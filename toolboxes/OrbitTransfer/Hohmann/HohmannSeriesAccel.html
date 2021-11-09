@@ -1,0 +1,287 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>HohmannSeriesAccel</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="HohmannSeriesAccel.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Demo of iterative Hohmann maneuvers with an acceleration limit</a></li><li><a href="#2">Acceleration limited, using default orbit fraction of 0.5</a></li><li><a href="#3">Add a value of specific impulse, acceleration will increase over time</a></li><li><a href="#4">Limit burns to a smaller fraction of the orbit, and specify a maximum burn time</a></li><li><a href="#5">Acceleration and tMax, but no Isp.</a></li><li><a href="#6">Compute arc loss for the burns</a></li><li><a href="#7">Figure legend</a></li></ul></div><h2 id="1">Demo of iterative Hohmann maneuvers with an acceleration limit</h2><p>The allowable delta-V at each revolution is computed from an acceleration, using an allowable orbit fraction and, optionally, a time limit. If a specific impulse is entered the acceleration increases over time as fuel is consumed.</p><p>The demo demonstrates the different inputs available to the function; in all of the cases, the delta-V is the same, but the transfer time changes.</p><p>See also: IterativeHohmannAccel, IterativeHohmannInc</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Initial acceleration for all cases</span>
+accel = 1e-6;
+
+<span class="comment">% Orbit parameters, LEO to MEO with 20 degree plane change</span>
+r0 = 6778;
+r1 = 20000;
+dI = -20*pi/180;
+</pre><h2 id="2">Acceleration limited, using default orbit fraction of 0.5</h2><p>Similar to the low-thrust spiral, a few days longer and a little less DV.</p><pre class="codeinput">IterativeHohmannAccel( r0, r1, dI, accel );
+h1 = findobj(<span class="string">'name'</span>,<span class="string">'Elements'</span>);
+set(h1,<span class="string">'name'</span>,<span class="string">'Elements: Fixed Accel'</span>)
+</pre><pre class="codeoutput">Initial; Target; Achieved
+  Columns 1 through 3
+                      6778         0.349065850398866                         0
+                     20000                         0                         0
+          20010.2132131131      0.000162422199219362                         0
+  Columns 4 through 6
+                         0                         0                         0
+                         0                         0                         0
+          3.14159265358979      0.000443226708223339                         0
+Iterative:  4.169 km/s, 59.6 days, 453 revs
+		accel: 1e-06 km/s2
+Hohmann:    3.462 km/s (#1 1.77683, #2 1.7)
+Low thrust: 4.506 km/s, 52.1541 days
+
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_01.png" alt=""> <img vspace="5" hspace="5" src="HohmannSeriesAccel_02.png" alt=""> <h2 id="3">Add a value of specific impulse, acceleration will increase over time</h2><p>This results in a slightly faster transfer, less than 50 days.</p><pre class="codeinput">Isp = 1000;
+IterativeHohmannAccel( r0, r1, dI, accel, Isp )
+h1 = findobj(<span class="string">'name'</span>,<span class="string">'Elements'</span>);
+set(h1,<span class="string">'name'</span>,<span class="string">'Elements: Fixed Isp'</span>)
+</pre><pre class="codeoutput">Initial; Target; Achieved
+  Columns 1 through 3
+                      6778         0.349065850398866                         0
+                     20000                         0                         0
+          20013.9324623114      0.000219050517501141                         0
+  Columns 4 through 6
+                         0                         0                         0
+                         0                         0                         0
+          3.14159265358979      0.000611170927580759                         0
+Iterative:  4.168 km/s, 48.2 days, 387 revs
+		Isp: 1000 s, accel0: 1e-06 km/s2, accelF:  1.52714e-06 km/s2
+Hohmann:    3.462 km/s (#1 1.77683, #2 1.7)
+Low thrust: 4.506 km/s, 52.1541 days
+
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_03.png" alt=""> <h2 id="4">Limit burns to a smaller fraction of the orbit, and specify a maximum burn time</h2><p>The increases the transfer time by almost a factor of 4.</p><pre class="codeinput">frac = 0.2;
+tMax = 1800;
+IterativeHohmannAccel( r0, r1, dI, accel, Isp, frac, tMax )
+h1 = findobj(<span class="string">'name'</span>,<span class="string">'Elements'</span>);
+set(h1,<span class="string">'name'</span>,<span class="string">'Elements: Fixed Isp, Max Burn Duration'</span>)
+</pre><pre class="codeoutput">Initial; Target; Achieved
+  Columns 1 through 3
+                      6778         0.349065850398866                         0
+                     20000                         0                         0
+          20002.8635388544      4.13566179226132e-05                         0
+  Columns 4 through 6
+                         0                         0                         0
+                         0                         0                         0
+          3.14159265358979      0.000120414547532194      -2.4487037904005e-16
+Iterative:  4.170 km/s, 187.1 days, 1267 revs
+		Isp: 1000 s, accel0: 1e-06 km/s2, accelF:  1.52981e-06 km/s2
+		frac: 0.2 orbits
+		Max: 1800 s
+Hohmann:    3.462 km/s (#1 1.77683, #2 1.7)
+Low thrust: 4.506 km/s, 52.1541 days
+
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_04.png" alt=""> <h2 id="5">Acceleration and tMax, but no Isp.</h2><p>This takes even longer than the previous case.</p><pre class="codeinput">IterativeHohmannAccel( r0, r1, dI, accel, [], frac, tMax )
+h1 = findobj(<span class="string">'name'</span>,<span class="string">'Elements'</span>);
+set(h1,<span class="string">'name'</span>,<span class="string">'Elements: Fixed Accel, Max Burn Duration'</span>)
+</pre><pre class="codeoutput">Initial; Target; Achieved
+  Columns 1 through 3
+                      6778         0.349065850398866                         0
+                     20000                         0                         0
+           20002.163174653      2.90238397581317e-05                         0
+  Columns 4 through 6
+                         0                         0                         0
+                         0                         0                         0
+          3.14159265358979      8.96831935202435e-05                         0
+Iterative:  4.170 km/s, 242.5 days, 1546 revs
+		accel: 1e-06 km/s2
+		frac: 0.2 orbits
+		Max: 1800 s
+Hohmann:    3.462 km/s (#1 1.77683, #2 1.7)
+Low thrust: 4.506 km/s, 52.1541 days
+
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_05.png" alt=""> <h2 id="6">Compute arc loss for the burns</h2><p>Apply finite burn losses, constant acceleration.</p><p>Try: different value of the burn fraction, from 0.1 to 0.5, to see the range of loss from the finite burns, and the change in duration of the transfer.</p><pre class="codeinput">frac      = 0.4;
+burns     = IterativeHohmannAccel( r0, r1, dI, accel, [], frac );
+burnFrame = OTFrame(<span class="string">'lvlh'</span>);
+dVtotal   = SumBurnsDV(burns,burnFrame);
+elInitial = [r0 abs(dI) 0 0 0 0];
+[absTimes,~,els] = BurnTimesImpulsive(elInitial,burns,burnFrame);
+
+elAtBurn = [elInitial;els];
+dVHArc   = zeros(1,size(burns,1));
+tDurH    = zeros(1,size(burns,1));
+<span class="keyword">for</span> i = 1:size(burns,1)
+  [dVk,tDuration] = ArcLossConstEls(elAtBurn(i,:),burns(i,:),accel,burnFrame);
+  dVHArc(i) = dVk;
+  tDurH(i) = tDuration;
+<span class="keyword">end</span>
+periods = Period(elAtBurn(:,1))';
+Plot2D(1:length(periods)-1,tDurH./periods(1:end-1)',<span class="string">'Burn Index'</span>,<span class="string">'Burn Fraction of Period'</span>,<span class="string">'Computed Arc Length - Hohmann'</span>)
+  dVPlot = reshape(dVHArc,2,[]);
+  Plot2D(1:size(dVPlot,2),dVPlot*1e3,<span class="string">'Index'</span>,<span class="string">'Delta-V (m/s)'</span>,<span class="string">'DV Per Rev'</span>);
+hold <span class="string">on</span>
+dVBurn = reshape(burns(:,1),2,[]);
+plot(1:size(dVPlot,2),dVBurn*1e3,<span class="string">'--'</span>)
+fprintf(<span class="string">'With an acceleration of %.4g km/s^2, delta-V is %.4g km/s. \n'</span>,accel,sum(abs(dVHArc)));
+fprintf(<span class="string">'\t Duration, %g days\n'</span>,absTimes(end)/86400);
+fprintf(<span class="string">'\t This is %.4g%% above the ideal DV. \n'</span>,(sum(abs(dVHArc))-dVtotal)/dVtotal*100);
+
+[dVS, ~, tS] = LTPlaneChange( r0, r1, dI, accel );
+fprintf(<span class="string">'An ideal spiral is %.4g km/s^2, duration %.4g days. \n'</span>,dVS,tS);
+</pre><pre class="codeoutput">With an acceleration of 1e-06 km/s^2, delta-V is 4.738 km/s. 
+	 Duration, 74.4742 days
+	 This is 13.66% above the ideal DV. 
+An ideal spiral is 4.506 km/s^2, duration 52.15 days. 
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_06.png" alt=""> <img vspace="5" hspace="5" src="HohmannSeriesAccel_07.png" alt=""> <h2 id="7">Figure legend</h2><pre class="codeinput">Figui;
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="HohmannSeriesAccel_08.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demo of iterative Hohmann maneuvers with an acceleration limit
+% The allowable delta-V at each revolution is computed from an acceleration,
+% using an allowable orbit fraction and, optionally, a time limit. If a specific
+% impulse is entered the acceleration increases over time as fuel is consumed.
+%
+% The demo demonstrates the different inputs available to the function; in all
+% of the cases, the delta-V is the same, but the transfer time changes.
+%
+% See also: IterativeHohmannAccel, IterativeHohmannInc
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2019 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Initial acceleration for all cases
+accel = 1e-6;
+
+% Orbit parameters, LEO to MEO with 20 degree plane change
+r0 = 6778;
+r1 = 20000;
+dI = -20*pi/180;
+
+%% Acceleration limited, using default orbit fraction of 0.5
+% Similar to the low-thrust spiral, a few days longer and a little less DV.
+IterativeHohmannAccel( r0, r1, dI, accel );
+h1 = findobj('name','Elements');
+set(h1,'name','Elements: Fixed Accel')
+   
+%% Add a value of specific impulse, acceleration will increase over time
+% This results in a slightly faster transfer, less than 50 days.
+Isp = 1000;
+IterativeHohmannAccel( r0, r1, dI, accel, Isp )
+h1 = findobj('name','Elements');
+set(h1,'name','Elements: Fixed Isp')
+
+%% Limit burns to a smaller fraction of the orbit, and specify a maximum burn time
+% The increases the transfer time by almost a factor of 4.
+frac = 0.2;
+tMax = 1800;
+IterativeHohmannAccel( r0, r1, dI, accel, Isp, frac, tMax )
+h1 = findobj('name','Elements');
+set(h1,'name','Elements: Fixed Isp, Max Burn Duration')
+
+%% Acceleration and tMax, but no Isp.
+% This takes even longer than the previous case.
+IterativeHohmannAccel( r0, r1, dI, accel, [], frac, tMax )
+h1 = findobj('name','Elements');
+set(h1,'name','Elements: Fixed Accel, Max Burn Duration')
+
+%% Compute arc loss for the burns
+% Apply finite burn losses, constant acceleration.
+%
+% Try: different value of the burn fraction, from 0.1 to 0.5, to see the range
+% of loss from the finite burns, and the change in duration of the transfer.
+frac      = 0.4;
+burns     = IterativeHohmannAccel( r0, r1, dI, accel, [], frac );
+burnFrame = OTFrame('lvlh');
+dVtotal   = SumBurnsDV(burns,burnFrame);
+elInitial = [r0 abs(dI) 0 0 0 0];
+[absTimes,~,els] = BurnTimesImpulsive(elInitial,burns,burnFrame);
+
+elAtBurn = [elInitial;els];
+dVHArc   = zeros(1,size(burns,1));
+tDurH    = zeros(1,size(burns,1));
+for i = 1:size(burns,1)
+  [dVk,tDuration] = ArcLossConstEls(elAtBurn(i,:),burns(i,:),accel,burnFrame);
+  dVHArc(i) = dVk;
+  tDurH(i) = tDuration;
+end
+periods = Period(elAtBurn(:,1))';
+Plot2D(1:length(periods)-1,tDurH./periods(1:end-1)','Burn Index','Burn Fraction of Period','Computed Arc Length - Hohmann')
+  dVPlot = reshape(dVHArc,2,[]);
+  Plot2D(1:size(dVPlot,2),dVPlot*1e3,'Index','Delta-V (m/s)','DV Per Rev');
+hold on
+dVBurn = reshape(burns(:,1),2,[]);
+plot(1:size(dVPlot,2),dVBurn*1e3,'REPLACE_WITH_DASH_DASH')
+fprintf('With an acceleration of %.4g km/s^2, delta-V is %.4g km/s. \n',accel,sum(abs(dVHArc)));
+fprintf('\t Duration, %g days\n',absTimes(end)/86400);
+fprintf('\t This is %.4g%% above the ideal DV. \n',(sum(abs(dVHArc))-dVtotal)/dVtotal*100);
+
+[dVS, ~, tS] = LTPlaneChange( r0, r1, dI, accel );
+fprintf('An ideal spiral is %.4g km/s^2, duration %.4g days. \n',dVS,tS);
+
+%% Figure legend
+Figui;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-04-30 19:30:11 -0400 (Tue, 30 Apr 2019) $
+% $Revision: 48738 $
+
+##### SOURCE END #####
+--></body></html>

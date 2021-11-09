@@ -1,0 +1,1010 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Generates the mass properties for the ComStar demo satellite.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="ComStarBuild.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Generates the mass properties for the ComStar demo satellite.</h1><!--introduction--><p>The Comstar is a hypothetical geosynchronous communications satellite used to demostrate control system design for satellites. You should run this script first before running any of the other Comstar scripts. Saves data to the mat-file ComStarI.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">2.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Inertias</span>, MassProp, BDDesign, DupVect, DVAKM
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">First guess</a></li><li><a href="#4">Spacecraft properties</a></li><li><a href="#5">Locations with respect to the box center</a></li><li><a href="#6">Transfer orbit mass properties</a></li><li><a href="#7">Dual spin turn mass properties</a></li><li><a href="#8">Mission orbit mass properties</a></li><li><a href="#9">Build the propulsion system</a></li><li><a href="#10">Save important data</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright 1996 Princeton Satellite Systems, Inc. All Rights Reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+g           = 9.806;
+rhoAL6061T6 = 2.7651e+03;
+</pre><h2 id="3">First guess</h2><pre class="codeinput"><span class="comment">%------------</span>
+mSC              = 2000;
+</pre><h2 id="4">Spacecraft properties</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+widthCore        = 1.6;
+widthAntenna     = 1.6;
+mAntenna         = 2*0.008*0.2*rhoAL6061T6*pi*(widthAntenna/2)^2; <span class="comment">% 20 percent mesh, 8 mm thick</span>
+lengthSAPanel    = 1.6;
+antennaBoom      = 1.6;
+thicknessSAPanel = 0.02;
+sAArea           = lengthSAPanel*widthCore;
+sABoom           = widthCore/2;
+nPanelsPerArray  = 3;
+rhoSolarPanel    = 64.1/(6*3.2);
+mSA              = 2*nPanelsPerArray*sAArea*rhoSolarPanel;
+power            = 0.142*nPanelsPerArray*sAArea*1358;
+mEL              = 0.001*power*63;
+mPayload         = 300;
+iSPSolid         = 285;
+rhoSolid         = 1.7574e+03;
+rhoFuel          = 1000;
+iSPACS           = 220;
+uSolid           = g*iSPSolid*0.001; <span class="comment">% km/sec</span>
+uACS             = g*iSPACS*0.001;   <span class="comment">% km/sec</span>
+years            = 10;
+dVAKM            = 1.514;
+dVSK             = 1.05*years*0.0107*(365.25/86.14);
+nFuelTanks       = 2;
+pFuelBOL         = 350*6895;
+pFuelEOL         = 100*6895;
+
+<span class="keyword">for</span> k = 1:10
+
+  <span class="comment">% Solid rocket fuel</span>
+  <span class="comment">%------------------</span>
+  mPSolid = mSC*(1 - exp(-dVAKM/uSolid));
+  mFuel   = (mSC - mPSolid)*(1 - exp(-dVSK/uACS));
+
+  <span class="comment">% Reaction control subsystem dry mass</span>
+  <span class="comment">%------------------------------------</span>
+  mRC     = (0.01 + 0.0115*sqrt(years))*mSC;
+
+  <span class="comment">% Solid motor dry mass</span>
+  <span class="comment">%---------------------</span>
+  mSolid  = 0.07*mPSolid;
+
+  <span class="comment">% Structural mass</span>
+  <span class="comment">%----------------</span>
+  mST     = 0.087*mSC;
+
+  <span class="comment">% Thermal control</span>
+  <span class="comment">%----------------</span>
+  mT      = 0.032*mSC;
+
+  <span class="comment">% Attitude control</span>
+  <span class="comment">%-----------------</span>
+  mAC     = 65 + 0.022*(mSC - 700);
+
+  mSC = mSA + mEL + mPayload + mPSolid + mSolid + mRC + mFuel + mST + mT + mAC + mAntenna;
+
+<span class="keyword">end</span>
+
+fprintf(1,<span class="string">'\n---------------------- \n  ComStar Spacecraft\n----------------------\n\n'</span>);
+
+
+fprintf(1,<span class="string">'Separation mass         = %12.2f kg\n'</span>,mSC);
+fprintf(1,<span class="string">'REA Fuel                = %12.2f kg\n'</span>,mFuel);
+fprintf(1,<span class="string">'Payload                 = %12.2f kg\n'</span>,mPayload);
+fprintf(1,<span class="string">'Reaction Control        = %12.2f kg\n'</span>,mRC);
+fprintf(1,<span class="string">'Antenna                 = %12.2f kg\n'</span>,mAntenna);
+fprintf(1,<span class="string">'Attitude Control        = %12.2f kg\n'</span>,mAC);
+fprintf(1,<span class="string">'Solid Structure         = %12.2f kg\n'</span>,mSolid);
+fprintf(1,<span class="string">'Solid Fuel              = %12.2f kg\n'</span>,mPSolid);
+fprintf(1,<span class="string">'BOL Mass                = %12.2f kg\n'</span>,mSC - mPSolid);
+
+
+<span class="comment">% Volume calculations</span>
+<span class="comment">%--------------------</span>
+vFuel          = mFuel/rhoFuel;
+solidLength    = 0.6*widthCore;
+solidRadius    = sqrt( ((mPSolid/rhoSolid)/solidLength)/pi );
+fuelTankRadius = (3*(vFuel/nFuelTanks)/(4*pi))^(1/3);
+rFuelTank      = fuelTankRadius + solidRadius;
+
+fprintf(1,<span class="string">'Solid Rocket Radius     = %12.2f m\n'</span>,solidRadius);
+fprintf(1,<span class="string">'Fuel Tank Diameter      = %12.2f m\n'</span>,2*fuelTankRadius);
+fprintf(1,<span class="string">'Fuel Tank Location      = %12.2f m\n'</span>,rFuelTank);
+
+<span class="comment">% Assume that the satellite has the following components</span>
+<span class="comment">%-------------------------------------------------------</span>
+<span class="comment">% 1 Solar arrays                   box</span>
+<span class="comment">% 2 North/south equipment bays     box</span>
+<span class="comment">% 3 Fuel tanks                     sphere</span>
+<span class="comment">% 4 Solid rocket                   cylinder</span>
+<span class="comment">% 5 Structure                      hollow box</span>
+<span class="comment">% 6 Antennas                       disk</span>
+<span class="comment">% 7 Solid structure                hollow cylinder</span>
+
+<span class="comment">%        1     2        2         4        7       2      3      5     2    2      6</span>
+<span class="comment">% mSC = mSA + mEL + mPayload + mPSolid + mSolid + mRC + mFuel + mST + mT + mAC + mAntenna;</span>
+
+mNSEquipment = mEL + mPayload + mRC + mT + mAC;
+
+<span class="comment">% Get all of the inertias about their own centers of mass</span>
+<span class="comment">% z is the axis of symmetry for cylinders</span>
+<span class="comment">% Box inputs are x, y, z</span>
+<span class="comment">%--------------------------------------------------------</span>
+
+
+<span class="comment">% Model as a 6 boxes with the length along y</span>
+<span class="comment">%-------------------------------------------</span>
+iSA       = Inertias( mSA/6,[widthCore lengthSAPanel  thicknessSAPanel],<span class="string">'box'</span> );          <span class="comment">% 1</span>
+
+<span class="comment">% Model as a 4 boxes</span>
+<span class="comment">%-------------------</span>
+depthNSEq = widthCore/2 - sqrt(solidRadius^2-(widthCore/4)^2);
+iNSEq     = Inertias( mNSEquipment/4,[0.4 0.4 1.6],<span class="string">'box'</span> );                               <span class="comment">% 2</span>
+
+<span class="comment">% Model as 2 spheres</span>
+<span class="comment">%-------------------</span>
+iFuel     = Inertias( mFuel/2, fuelTankRadius, <span class="string">'sphere'</span> ) ;                               <span class="comment">% 3</span>
+
+<span class="comment">% Model as a cylinder</span>
+<span class="comment">%-------------------</span>
+iPSolid   = Inertias( mPSolid, [solidRadius, solidLength,], <span class="string">'cylinder'</span> );                 <span class="comment">% 4</span>
+
+<span class="comment">% Model as a hollow box (Aluminum 6061-T6)</span>
+<span class="comment">%-----------------------------------------</span>
+thickness = mST/(6*widthCore^2)/rhoAL6061T6;
+iST       = Inertias( mST, [widthCore widthCore widthCore, thickness], <span class="string">'hollow box'</span> );    <span class="comment">% 5</span>
+
+<span class="comment">% Model as 2 cylinders</span>
+<span class="comment">%---------------------</span>
+iAntenna  = Inertias( mAntenna/2, [widthAntenna/2, widthAntenna/10], <span class="string">'cylinder'</span> );        <span class="comment">% 6</span>
+
+<span class="comment">% Model as a hollow cylinder</span>
+<span class="comment">%---------------------------</span>
+thickness = mSolid/(2*pi*solidRadius*solidLength*rhoAL6061T6);
+iSolid    = Inertias( mSolid, [solidRadius, solidLength, thickness], <span class="string">'hollow cylinder'</span> ); <span class="comment">% 7</span>
+
+fprintf(1,<span class="string">'Solar Panel Inertia     = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iSA(1:3));
+fprintf(1,<span class="string">'Equipment Inertia       = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iNSEq(1:3));
+fprintf(1,<span class="string">'Fuel Inertia            = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iFuel(1:3));
+fprintf(1,<span class="string">'Solid Fuel Inertia      = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iPSolid(1:3));
+fprintf(1,<span class="string">'Structure Inertia       = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iST(1:3));
+fprintf(1,<span class="string">'Antenna Inertia         = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iAntenna(1:3));
+fprintf(1,<span class="string">'Solid Structure Inertia = %12.2f %12.2f %12.2f kg-m^2\n'</span>,iSolid(1:3));
+</pre><pre class="codeoutput">
+---------------------- 
+  ComStar Spacecraft
+----------------------
+
+Separation mass         =      2046.53 kg
+REA Fuel                =       235.79 kg
+Payload                 =       300.00 kg
+Reaction Control        =        94.85 kg
+Antenna                 =        17.79 kg
+Attitude Control        =        94.60 kg
+Solid Structure         =        59.89 kg
+Solid Fuel              =       855.60 kg
+BOL Mass                =      1190.93 kg
+Solid Rocket Radius     =         0.40 m
+Fuel Tank Diameter      =         0.61 m
+Fuel Tank Location      =         0.71 m
+Solar Panel Inertia     =         1.82         1.82         3.65 kg-m^2
+Equipment Inertia       =        36.73        36.73         4.32 kg-m^2
+Fuel Inertia            =         4.36         4.36         4.36 kg-m^2
+Solid Fuel Inertia      =       100.24       100.24        69.06 kg-m^2
+Structure Inertia       =       126.22       126.22       126.22 kg-m^2
+Antenna Inertia         =         1.44         1.44         2.85 kg-m^2
+Solid Structure Inertia =         9.33         9.33         9.46 kg-m^2
+</pre><h2 id="5">Locations with respect to the box center</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+
+<span class="comment">% Solar array panels [north, south]</span>
+<span class="comment">%----------------------------------</span>
+yBase = widthCore/2 + sABoom;
+ySAD  = yBase + [0.5 1.5 2.5]*lengthSAPanel;
+rSAD = [zeros(1,6);-ySAD ySAD;zeros(1,6)];
+
+ySAD  = yBase + [0.5 1.5 2.5]*thicknessSAPanel;
+rSAU = [zeros(1,6);-ySAD ySAD;zeros(1,6)];
+
+<span class="comment">% North/south equipment</span>
+<span class="comment">%----------------------</span>
+rNSEq = [-0.8   0.8 -0.8  0.8;<span class="keyword">...</span>
+         -0.8  -0.8  0.8  0.8;<span class="keyword">...</span>
+        0.0   0.0  0.0  0.0];
+
+<span class="comment">% Fuel tanks</span>
+<span class="comment">%-----------</span>
+rFuel = [rFuelTank -rFuelTank;0 0;-.16 -.16];
+
+<span class="comment">% Solid Fuel and structure</span>
+<span class="comment">%-------------------------</span>
+rPSolid = [0;0;(solidLength - widthCore)/2];
+rSolid  = rPSolid;
+
+<span class="comment">% Structure</span>
+<span class="comment">%----------</span>
+rST = [0;0;0];
+
+<span class="comment">% Antennas</span>
+<span class="comment">%---------</span>
+rAntennaD = [antennaBoom + widthCore/2 -(antennaBoom + widthCore/2);0 0;0 0];
+rAntennaU = [widthCore/2 -widthCore/2;0 0;0 0];
+</pre><h2 id="6">Transfer orbit mass properties</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+two  = ones(1,2)/2;
+four = ones(1,4)/4;
+six  = ones(1,6)/6;
+inr = [DupVect(iSA',6),iNSEq',iNSEq',iNSEq',iNSEq',iFuel',iFuel',iAntenna',iAntenna',iST',iSolid',iPSolid'];
+m   = [mSA*six,mNSEquipment*four,mFuel*two,mAntenna*two,mST,mSolid,mPSolid];
+r   = [rSAU,rNSEq,rFuel,rAntennaU,rST,rSolid,rPSolid];
+cD  = [1;0; 0;0;1; 0;0;0;1];
+cS  = [1;0; 0;0;0;-1;0;1;0];
+cA  = [0;0;-1;0;1;0;1;0;0];
+cN  = [ <span class="string">'North Inner Panel  '</span>;<span class="keyword">...</span>
+        <span class="string">'North Middle Panel '</span>;<span class="keyword">...</span>
+        <span class="string">'North Outer Panel  '</span>;<span class="keyword">...</span>
+        <span class="string">'South Inner Panel  '</span>;<span class="keyword">...</span>
+        <span class="string">'South Middle Panel '</span>;<span class="keyword">...</span>
+        <span class="string">'South Outer Panel  '</span>;<span class="keyword">...</span>
+        <span class="string">'Northwest Equipment'</span>;<span class="keyword">...</span>
+        <span class="string">'Northeast Equipment'</span>;<span class="keyword">...</span>
+        <span class="string">'Southwest Equipment'</span>;<span class="keyword">...</span>
+        <span class="string">'Southeast Equipment'</span>;<span class="keyword">...</span>
+        <span class="string">'East Fuel Tank     '</span>;<span class="keyword">...</span>
+        <span class="string">'West Fuel Tanks    '</span>;<span class="keyword">...</span>
+        <span class="string">'East Antenna       '</span>;<span class="keyword">...</span>
+        <span class="string">'West Antenna       '</span>;<span class="keyword">...</span>
+        <span class="string">'Structure          '</span>;<span class="keyword">...</span>
+        <span class="string">'Solid Motor        '</span>;<span class="keyword">...</span>
+        <span class="string">'Solid Motor Fuel   '</span>];
+c = [cS,cS,cS,cS,cS,cS,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD,cD];
+
+fprintf(1,<span class="string">'\n------------------- \n  Transfer Orbit\n-------------------\n'</span>);
+MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+[inrTO, mTO, cMTO] = MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+</pre><pre class="codeoutput">
+------------------- 
+  Transfer Orbit
+-------------------
+
+Inertias are [Ixx Iyy Izz Ixy Ixz Iyz]
+
+Component   1 North Inner Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.20    3.87   23.98   -0.00    0.00    2.22 kg-m^2
+CM                      -0.0000   -1.6100    0.1616 m
+Mass                     8.5467 kg
+
+Component   2 North Middle Panel 
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.75    3.87   24.53   -0.00    0.00    2.25 kg-m^2
+CM                      -0.0000   -1.6300    0.1616 m
+Mass                     8.5467 kg
+
+Component   3 North Outer Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   25.32    3.87   25.09   -0.00    0.00    2.28 kg-m^2
+CM                      -0.0000   -1.6500    0.1616 m
+Mass                     8.5467 kg
+
+Component   4 South Inner Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.20    3.87   23.98    0.00    0.00   -2.22 kg-m^2
+CM                      -0.0000    1.6100    0.1616 m
+Mass                     8.5467 kg
+
+Component   5 South Middle Panel 
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.75    3.87   24.53    0.00    0.00   -2.25 kg-m^2
+CM                      -0.0000    1.6300    0.1616 m
+Mass                     8.5467 kg
+
+Component   6 South Outer Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   25.32    3.87   25.09    0.00    0.00   -2.28 kg-m^2
+CM                      -0.0000    1.6500    0.1616 m
+Mass                     8.5467 kg
+
+Component   7 Northwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  144.68  144.68  211.75 -103.71   20.95   20.95 kg-m^2
+CM                      -0.8000   -0.8000    0.1616 m
+Mass                   162.0529 kg
+
+Component   8 Northeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  144.68  144.68  211.75  103.71  -20.95   20.95 kg-m^2
+CM                       0.8000   -0.8000    0.1616 m
+Mass                   162.0529 kg
+
+Component   9 Southwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  144.68  144.68  211.75  103.71   20.95  -20.95 kg-m^2
+CM                      -0.8000    0.8000    0.1616 m
+Mass                   162.0529 kg
+
+Component  10 Southeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  144.68  144.68  211.75 -103.71  -20.95  -20.95 kg-m^2
+CM                       0.8000    0.8000    0.1616 m
+Mass                   162.0529 kg
+
+Component  11 East Fuel Tank     
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    4.36   63.12   63.12    0.00   -0.13    0.00 kg-m^2
+CM                       0.7060   -0.0000    0.0016 m
+Mass                   117.8944 kg
+
+Component  12 West Fuel Tanks    
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    4.36   63.12   63.12   -0.00    0.13    0.00 kg-m^2
+CM                      -0.7060   -0.0000    0.0016 m
+Mass                   117.8944 kg
+
+Component  13 East Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    3.08    7.37    7.14    0.00   -1.15    0.00 kg-m^2
+CM                       0.8000   -0.0000    0.1616 m
+Mass                     8.8953 kg
+
+Component  14 West Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    3.08    7.37    7.14   -0.00    1.15    0.00 kg-m^2
+CM                      -0.8000   -0.0000    0.1616 m
+Mass                     8.8953 kg
+
+Component  15 Structure          
+Inertia                126.22  126.22  126.22    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  130.87  130.87  126.22   -0.00    0.00    0.00 kg-m^2
+CM                      -0.0000   -0.0000    0.1616 m
+Mass                   177.9678 kg
+
+Component  16 Solid Motor        
+Inertia                  9.33    9.33    9.46    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   10.83   10.83    9.46   -0.00   -0.00   -0.00 kg-m^2
+CM                      -0.0000   -0.0000   -0.1584 m
+Mass                    59.8922 kg
+
+Component  17 Solid Motor Fuel   
+Inertia                100.24  100.24   69.06    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  121.71  121.71   69.06   -0.00   -0.00   -0.00 kg-m^2
+CM                      -0.0000   -0.0000   -0.1584 m
+Mass                   855.6027 kg
+
+System Inertia 1005.55   -0.00   -0.00   -0.00 1006.32   -0.00 -3.408812e-16
+System Inertia   -0.00 1339.45  107.00  103.00   45.00  109.00 ^2
+System CM         0.0000    0.0000   -0.1616 m
+System Mass    2046.5335 kg
+System Inertia in Principal Axes  1005.55    0.00    0.00 kg-m^2
+
+
+</pre><h2 id="7">Dual spin turn mass properties</h2><p>Eliminate the solid motor fuel</p><pre class="codeinput"><span class="comment">%-------------------------------</span>
+inr = inr(:,1:16);
+m   = m(1:16);
+r   = [rSAU,rNSEq,rFuel,rAntennaD,rST,rSolid];
+c = [cS,cS,cS,cS,cS,cS,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD];
+cN  =  cN(1:16,:);
+fprintf(1,<span class="string">'\n------------------- \n  Dual Spin Turn\n-------------------\n'</span>);
+MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+inrDST = MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+</pre><pre class="codeoutput">
+------------------- 
+  Dual Spin Turn
+-------------------
+
+Inertias are [Ixx Iyy Izz Ixy Ixz Iyz]
+
+Component   1 North Inner Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.00    3.67   23.98   -0.00    0.00    0.66 kg-m^2
+CM                      -0.0000   -1.6100    0.0478 m
+Mass                     8.5467 kg
+
+Component   2 North Middle Panel 
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.55    3.67   24.53   -0.00    0.00    0.67 kg-m^2
+CM                      -0.0000   -1.6300    0.0478 m
+Mass                     8.5467 kg
+
+Component   3 North Outer Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   25.11    3.67   25.09   -0.00    0.00    0.67 kg-m^2
+CM                      -0.0000   -1.6500    0.0478 m
+Mass                     8.5467 kg
+
+Component   4 South Inner Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.00    3.67   23.98    0.00    0.00   -0.66 kg-m^2
+CM                      -0.0000    1.6100    0.0478 m
+Mass                     8.5467 kg
+
+Component   5 South Middle Panel 
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   24.55    3.67   24.53    0.00    0.00   -0.67 kg-m^2
+CM                      -0.0000    1.6300    0.0478 m
+Mass                     8.5467 kg
+
+Component   6 South Outer Panel  
+Inertia                  1.82    3.65    1.82    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   25.11    3.67   25.09    0.00    0.00   -0.67 kg-m^2
+CM                      -0.0000    1.6500    0.0478 m
+Mass                     8.5467 kg
+
+Component   7 Northwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75 -103.71    6.19    6.19 kg-m^2
+CM                      -0.8000   -0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component   8 Northeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75  103.71   -6.19    6.19 kg-m^2
+CM                       0.8000   -0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component   9 Southwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75  103.71    6.19   -6.19 kg-m^2
+CM                      -0.8000    0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component  10 Southeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75 -103.71   -6.19   -6.19 kg-m^2
+CM                       0.8000    0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component  11 East Fuel Tank     
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    5.85   64.61   63.12    0.00    9.34   -0.00 kg-m^2
+CM                       0.7060   -0.0000   -0.1122 m
+Mass                   117.8944 kg
+
+Component  12 West Fuel Tanks    
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    5.85   64.61   63.12   -0.00   -9.34   -0.00 kg-m^2
+CM                      -0.7060   -0.0000   -0.1122 m
+Mass                   117.8944 kg
+
+Component  13 East Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    2.87   52.70   52.68    0.00   -1.02    0.00 kg-m^2
+CM                       2.4000   -0.0000    0.0478 m
+Mass                     8.8953 kg
+
+Component  14 West Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    2.87   52.70   52.68   -0.00    1.02    0.00 kg-m^2
+CM                      -2.4000   -0.0000    0.0478 m
+Mass                     8.8953 kg
+
+Component  15 Structure          
+Inertia                126.22  126.22  126.22    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  126.63  126.63  126.22   -0.00    0.00    0.00 kg-m^2
+CM                      -0.0000   -0.0000    0.0478 m
+Mass                   177.9678 kg
+
+Component  16 Solid Motor        
+Inertia                  9.33    9.33    9.46    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   13.77   13.77    9.46   -0.00   -0.00   -0.00 kg-m^2
+CM                      -0.0000   -0.0000   -0.2722 m
+Mass                    59.8922 kg
+
+System Inertia  868.41   -0.00   -0.00   -0.00  960.26   -0.00 -3.515871e-17
+System Inertia   -0.00 1361.48  107.00  103.00   45.00  109.00 ^2
+System CM         0.0000    0.0000   -0.0478 m
+System Mass    1190.9309 kg
+System Inertia in Principal Axes   868.41    0.00    0.00 kg-m^2
+
+
+</pre><h2 id="8">Mission orbit mass properties</h2><p>Eliminate the solid motor fuel and rotate the antennas</p><pre class="codeinput"><span class="comment">%-------------------------------------------------------</span>
+inr = inr(:,1:16);
+m   = m(1:16);
+r   = [rSAD,rNSEq,rFuel,rAntennaD,rST,rSolid];
+c   = [cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD];
+cN  =  cN(1:16,:);
+fprintf(1,<span class="string">'\n------------------- \n  Mission Orbit\n-------------------\n'</span>);
+MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+[inrMO, mMO, cMMO] = MassProp( inr, m, r, <span class="string">'mks'</span>, cN, c );
+</pre><pre class="codeoutput">
+------------------- 
+  Mission Orbit
+-------------------
+
+Inertias are [Ixx Iyy Izz Ixy Ixz Iyz]
+
+Component   1 North Inner Panel  
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   51.07    1.84   52.88   -0.00    0.00    0.98 kg-m^2
+CM                      -0.0000   -2.4000    0.0478 m
+Mass                     8.5467 kg
+
+Component   2 North Middle Panel 
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  138.59    1.84  140.39   -0.00    0.00    1.63 kg-m^2
+CM                      -0.0000   -4.0000    0.0478 m
+Mass                     8.5467 kg
+
+Component   3 North Outer Panel  
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  269.87    1.84  271.67   -0.00    0.00    2.29 kg-m^2
+CM                      -0.0000   -5.6000    0.0478 m
+Mass                     8.5467 kg
+
+Component   4 South Inner Panel  
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   51.07    1.84   52.88    0.00    0.00   -0.98 kg-m^2
+CM                      -0.0000    2.4000    0.0478 m
+Mass                     8.5467 kg
+
+Component   5 South Middle Panel 
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  138.59    1.84  140.39    0.00    0.00   -1.63 kg-m^2
+CM                      -0.0000    4.0000    0.0478 m
+Mass                     8.5467 kg
+
+Component   6 South Outer Panel  
+Inertia                  1.82    1.82    3.65    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  269.87    1.84  271.67    0.00    0.00   -2.29 kg-m^2
+CM                      -0.0000    5.6000    0.0478 m
+Mass                     8.5467 kg
+
+Component   7 Northwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75 -103.71    6.19    6.19 kg-m^2
+CM                      -0.8000   -0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component   8 Northeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75  103.71   -6.19    6.19 kg-m^2
+CM                       0.8000   -0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component   9 Southwest Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75  103.71    6.19   -6.19 kg-m^2
+CM                      -0.8000    0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component  10 Southeast Equipment
+Inertia                 36.73   36.73    4.32    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  140.82  140.82  211.75 -103.71   -6.19   -6.19 kg-m^2
+CM                       0.8000    0.8000    0.0478 m
+Mass                   162.0529 kg
+
+Component  11 East Fuel Tank     
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    5.85   64.61   63.12   -0.00    9.34    0.00 kg-m^2
+CM                       0.7060    0.0000   -0.1122 m
+Mass                   117.8944 kg
+
+Component  12 West Fuel Tanks    
+Inertia                  4.36    4.36    4.36    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    5.85   64.61   63.12    0.00   -9.34    0.00 kg-m^2
+CM                      -0.7060    0.0000   -0.1122 m
+Mass                   117.8944 kg
+
+Component  13 East Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    2.87   52.70   52.68   -0.00   -1.02   -0.00 kg-m^2
+CM                       2.4000    0.0000    0.0478 m
+Mass                     8.8953 kg
+
+Component  14 West Antenna       
+Inertia                  2.85    1.44    1.44    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM    2.87   52.70   52.68    0.00    1.02   -0.00 kg-m^2
+CM                      -2.4000    0.0000    0.0478 m
+Mass                     8.8953 kg
+
+Component  15 Structure          
+Inertia                126.22  126.22  126.22    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM  126.63  126.63  126.22    0.00    0.00   -0.00 kg-m^2
+CM                      -0.0000    0.0000    0.0478 m
+Mass                   177.9678 kg
+
+Component  16 Solid Motor        
+Inertia                  9.33    9.33    9.46    0.00    0.00    0.00 kg-m^2
+Inertia wrt System CM   13.77   13.77    9.46    0.00   -0.00    0.00 kg-m^2
+CM                      -0.0000    0.0000   -0.2722 m
+Mass                    59.8922 kg
+
+System Inertia 1640.15    0.00   -0.00    0.00  949.33    0.00 -3.515871e-17
+System Inertia    0.00 2144.15  107.00  103.00   45.00  109.00 ^2
+System CM         0.0000   -0.0000   -0.0478 m
+System Mass    1190.9309 kg
+System Inertia in Principal Axes  1640.15    0.00    0.00 kg-m^2
+
+
+</pre><h2 id="9">Build the propulsion system</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[v, mP] = BDDesign( mFuel/nFuelTanks, 1000, 298, pFuelBOL, pFuelEOL );
+
+fprintf(1,<span class="string">'\n------------------- \n  Propulsion System\n-------------------\n'</span>);
+
+vTank = [v v];
+mHe   = [mP mP];
+mF    = (mFuel/nFuelTanks)*ones(1,nFuelTanks);
+
+fprintf(1,<span class="string">'Fuel Tank Volume        = %12.2f %12.2f m^3\n'</span>,vTank);
+fprintf(1,<span class="string">'Mass Helium             = %12.2f %12.2f kg\n'</span>,mHe);
+fprintf(1,<span class="string">'Mass Fuel               = %12.2f %12.2f kg\n'</span>,mF);
+</pre><pre class="codeoutput">
+------------------- 
+  Propulsion System
+-------------------
+Fuel Tank Volume        =         0.17         0.17 m^3
+Mass Helium             =         0.18         0.18 kg
+Mass Fuel               =       117.89       117.89 kg
+</pre><h2 id="10">Save important data</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+mDry      = mTO - sum(mF) - mPSolid;
+mTODVFuel = mPSolid;
+cMAKM     = rPSolid;
+inrAKM    = iPSolid;
+mAKM      = mPSolid;
+c = cd;
+p = fileparts(which(mfilename));
+cd(p);
+save <span class="string">ComStarI</span> <span class="string">inrTO</span> <span class="string">mTO</span> <span class="string">cMTO</span> <span class="string">inrDST</span> <span class="string">inrMO</span> <span class="string">mMO</span> <span class="string">cMMO</span> <span class="string">mHe</span> <span class="string">vTank</span> <span class="string">mF</span> <span class="string">mDry</span> <span class="string">mTODVFuel</span> <span class="string">mAKM</span> <span class="string">cMAKM</span> <span class="string">inrAKM</span>
+fprintf(1,<span class="string">'\nData written to matfile ComStarI\n\n'</span>);
+cd(c);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+Data written to matfile ComStarI
+
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Generates the mass properties for the ComStar demo satellite.
+% The Comstar is a hypothetical geosynchronous communications satellite
+% used to demostrate control system design for satellites. You should
+% run this script first before running any of the other Comstar scripts.
+% Saves data to the mat-file ComStarI.
+%
+%   Since version 2.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Inertias, MassProp, BDDesign, DupVect, DVAKM
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright 1996 Princeton Satellite Systems, Inc. All Rights Reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g           = 9.806;
+rhoAL6061T6 = 2.7651e+03;
+
+%% First guess
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mSC              = 2000;
+
+%% Spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+widthCore        = 1.6;
+widthAntenna     = 1.6;
+mAntenna         = 2*0.008*0.2*rhoAL6061T6*pi*(widthAntenna/2)^2; % 20 percent mesh, 8 mm thick
+lengthSAPanel    = 1.6;
+antennaBoom      = 1.6;
+thicknessSAPanel = 0.02;
+sAArea           = lengthSAPanel*widthCore;
+sABoom           = widthCore/2;
+nPanelsPerArray  = 3;
+rhoSolarPanel    = 64.1/(6*3.2);
+mSA              = 2*nPanelsPerArray*sAArea*rhoSolarPanel;
+power            = 0.142*nPanelsPerArray*sAArea*1358;
+mEL              = 0.001*power*63;
+mPayload         = 300;
+iSPSolid         = 285;
+rhoSolid         = 1.7574e+03;
+rhoFuel          = 1000;
+iSPACS           = 220;
+uSolid           = g*iSPSolid*0.001; % km/sec
+uACS             = g*iSPACS*0.001;   % km/sec
+years            = 10;
+dVAKM            = 1.514;
+dVSK             = 1.05*years*0.0107*(365.25/86.14);
+nFuelTanks       = 2;
+pFuelBOL         = 350*6895;
+pFuelEOL         = 100*6895;
+
+for k = 1:10
+
+  % Solid rocket fuel
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  mPSolid = mSC*(1 - exp(-dVAKM/uSolid));
+  mFuel   = (mSC - mPSolid)*(1 - exp(-dVSK/uACS));
+  
+  % Reaction control subsystem dry mass
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  mRC     = (0.01 + 0.0115*sqrt(years))*mSC;
+   
+  % Solid motor dry mass
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  mSolid  = 0.07*mPSolid;
+  
+  % Structural mass
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  mST     = 0.087*mSC;
+  
+  % Thermal control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  mT      = 0.032*mSC;
+  
+  % Attitude control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  mAC     = 65 + 0.022*(mSC - 700);
+  
+  mSC = mSA + mEL + mPayload + mPSolid + mSolid + mRC + mFuel + mST + mT + mAC + mAntenna;
+  
+end
+
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH \n  ComStar Spacecraft\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n\n'); 
+
+
+fprintf(1,'Separation mass         = %12.2f kg\n',mSC);
+fprintf(1,'REA Fuel                = %12.2f kg\n',mFuel);
+fprintf(1,'Payload                 = %12.2f kg\n',mPayload);
+fprintf(1,'Reaction Control        = %12.2f kg\n',mRC);
+fprintf(1,'Antenna                 = %12.2f kg\n',mAntenna);
+fprintf(1,'Attitude Control        = %12.2f kg\n',mAC);
+fprintf(1,'Solid Structure         = %12.2f kg\n',mSolid);
+fprintf(1,'Solid Fuel              = %12.2f kg\n',mPSolid);
+fprintf(1,'BOL Mass                = %12.2f kg\n',mSC - mPSolid);
+
+
+% Volume calculations
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+vFuel          = mFuel/rhoFuel;
+solidLength    = 0.6*widthCore;
+solidRadius    = sqrt( ((mPSolid/rhoSolid)/solidLength)/pi );
+fuelTankRadius = (3*(vFuel/nFuelTanks)/(4*pi))^(1/3);
+rFuelTank      = fuelTankRadius + solidRadius;
+
+fprintf(1,'Solid Rocket Radius     = %12.2f m\n',solidRadius);
+fprintf(1,'Fuel Tank Diameter      = %12.2f m\n',2*fuelTankRadius);
+fprintf(1,'Fuel Tank Location      = %12.2f m\n',rFuelTank);
+
+% Assume that the satellite has the following components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% 1 Solar arrays                   box
+% 2 North/south equipment bays     box
+% 3 Fuel tanks                     sphere
+% 4 Solid rocket                   cylinder
+% 5 Structure                      hollow box
+% 6 Antennas                       disk
+% 7 Solid structure                hollow cylinder
+
+%        1     2        2         4        7       2      3      5     2    2      6
+% mSC = mSA + mEL + mPayload + mPSolid + mSolid + mRC + mFuel + mST + mT + mAC + mAntenna;
+
+mNSEquipment = mEL + mPayload + mRC + mT + mAC;
+
+% Get all of the inertias about their own centers of mass
+% z is the axis of symmetry for cylinders
+% Box inputs are x, y, z
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+% Model as a 6 boxes with the length along y
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+iSA       = Inertias( mSA/6,[widthCore lengthSAPanel  thicknessSAPanel],'box' );          % 1
+
+% Model as a 4 boxes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+depthNSEq = widthCore/2 - sqrt(solidRadius^2-(widthCore/4)^2);
+iNSEq     = Inertias( mNSEquipment/4,[0.4 0.4 1.6],'box' );                               % 2
+
+% Model as 2 spheres
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+iFuel     = Inertias( mFuel/2, fuelTankRadius, 'sphere' ) ;                               % 3
+
+% Model as a cylinder
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+iPSolid   = Inertias( mPSolid, [solidRadius, solidLength,], 'cylinder' );                 % 4
+
+% Model as a hollow box (Aluminum 6061-T6)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+thickness = mST/(6*widthCore^2)/rhoAL6061T6; 
+iST       = Inertias( mST, [widthCore widthCore widthCore, thickness], 'hollow box' );    % 5
+
+% Model as 2 cylinders
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+iAntenna  = Inertias( mAntenna/2, [widthAntenna/2, widthAntenna/10], 'cylinder' );        % 6
+
+% Model as a hollow cylinder
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+thickness = mSolid/(2*pi*solidRadius*solidLength*rhoAL6061T6);
+iSolid    = Inertias( mSolid, [solidRadius, solidLength, thickness], 'hollow cylinder' ); % 7
+
+fprintf(1,'Solar Panel Inertia     = %12.2f %12.2f %12.2f kg-m^2\n',iSA(1:3));
+fprintf(1,'Equipment Inertia       = %12.2f %12.2f %12.2f kg-m^2\n',iNSEq(1:3));
+fprintf(1,'Fuel Inertia            = %12.2f %12.2f %12.2f kg-m^2\n',iFuel(1:3));
+fprintf(1,'Solid Fuel Inertia      = %12.2f %12.2f %12.2f kg-m^2\n',iPSolid(1:3));
+fprintf(1,'Structure Inertia       = %12.2f %12.2f %12.2f kg-m^2\n',iST(1:3));
+fprintf(1,'Antenna Inertia         = %12.2f %12.2f %12.2f kg-m^2\n',iAntenna(1:3));
+fprintf(1,'Solid Structure Inertia = %12.2f %12.2f %12.2f kg-m^2\n',iSolid(1:3));
+
+%% Locations with respect to the box center
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Solar array panels [north, south]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yBase = widthCore/2 + sABoom;
+ySAD  = yBase + [0.5 1.5 2.5]*lengthSAPanel;
+rSAD = [zeros(1,6);-ySAD ySAD;zeros(1,6)];
+
+ySAD  = yBase + [0.5 1.5 2.5]*thicknessSAPanel;
+rSAU = [zeros(1,6);-ySAD ySAD;zeros(1,6)];
+
+% North/south equipment
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rNSEq = [-0.8   0.8 -0.8  0.8;...
+         -0.8  -0.8  0.8  0.8;...
+        0.0   0.0  0.0  0.0];
+
+% Fuel tanks
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rFuel = [rFuelTank -rFuelTank;0 0;-.16 -.16];
+
+% Solid Fuel and structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rPSolid = [0;0;(solidLength - widthCore)/2];
+rSolid  = rPSolid;
+
+% Structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rST = [0;0;0];
+
+% Antennas
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rAntennaD = [antennaBoom + widthCore/2 -(antennaBoom + widthCore/2);0 0;0 0];
+rAntennaU = [widthCore/2 -widthCore/2;0 0;0 0];
+
+%% Transfer orbit mass properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+two  = ones(1,2)/2;
+four = ones(1,4)/4;
+six  = ones(1,6)/6;
+inr = [DupVect(iSA',6),iNSEq',iNSEq',iNSEq',iNSEq',iFuel',iFuel',iAntenna',iAntenna',iST',iSolid',iPSolid'];
+m   = [mSA*six,mNSEquipment*four,mFuel*two,mAntenna*two,mST,mSolid,mPSolid];
+r   = [rSAU,rNSEq,rFuel,rAntennaU,rST,rSolid,rPSolid];
+cD  = [1;0; 0;0;1; 0;0;0;1];
+cS  = [1;0; 0;0;0;-1;0;1;0];
+cA  = [0;0;-1;0;1;0;1;0;0];
+cN  = [ 'North Inner Panel  ';...
+        'North Middle Panel ';...
+        'North Outer Panel  ';...
+        'South Inner Panel  ';...
+        'South Middle Panel ';...
+        'South Outer Panel  ';...
+        'Northwest Equipment';...
+        'Northeast Equipment';...
+        'Southwest Equipment';...
+        'Southeast Equipment';...
+        'East Fuel Tank     ';...
+        'West Fuel Tanks    ';...
+        'East Antenna       ';...
+        'West Antenna       ';...
+        'Structure          ';...
+        'Solid Motor        ';...
+        'Solid Motor Fuel   '];
+c = [cS,cS,cS,cS,cS,cS,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD,cD];
+	 
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- \n  Transfer Orbit\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n');
+MassProp( inr, m, r, 'mks', cN, c );
+[inrTO, mTO, cMTO] = MassProp( inr, m, r, 'mks', cN, c );
+
+%% Dual spin turn mass properties
+% Eliminate the solid motor fuel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr = inr(:,1:16);
+m   = m(1:16);
+r   = [rSAU,rNSEq,rFuel,rAntennaD,rST,rSolid];
+c = [cS,cS,cS,cS,cS,cS,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD];
+cN  =  cN(1:16,:);
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- \n  Dual Spin Turn\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n'); 
+MassProp( inr, m, r, 'mks', cN, c );
+inrDST = MassProp( inr, m, r, 'mks', cN, c );
+
+%% Mission orbit mass properties
+% Eliminate the solid motor fuel and rotate the antennas
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr = inr(:,1:16);
+m   = m(1:16);
+r   = [rSAD,rNSEq,rFuel,rAntennaD,rST,rSolid];
+c   = [cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cD,cA,cA,cD,cD];
+cN  =  cN(1:16,:);
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- \n  Mission Orbit\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n'); 
+MassProp( inr, m, r, 'mks', cN, c );
+[inrMO, mMO, cMMO] = MassProp( inr, m, r, 'mks', cN, c );
+
+%% Build the propulsion system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[v, mP] = BDDesign( mFuel/nFuelTanks, 1000, 298, pFuelBOL, pFuelEOL );
+
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- \n  Propulsion System\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n');
+
+vTank = [v v];
+mHe   = [mP mP];
+mF    = (mFuel/nFuelTanks)*ones(1,nFuelTanks);
+
+fprintf(1,'Fuel Tank Volume        = %12.2f %12.2f m^3\n',vTank);
+fprintf(1,'Mass Helium             = %12.2f %12.2f kg\n',mHe);
+fprintf(1,'Mass Fuel               = %12.2f %12.2f kg\n',mF);
+
+%% Save important data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mDry      = mTO - sum(mF) - mPSolid;
+mTODVFuel = mPSolid;
+cMAKM     = rPSolid;
+inrAKM    = iPSolid;
+mAKM      = mPSolid;
+c = cd;
+p = fileparts(which(mfilename));
+cd(p);
+save ComStarI inrTO mTO cMTO inrDST inrMO mMO cMMO mHe vTank mF mDry mTODVFuel mAKM cMAKM inrAKM
+fprintf(1,'\nData written to matfile ComStarI\n\n');
+cd(c);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-09 14:00:19 -0400 (Mon, 09 Mar 2015) $
+% $Revision: 39797 $
+
+##### SOURCE END #####
+--></body></html>

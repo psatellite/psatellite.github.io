@@ -1,0 +1,220 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Disturbance analysis of two thin plates.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="DisturbanceFlatPlate.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Disturbance analysis of two thin plates.</h1><!--introduction--><p>This model mimics the effect of two solar panels which often dominate the disturbances at higher altitudes. The analysis is performed in LEO. Two pointing modes are available: ECI pointing with the arrays towards the sun, and Earth pointing with the plates facing the Earth.</p><p>Things to try:</p><p>- Vary the orbital parameters - Add an additional rotation to the LVLH pointing</p><p>See also BuildFlatPlates, Disturbances, EarthEnvironment</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters</a></li><li><a href="#3">Perform the disturbance analysis</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  	Copyright (c) 2000-2003, 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><p>Choose the pointing method and specify the orbit. Load the CAD model from a mat file and display it.</p><pre class="codeinput"><span class="comment">% Pointing Method</span>
+<span class="comment">%----------------</span>
+<span class="comment">% Select between Earth and ECI pointing via a flag and clean up workspace</span>
+<span class="comment">% variables. Set true for Earth pointing and false for ECI pointing.</span>
+earthPointing = true;
+
+<span class="comment">% Orbital parameters</span>
+<span class="comment">%-------------------</span>
+rOrbit       = 7000;
+inclination  = 0.0; <span class="comment">% radians</span>
+eccentricity = 0.0;
+
+<span class="comment">% Load the model and display it</span>
+<span class="comment">%------------------------------</span>
+g = load(<span class="string">'FlatPlates'</span>);
+DrawSCPlanPlugIn(g)
+</pre><pre class="codeoutput">ans =
+    'DrawSCPlanPlugIn12      35.5802      98.6104'
+</pre><img vspace="5" hspace="5" src="DisturbanceFlatPlate_01.png" alt=""> <h2 id="3">Perform the disturbance analysis</h2><p>We will do 100 samples in a circular low Earth orbit. This will open several windows.</p><pre class="codeinput"><span class="comment">% Get the default data structure to fill in</span>
+<span class="comment">%------------------------------------------</span>
+d = Disturbances( <span class="string">'defaults'</span> );
+
+<span class="comment">% Generate orbit</span>
+<span class="comment">%---------------</span>
+nSamp     = 100;
+period    = Period( rOrbit );
+jD0       = FindSolsticeOrEquinox( <span class="string">'spring equinox'</span> );
+d.tSamp   = period/nSamp;
+elements  = [rOrbit inclination 0 0 eccentricity 0];
+t         = linspace(0,period,nSamp);
+[d.r,d.v] = RVFromKepler(elements,t);
+PltOrbit( elements, jD0 );
+
+<span class="comment">% Initialize the disturbance model</span>
+<span class="comment">%---------------------------------</span>
+e  = EarthEnvironment( d.r, d.v, JD2Array( jD0, t ), d );
+hD = Disturbances( <span class="string">'init'</span>, g, e );
+
+<span class="comment">% Create the transformation matrix arrays</span>
+<span class="comment">%----------------------------------------</span>
+<span class="comment">% Align the plates, with a z normal, with the x axis</span>
+bZToX = Eul2Mat([0;pi/2;0]);
+<span class="keyword">for</span> k = 1:nSamp
+  <span class="keyword">if</span>( earthPointing )
+    g.body(1).bHinge(k).b = Q2Mat( QLVLH( d.r(:,k), d.v(:,k) ))';
+  <span class="keyword">else</span>
+    <span class="comment">% Point at the sun assuming equinox</span>
+    g.body(1).bHinge(k).b = bZToX;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Run the analysis</span>
+<span class="comment">%-----------------</span>
+Disturbances( <span class="string">'run'</span>, g, e, hD );
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="DisturbanceFlatPlate_02.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_03.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_04.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_05.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_06.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_07.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_08.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_09.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_10.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_11.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_12.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_13.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_14.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_15.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_16.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_17.png" alt=""> <img vspace="5" hspace="5" src="DisturbanceFlatPlate_18.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Disturbance analysis of two thin plates. 
+% This model mimics the effect of two solar panels which often dominate the
+% disturbances at higher altitudes. The analysis is performed in LEO. Two
+% pointing modes are available: ECI pointing with the arrays towards the
+% sun, and Earth pointing with the plates facing the Earth.
+%
+% Things to try:
+% 
+% - Vary the orbital parameters
+% - Add an additional rotation to the LVLH pointing
+% 
+% See also BuildFlatPlates, Disturbances, EarthEnvironment
+% 
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  	Copyright (c) 2000-2003, 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Parameters
+% Choose the pointing method and specify the orbit. Load the CAD model from
+% a mat file and display it.
+
+% Pointing Method
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Select between Earth and ECI pointing via a flag and clean up workspace
+% variables. Set true for Earth pointing and false for ECI pointing.
+earthPointing = true;
+
+% Orbital parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rOrbit       = 7000;
+inclination  = 0.0; % radians
+eccentricity = 0.0;
+
+% Load the model and display it
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g = load('FlatPlates');
+DrawSCPlanPlugIn(g)
+
+%% Perform the disturbance analysis
+% We will do 100 samples in a circular low Earth orbit. This will open
+% several windows.
+
+% Get the default data structure to fill in
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d = Disturbances( 'defaults' );
+
+% Generate orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSamp     = 100;
+period    = Period( rOrbit );
+jD0       = FindSolsticeOrEquinox( 'spring equinox' );
+d.tSamp   = period/nSamp;
+elements  = [rOrbit inclination 0 0 eccentricity 0];
+t         = linspace(0,period,nSamp);
+[d.r,d.v] = RVFromKepler(elements,t);
+PltOrbit( elements, jD0 );
+
+% Initialize the disturbance model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+e  = EarthEnvironment( d.r, d.v, JD2Array( jD0, t ), d );
+hD = Disturbances( 'init', g, e );
+
+% Create the transformation matrix arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Align the plates, with a z normal, with the x axis
+bZToX = Eul2Mat([0;pi/2;0]);
+for k = 1:nSamp
+  if( earthPointing )
+    g.body(1).bHinge(k).b = Q2Mat( QLVLH( d.r(:,k), d.v(:,k) ))';
+  else
+    % Point at the sun assuming equinox
+    g.body(1).bHinge(k).b = bZToX;
+  end
+end
+
+% Run the analysis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Disturbances( 'run', g, e, hD );
+Figui;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-08-13 $
+% $Revision: bb70eb1bb58e6df271ef9fc0aee4c7c699f868bb $
+
+##### SOURCE END #####
+--></body></html>

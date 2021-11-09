@@ -1,0 +1,450 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Implements a spacecraft control tutorial.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-25"><meta name="DC.source" content="SCTTutorial.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Implements a spacecraft control tutorial.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also @statespace/statespace.m, PIDMIMO, Step, QError, QLVLH, QMult,
+QPose, Plot2D, RK4, Period, RVFromKepler, Accel
+------------------------------------------------------------------------</pre><!--/introduction--><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2003 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+echo <span class="string">on</span>
+<span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Welcome to the SCTTutorial!</span>
+<span class="comment">% We are going to design and simulate a station-keeping</span>
+<span class="comment">% attitude control system.</span>
+<span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% First, we prepare the inputs to the PIDMIMO function.</span>
+<span class="comment">% PIDMIMO performs automatic pole placement.</span>
+<span class="comment">%</span>
+inr = 1;       <span class="comment">% unit inertia - controller outputs an acceleration</span>
+zeta = 0.7071; <span class="comment">% damping ratio (critically damped)</span>
+omega = 0.1;   <span class="comment">% natural frequency (rad/sec)</span>
+tauInt = 100;  <span class="comment">% integrator time constant (sec)</span>
+omegaR = 4;    <span class="comment">% derivative roll-off</span>
+tSamp = 0.25;  <span class="comment">% sampling time (sec)</span>
+pause
+</pre><pre class="codeoutput">%---------------------------------------------------------------------
+% Welcome to the SCTTutorial!
+% We are going to design and simulate a station-keeping 
+% attitude control system.
+%---------------------------------------------------------------------
+% First, we prepare the inputs to the PIDMIMO function. 
+% PIDMIMO performs automatic pole placement.
+%
+inr = 1;       % unit inertia - controller outputs an acceleration
+zeta = 0.7071; % damping ratio (critically damped)
+omega = 0.1;   % natural frequency (rad/sec)
+tauInt = 100;  % integrator time constant (sec)
+omegaR = 4;    % derivative roll-off
+tSamp = 0.25;  % sampling time (sec)
+pause
+</pre><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Now, we calculate state-space control system:</span>
+type = <span class="string">'delta'</span>;
+[a, b, c, d, k] = PIDMIMO( inr, zeta, omega, tauInt, omegaR, tSamp, type)
+pause
+</pre><pre class="codeoutput">%%
+%---------------------------------------------------------------------
+% Now, we calculate state-space control system:
+type = 'delta';
+[a, b, c, d, k] = PIDMIMO( inr, zeta, omega, tauInt, omegaR, tSamp, type)
+a =
+            0            0
+            0     -0.65043
+b =
+         0.25
+      0.65043
+c =
+   0.00059779     -0.81792
+d =
+      0.83589
+k = 
+  struct with fields:
+
+    kP: 0.017975
+    kR: 0.19455
+    kI: 0.00059779
+pause
+</pre><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Let's create a state space object to get the step response:</span>
+g = statespace( a, b, c, d, <span class="string">'SCTTutorial'</span>,{<span class="string">'angle'</span>,<span class="string">'rate'</span>}, {<span class="string">'angleError'</span>},{<span class="string">'accel'</span>},type,tSamp );
+nSteps = 50;
+Step(g, 1, tSamp, nSteps, <span class="string">'step'</span>)
+pause
+</pre><pre class="codeoutput">%%
+%---------------------------------------------------------------------
+% Let's create a state space object to get the step response:
+g = statespace( a, b, c, d, 'SCTTutorial',{'angle','rate'}, {'angleError'},{'accel'},type,tSamp );
+nSteps = 50;
+Step(g, 1, tSamp, nSteps, 'step')
+pause
+</pre><img vspace="5" hspace="5" src="SCTTutorial_01.png" alt=""> <img vspace="5" hspace="5" src="SCTTutorial_02.png" alt=""> <pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Before we run the simulation, we need to define the spacecraft properties.</span>
+inertia    = diag([24.5 10 25])
+invInertia = inv(inertia);
+pause
+</pre><pre class="codeoutput">%%
+%---------------------------------------------------------------------
+% Before we run the simulation, we need to define the spacecraft properties.
+inertia    = diag([24.5 10 25])
+inertia =
+         24.5            0            0
+            0           10            0
+            0            0           25
+invInertia = inv(inertia);
+pause
+</pre><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Now we are ready to simulate our controller. We will use small</span>
+<span class="comment">% torques applied in the first step of the simulation to test</span>
+<span class="comment">% the control system's response.</span>
+<span class="comment">%</span>
+echo <span class="string">off</span>
+w0 = 2*pi/Period(7000); <span class="comment">% rad/sec</span>
+x = [0.5;0.5;0.5;-0.5;0;-w0;0];
+t = 0:tSamp:20;
+<span class="comment">% calculate LVLH quaternion a priori</span>
+[r,v] = RVFromKepler([7000;0;0;0;0;0],t);
+qLVLH = QLVLH(r,v);
+xRoll = [0;0];
+xPitch = [0;0];
+xYaw = [0;0];
+tExt = [0;0;0];
+xPlot = zeros(7,length(t));
+tPlot = zeros(3,length(t));
+<span class="keyword">for</span> k = 1:length(t)
+  xPlot(:,k) = x;
+  <span class="keyword">if</span> k == 1
+    tDist = [1e-6; -2e-5; 3e-7];
+  <span class="keyword">else</span>
+    tDist = [0;0;0];
+    accel = zeros(3,1);
+    <span class="comment">% Rename for clarity</span>
+    qECIToBody = x(1:4);
+    qECIToLVLH = qLVLH(:,k);
+    qBodyToLVLH = QPose( QMult( QPose(qECIToBody),qECIToLVLH ) );
+    <span class="keyword">if</span>( qBodyToLVLH(1) &lt; 0 )
+      qBodyToLVLH = -qBodyToLVLH;
+    <span class="keyword">end</span>
+    angleError = -2*qBodyToLVLH(2:4);
+
+    <span class="comment">% The delta form of the controller</span>
+    accel(1) =          c*xRoll  + d*angleError(1);
+    xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+
+    accel(2) =          c*xPitch + d*angleError(2);
+    xPitch   = xPitch + a*xPitch + b*angleError(2);
+
+    accel(3) =         c*xYaw   + d*angleError(3);
+    xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+
+    tExt  = -inertia*accel;
+  <span class="keyword">end</span>
+  <span class="keyword">if</span>( k == 1), echo <span class="string">on</span>, <span class="keyword">end</span>
+  <span class="comment">% This is the numerical integration of the dynamics:</span>
+  x = RK4( @FRB, x, tSamp, t(k), inertia, invInertia, tExt+tDist );
+  echo <span class="string">off</span>
+  tPlot(:,k) = tExt;
+<span class="keyword">end</span>
+Plot2D(t,xPlot(1:4,:),<span class="string">'Time (s)'</span>,[<span class="string">'qS'</span>;<span class="string">'qX'</span>;<span class="string">'qY'</span>;<span class="string">'qZ'</span>],<span class="string">'Quaternion'</span>);
+Plot2D(t,xPlot(5:7,:),<span class="string">'Time (s)'</span>,[<span class="string">'wX'</span>;<span class="string">'wY'</span>;<span class="string">'wZ'</span>],<span class="string">'Body rates'</span>);
+Plot2D(t,tPlot,<span class="string">'Time (s)'</span>,[<span class="string">'x'</span>;<span class="string">'y'</span>;<span class="string">'z'</span>],<span class="string">'Control Torque (Nm)'</span>);
+echo <span class="string">on</span>
+pause
+</pre><pre class="codeoutput">%% 
+%---------------------------------------------------------------------
+% Now we are ready to simulate our controller. We will use small
+% torques applied in the first step of the simulation to test
+% the control system's response.
+%
+echo off
+  % This is the numerical integration of the dynamics:
+  x = RK4( @FRB, x, tSamp, t(k), inertia, invInertia, tExt+tDist );
+  echo off
+pause
+</pre><img vspace="5" hspace="5" src="SCTTutorial_03.png" alt=""> <img vspace="5" hspace="5" src="SCTTutorial_04.png" alt=""> <img vspace="5" hspace="5" src="SCTTutorial_05.png" alt=""> <pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+<span class="comment">% Now let's see how our controller performs with a lag in the system.</span>
+<span class="comment">% We'll create a small stack so that our state update to the controller</span>
+<span class="comment">% is one sampling time interval behind.</span>
+echo <span class="string">off</span>
+x = [0.5;0.5;0.5;-0.5;0;-w0;0];
+xRoll = [0;0];
+xPitch = [0;0];
+xYaw = [0;0];
+tExt = [0;0;0];
+xDPlot = zeros(7,length(t));
+tDPlot = zeros(3,length(t));
+xOld = x;
+<span class="keyword">for</span> k = 1:length(t)
+  xDPlot(:,k) = x;
+  <span class="keyword">if</span>( k == 1 )
+    tDist = [1e-6; -2e-5; 3e-7];
+  <span class="keyword">else</span>
+    tDist = [0;0;0];
+    accel = zeros(3,1);
+    qError = QPose( QMult( QPose(xOld(1:4)),qLVLH(:,k) ) );
+    <span class="keyword">if</span>( qError(1) &lt; 0 )
+      qError = -qError;
+    <span class="keyword">end</span>
+    angleError = -2*qError(2:4);
+
+    <span class="comment">% The delta form of the controller</span>
+    accel(1) =          c*xRoll  + d*angleError(1);
+    xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+
+    accel(2) =          c*xPitch + d*angleError(2);
+    xPitch   = xPitch + a*xPitch + b*angleError(2);
+
+    accel(3) =         c*xYaw   + d*angleError(3);
+    xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+
+    tExt  = -inertia*accel;
+  <span class="keyword">end</span>
+  <span class="comment">% This is the numerical integration of the dynamics:</span>
+  xOld = x;
+  x = RK4( @FRB, x, tSamp, t(k), inertia, invInertia, tExt+tDist );
+  tDPlot(:,k) = tExt;
+<span class="keyword">end</span>
+
+Plot2D(t,[xPlot(5:7,:); xDPlot(5:7,:)],<span class="string">'Time (s)'</span>,[<span class="string">'wX'</span>;<span class="string">'wY'</span>;<span class="string">'wZ'</span>],<span class="string">'Ideal vs. delayed controller: body rates'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>]);
+Plot2D(t,[tPlot; tDPlot],<span class="string">'Time (s)'</span>,[<span class="string">'tX'</span>;<span class="string">'tY'</span>;<span class="string">'tZ'</span>],<span class="string">'Ideal vs. delayed controller: torque'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>]);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+%%
+%---------------------------------------------------------------------
+% Now let's see how our controller performs with a lag in the system.
+% We'll create a small stack so that our state update to the controller
+% is one sampling time interval behind.
+echo off
+</pre><img vspace="5" hspace="5" src="SCTTutorial_06.png" alt=""> <img vspace="5" hspace="5" src="SCTTutorial_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Implements a spacecraft control tutorial. 
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also @statespace/statespace.m, PIDMIMO, Step, QError, QLVLH, QMult, 
+%  QPose, Plot2D, RK4, Period, RVFromKepler, Accel
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2003 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+echo on
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Welcome to the SCTTutorial!
+% We are going to design and simulate a station-keeping 
+% attitude control system.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% First, we prepare the inputs to the PIDMIMO function. 
+% PIDMIMO performs automatic pole placement.
+%
+inr = 1;       % unit inertia - controller outputs an acceleration
+zeta = 0.7071; % damping ratio (critically damped)
+omega = 0.1;   % natural frequency (rad/sec)
+tauInt = 100;  % integrator time constant (sec)
+omegaR = 4;    % derivative roll-off
+tSamp = 0.25;  % sampling time (sec)
+pause
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Now, we calculate state-space control system:
+type = 'delta';
+[a, b, c, d, k] = PIDMIMO( inr, zeta, omega, tauInt, omegaR, tSamp, type)
+pause
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Let's create a state space object to get the step response:
+g = statespace( a, b, c, d, 'SCTTutorial',{'angle','rate'}, {'angleError'},{'accel'},type,tSamp );
+nSteps = 50;
+Step(g, 1, tSamp, nSteps, 'step')
+pause
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Before we run the simulation, we need to define the spacecraft properties.
+inertia    = diag([24.5 10 25])
+invInertia = inv(inertia);
+pause
+%% 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Now we are ready to simulate our controller. We will use small
+% torques applied in the first step of the simulation to test
+% the control system's response.
+%
+echo off
+w0 = 2*pi/Period(7000); % rad/sec
+x = [0.5;0.5;0.5;-0.5;0;-w0;0];
+t = 0:tSamp:20;
+% calculate LVLH quaternion a priori
+[r,v] = RVFromKepler([7000;0;0;0;0;0],t);
+qLVLH = QLVLH(r,v);
+xRoll = [0;0];
+xPitch = [0;0];
+xYaw = [0;0];
+tExt = [0;0;0];
+xPlot = zeros(7,length(t));
+tPlot = zeros(3,length(t));
+for k = 1:length(t)
+  xPlot(:,k) = x;
+  if k == 1
+    tDist = [1e-6; -2e-5; 3e-7];
+  else
+    tDist = [0;0;0];
+    accel = zeros(3,1);
+    % Rename for clarity
+    qECIToBody = x(1:4);
+    qECIToLVLH = qLVLH(:,k);
+    qBodyToLVLH = QPose( QMult( QPose(qECIToBody),qECIToLVLH ) );
+    if( qBodyToLVLH(1) < 0 )
+      qBodyToLVLH = -qBodyToLVLH;
+    end
+    angleError = -2*qBodyToLVLH(2:4);
+    
+    % The delta form of the controller  
+    accel(1) =          c*xRoll  + d*angleError(1);
+    xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+    
+    accel(2) =          c*xPitch + d*angleError(2);
+    xPitch   = xPitch + a*xPitch + b*angleError(2);
+    
+    accel(3) =         c*xYaw   + d*angleError(3);
+    xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+    
+    tExt  = -inertia*accel;
+  end
+  if( k == 1), echo on, end
+  % This is the numerical integration of the dynamics:
+  x = RK4( @FRB, x, tSamp, t(k), inertia, invInertia, tExt+tDist );
+  echo off
+  tPlot(:,k) = tExt;
+end
+Plot2D(t,xPlot(1:4,:),'Time (s)',['qS';'qX';'qY';'qZ'],'Quaternion');
+Plot2D(t,xPlot(5:7,:),'Time (s)',['wX';'wY';'wZ'],'Body rates');
+Plot2D(t,tPlot,'Time (s)',['x';'y';'z'],'Control Torque (Nm)');
+echo on
+pause
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Now let's see how our controller performs with a lag in the system.
+% We'll create a small stack so that our state update to the controller
+% is one sampling time interval behind.
+echo off
+x = [0.5;0.5;0.5;-0.5;0;-w0;0];
+xRoll = [0;0];
+xPitch = [0;0];
+xYaw = [0;0];
+tExt = [0;0;0];
+xDPlot = zeros(7,length(t));
+tDPlot = zeros(3,length(t));
+xOld = x;
+for k = 1:length(t)
+  xDPlot(:,k) = x;
+  if( k == 1 )
+    tDist = [1e-6; -2e-5; 3e-7];
+  else
+    tDist = [0;0;0];
+    accel = zeros(3,1);
+    qError = QPose( QMult( QPose(xOld(1:4)),qLVLH(:,k) ) );
+    if( qError(1) < 0 )
+      qError = -qError;
+    end
+    angleError = -2*qError(2:4);
+  
+    % The delta form of the controller  
+    accel(1) =          c*xRoll  + d*angleError(1);
+    xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+    
+    accel(2) =          c*xPitch + d*angleError(2);
+    xPitch   = xPitch + a*xPitch + b*angleError(2);
+    
+    accel(3) =         c*xYaw   + d*angleError(3);
+    xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+    
+    tExt  = -inertia*accel;
+  end
+  % This is the numerical integration of the dynamics:
+  xOld = x;
+  x = RK4( @FRB, x, tSamp, t(k), inertia, invInertia, tExt+tDist );
+  tDPlot(:,k) = tExt;
+end
+
+Plot2D(t,[xPlot(5:7,:); xDPlot(5:7,:)],'Time (s)',['wX';'wY';'wZ'],'Ideal vs. delayed controller: body rates','lin',['[1 4]';'[2 5]';'[3 6]']);
+Plot2D(t,[tPlot; tDPlot],'Time (s)',['tX';'tY';'tZ'],'Ideal vs. delayed controller: torque','lin',['[1 4]';'[2 5]';'[3 6]']);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-05-23 15:10:44 -0400 (Tue, 23 May 2017) $
+% $Revision: 44667 $
+
+##### SOURCE END #####
+--></body></html>

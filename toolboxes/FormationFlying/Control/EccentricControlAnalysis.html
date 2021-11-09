@@ -1,0 +1,674 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Analyze the performance of relative orbit control in eccentric orbits</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="EccentricControlAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Analyze the performance of relative orbit control in eccentric orbits</h1><!--introduction--><p>This script compares the performance of two different control methods for relative orbit control in a highly eccentric orbit. The two methods compared are:     - LPEccentric     (relative dynamics expressed in Hills frame)     - LPEccentricGVE  (relative dynamics expressed with Gauss var. eqs.)</p><p>The linearization error is much higher when the relative dynamics is based in Hills frame. This results in noticable error in the controlled trajectory.</p><p>In addition, this script also compares the relative trajectories when the maneuver is simulated in different ways. The following types of simulations are compared     - Discrete relative dynamics in Hills frame.     - Discrete relative dynamics with differential elements using Gauss'              variational equations.     - Keplerian orbits patched together with impulsive delta-v's     - Numerical integration in ECI frame</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Delay</span>, QHills, QTForm, TimeGUI, Mag, RK4TI,
+EccGeometry_Structure, DiscreteGVE, FFEccDiscreteHills, LPEccentric,
+LPEccentricGVE, ECI2Hills, FFEccDeltaElem2Hills, FFEccGoals2Hills,
+FFEccHills2DeltaElem, ApplyDeltaV, RVOrbGenDV, OrbRate, RVOrbGen, El2RV,
+M2Nu, M2NuAbs, Period
+------------------------------------------------------------------------
+</pre><!--/introduction--><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2004 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+
+
+<span class="comment">% initial orbit</span>
+a = 42095;
+i = pi/18;
+W = 0;
+w = 0;
+e = 0.818181000;
+M = pi;
+el0 = [a,i,W,w,e,M];
+
+<span class="comment">% other orbit data</span>
+n   = OrbRate(a);
+T   = Period(a);
+nu0 = M2Nu(e,M);
+
+<span class="comment">% initial relative state</span>
+dEl0 = [1e-9, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7];
+xH0  = FFEccDeltaElem2Hills( el0, dEl0, 2 );
+
+<span class="comment">% desired relative state</span>
+goals = EccGeometry_Structure;
+goals.y0 = 0;
+MF  = M + 2*pi;
+nuF = M2NuAbs( e, MF );
+xHF = FFEccGoals2Hills( e, nuF, goals, n );
+dElF = FFEccHills2DeltaElem( el0, xHF, 2 );
+
+fprintf(<span class="string">'\nPlanning a maneuver using "LPEccentric" and "LPEccentricGVE"...\n'</span>)
+
+<span class="comment">% plan a manuever with simplex (Hills)</span>
+nS = 2000;
+[aC1,t1,flag1] = LPEccentric( e, n, xH0, xHF, nu0, nuF, nS );
+
+<span class="comment">% plan a manuever with simplex (GVE)</span>
+[aC2,t2,flag2] = LPEccentricGVE( el0, dEl0', zeros(1,6)', MF, nS );
+
+
+<span class="keyword">if</span>( norm(t1-t2)&gt;eps )
+   warning(<span class="string">'Hills-based and GVE-based solutions use different time vectors'</span>);
+   <span class="keyword">while</span> 1
+      ans = input(<span class="string">'continue(c) or quit(q) ?'</span>,<span class="string">'s'</span>);
+      <span class="keyword">switch</span> lower(ans)
+         <span class="keyword">case</span> <span class="string">'c'</span>
+            <span class="keyword">break</span>;
+         <span class="keyword">case</span> <span class="string">'q'</span>
+            <span class="keyword">return</span>;
+      <span class="keyword">end</span>
+   <span class="keyword">end</span>
+<span class="keyword">else</span>
+   t=t1;
+<span class="keyword">end</span>
+
+<span class="comment">% extend time vector to show future orbits</span>
+dt   = diff(t);
+nOrb = 1;
+nSPO = round( nS*2*pi/(MF-el0(6)) );
+t    = [t, t(end)+linspace(dt(2),nOrb*T,nOrb*nSPO)];
+aC1  = [aC1, zeros(3,nOrb*nSPO)];
+aC2  = [aC2, zeros(3,nOrb*nSPO)];
+N    = length(t);
+
+fprintf(<span class="string">'\nApplying the maneuver and propagating dynamics in relative frames...\n'</span>)
+
+<span class="comment">% propagate initial state with control using FFEccDiscreteHills</span>
+[xHD1,nu] = FFEccDiscreteHills( e, n, xH0, nu0, aC1, t );
+
+<span class="comment">% propagate initial state with control using DiscreteGVE</span>
+[dEl,M]   = DiscreteGVE( el0, dEl0, aC2, t );
+
+<span class="comment">% find delta-v's for Hills solution</span>
+k  = find(Mag(aC1));
+dV1      = zeros(3,length(k));
+dV1(1,:) = aC1(1,k).*dt(k);
+dV1(2,:) = aC1(2,k).*dt(k);
+dV1(3,:) = aC1(3,k).*dt(k);
+dV1Times = t(k)+dt(k)/2;      <span class="comment">% apply purely impulsive delta-v at halfway point of burn</span>
+dV1Times = t(k)+dt(k);        <span class="comment">% apply purely impulsive delta-v at end of burn</span>
+
+<span class="comment">% find delta-v's</span>
+k = find(Mag(aC2));
+dV2      = zeros(3,length(k));
+dV2(1,:) = aC2(1,k).*dt(k);
+dV2(2,:) = aC2(2,k).*dt(k);
+dV2(3,:) = aC2(3,k).*dt(k);
+dV2Times = t(k)+dt(k)/2;      <span class="comment">% apply purely impulsive delta-v at halfway point of burn</span>
+dV2Times = t(k)+dt(k);        <span class="comment">% apply purely impulsive delta-v at end of burn</span>
+
+fprintf(<span class="string">'\nNow applying impulsive delta-vs to absolute orbit with Keplerian propagation...\n'</span>)
+
+<span class="comment">% piece together keplerian orbits with purely impulsive delta-v's</span>
+[r0,v0]      = RVOrbGen(   el0,      t );
+[r1,v1] = RVOrbGenDV( el0+dEl0, t, dV1, dV1Times );
+[r2,v2] = RVOrbGenDV( el0+dEl0, t, dV2, dV2Times );
+xHK1 = zeros(6,N);
+xHK2 = zeros(6,N);
+
+<span class="keyword">for</span> i=1:N
+   xHK1(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [r1(:,i);v1(:,i) ] );
+   xHK2(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [r2(:,i);v2(:,i)] );
+<span class="keyword">end</span>
+
+<span class="comment">% transform element differences from GVE solution to Hills frame</span>
+xHD2 = zeros(6,N);
+rD2  = zeros(3,N);
+vD2  = zeros(3,N);
+
+<span class="keyword">for</span> i=1:N
+   [rD2(:,i),vD2(:,i)] = El2RV( [el0(1:5),M(i)] + dEl(i,:) );
+   xHD2(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [rD2(:,i);vD2(:,i)] );
+<span class="keyword">end</span>
+
+
+figure(<span class="string">'name'</span>,<span class="string">'Keplerian Orbit Patches with Pure Impulsive Burns'</span>)
+plot(t/T,xHD1(1:3,:),<span class="string">'linewidth'</span>,2), hold <span class="string">on</span>
+plot(t/T,xHD2(1:3,:),<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2)
+plot(t/T,xHK1(1:3,:),<span class="string">':'</span>,<span class="string">'linewidth'</span>,2)
+plot(t/T,xHK2(1:3,:),<span class="string">'-.'</span>,<span class="string">'linewidth'</span>,2)
+grid <span class="string">on</span>, zoom <span class="string">on</span>,
+xlabel(<span class="string">'Time [orbits]'</span>)
+ylabel(<span class="string">'Position [km]'</span>)
+legend(<span class="string">'Hills-Frame Soln - Relative Propagation'</span>,<span class="string">'GVE-Frame Soln - Relative Propagation'</span>,<span class="keyword">...</span>
+    <span class="string">'Hills-Frame Soln - Keplerian Propagation'</span>,<span class="string">'GVE-Frame Soln - Keplerian Propagation'</span>)
+
+fprintf(<span class="string">'Position error norm between - Hills prop and GVE prop:  %f km\n'</span>,norm(xHD1-xHD2))
+fprintf(<span class="string">'Position error norm between - Hills prop and Keplerian: %f km\n'</span>,norm(xHD1-xHK1))
+fprintf(<span class="string">'Position error norm between -   GVE prop and Keplerian: %f km\n'</span>,norm(xHD2-xHK2))
+
+fprintf(<span class="string">'\nNow integrating the reference orbit and two controlled orbits in the ECI frame...\n'</span>)
+
+<span class="comment">% integrate absolute states in ECI frame</span>
+dT  = min(dt)/2;
+nSI = round(t(end)/dT)+1;
+time = 0:dT:dT*(nSI-1);
+xE0 = zeros(6,nSI);  <span class="comment">% reference orbit</span>
+xE1 = zeros(6,nSI);  <span class="comment">% secondary orbit (Hills-based solution)</span>
+xE2 = zeros(6,nSI);  <span class="comment">% secondary orbit (GVE-vased solution)</span>
+xE0(:,1) = [r0(:,1);v0(:,1)];
+xE1(:,1) = [r1(:,1);v1(:,1)];
+xE2(:,1) = [r2(:,1);v2(:,1)];
+
+<span class="comment">% thrust times</span>
+k   = find(Mag(aC1)&gt;eps);
+t0H = t(k);
+tFH = t(k)+dt(k);
+aCH = aC1(:,k);
+k   = find(Mag(aC2)&gt;eps);
+t0G = t(k);
+tFG = t(k)+dt(k);
+aCG = aC2(:,k);
+
+nBH = length(t0H);
+nBG = length(t0G);
+tX  = max([tFH,tFG])+dT;
+
+zeroAcc = zeros(3,1);
+
+<span class="comment">% initialize time gui</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSI, 0, tToGoMem, 0, dT, <span class="string">'Orbit Simulation'</span> );
+
+xHI1 = zeros(6,nSI);
+xHI2 = zeros(6,nSI);
+aH1p = zeros(3,nSI);
+aH2p = zeros(3,nSI);
+
+xHI1(:,1) = ECI2Hills( xE0(:,1), xE1(:,1) );
+xHI2(:,1) = ECI2Hills( xE0(:,1), xE2(:,1) );
+
+delay = 20;
+next = delay;
+
+rhs = @(x,a) [x(4:6); a - (3.98600436e5)*x(1:3)/norm(x(1:3))^3];
+
+<span class="keyword">for</span> i=2:nSI
+
+   <span class="comment">% compute thrust</span>
+   aH1 = zeroAcc;
+   aH2 = zeroAcc;
+   <span class="keyword">if</span>( time(i-1) &lt; tX )
+      qEH = QHills( xE0(1:3,i-1), xE0(4:6,i-1) );
+      <span class="keyword">for</span> j=1:nBH
+         f = ApplyDeltaV( t0H(j), tFH(j), time(i-1), dT );
+         aH1 = aH1 + f*aCH(:,j);
+      <span class="keyword">end</span>
+      <span class="keyword">for</span> j=1:nBG
+         f = ApplyDeltaV( t0G(j), tFG(j), time(i-1), dT );
+         aH2 = aH2 + f*aCG(:,j);
+      <span class="keyword">end</span>
+      a1 = QTForm( qEH, aH1 );
+      a2 = QTForm( qEH, aH2 );
+   <span class="keyword">else</span>
+      a1 = zeroAcc;
+      a2 = zeroAcc;
+   <span class="keyword">end</span>
+
+   <span class="comment">% store applied acceleration</span>
+   aH1p(:,i-1) = aH1;
+   aH2p(:,i-1) = aH2;
+
+   <span class="comment">% integrate states</span>
+   xE0(:,i) = RK4TI( rhs, xE0(:,i-1), dT, zeroAcc );
+   xE1(:,i) = RK4TI( rhs, xE1(:,i-1), dT, a1 );
+   xE2(:,i) = RK4TI( rhs, xE2(:,i-1), dT, a2 );
+
+   <span class="comment">% transform to Hills frame</span>
+   xHI1(:,i) = ECI2Hills( xE0(:,i), xE1(:,i) );
+   xHI2(:,i) = ECI2Hills( xE0(:,i), xE2(:,i) );
+
+   <span class="comment">% time gui</span>
+   <span class="keyword">if</span>( i &gt; next )
+      [ ratioRealTime, tToGoMem ] = TimeGUI( nSI, i, tToGoMem, ratioRealTime, dT );
+      next = i + delay;
+      <span class="keyword">switch</span> simulationAction
+         <span class="keyword">case</span> <span class="string">'pause'</span>
+            pause
+            simulationAction = <span class="string">' '</span>;
+         <span class="keyword">case</span> <span class="string">'stop'</span>
+            TimeGUI(<span class="string">'close'</span>);
+            <span class="keyword">return</span>;
+         <span class="keyword">case</span> <span class="string">'plot'</span>
+            <span class="keyword">break</span>;
+      <span class="keyword">end</span>
+   <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+TimeGUI(<span class="string">'close'</span>);
+
+time = time(1:i);
+xE0  = xE0(:,1:i);
+xE1  = xE1(:,1:i);
+xE2  = xE2(:,1:i);
+xHI1 = xHI1(:,1:i);
+xHI2 = xHI2(:,1:i);
+
+ind = round(linspace(1,length(time),length(t)));
+
+figure(<span class="string">'name'</span>,<span class="string">'Fine Orbit Integration with Matched Duration Burns'</span>)
+plot(1,0,<span class="string">'k-'</span>,1,0,<span class="string">'k--'</span>,1,0,<span class="string">'k:'</span>,1,0,<span class="string">'k-.'</span>,<span class="string">'linewidth'</span>,2), hold <span class="string">on</span>
+legend(<span class="string">'Hills-Frame Soln - Relative Propagation'</span>,<span class="string">'GVE-Frame Soln - Relative Propagation'</span>,<span class="keyword">...</span>
+    <span class="string">'Hills-Frame Soln - ECI Integration'</span>,<span class="string">'GVE-Frame Soln - ECI Integration'</span>)
+plot(t/T,xHD1(1:3,:),<span class="string">'linewidth'</span>,2), hold <span class="string">on</span>
+plot(t/T,xHD2(1:3,:),<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2)
+plot(time(ind)/T,xHI1(1:3,ind),<span class="string">':'</span>,<span class="string">'linewidth'</span>,2)
+plot(time(ind)/T,xHI2(1:3,ind),<span class="string">'-.'</span>,<span class="string">'linewidth'</span>,2)
+grid <span class="string">on</span>, zoom <span class="string">on</span>,
+xlabel(<span class="string">'Time [orbits]'</span>)
+ylabel(<span class="string">'Position [km]'</span>)
+
+figure
+semilogy(t/T,[Mag(xHD1(1:3,:));Mag(xHD2(1:3,:))],<span class="keyword">...</span>
+   t/T,[Mag(xHK1(1:3,:));Mag(xHK2(1:3,:))],<span class="keyword">...</span>
+   time(ind)/T,[Mag(xHI1(1:3,ind));Mag(xHI2(1:3,ind))])
+xlabel(<span class="string">'Time [orbits]'</span>)
+ylabel(<span class="string">'|Pos. Error| [km]'</span>)
+
+fprintf(<span class="string">'Position error norm between - Hills prop and Integrated: %f km\n'</span>,<span class="keyword">...</span>
+    norm(interp1(t,xHD1',time(1:end-1))'-xHI1(:,1:end-1)))
+fprintf(<span class="string">'Position error norm between -   GVE prop and Integrated: %f km\n'</span>,<span class="keyword">...</span>
+    norm(interp1(t,xHD2',time(1:end-1))'-xHI2(:,1:end-1)))
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+Planning a maneuver using "LPEccentric" and "LPEccentricGVE"...
+
+Applying the maneuver and propagating dynamics in relative frames...
+
+Now applying impulsive delta-vs to absolute orbit with Keplerian propagation...
+Position error norm between - Hills prop and GVE prop:  0.000553 km
+Position error norm between - Hills prop and Keplerian: 0.044794 km
+Position error norm between -   GVE prop and Keplerian: 0.008876 km
+
+Now integrating the reference orbit and two controlled orbits in the ECI frame...
+Position error norm between - Hills prop and Integrated: 0.297520 km
+Position error norm between -   GVE prop and Integrated: 0.031273 km
+</pre><img vspace="5" hspace="5" src="EccentricControlAnalysis_01.png" alt=""> <img vspace="5" hspace="5" src="EccentricControlAnalysis_02.png" alt=""> <img vspace="5" hspace="5" src="EccentricControlAnalysis_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Analyze the performance of relative orbit control in eccentric orbits 
+%
+% This script compares the performance of two different control methods
+% for relative orbit control in a highly eccentric orbit. The two methods
+% compared are:
+%     - LPEccentric     (relative dynamics expressed in Hills frame)
+%     - LPEccentricGVE  (relative dynamics expressed with Gauss var. eqs.) 
+%
+% The linearization error is much higher when the relative dynamics is
+% based in Hills frame. This results in noticable error in the controlled
+% trajectory.
+%
+% In addition, this script also compares the relative trajectories when
+% the maneuver is simulated in different ways. The following types of
+% simulations are compared
+%     - Discrete relative dynamics in Hills frame.
+%     - Discrete relative dynamics with differential elements using Gauss'
+%              variational equations.
+%     - Keplerian orbits patched together with impulsive delta-v's
+%     - Numerical integration in ECI frame 
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Delay, QHills, QTForm, TimeGUI, Mag, RK4TI, 
+%  EccGeometry_Structure, DiscreteGVE, FFEccDiscreteHills, LPEccentric, 
+%  LPEccentricGVE, ECI2Hills, FFEccDeltaElem2Hills, FFEccGoals2Hills, 
+%  FFEccHills2DeltaElem, ApplyDeltaV, RVOrbGenDV, OrbRate, RVOrbGen, El2RV, 
+%  M2Nu, M2NuAbs, Period
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2004 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+   
+% initial orbit
+a = 42095;
+i = pi/18;
+W = 0;
+w = 0;
+e = 0.818181000;
+M = pi;
+el0 = [a,i,W,w,e,M];
+
+% other orbit data
+n   = OrbRate(a);
+T   = Period(a);
+nu0 = M2Nu(e,M);
+
+% initial relative state
+dEl0 = [1e-9, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7];
+xH0  = FFEccDeltaElem2Hills( el0, dEl0, 2 );
+
+% desired relative state
+goals = EccGeometry_Structure;
+goals.y0 = 0;
+MF  = M + 2*pi;
+nuF = M2NuAbs( e, MF );
+xHF = FFEccGoals2Hills( e, nuF, goals, n );
+dElF = FFEccHills2DeltaElem( el0, xHF, 2 );
+
+fprintf('\nPlanning a maneuver using "LPEccentric" and "LPEccentricGVE"...\n')
+
+% plan a manuever with simplex (Hills)
+nS = 2000;
+[aC1,t1,flag1] = LPEccentric( e, n, xH0, xHF, nu0, nuF, nS );
+
+% plan a manuever with simplex (GVE)
+[aC2,t2,flag2] = LPEccentricGVE( el0, dEl0', zeros(1,6)', MF, nS );
+
+
+if( norm(t1-t2)>eps )
+   warning('Hills-based and GVE-based solutions use different time vectors');
+   while 1
+      ans = input('continue(c) or quit(q) ?','s');
+      switch lower(ans)
+         case 'c'
+            break;
+         case 'q'
+            return;
+      end
+   end
+else
+   t=t1;
+end
+
+% extend time vector to show future orbits
+dt   = diff(t);
+nOrb = 1;
+nSPO = round( nS*2*pi/(MF-el0(6)) );
+t    = [t, t(end)+linspace(dt(2),nOrb*T,nOrb*nSPO)];
+aC1  = [aC1, zeros(3,nOrb*nSPO)];
+aC2  = [aC2, zeros(3,nOrb*nSPO)];
+N    = length(t);
+
+fprintf('\nApplying the maneuver and propagating dynamics in relative frames...\n')
+
+% propagate initial state with control using FFEccDiscreteHills
+[xHD1,nu] = FFEccDiscreteHills( e, n, xH0, nu0, aC1, t );
+
+% propagate initial state with control using DiscreteGVE
+[dEl,M]   = DiscreteGVE( el0, dEl0, aC2, t );
+
+% find delta-v's for Hills solution
+k  = find(Mag(aC1));
+dV1      = zeros(3,length(k));
+dV1(1,:) = aC1(1,k).*dt(k);
+dV1(2,:) = aC1(2,k).*dt(k);
+dV1(3,:) = aC1(3,k).*dt(k);
+dV1Times = t(k)+dt(k)/2;      % apply purely impulsive delta-v at halfway point of burn
+dV1Times = t(k)+dt(k);        % apply purely impulsive delta-v at end of burn
+
+% find delta-v's
+k = find(Mag(aC2));
+dV2      = zeros(3,length(k));
+dV2(1,:) = aC2(1,k).*dt(k);
+dV2(2,:) = aC2(2,k).*dt(k);
+dV2(3,:) = aC2(3,k).*dt(k);
+dV2Times = t(k)+dt(k)/2;      % apply purely impulsive delta-v at halfway point of burn
+dV2Times = t(k)+dt(k);        % apply purely impulsive delta-v at end of burn
+
+fprintf('\nNow applying impulsive delta-vs to absolute orbit with Keplerian propagation...\n')
+
+% piece together keplerian orbits with purely impulsive delta-v's
+[r0,v0]      = RVOrbGen(   el0,      t );
+[r1,v1] = RVOrbGenDV( el0+dEl0, t, dV1, dV1Times );
+[r2,v2] = RVOrbGenDV( el0+dEl0, t, dV2, dV2Times );
+xHK1 = zeros(6,N);
+xHK2 = zeros(6,N);
+
+for i=1:N
+   xHK1(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [r1(:,i);v1(:,i) ] );
+   xHK2(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [r2(:,i);v2(:,i)] );
+end
+
+% transform element differences from GVE solution to Hills frame
+xHD2 = zeros(6,N);
+rD2  = zeros(3,N);
+vD2  = zeros(3,N);
+
+for i=1:N
+   [rD2(:,i),vD2(:,i)] = El2RV( [el0(1:5),M(i)] + dEl(i,:) );
+   xHD2(:,i) = ECI2Hills( [r0(:,i);v0(:,i)], [rD2(:,i);vD2(:,i)] );
+end
+
+
+figure('name','Keplerian Orbit Patches with Pure Impulsive Burns')
+plot(t/T,xHD1(1:3,:),'linewidth',2), hold on
+plot(t/T,xHD2(1:3,:),'REPLACE_WITH_DASH_DASH','linewidth',2)
+plot(t/T,xHK1(1:3,:),':','linewidth',2)
+plot(t/T,xHK2(1:3,:),'-.','linewidth',2)
+grid on, zoom on, 
+xlabel('Time [orbits]')
+ylabel('Position [km]')
+legend('Hills-Frame Soln - Relative Propagation','GVE-Frame Soln - Relative Propagation',...
+    'Hills-Frame Soln - Keplerian Propagation','GVE-Frame Soln - Keplerian Propagation')
+
+fprintf('Position error norm between - Hills prop and GVE prop:  %f km\n',norm(xHD1-xHD2))
+fprintf('Position error norm between - Hills prop and Keplerian: %f km\n',norm(xHD1-xHK1))
+fprintf('Position error norm between -   GVE prop and Keplerian: %f km\n',norm(xHD2-xHK2))
+
+fprintf('\nNow integrating the reference orbit and two controlled orbits in the ECI frame...\n')
+
+% integrate absolute states in ECI frame
+dT  = min(dt)/2;
+nSI = round(t(end)/dT)+1;
+time = 0:dT:dT*(nSI-1);
+xE0 = zeros(6,nSI);  % reference orbit
+xE1 = zeros(6,nSI);  % secondary orbit (Hills-based solution)
+xE2 = zeros(6,nSI);  % secondary orbit (GVE-vased solution)
+xE0(:,1) = [r0(:,1);v0(:,1)];
+xE1(:,1) = [r1(:,1);v1(:,1)];
+xE2(:,1) = [r2(:,1);v2(:,1)];
+
+% thrust times
+k   = find(Mag(aC1)>eps);
+t0H = t(k);
+tFH = t(k)+dt(k);
+aCH = aC1(:,k);
+k   = find(Mag(aC2)>eps);
+t0G = t(k);
+tFG = t(k)+dt(k);
+aCG = aC2(:,k);
+
+nBH = length(t0H);
+nBG = length(t0G);
+tX  = max([tFH,tFG])+dT;
+
+zeroAcc = zeros(3,1);
+
+% initialize time gui
+global simulationAction
+simulationAction = ' ';
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSI, 0, tToGoMem, 0, dT, 'Orbit Simulation' );
+
+xHI1 = zeros(6,nSI);
+xHI2 = zeros(6,nSI);
+aH1p = zeros(3,nSI);
+aH2p = zeros(3,nSI);
+
+xHI1(:,1) = ECI2Hills( xE0(:,1), xE1(:,1) );
+xHI2(:,1) = ECI2Hills( xE0(:,1), xE2(:,1) );
+
+delay = 20;
+next = delay;
+
+rhs = @(x,a) [x(4:6); a - (3.98600436e5)*x(1:3)/norm(x(1:3))^3];
+
+for i=2:nSI
+   
+   % compute thrust
+   aH1 = zeroAcc;
+   aH2 = zeroAcc;
+   if( time(i-1) < tX )
+      qEH = QHills( xE0(1:3,i-1), xE0(4:6,i-1) );
+      for j=1:nBH
+         f = ApplyDeltaV( t0H(j), tFH(j), time(i-1), dT );
+         aH1 = aH1 + f*aCH(:,j);
+      end
+      for j=1:nBG
+         f = ApplyDeltaV( t0G(j), tFG(j), time(i-1), dT );
+         aH2 = aH2 + f*aCG(:,j);
+      end
+      a1 = QTForm( qEH, aH1 );
+      a2 = QTForm( qEH, aH2 );
+   else
+      a1 = zeroAcc;
+      a2 = zeroAcc;
+   end
+   
+   % store applied acceleration
+   aH1p(:,i-1) = aH1;
+   aH2p(:,i-1) = aH2;
+   
+   % integrate states
+   xE0(:,i) = RK4TI( rhs, xE0(:,i-1), dT, zeroAcc );
+   xE1(:,i) = RK4TI( rhs, xE1(:,i-1), dT, a1 );
+   xE2(:,i) = RK4TI( rhs, xE2(:,i-1), dT, a2 );
+   
+   % transform to Hills frame
+   xHI1(:,i) = ECI2Hills( xE0(:,i), xE1(:,i) );
+   xHI2(:,i) = ECI2Hills( xE0(:,i), xE2(:,i) );
+
+   % time gui
+   if( i > next )
+      [ ratioRealTime, tToGoMem ] = TimeGUI( nSI, i, tToGoMem, ratioRealTime, dT );
+      next = i + delay;
+      switch simulationAction
+         case 'pause'
+            pause
+            simulationAction = ' ';
+         case 'stop'
+            TimeGUI('close');
+            return;
+         case 'plot'
+            break;
+      end
+   end
+   
+end
+TimeGUI('close');
+
+time = time(1:i);
+xE0  = xE0(:,1:i);
+xE1  = xE1(:,1:i);
+xE2  = xE2(:,1:i);
+xHI1 = xHI1(:,1:i);
+xHI2 = xHI2(:,1:i);
+
+ind = round(linspace(1,length(time),length(t)));
+
+figure('name','Fine Orbit Integration with Matched Duration Burns')
+plot(1,0,'k-',1,0,'kREPLACE_WITH_DASH_DASH',1,0,'k:',1,0,'k-.','linewidth',2), hold on
+legend('Hills-Frame Soln - Relative Propagation','GVE-Frame Soln - Relative Propagation',...
+    'Hills-Frame Soln - ECI Integration','GVE-Frame Soln - ECI Integration')
+plot(t/T,xHD1(1:3,:),'linewidth',2), hold on
+plot(t/T,xHD2(1:3,:),'REPLACE_WITH_DASH_DASH','linewidth',2)
+plot(time(ind)/T,xHI1(1:3,ind),':','linewidth',2)
+plot(time(ind)/T,xHI2(1:3,ind),'-.','linewidth',2)
+grid on, zoom on, 
+xlabel('Time [orbits]')
+ylabel('Position [km]')
+
+figure
+semilogy(t/T,[Mag(xHD1(1:3,:));Mag(xHD2(1:3,:))],...
+   t/T,[Mag(xHK1(1:3,:));Mag(xHK2(1:3,:))],...
+   time(ind)/T,[Mag(xHI1(1:3,ind));Mag(xHI2(1:3,ind))])
+xlabel('Time [orbits]')
+ylabel('|Pos. Error| [km]')
+
+fprintf('Position error norm between - Hills prop and Integrated: %f km\n',...
+    norm(interp1(t,xHD1',time(1:end-1))'-xHI1(:,1:end-1)))
+fprintf('Position error norm between -   GVE prop and Integrated: %f km\n',...
+    norm(interp1(t,xHD2',time(1:end-1))'-xHI2(:,1:end-1)))
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

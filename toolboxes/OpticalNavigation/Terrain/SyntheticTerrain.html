@@ -1,0 +1,922 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SyntheticTerrain</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-09"><meta name="DC.source" content="SyntheticTerrain.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">SyntheticTerrain is a script created to create synthetic terrain</a></li><li><a href="#2">Fourier transform to separate high and low freq data</a></li><li><a href="#3">High freq: square-diamond interpolation</a></li><li><a href="#4">Low freq: bilinear interpolation</a></li><li><a href="#5">Rejoin frequencies</a></li><li><a href="#6">Plotting</a></li><li><a href="#7">Square interpoloation</a></li><li><a href="#8">Diamond interpolation</a></li><li><a href="#9">Generate an RGB image</a></li></ul></div><h2 id="1">SyntheticTerrain is a script created to create synthetic terrain</h2><p>Allan et al.'s work <a href="https://doi.org/10.1109/AERO.2019.8741780">https://doi.org/10.1109/AERO.2019.8741780</a> to create a s terrain generator for the lunar surface to create high resolution images from the currently available low resolution images from <a href="http://imbrium.mit.edu/">http://imbrium.mit.edu/</a></p><p>This script upscales the input image and outputs a synthetic higher resolution version of the input image:</p><p>1. separates the high and low frequencies of the input image 2. performs fractal synthesis by the diamond-square method on the high frequency portion of the image and uses the Catmull-Rom spline interpolation method to generate new data 3. performs bilinear interpolation on the low frequency component of the image 4. recombines the high and low frequencies of the input image and returns the final image</p><p>key input variables the user can change:</p><p>c_img - the input image (this should be a dem but the script was mostly tested on optical images. may need different frequency splitting method for low contrast dems avaialable.) the input image needs to be a square with even # of pixels. I recommend starting with a small 500x500 image.</p><p>scale - determines the upscaling of the input image. this needs to be a power of 2. i.e. scale = 2, 4, 8, 16 etc.</p><p>freq - determines the frequency split between high and low frequencies. make use of the figure showing the frequency split to determine what the frequency should be for the input image. This needs to be between [0,1].</p><p>interp - sets the interpolation method. by default this is 'spline' for Catmull-Rom Spline and 'linear', or linear interpolation, is only used on edge cases. However this can be changed to 'linear' for the entire image for comparison. This can only be 'spline' or 'linear'.</p><p>key outputs:</p><p>hmap - final heightmap. this is the upscaled input image. size will be scale*input image size</p><p>method - matrix with indices indicating if a pixel was interpolated with the square or diamond method and the iteration number. 1:iter_max are squares for each iteration. iter_max+1:iter_max+iter_max are diamonds for each iteration. useful for debugging or for understanding final image artifacts.</p><p>Online resources:</p><p>Diamond-square method <a href="https://stevelosh.com/blog/2016/06/diamond-square/">https://stevelosh.com/blog/2016/06/diamond-square/</a></p><p>catmull rom spline <a href="https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline">https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline</a></p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2021 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2021.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Lunar image</span>
+file  = <span class="string">'LunarSurfaceImage.png'</span>;
+dem   = imread(file);
+demt  = dem/max(dem(:));
+c_img	= demt(1:512,1:512);
+</pre><h2 id="2">Fourier transform to separate high and low freq data</h2><p>Taken from Maggie Kautz's homework for OPTI 512L from UArizona fourier transforms to split high and low frequencies by freq input variable</p><pre class="codeinput"><span class="comment">% Fourier transform original image</span>
+F = fftshift(fft2(fftshift(c_img)));
+
+<span class="comment">% Make a meshgrid the same size as input image</span>
+xi = linspace(-1,1,length(c_img));
+eta = xi;
+[XI, ETA] = meshgrid(xi,eta);
+
+<span class="comment">% Change this variable to change frequency split</span>
+freq = 0.01; <span class="comment">% bounds [0,1]</span>
+
+<span class="comment">% Use meshgrid to greate high and low pass filters</span>
+LPF = (abs(XI) &lt; freq) &amp; (abs(ETA) &lt; freq); <span class="comment">%low pass filter only lets in xi &lt; abs(freq) frequencies</span>
+HPF = 1 - LPF; <span class="comment">% high pass filter blocks xi &lt; abs(freq) frequencies</span>
+
+<span class="comment">% Use high and low pass filters on fourier transform of the original image</span>
+Img_LPF = F.*LPF;
+Img_HPF = F.*HPF;
+
+<span class="comment">% Inverse fourier transform to return data we can use</span>
+img_lpf = fftshift(ifft2(fftshift(Img_LPF)));
+img_hpf = fftshift(ifft2(fftshift(Img_HPF)));
+
+<span class="comment">% Take real portion of inverse fft for visualization purposes</span>
+lpf_data = real(img_lpf);
+hpf_data = real(img_hpf);
+
+<span class="comment">% Make real portion of fft into rgb images for visualizations at the end of</span>
+<span class="comment">% the code</span>
+lpf_img = imRGB(lpf_data,255);
+hpf_img = imRGB(hpf_data,1);
+
+<span class="comment">% Plot frequency split to see if freq variable needs to be changed</span>
+NewFig(<span class="string">'Frequency Split'</span>);
+subplot(1,2,1)
+imagesc(xi,eta, lpf_data)
+colormap(gray)
+axis <span class="string">square</span>
+title(<span class="string">'Low Pass Filter'</span>)
+
+subplot(1,2,2)
+imagesc(xi,eta, hpf_data)
+colormap(gray)
+axis <span class="string">square</span>
+title(<span class="string">'High Pass Filter'</span>)
+
+sgtitle(sprintf(<span class="string">'Frequency %0.2f'</span>,freq))
+</pre><img vspace="5" hspace="5" src="SyntheticTerrain_01.png" alt=""> <h2 id="3">High freq: square-diamond interpolation</h2><pre class="codeinput"><span class="comment">% perform square-diamond interpolation only on high frequency portion</span>
+image = hpf_data;
+
+<span class="comment">% get size of high frequency portion</span>
+[m,n] = size(image);
+
+<span class="comment">% set upscaling factor (needs to be power of 2: 2,4,8,16, etc.)</span>
+scale = 2;
+
+<span class="comment">% set interpolation method (either 'linear' or 'spline')</span>
+interp = <span class="string">'spline'</span>;
+
+<span class="comment">% initilize heightmap and diamond-square method output</span>
+hmap = zeros(m*scale,n*scale);
+method = zeros(m*scale,n*scale);
+
+<span class="comment">% add existing data to heightmap</span>
+original_x = zeros(m*n,1);
+original_y = zeros(m*n,1);
+count = 1;
+<span class="keyword">for</span> i = 1:m
+    <span class="keyword">for</span> j = 1:n
+        <span class="comment">% position original data determined by scale*x+1,scale*y+1</span>
+        <span class="comment">% starts at 1,1 when x=y=0</span>
+        hmap(scale*(i-1)+1,scale*(j-1)+1) = image(i,j);
+
+        <span class="comment">% save position of original data</span>
+        original_x(count) = scale*(i-1)+1;
+        original_y(count) = scale*(j-1)+1;
+
+        count = count + 1;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% rename original data to square input variables</span>
+s_in_x = original_x;
+s_in_y = original_y;
+
+iteration = 1; <span class="comment">% increases for each iteration of square+diamond</span>
+iter_max = log(scale)/log(2); <span class="comment">% max # of iteration determined by scale</span>
+<span class="keyword">for</span> i = 1:iter_max
+
+[hmap, so_x, so_y, method] = square(hmap, interp, iteration, scale, m, n, s_in_x, s_in_y, method);
+[hmap, s_in_x, s_in_y, method] = diamond(hmap, interp, iteration, scale, m, n, so_x, so_y, method);
+
+iteration = iteration + 1;
+<span class="keyword">end</span>
+</pre><h2 id="4">Low freq: bilinear interpolation</h2><pre class="codeinput"><span class="comment">% use matlab function to bilinear interpolate low frequency data</span>
+bi = imresize(lpf_data,scale,<span class="string">'bilinear'</span>);
+</pre><h2 id="5">Rejoin frequencies</h2><p>recombine processed high and low frequencies</p><pre class="codeinput">combo = hmap + bi;
+
+<span class="comment">% normalize</span>
+combo = combo/max(combo,[],<span class="string">'all'</span>);
+
+<span class="comment">% make rgb for visualization</span>
+combo_rgb = imRGB(combo,1);
+</pre><h2 id="6">Plotting</h2><pre class="codeinput"><span class="comment">% Original terrain image</span>
+NewFig(<span class="string">'Original Image'</span>);
+imshow(c_img)
+title(<span class="string">'Original Lunar Terrain Image'</span>)
+
+<span class="comment">% subplots to see before and after for low and high frequencies</span>
+NewFig(<span class="string">'Low Frequency'</span>);
+subplot(1,2,1)
+imshow(lpf_img)
+title(<span class="string">'Original Low Frequency'</span>)
+subplot(1,2,2)
+imshow(imRGB(bi,1))
+title(<span class="string">'Low Frequency Bilinear Interpolation'</span>)
+
+NewFig(<span class="string">'High Frequency'</span>);
+subplot(1,2,1)
+imshow(hpf_img)
+title(<span class="string">'Original High Frequency'</span>)
+subplot(1,2,2)
+imshow(imRGB(hmap,1))
+title(<span class="string">'High Frequency Catmull Rom Spline Interpolation'</span>)
+
+<span class="comment">% final output image</span>
+NewFig(<span class="string">'Combined'</span>);
+imshow(combo_rgb)
+title(sprintf(<span class="string">'Combined Low and High Frequency Simulated High Resolution Image. Scale %d Split Frequency %0.2f'</span>,scale, freq))
+
+Figui
+</pre><img vspace="5" hspace="5" src="SyntheticTerrain_02.png" alt=""> <img vspace="5" hspace="5" src="SyntheticTerrain_03.png" alt=""> <img vspace="5" hspace="5" src="SyntheticTerrain_04.png" alt=""> <img vspace="5" hspace="5" src="SyntheticTerrain_05.png" alt=""> <img vspace="5" hspace="5" src="SyntheticTerrain_06.png" alt=""> <h2 id="7">Square interpoloation</h2><pre class="codeinput"><span class="keyword">function</span> [hmap, output_locations_x, output_locations_y, method] = square(hmap, interp, iteration, scale, im_m, im_n, input_location_x, input_location_y, method)
+<span class="comment">% function to perform square portion of square-diamond interpolation</span>
+
+fprintf(<span class="string">'Performing square iteration %d out of %d\n'</span>,iteration,log(scale)/log(2))
+
+<span class="comment">% get size of input data</span>
+m = length(input_location_x);
+n = length(input_location_y);
+
+<span class="comment">% initilize arrays to store square locations</span>
+square_locations_x = zeros(m,1);
+square_locations_y = zeros(n,1);
+
+count = 1;
+<span class="keyword">for</span> i=1:m <span class="comment">% for size of input data</span>
+
+    <span class="comment">% input data locations</span>
+    x = input_location_x(i);
+    y = input_location_y(i);
+
+    <span class="comment">% if x or y are zero, print and break</span>
+    <span class="keyword">if</span> (x == 0) | (y == 0)
+        fprintf(<span class="string">'Input data is zero. Miscalculated # of outputs of previous function\n breaking at %d of %d\n'</span>, i, m)
+        <span class="keyword">break</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% for each input pixel, find distance to next input pixel in x &amp; y</span>
+    distance = scale/(2^(iteration-1));
+    x_add = distance;
+    y_add = distance;
+
+    interp_2 = interp; <span class="comment">% for all data use original interpolation method</span>
+
+    <span class="comment">% check if pixel is on edge of image</span>
+    x_edge = (x+x_add)&gt;=scale*im_m;
+    y_edge = (y+y_add)&gt;=scale*im_n;
+
+    input_data=[]; <span class="comment">% initialize input data</span>
+    <span class="comment">% if input pixel on edge, only take existing data and do linear instead of spline</span>
+    <span class="comment">% use linear on edge cases bc spline needs 4 data points</span>
+    <span class="keyword">if</span> x_edge &amp; ~y_edge
+        input_data = [hmap(x,y),hmap(x,y+y_add)];
+        interp_2 = <span class="string">'linear'</span>;
+    <span class="keyword">elseif</span> y_edge &amp; ~x_edge
+        input_data = [hmap(x,y),hmap(x+x_add,y)];
+        interp_2 = <span class="string">'linear'</span>;
+    <span class="keyword">elseif</span> x_edge &amp; y_edge
+        input_data = [hmap(x,y)];
+        interp_2 = <span class="string">'linear'</span>;
+    <span class="keyword">else</span>
+        <span class="comment">% if input pixel not on edge, take surrounding four corner pixels</span>
+        <span class="keyword">try</span>
+            input_data = [hmap(x,y),hmap(x,y+y_add),hmap(x+x_add,y),hmap(x+x_add,y+y_add)];
+        <span class="keyword">catch</span>
+            fprintf(<span class="string">'caught error. usually is an out of bounds error. check input_data'</span>)
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% use distance to find placement of new square pixel</span>
+    sx = x + distance/2;
+    sy = y + distance/2;
+
+    <span class="comment">% store square pixel locations</span>
+    square_locations_x(count) = sx;
+    square_locations_y(count) = sy;
+
+    <span class="comment">% depending on if pixel is on edge or not, use linear or spline to</span>
+    <span class="comment">% interpolate new square pixel value and store in hmap</span>
+    <span class="keyword">switch</span> interp_2
+        <span class="keyword">case</span> <span class="string">'spline'</span>
+            <span class="comment">% take spline average</span>
+            hmap(sx,sy) = CatmullRomSpline(input_data(:));
+        <span class="keyword">case</span> <span class="string">'linear'</span>
+            <span class="comment">% take linear average</span>
+            hmap(sx,sy) = mean(input_data,<span class="string">'all'</span>);
+
+    <span class="keyword">end</span>
+    count = count + 1;
+
+    <span class="comment">% store square method</span>
+    method(sx,sy) = iteration;
+
+<span class="keyword">end</span>
+
+<span class="comment">% combine input locations and square locations to pass to diamond function</span>
+output_locations_x = [input_location_x; square_locations_x];
+output_locations_y = [input_location_y; square_locations_y];
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Performing square iteration 1 out of 1
+</pre><h2 id="8">Diamond interpolation</h2><pre class="codeinput"><span class="keyword">function</span> [hmap, output_locations_x, output_locations_y, method] = diamond(hmap, interp, iteration, scale, im_m, im_n, input_location_x, input_location_y, method);
+<span class="comment">% function to perform diamond portion of square-diamond interpolation</span>
+
+fprintf(<span class="string">'Performing diamond iteration %d out of %d\n'</span>,iteration,log(scale)/log(2))
+
+<span class="comment">% get size of input data</span>
+m = length(input_location_x);
+n = length(input_location_y);
+
+<span class="comment">% initilize arrays to store square locations</span>
+diamond_locations_x = zeros(2*m - im_m*iteration - im_n*iteration,1);
+diamond_locations_y = zeros(2*n - im_m*iteration - im_n*iteration,1);
+
+count = 1;
+<span class="keyword">for</span> i=1:m <span class="comment">% for size of input data</span>
+
+    <span class="comment">% input data locations</span>
+    x = input_location_x(i);
+    y = input_location_y(i);
+
+    <span class="comment">% if x or y are zero, print and break</span>
+    <span class="keyword">if</span> (x == 0) || (y == 0)
+        fprintf(<span class="string">'input data is zero. miscalculated # of outputs of previous function\n breaking at %d of %d\n'</span>, i, m)
+        <span class="keyword">break</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% distance to next input pixel in x &amp; y</span>
+    distance = scale/(2^(iteration-1));
+
+    <span class="comment">% if input location is on the bottom or right edge, don't create a new</span>
+    <span class="comment">% diamond past the edge of the frame</span>
+    start = 1;
+    stop = 2;
+    <span class="keyword">if</span> (x + distance/2) &gt;= scale*im_m
+        <span class="comment">% only create second diamond</span>
+        start = 2;
+        stop = 2;
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> (y + distance/2) &gt;= scale*im_n
+        <span class="comment">% only create first diamond</span>
+        start = 1;
+        stop = 1;
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> ((x + distance/2) &gt;= scale*im_m) &amp; ((y + distance/2) &gt;= scale*im_n)
+        <span class="comment">% create no diamonds and continue to next input location</span>
+        fprintf(<span class="string">'Found corner. Continue happening at i = %d out of %d.\n'</span>,i,m)
+        <span class="keyword">continue</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% create two diamonds for each input location</span>
+    <span class="keyword">for</span> k=start:stop
+        <span class="keyword">if</span> k == 1
+            <span class="comment">% first diamond location</span>
+            xd = x + distance/2;
+            yd = y;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> k == 2
+            <span class="comment">% second diamond location</span>
+            xd = x;
+            yd = y + distance/2;
+        <span class="keyword">end</span>
+
+        <span class="comment">% store new diamond location for output later</span>
+        diamond_locations_x(count) = xd;
+        diamond_locations_y(count) = yd;
+
+        <span class="comment">% this is the x,y to add to diamond location to find our data to</span>
+        <span class="comment">% average</span>
+        x_add = distance/2;
+        y_add = distance/2;
+
+        interp_2 = interp; <span class="comment">% for all data use original interpolation method</span>
+
+        data = []; <span class="comment">% initialize data variable</span>
+        <span class="comment">% find four surrounding pixels for diamond average calculation</span>
+        <span class="comment">% make sure the x,y we are adding is not past the image frame</span>
+        x_edge = (xd + x_add) &gt; scale*im_m;
+        y_edge = (yd + y_add) &gt; scale*im_n;
+
+        <span class="comment">% edge effects for x</span>
+        <span class="keyword">if</span> xd == 1
+            <span class="comment">% take only pixel below</span>
+            down = hmap(xd + x_add,yd);
+            data = [data, down];
+            interp_2 = <span class="string">'linear'</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> x_edge
+            <span class="comment">% take only pixel above</span>
+            up = hmap(xd - x_add,yd);
+            data = [data, up];
+            interp_2 = <span class="string">'linear'</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> ~x_edge &amp; xd~=1 <span class="comment">% if not on edge</span>
+            <span class="comment">% take both pixels above and below</span>
+            up = hmap(xd - x_add,yd);
+            down = hmap(xd + x_add,yd);
+            data = [data, up, down];
+        <span class="keyword">end</span>
+
+        <span class="comment">%edge effects for y</span>
+        <span class="keyword">if</span> yd == 1
+            <span class="comment">% take only pixel to the right</span>
+            right = hmap(xd,yd + y_add);
+            data = [data, right];
+            interp_2 = <span class="string">'linear'</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> y_edge
+            <span class="comment">% take only pixel to the left</span>
+            left = hmap(xd,yd - y_add);
+            data = [data, left];
+            interp_2 = <span class="string">'linear'</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> yd~=1 &amp;&amp; ~y_edge <span class="comment">% if not on edge</span>
+            <span class="comment">% take both pixels to the right and left</span>
+            left = hmap(xd,yd - y_add);
+            right = hmap(xd,yd + y_add);
+            data = [data, left, right];
+        <span class="keyword">end</span>
+
+        <span class="comment">% depending on if pixel is on edge or not, use linear or spline to</span>
+        <span class="comment">% interpolate new square pixel value and store in hmap</span>
+        <span class="keyword">switch</span> interp_2
+            <span class="keyword">case</span> <span class="string">'linear'</span> <span class="comment">% linear interpolation</span>
+                hmap(xd,yd) = mean(data,<span class="string">'all'</span>);
+            <span class="keyword">case</span> <span class="string">'spline'</span> <span class="comment">% Catmull Rom spline</span>
+                hmap(xd,yd) = CatmullRomSpline(data);
+        <span class="keyword">end</span>
+        count = count + 1;
+
+        <span class="comment">% store diamond method</span>
+        method(xd,yd) = iteration + log(scale)/log(2);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% combine input locations and square locations to pass to square function</span>
+output_locations_x = [input_location_x; diamond_locations_x];
+output_locations_y = [input_location_y; diamond_locations_y];
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Performing diamond iteration 1 out of 1
+Found corner. Continue happening at i = 262144 out of 524288.
+Found corner. Continue happening at i = 524288 out of 524288.
+</pre><h2 id="9">Generate an RGB image</h2><p>function to make input an rgb image. can convert uint 8 to double by using scale = 255.</p><pre class="codeinput"><span class="keyword">function</span> image_out = imRGB(image_in,scale)
+
+image_out(:,:,1) = image_in/scale;
+image_out(:,:,2) = image_in/scale;
+image_out(:,:,3) = image_in/scale;
+
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% SyntheticTerrain is a script created to create synthetic terrain
+% Allan et al.'s work https://doi.org/10.1109/AERO.2019.8741780 to create a s
+% terrain generator for the lunar surface to create high resolution images
+% from the currently available low resolution images from http://imbrium.mit.edu/
+%
+% This script upscales the input image and outputs a synthetic higher
+% resolution version of the input image:
+%
+% 1. separates the high and low frequencies of the input image 
+% 2. performs fractal synthesis by the diamond-square method on the high
+% frequency portion of the image and uses the Catmull-Rom spline
+% interpolation method to generate new data
+% 3. performs bilinear interpolation on the low frequency component of the
+% image
+% 4. recombines the high and low frequencies of the input image and returns
+% the final image
+%
+% key input variables the user can change:
+%
+% c_img - the input image (this should be a dem but the script was mostly
+% tested on optical images. may need different frequency splitting method 
+% for low contrast dems avaialable.) the input image needs to be a square 
+% with even # of pixels. I recommend starting with a small 500x500 image.
+%
+% scale - determines the upscaling of the input image. this needs to be a
+% power of 2. i.e. scale = 2, 4, 8, 16 etc.
+%
+% freq - determines the frequency split between high and low frequencies.
+% make use of the figure showing the frequency split to determine what the
+% frequency should be for the input image. This needs to be between [0,1].
+%
+% interp - sets the interpolation method. by default this is 'spline' for
+% Catmull-Rom Spline and 'linear', or linear interpolation, is only used on
+% edge cases. However this can be changed to 'linear' for the entire image
+% for comparison. This can only be 'spline' or 'linear'.
+%
+% key outputs:
+%
+% hmap - final heightmap. this is the upscaled input image. size will be
+% scale*input image size
+%
+% method - matrix with indices indicating if a pixel was interpolated with
+% the square or diamond method and the iteration number. 1:iter_max are
+% squares for each iteration. iter_max+1:iter_max+iter_max are diamonds for
+% each iteration. useful for debugging or for understanding final image
+% artifacts.
+%
+% Online resources:
+%
+% Diamond-square method
+% https://stevelosh.com/blog/2016/06/diamond-square/
+%
+% catmull rom spline
+% https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2021 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2021.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Lunar image
+file  = 'LunarSurfaceImage.png';
+dem   = imread(file);
+demt  = dem/max(dem(:));
+c_img	= demt(1:512,1:512);
+
+%% Fourier transform to separate high and low freq data
+% Taken from Maggie Kautz's homework for OPTI 512L from UArizona
+% fourier transforms to split high and low frequencies by freq input
+% variable
+
+% Fourier transform original image
+F = fftshift(fft2(fftshift(c_img)));
+
+% Make a meshgrid the same size as input image
+xi = linspace(-1,1,length(c_img));
+eta = xi;
+[XI, ETA] = meshgrid(xi,eta);
+
+% Change this variable to change frequency split
+freq = 0.01; % bounds [0,1]
+
+% Use meshgrid to greate high and low pass filters
+LPF = (abs(XI) < freq) & (abs(ETA) < freq); %low pass filter only lets in xi < abs(freq) frequencies
+HPF = 1 - LPF; % high pass filter blocks xi < abs(freq) frequencies
+
+% Use high and low pass filters on fourier transform of the original image
+Img_LPF = F.*LPF;
+Img_HPF = F.*HPF;
+
+% Inverse fourier transform to return data we can use
+img_lpf = fftshift(ifft2(fftshift(Img_LPF)));
+img_hpf = fftshift(ifft2(fftshift(Img_HPF)));
+
+% Take real portion of inverse fft for visualization purposes
+lpf_data = real(img_lpf);
+hpf_data = real(img_hpf);
+
+% Make real portion of fft into rgb images for visualizations at the end of
+% the code
+lpf_img = imRGB(lpf_data,255);
+hpf_img = imRGB(hpf_data,1);
+
+% Plot frequency split to see if freq variable needs to be changed
+NewFig('Frequency Split');
+subplot(1,2,1)
+imagesc(xi,eta, lpf_data)
+colormap(gray)
+axis square
+title('Low Pass Filter')
+
+subplot(1,2,2)
+imagesc(xi,eta, hpf_data)
+colormap(gray)
+axis square
+title('High Pass Filter')
+
+sgtitle(sprintf('Frequency %0.2f',freq))
+
+%% High freq: square-diamond interpolation 
+
+% perform square-diamond interpolation only on high frequency portion
+image = hpf_data;
+
+% get size of high frequency portion
+[m,n] = size(image);
+
+% set upscaling factor (needs to be power of 2: 2,4,8,16, etc.)
+scale = 2;
+
+% set interpolation method (either 'linear' or 'spline')
+interp = 'spline';
+
+% initilize heightmap and diamond-square method output
+hmap = zeros(m*scale,n*scale);
+method = zeros(m*scale,n*scale);
+
+% add existing data to heightmap
+original_x = zeros(m*n,1);
+original_y = zeros(m*n,1);
+count = 1;
+for i = 1:m
+    for j = 1:n
+        % position original data determined by scale*x+1,scale*y+1
+        % starts at 1,1 when x=y=0
+        hmap(scale*(i-1)+1,scale*(j-1)+1) = image(i,j);
+        
+        % save position of original data
+        original_x(count) = scale*(i-1)+1;
+        original_y(count) = scale*(j-1)+1;
+        
+        count = count + 1;
+    end
+end
+
+% rename original data to square input variables
+s_in_x = original_x;
+s_in_y = original_y;
+
+iteration = 1; % increases for each iteration of square+diamond
+iter_max = log(scale)/log(2); % max # of iteration determined by scale
+for i = 1:iter_max
+ 
+[hmap, so_x, so_y, method] = square(hmap, interp, iteration, scale, m, n, s_in_x, s_in_y, method);
+[hmap, s_in_x, s_in_y, method] = diamond(hmap, interp, iteration, scale, m, n, so_x, so_y, method);
+
+iteration = iteration + 1;
+end
+
+%% Low freq: bilinear interpolation
+
+% use matlab function to bilinear interpolate low frequency data
+bi = imresize(lpf_data,scale,'bilinear');
+
+%% Rejoin frequencies
+% recombine processed high and low frequencies
+combo = hmap + bi;
+
+% normalize
+combo = combo/max(combo,[],'all'); 
+
+% make rgb for visualization
+combo_rgb = imRGB(combo,1); 
+
+%% Plotting
+
+% Original terrain image
+NewFig('Original Image');
+imshow(c_img)
+title('Original Lunar Terrain Image')
+
+% subplots to see before and after for low and high frequencies
+NewFig('Low Frequency');
+subplot(1,2,1)
+imshow(lpf_img)
+title('Original Low Frequency')
+subplot(1,2,2)
+imshow(imRGB(bi,1))
+title('Low Frequency Bilinear Interpolation')
+
+NewFig('High Frequency');
+subplot(1,2,1)
+imshow(hpf_img)
+title('Original High Frequency')
+subplot(1,2,2)
+imshow(imRGB(hmap,1))
+title('High Frequency Catmull Rom Spline Interpolation')
+
+% final output image
+NewFig('Combined');
+imshow(combo_rgb)
+title(sprintf('Combined Low and High Frequency Simulated High Resolution Image. Scale %d Split Frequency %0.2f',scale, freq))
+
+Figui
+
+%% Square interpoloation
+function [hmap, output_locations_x, output_locations_y, method] = square(hmap, interp, iteration, scale, im_m, im_n, input_location_x, input_location_y, method)
+% function to perform square portion of square-diamond interpolation
+
+fprintf('Performing square iteration %d out of %d\n',iteration,log(scale)/log(2))
+
+% get size of input data
+m = length(input_location_x);
+n = length(input_location_y);
+
+% initilize arrays to store square locations
+square_locations_x = zeros(m,1);
+square_locations_y = zeros(n,1);
+
+count = 1;
+for i=1:m % for size of input data
+        
+    % input data locations
+    x = input_location_x(i);
+    y = input_location_y(i);
+    
+    % if x or y are zero, print and break
+    if (x == 0) | (y == 0)
+        fprintf('Input data is zero. Miscalculated # of outputs of previous function\n breaking at %d of %d\n', i, m)
+        break
+    end
+      
+    % for each input pixel, find distance to next input pixel in x & y
+    distance = scale/(2^(iteration-1));
+    x_add = distance;
+    y_add = distance;
+    
+    interp_2 = interp; % for all data use original interpolation method
+
+    % check if pixel is on edge of image
+    x_edge = (x+x_add)>=scale*im_m;
+    y_edge = (y+y_add)>=scale*im_n;    
+    
+    input_data=[]; % initialize input data
+    % if input pixel on edge, only take existing data and do linear instead of spline
+    % use linear on edge cases bc spline needs 4 data points
+    if x_edge & ~y_edge
+        input_data = [hmap(x,y),hmap(x,y+y_add)];
+        interp_2 = 'linear';
+    elseif y_edge & ~x_edge
+        input_data = [hmap(x,y),hmap(x+x_add,y)];
+        interp_2 = 'linear';
+    elseif x_edge & y_edge
+        input_data = [hmap(x,y)];
+        interp_2 = 'linear';
+    else
+        % if input pixel not on edge, take surrounding four corner pixels
+        try
+            input_data = [hmap(x,y),hmap(x,y+y_add),hmap(x+x_add,y),hmap(x+x_add,y+y_add)];
+        catch 
+            fprintf('caught error. usually is an out of bounds error. check input_data')
+        end
+    end
+    
+    % use distance to find placement of new square pixel
+    sx = x + distance/2;
+    sy = y + distance/2;
+    
+    % store square pixel locations
+    square_locations_x(count) = sx;
+    square_locations_y(count) = sy;
+       
+    % depending on if pixel is on edge or not, use linear or spline to
+    % interpolate new square pixel value and store in hmap
+    switch interp_2
+        case 'spline'
+            % take spline average
+            hmap(sx,sy) = CatmullRomSpline(input_data(:));
+        case 'linear'
+            % take linear average
+            hmap(sx,sy) = mean(input_data,'all');
+            
+    end
+    count = count + 1;
+    
+    % store square method
+    method(sx,sy) = iteration;
+    
+end
+
+% combine input locations and square locations to pass to diamond function
+output_locations_x = [input_location_x; square_locations_x];
+output_locations_y = [input_location_y; square_locations_y];
+end
+
+%% Diamond interpolation
+function [hmap, output_locations_x, output_locations_y, method] = diamond(hmap, interp, iteration, scale, im_m, im_n, input_location_x, input_location_y, method);
+% function to perform diamond portion of square-diamond interpolation
+
+fprintf('Performing diamond iteration %d out of %d\n',iteration,log(scale)/log(2))
+
+% get size of input data
+m = length(input_location_x);
+n = length(input_location_y);
+
+% initilize arrays to store square locations
+diamond_locations_x = zeros(2*m - im_m*iteration - im_n*iteration,1);
+diamond_locations_y = zeros(2*n - im_m*iteration - im_n*iteration,1);
+
+count = 1;
+for i=1:m % for size of input data
+
+    % input data locations
+    x = input_location_x(i);
+    y = input_location_y(i);
+    
+    % if x or y are zero, print and break
+    if (x == 0) || (y == 0)
+        fprintf('input data is zero. miscalculated # of outputs of previous function\n breaking at %d of %d\n', i, m)
+        break
+    end
+    
+    % distance to next input pixel in x & y
+    distance = scale/(2^(iteration-1));
+
+    % if input location is on the bottom or right edge, don't create a new
+    % diamond past the edge of the frame
+    start = 1;
+    stop = 2;
+    if (x + distance/2) >= scale*im_m
+        % only create second diamond
+        start = 2;
+        stop = 2;
+    end
+    if (y + distance/2) >= scale*im_n
+        % only create first diamond
+        start = 1;
+        stop = 1;
+    end
+    if ((x + distance/2) >= scale*im_m) & ((y + distance/2) >= scale*im_n)
+        % create no diamonds and continue to next input location
+        fprintf('Found corner. Continue happening at i = %d out of %d.\n',i,m)
+        continue
+    end
+    
+    % create two diamonds for each input location 
+    for k=start:stop
+        if k == 1
+            % first diamond location
+            xd = x + distance/2;
+            yd = y;
+        end
+        if k == 2
+            % second diamond location
+            xd = x;
+            yd = y + distance/2;
+        end
+        
+        % store new diamond location for output later
+        diamond_locations_x(count) = xd;
+        diamond_locations_y(count) = yd;
+        
+        % this is the x,y to add to diamond location to find our data to
+        % average
+        x_add = distance/2;
+        y_add = distance/2;
+        
+        interp_2 = interp; % for all data use original interpolation method
+        
+        data = []; % initialize data variable
+        % find four surrounding pixels for diamond average calculation
+        % make sure the x,y we are adding is not past the image frame
+        x_edge = (xd + x_add) > scale*im_m;
+        y_edge = (yd + y_add) > scale*im_n;
+        
+        % edge effects for x
+        if xd == 1
+            % take only pixel below
+            down = hmap(xd + x_add,yd);
+            data = [data, down];
+            interp_2 = 'linear';
+        end
+        if x_edge
+            % take only pixel above
+            up = hmap(xd - x_add,yd);
+            data = [data, up];
+            interp_2 = 'linear';
+        end
+        if ~x_edge & xd~=1 % if not on edge
+            % take both pixels above and below 
+            up = hmap(xd - x_add,yd);
+            down = hmap(xd + x_add,yd);
+            data = [data, up, down];
+        end
+        
+        %edge effects for y
+        if yd == 1
+            % take only pixel to the right
+            right = hmap(xd,yd + y_add);
+            data = [data, right];
+            interp_2 = 'linear';
+        end
+        if y_edge
+            % take only pixel to the left
+            left = hmap(xd,yd - y_add);
+            data = [data, left];
+            interp_2 = 'linear';
+        end
+        if yd~=1 && ~y_edge % if not on edge
+            % take both pixels to the right and left
+            left = hmap(xd,yd - y_add);
+            right = hmap(xd,yd + y_add);
+            data = [data, left, right];
+        end
+        
+        % depending on if pixel is on edge or not, use linear or spline to
+        % interpolate new square pixel value and store in hmap        
+        switch interp_2
+            case 'linear' % linear interpolation
+                hmap(xd,yd) = mean(data,'all');
+            case 'spline' % Catmull Rom spline
+                hmap(xd,yd) = CatmullRomSpline(data);
+        end
+        count = count + 1;
+        
+        % store diamond method
+        method(xd,yd) = iteration + log(scale)/log(2);
+    end
+end
+
+% combine input locations and square locations to pass to square function
+output_locations_x = [input_location_x; diamond_locations_x];
+output_locations_y = [input_location_y; diamond_locations_y];
+end
+
+%% Generate an RGB image
+% function to make input an rgb image. can convert uint 8 to double by
+% using scale = 255.
+function image_out = imRGB(image_in,scale)
+
+image_out(:,:,1) = image_in/scale;
+image_out(:,:,2) = image_in/scale;
+image_out(:,:,3) = image_in/scale;
+
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-09 $
+% $Revision: d41096bb792488c5fe4c837553781e8733255ab9 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,332 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate orbit estimation using a UKF and lunar landmark data.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="UKFDemoOrbitOpticalNavLunar.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate orbit estimation using a UKF and lunar landmark data.</h1><!--introduction--><p>The spacecraft is in a geosynchronous orbit. Uses the Hipparcos catalog.</p><p>-------------------------------------------------------------------------  See also RaDec2U, Plot2D, TimeLabl, RK4, Unit, Date2JD,  NavTargetTrackingLunar, OpticalNavLunarLandmarkStar, LoadCatalog, UKF,  Planets, AngleOfView -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Select the filter</a></li><li><a href="#3">Measurement options</a></li><li><a href="#4">Simulation parameters</a></li><li><a href="#5">Allocate memory for plotting</a></li><li><a href="#6">Earth gravitational parameter</a></li><li><a href="#7">Initial Julian Date</a></li><li><a href="#8">Star Catalog</a></li><li><a href="#9">Initial state [r;v]</a></li><li><a href="#10">Position and velocity uncertainty</a></li><li><a href="#11">Measurement noise</a></li><li><a href="#12">Landmark vectors</a></li><li><a href="#13">State estimate at start</a></li><li><a href="#14">Covariance based on the uncertainty</a></li><li><a href="#15">Create a time sequence for the x-axis</a></li><li><a href="#16">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2009-2010, 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 9.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Select the filter</h2><pre class="codeinput"><span class="comment">%------------------</span>
+filter        = @UKF;   <span class="comment">% Full covariance matrix filter</span>
+</pre><h2 id="3">Measurement options</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+planets       = 1; <span class="comment">% 1 or 2</span>
+starOffset    = 8*pi/180;
+radiusMoon    = 1738;
+fOV           = 8.8*pi/180;
+fL            = 200;
+pixel         = 15e-3; <span class="comment">% mm</span>
+nPixels       = 2048;
+rMoon         = 405696 + 42167; <span class="comment">% Maximum apogee</span>
+angle         = AngleOfView( fL, nPixels*pixel ); <span class="comment">% half angle</span>
+angleMoon     = atan(radiusMoon/rMoon); <span class="comment">% half angle</span>
+pixelsMoon    = 0.5*nPixels*angleMoon/angle;
+resolution    = radiusMoon/pixelsMoon;
+</pre><h2 id="4">Simulation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+nSim          = 24*20;
+dT            = 3600; <span class="comment">% sec</span>
+tEnd          = nSim*dT;
+</pre><h2 id="5">Allocate memory for plotting</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+xP            = zeros(12,nSim);
+</pre><h2 id="6">Earth gravitational parameter</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+mu            = 3.98600436e5;
+</pre><h2 id="7">Initial Julian Date</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+jD0           = Date2JD( [2014 2 1 0 0 0] );
+</pre><h2 id="8">Star Catalog</h2><pre class="codeinput"><span class="comment">%-------------</span>
+starCatalog   = LoadCatalog( <span class="string">'Hipparcos'</span>, 7 );
+uStar         = RaDec2U( starCatalog.rA, starCatalog.dec );
+</pre><h2 id="9">Initial state [r;v]</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+r             = 42167;
+x             = [r;0;0;0;sqrt(mu/r);0];
+</pre><h2 id="10">Position and velocity uncertainty</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+r1Sigma       = 100; <span class="comment">% km</span>
+v1Sigma       = 0.1; <span class="comment">% km/s</span>
+</pre><h2 id="11">Measurement noise</h2><pre class="codeinput"><span class="comment">%------------------</span>
+noise.landmark = resolution/sqrt(12);<span class="comment">% 30e-3; % 30 m</span>
+noise.angle    = 10*0.0000048481368111; <span class="comment">% 1 arcsecond in radians</span>
+noise.moon     = 3e-5; <span class="comment">% 3 cm</span>
+</pre><h2 id="12">Landmark vectors</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+rL   = radiusMoon*Unit([1   0.5 0.3 0.5 0.8 0.2;<span class="keyword">...</span>
+                        0   0.5 0.3 0.8 0.2 0.1;<span class="keyword">...</span>
+                        0.5 0.5 0.5 0.5 0.5 0.5]);
+</pre><h2 id="13">State estimate at start</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+d.x           = x + [r1Sigma*randn(3,1);v1Sigma*randn(3,1)];
+</pre><h2 id="14">Covariance based on the uncertainty</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+d.p           = diag([r1Sigma^2*ones(1,3) v1Sigma^2*ones(1,3)]);
+d.int         =<span class="string">'RK4'</span>;
+d.rHSFun      =<span class="string">'RHSOrbitUKF'</span>;
+d.measFun     =<span class="string">'OpticalNavLunarLandmarkStar'</span>;
+d.integrator  = @RK4;
+d.alpha       = 0.8e-3; <span class="comment">% UKF spread of sigma points</span>
+d.kappa       = 0; <span class="comment">% UKF weighting factor</span>
+d.beta        = 2; <span class="comment">% UKF incorporation of a priori knowledge</span>
+d.dY          = 12;
+d.dT          = dT;
+d.rHSFunData  = struct(<span class="string">'mu'</span>,mu,<span class="string">'a'</span>,[0;0;0]);
+sigY          = noise.angle*10*ones(1,12);
+d.rM          = diag(sigY.^2); <span class="comment">% Measurement noise covariance</span>
+vecP          = [0 0 0 1e-6 1e-6 1e-6]';
+d.rP          = diag(vecP.^2); <span class="comment">% Plant noise covariance</span>
+d             = filter(<span class="string">'initialize'</span>, d );
+t             = 0;
+[g.u, g.rL]   = NavTargetTrackingLunar( x, uStar, rL, jD0, fOV );
+g.jD          = jD0;
+y             = OpticalNavLunarLandmarkStar( x, g );
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  xP(:,k)       = [d.x; x];
+
+  <span class="comment">% Update the RHS</span>
+  <span class="comment">%---------------</span>
+  x             = RK4( d.rHSFun, x, dT, t, d.rHSFunData ) + vecP.*randn(6,1);
+  t             = t + dT;
+  jD            = jD0 + t/86400;
+  g.jD          = jD;
+  [g.u, g.rL]   = NavTargetTrackingLunar( x, uStar, rL, jD, fOV );
+  y             = OpticalNavLunarLandmarkStar( x, g, noise );
+  d.measFunData = g;
+
+  <span class="comment">% Kalman Filter</span>
+  <span class="comment">%--------------</span>
+  d.t           = t;
+  d             = filter( <span class="string">'update'</span>, d, y );
+
+<span class="keyword">end</span>
+</pre><h2 id="15">Create a time sequence for the x-axis</h2><pre class="codeinput"><span class="comment">%--------------------------------------</span>
+[t,tL] = TimeLabl((0:(nSim-1))*dT);
+</pre><h2 id="16">Plot</h2><pre class="codeinput"><span class="comment">%-----</span>
+err = xP(1:6,:) - xP(7:12,:);
+yL  = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span>};
+Plot2D( t, err, tL, yL, <span class="string">'Estimation Errors'</span> );
+
+meanError = mean(abs(err(1:3,0.5*nSim:end)),2);
+
+DispWithTitle(meanError,<span class="string">'Mean Error'</span>);
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Mean Error
+       9.0637
+       9.1123
+      0.47331
+</pre><img vspace="5" hspace="5" src="UKFDemoOrbitOpticalNavLunar_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate orbit estimation using a UKF and lunar landmark data.
+% The spacecraft is in a geosynchronous orbit.
+% Uses the Hipparcos catalog.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also RaDec2U, Plot2D, TimeLabl, RK4, Unit, Date2JD, 
+%  NavTargetTrackingLunar, OpticalNavLunarLandmarkStar, LoadCatalog, UKF, 
+%  Planets, AngleOfView
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 2009-2010, 2014 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 9.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Select the filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+filter        = @UKF;   % Full covariance matrix filter
+
+%% Measurement options
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH                        
+planets       = 1; % 1 or 2
+starOffset    = 8*pi/180;
+radiusMoon    = 1738;
+fOV           = 8.8*pi/180;
+fL            = 200;
+pixel         = 15e-3; % mm
+nPixels       = 2048;
+rMoon         = 405696 + 42167; % Maximum apogee
+angle         = AngleOfView( fL, nPixels*pixel ); % half angle
+angleMoon     = atan(radiusMoon/rMoon); % half angle
+pixelsMoon    = 0.5*nPixels*angleMoon/angle;
+resolution    = radiusMoon/pixelsMoon;
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim          = 24*20;
+dT            = 3600; % sec
+tEnd          = nSim*dT;
+
+%% Allocate memory for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP            = zeros(12,nSim);
+
+%% Earth gravitational parameter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mu            = 3.98600436e5;
+
+%% Initial Julian Date
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD0           = Date2JD( [2014 2 1 0 0 0] );
+
+%% Star Catalog
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+starCatalog   = LoadCatalog( 'Hipparcos', 7 );
+uStar         = RaDec2U( starCatalog.rA, starCatalog.dec );
+
+%% Initial state [r;v]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r             = 42167;
+x             = [r;0;0;0;sqrt(mu/r);0];
+
+%% Position and velocity uncertainty
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r1Sigma       = 100; % km
+v1Sigma       = 0.1; % km/s
+
+%% Measurement noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+noise.landmark = resolution/sqrt(12);% 30e-3; % 30 m
+noise.angle    = 10*0.0000048481368111; % 1 arcsecond in radians
+noise.moon     = 3e-5; % 3 cm
+
+%% Landmark vectors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rL   = radiusMoon*Unit([1   0.5 0.3 0.5 0.8 0.2;...
+                        0   0.5 0.3 0.8 0.2 0.1;...
+                        0.5 0.5 0.5 0.5 0.5 0.5]); 
+
+%% State estimate at start
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.x           = x + [r1Sigma*randn(3,1);v1Sigma*randn(3,1)];
+
+%% Covariance based on the uncertainty
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.p           = diag([r1Sigma^2*ones(1,3) v1Sigma^2*ones(1,3)]);
+d.int         ='RK4';
+d.rHSFun      ='RHSOrbitUKF';
+d.measFun     ='OpticalNavLunarLandmarkStar';
+d.integrator  = @RK4;
+d.alpha       = 0.8e-3; % UKF spread of sigma points
+d.kappa       = 0; % UKF weighting factor
+d.beta        = 2; % UKF incorporation of a priori knowledge
+d.dY          = 12;
+d.dT          = dT;
+d.rHSFunData  = struct('mu',mu,'a',[0;0;0]);
+sigY          = noise.angle*10*ones(1,12);
+d.rM          = diag(sigY.^2); % Measurement noise covariance
+vecP          = [0 0 0 1e-6 1e-6 1e-6]';
+d.rP          = diag(vecP.^2); % Plant noise covariance
+d             = filter('initialize', d );
+t             = 0;
+[g.u, g.rL]   = NavTargetTrackingLunar( x, uStar, rL, jD0, fOV );
+g.jD          = jD0;
+y             = OpticalNavLunarLandmarkStar( x, g );
+
+for k = 1:nSim
+  
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xP(:,k)       = [d.x; x];
+
+  % Update the RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x             = RK4( d.rHSFun, x, dT, t, d.rHSFunData ) + vecP.*randn(6,1);
+  t             = t + dT;
+  jD            = jD0 + t/86400;
+  g.jD          = jD;
+  [g.u, g.rL]   = NavTargetTrackingLunar( x, uStar, rL, jD, fOV );
+  y             = OpticalNavLunarLandmarkStar( x, g, noise );
+  d.measFunData = g;
+  
+  % Kalman Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  d.t           = t;
+  d             = filter( 'update', d, y );
+  
+end
+
+%% Create a time sequence for the x-axis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t,tL] = TimeLabl((0:(nSim-1))*dT);
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+err = xP(1:6,:) - xP(7:12,:);
+yL  = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)'};
+Plot2D( t, err, tL, yL, 'Estimation Errors' );
+
+meanError = mean(abs(err(1:3,0.5*nSim:end)),2);
+
+DispWithTitle(meanError,'Mean Error');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-09-07 $
+% $Revision: 56823b063f01d314adbfeb675683aa4d4047cc8c $
+
+##### SOURCE END #####
+--></body></html>

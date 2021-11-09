@@ -1,0 +1,386 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate various single degree of freedom gyros.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="TGyro.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate various single degree of freedom gyros.</h1><!--introduction--><pre class="language-matlab">Simulates <span class="string">a</span> <span class="string">rate</span> <span class="string">gyro</span> <span class="string">and</span> <span class="string">a</span> <span class="string">rate</span> <span class="string">integrating</span> <span class="string">gyro.</span>
+Both <span class="string">are</span> <span class="string">simulated</span> <span class="string">using</span> <span class="string">SDG</span> <span class="string">and</span> <span class="string">the</span> <span class="string">RHS</span> <span class="string">FSDG.</span> <span class="string">They</span> <span class="string">are</span>
+configured <span class="string">by</span> <span class="string">setting</span> <span class="string">the</span> <span class="string">appropriate</span> <span class="string">parameters.</span>
+</pre><pre>------------------------------------------------------------------------
+See also Plot2D, TimeGUI, RK4, SDG
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">To make a rate integrating gyro set k = cD/h and k.*kF./cD &lt;&lt; 1</a></li><li><a href="#4">Run the simulation</a></li><li><a href="#5">Initial output</a></li><li><a href="#6">Initialize the time display</a></li><li><a href="#7">Plotting</a></li><li><a href="#8">To make a rate gyro set kF = h and kSG*kF/cD &gt;&gt; 1</a></li><li><a href="#9">Run the simulation</a></li><li><a href="#10">Initialize the time display</a></li><li><a href="#11">Initial output</a></li><li><a href="#12">Shorten the arrays in case the user stopped the sim</a></li><li><a href="#13">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1996 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 1.</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">To make a rate integrating gyro set k = cD/h and k.*kF./cD &lt;&lt; 1</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------------------</span>
+h    = 1;
+u    = [1;0;0];
+cD   = 1;
+kSG  = cD/h;
+kF   = 0.0001;
+bias = 0;
+nU   = 0;
+nV   = 0;
+nE   = 0;
+
+[a,b,c,d] = SDG( u, h, cD, kSG, kF );
+eig(a)
+</pre><pre class="codeoutput">ans =
+   1.0e-04 *
+  -1.000000000000000
+                   0
+                   0
+</pre><h2 id="4">Run the simulation</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+dT   = 0.05;
+nSim = 100;
+x    = zeros(3,nSim);
+w    = [0.01;0;0];
+t    = dT*(0:(nSim-1));
+y    = zeros(1,nSim);
+</pre><h2 id="5">Initial output</h2><pre class="codeinput"><span class="comment">%---------------</span>
+[~,y(1)] = SDG( u, h, cD, kSG, kF, w, x(:,1), bias, nU, nV, nE );
+</pre><h2 id="6">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'TGyro'</span> );
+
+<span class="keyword">for</span> k = 2:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  x(:,k)          = RK4(<span class="string">'FSDG'</span>, x(:,k-1), dT, t(k-1), u, h, cD, kSG, kF, w, bias, nU, nV, nE);
+  [dontCare,y(k)] = SDG( u, h, cD, kSG, kF, w, x(:,k), bias, nU, nV, nE );
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+j = 1:k;
+y = [y-w(1)*t;y;x];
+</pre><img vspace="5" hspace="5" src="TGyro_01.png" alt=""> <h2 id="7">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+yLabel = [<span class="string">'Error  '</span>;<span class="keyword">...</span>
+          <span class="string">'Output '</span>;<span class="keyword">...</span>
+          <span class="string">'State 1'</span>;<span class="keyword">...</span>
+          <span class="string">'State 2'</span>;<span class="keyword">...</span>
+          <span class="string">'State 3'</span>];
+
+Plot2D( t(j), y(:,j), <span class="string">'Time (sec)'</span>,yLabel,<span class="string">'Rate Integrating Gyro'</span>);
+</pre><img vspace="5" hspace="5" src="TGyro_02.png" alt=""> <h2 id="8">To make a rate gyro set kF = h and kSG*kF/cD &gt;&gt; 1</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------</span>
+h    = 1;
+kF   = h;
+cD   = 1;
+u    = [1;0;0];
+kSG  = 10;
+bias = 0;
+nU   = 0;
+nV   = 0;
+nE   = 0;
+
+[a,b,c,d] = SDG( u, h, cD, kSG, kF );
+eig(a)
+</pre><pre class="codeoutput">ans =
+   -10
+     0
+     0
+</pre><h2 id="9">Run the simulation</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+dT   = 0.05;
+nSim = 100;
+x    = zeros(3,nSim);
+w    = [0.01;0;0];
+t    = dT*(0:(nSim-1));
+y    = zeros(1,nSim);
+</pre><h2 id="10">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'TGyro'</span> );
+</pre><img vspace="5" hspace="5" src="TGyro_03.png" alt=""> <h2 id="11">Initial output</h2><pre class="codeinput"><span class="comment">%---------------</span>
+[dontCare,y(1)] = SDG( u, h, cD, kSG, kF, w, x(:,1), bias, nU, nV, nE );
+
+<span class="keyword">for</span> k = 2:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  x(:,k)          = RK4(<span class="string">'FSDG'</span>, x(:,k-1), dT, t(k-1), u, h, cD, kSG, kF, w, bias, nU, nV, nE);
+  [dontCare,y(k)] = SDG( u, h, cD, kSG, kF, w, x(:,k), bias, nU, nV, nE );
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><h2 id="12">Shorten the arrays in case the user stopped the sim</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+j = 1:k;
+y = [y-w(1)*t;y;x];
+</pre><h2 id="13">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+yLabel = [<span class="string">'Error  '</span>;<span class="keyword">...</span>
+          <span class="string">'Output '</span>;<span class="keyword">...</span>
+          <span class="string">'State 1'</span>;<span class="keyword">...</span>
+          <span class="string">'State 2'</span>;<span class="keyword">...</span>
+          <span class="string">'State 3'</span>];
+
+Plot2D( t(j), y(:,j), <span class="string">'Time (sec)'</span>,yLabel,<span class="string">'Rate Gyro'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="TGyro_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate various single degree of freedom gyros.
+%   Simulates a rate gyro and a rate integrating gyro.
+%   Both are simulated using SDG and the RHS FSDG. They are 
+%   configured by setting the appropriate parameters.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TimeGUI, RK4, SDG
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1996 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 1.
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% To make a rate integrating gyro set k = cD/h and k.*kF./cD << 1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h    = 1;
+u    = [1;0;0];
+cD   = 1;
+kSG  = cD/h;
+kF   = 0.0001;
+bias = 0;
+nU   = 0;
+nV   = 0;
+nE   = 0;
+
+[a,b,c,d] = SDG( u, h, cD, kSG, kF );
+eig(a)
+
+%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = 0.05;
+nSim = 100;
+x    = zeros(3,nSim);
+w    = [0.01;0;0];
+t    = dT*(0:(nSim-1));
+y    = zeros(1,nSim);
+
+%% Initial output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[~,y(1)] = SDG( u, h, cD, kSG, kF, w, x(:,1), bias, nU, nV, nE );
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, 'TGyro' );
+
+for k = 2:nSim
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  x(:,k)          = RK4('FSDG', x(:,k-1), dT, t(k-1), u, h, cD, kSG, kF, w, bias, nU, nV, nE);
+  [dontCare,y(k)] = SDG( u, h, cD, kSG, kF, w, x(:,k), bias, nU, nV, nE );
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+
+end
+
+j = 1:k;
+y = [y-w(1)*t;y;x];
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+yLabel = ['Error  ';...
+          'Output ';...
+          'State 1';...
+          'State 2';...
+          'State 3'];
+
+Plot2D( t(j), y(:,j), 'Time (sec)',yLabel,'Rate Integrating Gyro');
+
+
+%% To make a rate gyro set kF = h and kSG*kF/cD >> 1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+h    = 1;
+kF   = h;
+cD   = 1;
+u    = [1;0;0];
+kSG  = 10;
+bias = 0;
+nU   = 0;
+nV   = 0;
+nE   = 0;
+
+[a,b,c,d] = SDG( u, h, cD, kSG, kF );
+eig(a)
+
+
+%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = 0.05;
+nSim = 100;
+x    = zeros(3,nSim);
+w    = [0.01;0;0];
+t    = dT*(0:(nSim-1));
+y    = zeros(1,nSim);
+
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'TGyro' );
+
+%% Initial output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[dontCare,y(1)] = SDG( u, h, cD, kSG, kF, w, x(:,1), bias, nU, nV, nE );
+
+for k = 2:nSim
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  x(:,k)          = RK4('FSDG', x(:,k-1), dT, t(k-1), u, h, cD, kSG, kF, w, bias, nU, nV, nE);
+  [dontCare,y(k)] = SDG( u, h, cD, kSG, kF, w, x(:,k), bias, nU, nV, nE );
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+
+end
+
+%% Shorten the arrays in case the user stopped the sim
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+j = 1:k;
+y = [y-w(1)*t;y;x];
+
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+yLabel = ['Error  ';...
+          'Output ';...
+          'State 1';...
+          'State 2';...
+          'State 3'];
+
+Plot2D( t(j), y(:,j), 'Time (sec)',yLabel,'Rate Gyro');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 14:37:50 -0400 (Thu, 28 May 2020) $
+% $Revision: 52512 $
+
+##### SOURCE END #####
+--></body></html>

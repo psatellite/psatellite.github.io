@@ -1,0 +1,380 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate an F16 performing a coordinated turn.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="CTSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate an F16 performing a coordinated turn.</h1><!--introduction--><p>The F16 will go unstable due to an unstable longitudinal mode.  ------------------------------------------------------------------------  See also ECIToNED, VTToVB, AC, ACBuild, ACInit, ACPlot, DrawAC, HUD,  @acstate/acstate.m, Eul2Q, QMult, TimeGUI  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">Global for the HUD</a></li><li><a href="#4">F16 database</a></li><li><a href="#5">Load the standard atmosphere</a></li><li><a href="#6">Control</a></li><li><a href="#7">Initial state vector</a></li><li><a href="#8">Initial time and state</a></li><li><a href="#9">Initialize the model</a></li><li><a href="#10">Set up the HUD</a></li><li><a href="#11">Set up the aircraft display</a></li><li><a href="#12">Initialize the plots</a></li><li><a href="#13">Initialize the time display</a></li><li><a href="#14">Create the plots</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1997 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.0 (ACT)</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Global for the HUD</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="keyword">global</span> hUDOutput
+hUDOutput = struct(<span class="string">'pushbutton1'</span>,0,<span class="string">'pushbutton2'</span>,0,<span class="string">'checkbox1'</span>,0,<span class="keyword">...</span>
+                   <span class="string">'checkbox2'</span>,0,<span class="string">'checkbox3'</span>,0);
+</pre><h2 id="4">F16 database</h2><pre class="codeinput"><span class="comment">%-------------</span>
+d               = ACBuild(<span class="string">'F16'</span>);
+d.theta0        = 0;
+d.wPlanet       = [0;0;0];
+d.actuator.name = [];
+d.aero.name     = <span class="string">'ACAero'</span>;
+d.engine.name   = <span class="string">'ACEngine'</span>;
+d.rotor.name    = [];
+d.sensor.name   = <span class="string">'ACSensor'</span>;
+d.disturb.name  = [];
+</pre><h2 id="5">Load the standard atmosphere</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+d.atmData       = load(<span class="string">'AtmData.txt'</span>);
+d.atmUnits      = <span class="string">'eng'</span>;
+</pre><h2 id="6">Control</h2><pre class="codeinput"><span class="comment">%--------</span>
+d.control.throttle  =   0.8349601   + 0.00177955182723;
+d.control.elevator  =  -1.481766    + 0.00136225302829;
+d.control.aileron   =   0.09553108  - 6.122723107626488e-04;
+d.control.rudder    =  -0.4118124   + 0.00314275758041;
+</pre><h2 id="7">Initial state vector</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+alpha     = 0.23929886303038;
+beta      = 5.066120644138852e-04;
+vT        = 502;
+v         = VTToVB( vT, alpha, beta );
+
+cG        = [0.35;0;0];
+
+r         = [0;0;0] + [d.equatorialRadiusPlanet;0;0];
+
+eulInit   = [1.36428891652801;0.05049248496658;0.23546606115943];
+
+qNEDToB   = Eul2Q( eulInit );
+qECIToNED = ECIToNED( r, <span class="string">'quaternion'</span> );
+q         = QMult( qECIToNED, qNEDToB );
+w         = [-0.01567467524226;0.29324283670362;0.06118889106375];
+
+wR        = 160;
+engine    = 64.12363;
+mass      = 1/1.57e-3;
+inertia   = [9497;55814;63100;0;-982;0];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+</pre><h2 id="8">Initial time and state</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+t = 0;
+x = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+</pre><h2 id="9">Initialize the model</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+dT   = 0.1;
+nSim = 10/dT;
+
+d    = ACInit( x, d );
+</pre><h2 id="10">Set up the HUD</h2><pre class="codeinput"><span class="comment">%---------------</span>
+dHUD.atmData  = d.atmData ;
+dHUD.atmUnits = <span class="string">'eng'</span>;
+
+cHUD.control     = d.control;
+cHUD.elevatorMax = 90;
+cHUD.aileronMax  = 90;
+cHUD.rudderMax   = 90;
+cHUD.dT          = dT;
+hHUD = HUD( <span class="string">'init'</span>, dHUD, x, [], cHUD );
+</pre><img vspace="5" hspace="5" src="CTSim_01.png" alt=""> <h2 id="11">Set up the aircraft display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+gF16 = load(<span class="string">'gF16'</span>);
+hF16 = DrawAC( <span class="string">'init'</span>, gF16, x, [], d.atmUnits  );
+</pre><img vspace="5" hspace="5" src="CTSim_02.png" alt=""> <h2 id="12">Initialize the plots</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+plots = [ <span class="string">'Euler angles'</span>;<span class="keyword">...</span>
+          <span class="string">'Quaternion  '</span>;<span class="keyword">...</span>
+          <span class="string">'Angular rate'</span>;<span class="keyword">...</span>
+          <span class="string">'Position ECI'</span>;<span class="keyword">...</span>
+          <span class="string">'Velocity    '</span>;<span class="keyword">...</span>
+          <span class="string">'Alpha       '</span>];
+
+dPlot = ACPlot( x, <span class="string">'init'</span>, plots, d, nSim, dT, nSim );
+</pre><h2 id="13">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'F16 Simulation'</span> );
+
+<span class="keyword">for</span> k = 1:nSim
+
+	<span class="comment">% Display the status message</span>
+	<span class="comment">%---------------------------</span>
+	[ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  <span class="comment">% HUD information</span>
+  <span class="comment">%----------------</span>
+  hHUD = HUD( <span class="string">'run'</span>, dHUD, x, hHUD, cHUD );
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  dPlot = ACPlot( x, <span class="string">'store'</span>, dPlot, k );
+
+  <span class="comment">% 3D Display</span>
+  <span class="comment">%-----------</span>
+  hF16 = DrawAC( <span class="string">'run'</span>, gF16, x, hF16, d.atmUnits );
+
+  <span class="comment">% The simulation</span>
+  <span class="comment">%---------------</span>
+	x     = AC( x, t, dT, d );
+	t     = t + dT;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+TimeGUI(<span class="string">'close'</span>);
+</pre><img vspace="5" hspace="5" src="CTSim_03.png" alt=""> <img vspace="5" hspace="5" src="CTSim_04.png" alt=""> <h2 id="14">Create the plots</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+ACPlot( x, <span class="string">'plot'</span>, dPlot );
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="CTSim_05.png" alt=""> <img vspace="5" hspace="5" src="CTSim_06.png" alt=""> <img vspace="5" hspace="5" src="CTSim_07.png" alt=""> <img vspace="5" hspace="5" src="CTSim_08.png" alt=""> <img vspace="5" hspace="5" src="CTSim_09.png" alt=""> <img vspace="5" hspace="5" src="CTSim_10.png" alt=""> <img vspace="5" hspace="5" src="CTSim_11.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate an F16 performing a coordinated turn. 
+% The F16 will go unstable due to an unstable longitudinal mode.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also ECIToNED, VTToVB, AC, ACBuild, ACInit, ACPlot, DrawAC, HUD, 
+%  @acstate/acstate.m, Eul2Q, QMult, TimeGUI
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1997 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.0 (ACT)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Global for the HUD
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+global hUDOutput
+hUDOutput = struct('pushbutton1',0,'pushbutton2',0,'checkbox1',0,...
+                   'checkbox2',0,'checkbox3',0);
+
+%% F16 database
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d               = ACBuild('F16');
+d.theta0        = 0;
+d.wPlanet       = [0;0;0];
+d.actuator.name = [];
+d.aero.name     = 'ACAero';
+d.engine.name   = 'ACEngine';
+d.rotor.name    = [];
+d.sensor.name   = 'ACSensor';
+d.disturb.name  = [];
+
+%% Load the standard atmosphere
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.atmData       = load('AtmData.txt');
+d.atmUnits      = 'eng';
+
+%% Control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.control.throttle  =   0.8349601   + 0.00177955182723;
+d.control.elevator  =  -1.481766    + 0.00136225302829;
+d.control.aileron   =   0.09553108  - 6.122723107626488e-04;
+d.control.rudder    =  -0.4118124   + 0.00314275758041;
+
+%% Initial state vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+alpha     = 0.23929886303038;
+beta      = 5.066120644138852e-04;
+vT        = 502;
+v         = VTToVB( vT, alpha, beta );
+
+cG        = [0.35;0;0];
+
+r         = [0;0;0] + [d.equatorialRadiusPlanet;0;0];
+
+eulInit   = [1.36428891652801;0.05049248496658;0.23546606115943];
+
+qNEDToB   = Eul2Q( eulInit );
+qECIToNED = ECIToNED( r, 'quaternion' );
+q         = QMult( qECIToNED, qNEDToB );
+w         = [-0.01567467524226;0.29324283670362;0.06118889106375];
+
+wR        = 160;
+engine    = 64.12363;
+mass      = 1/1.57e-3;
+inertia   = [9497;55814;63100;0;-982;0];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+
+%% Initial time and state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t = 0;
+x = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+
+%% Initialize the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = 0.1;
+nSim = 10/dT;
+
+d    = ACInit( x, d );
+
+%% Set up the HUD
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dHUD.atmData  = d.atmData ;
+dHUD.atmUnits = 'eng';
+
+cHUD.control     = d.control;
+cHUD.elevatorMax = 90;
+cHUD.aileronMax  = 90;
+cHUD.rudderMax   = 90;
+cHUD.dT          = dT;
+hHUD = HUD( 'init', dHUD, x, [], cHUD );
+
+%% Set up the aircraft display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+gF16 = load('gF16');
+hF16 = DrawAC( 'init', gF16, x, [], d.atmUnits  );
+
+%% Initialize the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+plots = [ 'Euler angles';...
+          'Quaternion  ';...
+          'Angular rate';...
+          'Position ECI';...
+          'Velocity    ';...
+          'Alpha       ']; 
+					
+dPlot = ACPlot( x, 'init', plots, d, nSim, dT, nSim );
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'F16 Simulation' );
+
+for k = 1:nSim
+
+	% Display the status message
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	[ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+  
+  % HUD information
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  hHUD = HUD( 'run', dHUD, x, hHUD, cHUD );
+  
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  dPlot = ACPlot( x, 'store', dPlot, k );
+   
+  % 3D Display
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  hF16 = DrawAC( 'run', gF16, x, hF16, d.atmUnits );
+  
+  % The simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	x     = AC( x, t, dT, d );
+	t     = t + dT;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+TimeGUI('close');
+
+%% Create the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+ACPlot( x, 'plot', dPlot );
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-03 15:51:45 -0400 (Tue, 03 Sep 2019) $
+% $Revision: 49687 $
+
+##### SOURCE END #####
+--></body></html>

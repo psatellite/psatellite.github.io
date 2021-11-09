@@ -1,0 +1,389 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate a spacecraft in orbit pointing at a target on the Earth</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="SCPointingDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate a spacecraft in orbit pointing at a target on the Earth</h1><!--introduction--><pre class="language-matlab">Since <span class="string">version</span> <span class="string">8.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">C2DelZOH</span>, PIDMIMO, AU2Q, CoordinateTransform, LatLonToR, Q2AU,
+QForm, QMult, QPose, U2Q, Constant, AnimateVectors, Map, RK4, Unit,
+Date2JD, JD2T, OrbRate, RVFromKepler, Period, DMS2Rad, GMSTime,
+TruEarth, DeltaQTarget, AttitudeTarget
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setup the orbit</a></li><li><a href="#3">Constants</a></li><li><a href="#4">Ground target</a></li><li><a href="#5">Simulation parameters</a></li><li><a href="#6">Compute orbital elements and show ground track with target</a></li><li><a href="#7">Initial conditions for attitude dynamics</a></li><li><a href="#8">The plant: rigid body model</a></li><li><a href="#9">The controller</a></li><li><a href="#10">Calculate state-space control system matrices:</a></li><li><a href="#11">Simulation</a></li><li><a href="#12">plots</a></li><li><a href="#13">animation</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2008 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Setup the orbit<a name="2"></a></h2><pre class="codeinput"><span class="comment">%----------------</span>
+</pre><h2>Constants<a name="3"></a></h2><pre class="codeinput"><span class="comment">%--------------</span>
+Re = 6378.14; <span class="comment">% radius of Earth (km)</span>
+</pre><h2>Ground target<a name="4"></a></h2><pre class="codeinput"><span class="comment">%--------------</span>
+tgt.latitude  = DMS2Rad( 51, 15, 44.20 ); <span class="comment">% latitude to point at (rad)</span>
+tgt.longitude = DMS2Rad( -2, 17, 17.27 ); <span class="comment">% longitude to point at (rad)</span>
+tgt.u         = [1;0;0];                  <span class="comment">% body vector to point</span>
+</pre><h2>Simulation parameters<a name="5"></a></h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+jD       = Date2JD+100;  <span class="comment">% today's date in Julian date format</span>
+alt      = 400;      <span class="comment">% altitude of orbit (km)</span>
+tSpan    = 3*60;     <span class="comment">% time span to simulate (seconds)</span>
+tSamp    = 0.25;     <span class="comment">% control sampling time (seconds)</span>
+</pre><h2>Compute orbital elements and show ground track with target<a name="6"></a></h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------------</span>
+time  = 0:tSamp:tSpan;
+T     = Period(Re+alt);                       <span class="comment">% orbit period (sec)</span>
+gms   = GMSTime( jD )*pi/180;    <span class="comment">% Greenwich mean time at jD (deg)</span>
+rA    = gms-pi/2+tgt.longitude;  <span class="comment">% Right ascension (rad)</span>
+inc   = tgt.latitude;            <span class="comment">% Inclination (rad)</span>
+n     = OrbRate( Re+alt );       <span class="comment">% mean orbit rate (rad/s)</span>
+M     = pi/2 - tSpan/2*n;        <span class="comment">% initial mean anomaly</span>
+el    = [Re+alt, inc, rA, 0, 0, M];    <span class="comment">% orbital elements</span>
+t     = linspace(0,tSpan,30);
+[r,v] = RVFromKepler( el, t );
+lla   = zeros(size(r));
+<span class="keyword">for</span> i=1:length(t),
+   lla(:,i) = CoordinateTransform(<span class="string">'eci'</span>,<span class="string">'llr'</span>,r(:,i),jD+t(i)/86400);
+<span class="keyword">end</span>
+Map(<span class="string">'Earth'</span>,<span class="string">'2d'</span>)
+plot(lla(2,:)*180/pi,lla(1,:)*180/pi,<span class="string">'y'</span>)
+plot(tgt.longitude*180/pi,tgt.latitude*180/pi,<span class="string">'r.'</span>,<span class="string">'markersize'</span>,20)
+</pre><img vspace="5" hspace="5" src="SCPointingDemo_01.png" alt=""> <h2>Initial conditions for attitude dynamics<a name="7"></a></h2><pre class="codeinput">q0          = [1;0;0;0];   <span class="comment">% Initial ECI to Body quaternion</span>
+w0          = [0;0;0];     <span class="comment">% Initial angular rates of Body [rad/sec]</span>
+inertia     = eye(3); <span class="comment">% inertia matrix [kg-m^2]</span>
+noiseSigma  = 0;        <span class="comment">% 1-sigma noise level for pointing knowledge [rad]</span>
+</pre><h2>The plant: rigid body model<a name="8"></a></h2><p>Our plant (the rigid body spacecraft) is a double integrator. The input to the the plant is a commanded angular acceleration. The output is an angular rotation.</p><p>Compute the plant statespace system</p><pre class="codeinput">ap = [0 1;0 0]; bp = [0;1]; cp = [1 0]; dp = 0;
+</pre><h2>The controller<a name="9"></a></h2><p>We will now design a PID controller with input "u" and output "y". It will have the following transfer function:</p><pre>             Kr s         u
+ y = Kp u +  ---- u + Ki ---
+            s + wR        s</pre><p>The gains (Kp, Kr, Ki) and the derivative roll-off term (wR) will be computed using the PIDMIMO function. It will compute these controller parameters so that the closed-loop system (the controlled spacecraft) will have the desired properties. We specify the desired properties in terms of:  * natural frequency  * damping ratio  * integrator time constant  * derivative roll-off frequency</p><pre class="codeinput">zeta        = 0.7071;      <span class="comment">% damping ratio (critically damped)</span>
+omega       = 0.3;         <span class="comment">% natural frequency</span>
+tauInt      = 100;         <span class="comment">% integrator time constant (sec)</span>
+omegaR      = 4;           <span class="comment">% derivative roll-off</span>
+inr         = 1;           <span class="comment">% unit inertia - controller outputs an acceleration</span>
+rateLimit   = .25;         <span class="comment">% maximum angular rate [rad/s]</span>
+stepLimit   = rateLimit*tSamp;
+</pre><h2>Calculate state-space control system matrices:<a name="10"></a></h2><pre class="codeinput">[ak, bk, ck, dk, gains] = PIDMIMO( inr, zeta, omega, tauInt, omegaR);
+[akd,bkd] = C2DelZOH(ak,bk,tSamp);
+invInertia = inv(inertia);
+</pre><h2>Simulation<a name="11"></a></h2><p>We will simulate a point mass orbit and a rigid body</p><pre class="codeinput">xOrb = [r(:,1);v(:,1)];
+xAtt = [q0;w0];
+
+mu = Constant(<span class="string">'mu earth'</span>);
+orbitRHS = @(x,t) FOrbCart(x,t,0,mu);
+
+d = struct;
+d.qECIToBody = q0;
+d.rECI = xOrb(1:3);
+d.jD = jD;
+
+xRoll = [0;0];
+xPitch= [0;0];
+xYaw  = [0;0];
+xPlot = zeros(13,length(time));
+trq   = zeros(3,length(time));
+pointingError = zeros(1,length(time));
+uTB           = zeros(3,length(time));
+angleError    = trq;
+qECIToTargetOld = q0;
+<span class="keyword">for</span> k = 1:length(time)
+   xPlot(:,k) = [xAtt;xOrb]; <span class="comment">% record</span>
+   qECIToBody = xAtt(1:4);   <span class="comment">% rename for clarity</span>
+
+   <span class="comment">% Compute the new target quaternion</span>
+   <span class="comment">%----------------------------------</span>
+   d.qECIToBody = qECIToBody;
+   d.rECI = xOrb(1:3);
+   d.jD = jD+time(k)/86400;
+   qTarget = AttitudeTarget( <span class="string">'latlon'</span>, d, tgt );
+
+   <span class="comment">% Limit the total angular change</span>
+   <span class="comment">%-------------------------------</span>
+   [qTargetToBody,qECIToTargetOld] = DeltaQTarget(qTarget,qECIToBody,<span class="keyword">...</span>
+                                                qECIToTargetOld,stepLimit);
+   qBodyToTarget = QPose(qTargetToBody);
+
+   qTToB = QMult( QPose(qTarget), qECIToBody );
+   uTB(:,k) = QForm(qTToB,tgt.u);
+   pointingError(k) = acos(dot(uTB(:,k),tgt.u));
+   angleError(:,k) = 2*qBodyToTarget(2:4) + randn(3,1)*noiseSigma;
+
+   <span class="comment">% The delta form of the controller</span>
+   <span class="comment">%---------------------------------</span>
+   acc    = zeros(3,1);
+   acc(1) =          ck*xRoll   + dk*angleError(1,k);
+   xRoll  = xRoll  + akd*xRoll  + bkd*angleError(1,k);
+   acc(2) =          ck*xPitch  + dk*angleError(2,k);
+   xPitch = xPitch + akd*xPitch + bkd*angleError(2,k);
+   acc(3) =          ck*xYaw    + dk*angleError(3,k);
+   xYaw   = xYaw   + akd*xYaw   + bkd*angleError(3,k);
+   tExt  = -inertia*acc;
+
+   <span class="comment">% Numerical integration of the dynamics:</span>
+   xAtt = RK4( <span class="string">'FRB'</span>, xAtt, tSamp, time(k), inertia, invInertia, tExt );
+   xOrb = RK4( orbitRHS, xOrb, tSamp, time(k) );
+   trq(:,k) = tExt;
+<span class="keyword">end</span>
+</pre><h2>plots<a name="12"></a></h2><pre class="codeinput">Plot2D(time,xPlot(1:4,:),<span class="string">'Time (s)'</span>,<span class="string">'Quaternion'</span>,<span class="string">'Inertial to Body Quaternion'</span>);
+legend(<span class="string">'qS'</span>,<span class="string">'qX'</span>,<span class="string">'qY'</span>,<span class="string">'qZ'</span>);
+Plot2D(time,xPlot(5:7,:)*180/pi,<span class="string">'Time (s)'</span>,<span class="string">'Body rates [deg/s]'</span>,<span class="string">'Body rates'</span>);
+legend(<span class="string">'wX'</span>,<span class="string">'wY'</span>,<span class="string">'wZ'</span>);
+Plot2D(time,trq,<span class="string">'Time (s)'</span>,<span class="string">'Control Torques [Nm]'</span>,<span class="string">'Control Torques'</span>);
+legend(<span class="string">'Tx'</span>,<span class="string">'Ty'</span>,<span class="string">'Tz'</span>),<span class="keyword">...</span>
+Plot2D(time,angleError*180/pi,<span class="string">'Time (s)'</span>,<span class="string">'Angular Error Input to Control Law [deg]'</span>,<span class="string">'Control Tracking Error'</span>);
+legend(<span class="string">'eX'</span>,<span class="string">'eY'</span>,<span class="string">'eZ'</span>);
+Plot2D(time,pointingError*180/pi,<span class="string">'Time (s)'</span>,<span class="string">'Pointing Error [deg]'</span>,<span class="string">'Pointing Error'</span>);
+</pre><img vspace="5" hspace="5" src="SCPointingDemo_02.png" alt=""> <img vspace="5" hspace="5" src="SCPointingDemo_03.png" alt=""> <img vspace="5" hspace="5" src="SCPointingDemo_04.png" alt=""> <img vspace="5" hspace="5" src="SCPointingDemo_05.png" alt=""> <img vspace="5" hspace="5" src="SCPointingDemo_06.png" alt=""> <h2>animation<a name="13"></a></h2><p>animate the target vector in the Body frame during the transient period define end of transient period at point when pointing error drops below 1 deg</p><pre class="codeinput">k = find( pointingError*180/pi &gt; 1 );
+AnimateVectors(uTB(:,1:k(end)),<span class="string">'y'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SCPointingDemo_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate a spacecraft in orbit pointing at a target on the Earth
+%   Since version 8.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also C2DelZOH, PIDMIMO, AU2Q, CoordinateTransform, LatLonToR, Q2AU, 
+%  QForm, QMult, QPose, U2Q, Constant, AnimateVectors, Map, RK4, Unit, 
+%  Date2JD, JD2T, OrbRate, RVFromKepler, Period, DMS2Rad, GMSTime,
+%  TruEarth, DeltaQTarget, AttitudeTarget
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Setup the orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Re = 6378.14; % radius of Earth (km)
+
+%% Ground target
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tgt.latitude  = DMS2Rad( 51, 15, 44.20 ); % latitude to point at (rad)
+tgt.longitude = DMS2Rad( -2, 17, 17.27 ); % longitude to point at (rad)
+tgt.u         = [1;0;0];                  % body vector to point
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD       = Date2JD+100;  % today's date in Julian date format
+alt      = 400;      % altitude of orbit (km)
+tSpan    = 3*60;     % time span to simulate (seconds)
+tSamp    = 0.25;     % control sampling time (seconds)
+
+%% Compute orbital elements and show ground track with target
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+time  = 0:tSamp:tSpan;
+T     = Period(Re+alt);                       % orbit period (sec)
+gms   = GMSTime( jD )*pi/180;    % Greenwich mean time at jD (deg)
+rA    = gms-pi/2+tgt.longitude;  % Right ascension (rad)
+inc   = tgt.latitude;            % Inclination (rad)
+n     = OrbRate( Re+alt );       % mean orbit rate (rad/s)
+M     = pi/2 - tSpan/2*n;        % initial mean anomaly
+el    = [Re+alt, inc, rA, 0, 0, M];    % orbital elements
+t     = linspace(0,tSpan,30);
+[r,v] = RVFromKepler( el, t );
+lla   = zeros(size(r));
+for i=1:length(t),
+   lla(:,i) = CoordinateTransform('eci','llr',r(:,i),jD+t(i)/86400);
+end
+Map('Earth','2d')
+plot(lla(2,:)*180/pi,lla(1,:)*180/pi,'y')
+plot(tgt.longitude*180/pi,tgt.latitude*180/pi,'r.','markersize',20)
+
+%% Initial conditions for attitude dynamics
+q0          = [1;0;0;0];   % Initial ECI to Body quaternion
+w0          = [0;0;0];     % Initial angular rates of Body [rad/sec]
+inertia     = eye(3); % inertia matrix [kg-m^2]
+noiseSigma  = 0;        % 1-sigma noise level for pointing knowledge [rad]
+
+%% The plant: rigid body model
+% Our plant (the rigid body spacecraft) is a double integrator.
+% The input to the the plant is a commanded angular acceleration.
+% The output is an angular rotation.
+%
+% Compute the plant statespace system
+ap = [0 1;0 0]; bp = [0;1]; cp = [1 0]; dp = 0;
+
+%% The controller
+% We will now design a PID controller with input "u" and output "y".
+% It will have the following transfer function:
+%
+%               Kr s         u
+%   y = Kp u +  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH u + Ki REPLACE_WITH_DASH_DASH-
+%              s + wR        s
+%
+% The gains (Kp, Kr, Ki) and the derivative roll-off term (wR) will be
+% computed using the PIDMIMO function. It will compute these controller
+% parameters so that the closed-loop system (the controlled spacecraft)
+% will have the desired properties. We specify the desired properties in
+% terms of:
+%  * natural frequency
+%  * damping ratio
+%  * integrator time constant
+%  * derivative roll-off frequency
+
+zeta        = 0.7071;      % damping ratio (critically damped)
+omega       = 0.3;         % natural frequency
+tauInt      = 100;         % integrator time constant (sec)
+omegaR      = 4;           % derivative roll-off
+inr         = 1;           % unit inertia - controller outputs an acceleration
+rateLimit   = .25;         % maximum angular rate [rad/s]
+stepLimit   = rateLimit*tSamp;
+
+%% Calculate state-space control system matrices:
+[ak, bk, ck, dk, gains] = PIDMIMO( inr, zeta, omega, tauInt, omegaR);
+[akd,bkd] = C2DelZOH(ak,bk,tSamp);
+invInertia = inv(inertia);
+
+%% Simulation
+% We will simulate a point mass orbit and a rigid body
+xOrb = [r(:,1);v(:,1)];
+xAtt = [q0;w0];
+
+mu = Constant('mu earth');
+orbitRHS = @(x,t) FOrbCart(x,t,0,mu);
+
+d = struct;
+d.qECIToBody = q0;
+d.rECI = xOrb(1:3);
+d.jD = jD;
+
+xRoll = [0;0];
+xPitch= [0;0];
+xYaw  = [0;0];
+xPlot = zeros(13,length(time));
+trq   = zeros(3,length(time));
+pointingError = zeros(1,length(time));
+uTB           = zeros(3,length(time));
+angleError    = trq;
+qECIToTargetOld = q0;
+for k = 1:length(time)
+   xPlot(:,k) = [xAtt;xOrb]; % record 
+   qECIToBody = xAtt(1:4);   % rename for clarity
+   
+   % Compute the new target quaternion
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   d.qECIToBody = qECIToBody;
+   d.rECI = xOrb(1:3);
+   d.jD = jD+time(k)/86400;
+   qTarget = AttitudeTarget( 'latlon', d, tgt );
+   
+   % Limit the total angular change
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   [qTargetToBody,qECIToTargetOld] = DeltaQTarget(qTarget,qECIToBody,...
+                                                qECIToTargetOld,stepLimit);
+   qBodyToTarget = QPose(qTargetToBody);
+   
+   qTToB = QMult( QPose(qTarget), qECIToBody );
+   uTB(:,k) = QForm(qTToB,tgt.u);
+   pointingError(k) = acos(dot(uTB(:,k),tgt.u));  
+   angleError(:,k) = 2*qBodyToTarget(2:4) + randn(3,1)*noiseSigma;
+   
+   % The delta form of the controller
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   acc    = zeros(3,1);
+   acc(1) =          ck*xRoll   + dk*angleError(1,k);
+   xRoll  = xRoll  + akd*xRoll  + bkd*angleError(1,k);
+   acc(2) =          ck*xPitch  + dk*angleError(2,k);
+   xPitch = xPitch + akd*xPitch + bkd*angleError(2,k);
+   acc(3) =          ck*xYaw    + dk*angleError(3,k);
+   xYaw   = xYaw   + akd*xYaw   + bkd*angleError(3,k);
+   tExt  = -inertia*acc;
+   
+   % Numerical integration of the dynamics:
+   xAtt = RK4( 'FRB', xAtt, tSamp, time(k), inertia, invInertia, tExt );
+   xOrb = RK4( orbitRHS, xOrb, tSamp, time(k) );
+   trq(:,k) = tExt;
+end
+
+%% plots
+
+Plot2D(time,xPlot(1:4,:),'Time (s)','Quaternion','Inertial to Body Quaternion');
+legend('qS','qX','qY','qZ');
+Plot2D(time,xPlot(5:7,:)*180/pi,'Time (s)','Body rates [deg/s]','Body rates');
+legend('wX','wY','wZ');
+Plot2D(time,trq,'Time (s)','Control Torques [Nm]','Control Torques');
+legend('Tx','Ty','Tz'),...
+Plot2D(time,angleError*180/pi,'Time (s)','Angular Error Input to Control Law [deg]','Control Tracking Error'); 
+legend('eX','eY','eZ');
+Plot2D(time,pointingError*180/pi,'Time (s)','Pointing Error [deg]','Pointing Error');
+
+%% animation
+% animate the target vector in the Body frame during the transient period
+% define end of transient period at point when pointing error drops below 1 deg
+k = find( pointingError*180/pi > 1 );  
+AnimateVectors(uTB(:,1:k(end)),'y');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-11 15:20:51 -0400 (Wed, 11 Mar 2015) $
+% $Revision: 39858 $
+
+##### SOURCE END #####
+--></body></html>

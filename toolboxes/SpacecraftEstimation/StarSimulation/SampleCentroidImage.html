@@ -1,0 +1,203 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SampleCentroidImage</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="SampleCentroidImage.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Sample Image Generation script</a></li><li><a href="#2">Integrate the PSFs</a></li><li><a href="#3">Add and verify noise</a></li><li><a href="#4">Threshold the image</a></li><li><a href="#5">Blobify</a></li></ul></div><h2 id="1">Sample Image Generation script</h2><p>Test image generation using PSF integration with noise, for fixed centroid locations. Apply Poisson noise to the clean, simulated image and blobify. Verify the image histogram.</p><p>See also IntegratePSFs, RHSGaussianPSF, PoissonNoise, ApplyThreshold, Blobify</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2018.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Integrate the PSFs</h2><pre class="codeinput">d               = IntegratePSFs;
+d.n             = 64; <span class="comment">% pixels</span>
+d.m             = 64;
+d.xPixel        = 20; <span class="comment">% microns</span>
+d.yPixel        = 20;
+d.funData.sigma	= 15; <span class="comment">% microns</span>
+d.funPSF        = @RHSGaussianPSF;
+x0              = [5.5 11.5 26.5 19.2  8.4 44.0 52.01 18.3]; <span class="comment">% pixels</span>
+y0              = [5.5 11.5 44.1 16.1 19.3 52.1 22.00 62.6];
+d.rPSF          = [x0*d.xPixel;<span class="keyword">...</span>
+                   y0*d.yPixel]; <span class="comment">% microns</span>
+d.iPSF          = [41 4 33 22 16 50 15 14]*1e3/(2*pi*d.funData.sigma^2);
+nPix            = 4; <span class="comment">% number of pixels from center to integrate</span>
+[pClean, iC]    = IntegratePSFs( d, nPix );
+</pre><h2 id="3">Add and verify noise</h2><p>Add Poisson noise; default is 5% of max pixel count</p><pre class="codeinput">[pNoise,f,b0]   = PoissonNoise( pClean );
+
+<span class="comment">% View the histogram to check for a nice Gaussian</span>
+figure(<span class="string">'Name'</span>,<span class="string">'Pixel Histogram'</span>)
+histogram(pNoise(:),<span class="string">'BinMethod'</span>,<span class="string">'integer'</span>);
+grid <span class="string">on</span>
+</pre><img vspace="5" hspace="5" src="SampleCentroidImage_01.png" alt=""> <h2 id="4">Threshold the image</h2><p>Threshold the image using a Gaussian fit to the noise floor</p><pre class="codeinput">[pThresh,b,T] = ApplyThreshold(pNoise);
+</pre><h2 id="5">Blobify</h2><pre class="codeinput">tic
+blobs = Blobify(pThresh);
+toc
+DrawBlobs(blobs,pNoise)
+
+figure(<span class="string">'Name'</span>,<span class="string">'Star Image'</span>,<span class="string">'position'</span>,[100 100 1100 300])
+h = subplot(1,3,1);
+imagesc(pClean,<span class="string">'parent'</span>,h);
+axis <span class="string">equal</span>;
+title(<span class="string">'ImagerPSF Output'</span>)
+h = subplot(1,3,2);
+imagesc(pNoise,<span class="string">'parent'</span>,h);
+axis <span class="string">equal</span>;
+title(<span class="string">'Imager with Noise'</span>)
+h = subplot(1,3,3);
+imagesc(pThresh,<span class="string">'parent'</span>,h);
+axis <span class="string">equal</span>;
+title(<span class="string">'Thresholded Image'</span>)
+
+Figui;
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Blob combine operations: 0
+Elapsed time is 0.018227 seconds.
+ans = 
+  Figure (6: Blobs) with properties:
+
+      Number: 6
+        Name: 'Blobs'
+       Color: [0.94 0.94 0.94]
+    Position: [560 528 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+</pre><img vspace="5" hspace="5" src="SampleCentroidImage_02.png" alt=""> <img vspace="5" hspace="5" src="SampleCentroidImage_03.png" alt=""> <img vspace="5" hspace="5" src="SampleCentroidImage_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Sample Image Generation script
+% Test image generation using PSF integration with noise, for fixed centroid
+% locations. Apply Poisson noise to the clean, simulated image and blobify.
+% Verify the image histogram.
+%
+% See also IntegratePSFs, RHSGaussianPSF, PoissonNoise, ApplyThreshold, Blobify
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2018.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+%% Integrate the PSFs
+d               = IntegratePSFs;
+d.n             = 64; % pixels
+d.m             = 64;
+d.xPixel        = 20; % microns
+d.yPixel        = 20;
+d.funData.sigma	= 15; % microns
+d.funPSF        = @RHSGaussianPSF;
+x0              = [5.5 11.5 26.5 19.2  8.4 44.0 52.01 18.3]; % pixels
+y0              = [5.5 11.5 44.1 16.1 19.3 52.1 22.00 62.6];
+d.rPSF          = [x0*d.xPixel;...
+                   y0*d.yPixel]; % microns
+d.iPSF          = [41 4 33 22 16 50 15 14]*1e3/(2*pi*d.funData.sigma^2);
+nPix            = 4; % number of pixels from center to integrate
+[pClean, iC]    = IntegratePSFs( d, nPix );
+
+%% Add and verify noise
+% Add Poisson noise; default is 5% of max pixel count
+[pNoise,f,b0]   = PoissonNoise( pClean );
+
+% View the histogram to check for a nice Gaussian
+figure('Name','Pixel Histogram')
+histogram(pNoise(:),'BinMethod','integer');
+grid on
+
+%% Threshold the image
+% Threshold the image using a Gaussian fit to the noise floor
+[pThresh,b,T] = ApplyThreshold(pNoise);
+
+%% Blobify
+tic
+blobs = Blobify(pThresh);
+toc
+DrawBlobs(blobs,pNoise)
+
+figure('Name','Star Image','position',[100 100 1100 300])
+h = subplot(1,3,1);
+imagesc(pClean,'parent',h);
+axis equal;
+title('ImagerPSF Output')
+h = subplot(1,3,2);
+imagesc(pNoise,'parent',h);
+axis equal;
+title('Imager with Noise')
+h = subplot(1,3,3);
+imagesc(pThresh,'parent',h);
+axis equal;
+title('Thresholded Image')
+
+Figui;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-08-07 14:35:08 -0400 (Tue, 07 Aug 2018) $
+% $Revision: 46862 $
+##### SOURCE END #####
+--></body></html>

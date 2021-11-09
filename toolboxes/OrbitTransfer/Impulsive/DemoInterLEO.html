@@ -1,0 +1,241 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>DemoInterLEO</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="DemoInterLEO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">LEO Hohmann with inclination targeting and optimization demo - Single Rev</a></li><li><a href="#2">Parameters</a></li><li><a href="#3">analytical delta-Vs</a></li><li><a href="#4">With analytic targeting; ~1 sec</a></li><li><a href="#5">Implement with a DV limit per rev</a></li></ul></div><h2 id="1">LEO Hohmann with inclination targeting and optimization demo - Single Rev</h2><p>Small delta-V example, &lt; 500 m/s</p><p>See also: OrbMnvrInclination, OrbMnvrInclAndHohm, OptimizeImpulsiveLVLH, PlotImpulsiveTrajectory</p><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><pre class="codeinput">sma1 = 6700;
+sma2 = 7000;
+inc1 = 28; <span class="comment">% degrees</span>
+inc2 = 31;
+
+ecc = 0.0; <span class="comment">% if desired, small nonzero value</span>
+
+elInitial = [sma1 inc1*pi/180 0 0 ecc 1.5776]; <span class="comment">% a in km  % 2*pi*rand(1) , 6.0287</span>
+elFinal   = [sma2 inc2*pi/180 0 0 ecc 0.1]; <span class="comment">% a in km</span>
+
+dInc = (inc2-inc1)*pi/180;
+</pre><h2 id="3">analytical delta-Vs</h2><p>Hohmann alone</p><pre class="codeinput">[dVHoh, dV1, dV2] = DVHoh( sma1, sma2, VOrbit(sma1) );
+DispWithTitle(dVHoh,<span class="string">'deltaV for Hohmann transfer alone'</span>);
+<span class="comment">% Inclination alone</span>
+dVInc = OrbMnvrInclination( VOrbit(sma2), ecc, pi, abs(inc1-inc2)*pi/180 );
+DispWithTitle(dVInc,<span class="string">'deltaV for inclination alone'</span>);
+<span class="comment">% combined</span>
+[deltaV, deltaI] = OrbMnvrInclAndHohm( sma1, sma2, inc1*pi/180, inc2*pi/180 );
+<span class="comment">% saved by distributing inclination change</span>
+deltaVsaved = dVHoh+dVInc.total - deltaV.total;
+DispWithTitle(deltaVsaved,<span class="string">'Delta V saved by doing inclination and Hohmann transfer together'</span>);
+
+<span class="comment">% for comparison, low-thrust spiral</span>
+dVLow = LTPlaneChange(sma1,sma2,dInc);
+DispWithTitle(dVLow,<span class="string">'Delta V for low thrust spiral'</span>);
+</pre><pre class="codeoutput">deltaV for Hohmann transfer alone
+         0.167071510508392
+deltaV for inclination alone
+    total: 0.395065290932922
+Delta V saved by doing inclination and Hohmann transfer together
+         0.129512854528931
+Delta V for low thrust spiral
+         0.649167527544801
+</pre><h2 id="4">With analytic targeting; ~1 sec</h2><pre class="codeinput">disp(<span class="string">'Optimizing with analytic targeting...'</span>)
+tic
+[burnsA,elOut,opt] = OptimizeImpulsiveLVLH(elInitial,elFinal);
+toc
+disp(<span class="string">'...finished.'</span>)
+
+OptimizerReport( opt, true )
+
+dVopt = sum(burnsA(:,1));
+errDV = dVopt - deltaV.total;
+fprintf(<span class="string">'\nHohmann/Inc DV: %g km/s\n'</span>,deltaV.total);
+fprintf(<span class="string">'Optimizer DV: %g km/s\n'</span>,dVopt);
+fprintf(<span class="string">'Error in DV from Hohmann: %g km/s (%g %%)\n\n\n'</span>,errDV,errDV/deltaV.total*100);
+
+PlotImpulsiveTrajectory(elInitial, burnsA, elFinal, <span class="string">'lvlh'</span>);
+</pre><pre class="codeoutput">Optimizing with analytic targeting...
+Elapsed time is 0.832217 seconds.
+...finished.
+Total Delta-V (km/s):
+         0.447414539874743
+Number of burns:
+     2
+Initial elements, target, achieved:
+  Columns 1 through 3
+                      6700         0.488692190558412                         0
+                      7000         0.541052068118242                         0
+          6845.97627532104         0.506781897717854       0.00540364081240879
+          6999.98140032679         0.541051933919208       2.1073424255447e-08
+  Columns 4 through 6
+                         0                         0                    1.5776
+                         0                         0                       0.1
+          6.06078872875806        0.0227301995227524         0.345853570991029
+           3.0653013513501      2.58638628894382e-06     -9.22473429383655e-05
+Mission duration:
+	114.226 Time (min)
+Cost value:
+         0.447414539874743
+Iterations:
+   327
+Burns (lvlh: DV, alpha, beta, dT):
+  Columns 1 through 3
+         0.174624808804629        -0.652972324398587         0.953748616944369
+         0.272789731070114        -0.296494662102977         -1.25566018608357
+  Column 4
+         0.771841578583953
+         0.468486268832894
+
+Hohmann/Inc DV: 0.432624 km/s
+Optimizer DV: 0.447415 km/s
+Error in DV from Hohmann: 0.0147906 km/s (3.41881 %)
+
+
+</pre><img vspace="5" hspace="5" src="DemoInterLEO_01.png" alt=""> <h2 id="5">Implement with a DV limit per rev</h2><pre class="codeinput">burnMaxDeltaV = 0.005;
+burnsL = BreakImpulsesByDeltaV(burnsA,burnMaxDeltaV,elInitial);
+PlotElementsImpulsive(elInitial, burnsL, <span class="string">'lvlh'</span>);
+PlotImpulsiveTrajectory(elInitial, burnsL, elFinal, <span class="string">'lvlh'</span>);
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="DemoInterLEO_02.png" alt=""> <img vspace="5" hspace="5" src="DemoInterLEO_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% LEO Hohmann with inclination targeting and optimization demo - Single Rev
+% Small delta-V example, < 500 m/s
+%
+% See also:
+% OrbMnvrInclination, OrbMnvrInclAndHohm, OptimizeImpulsiveLVLH, PlotImpulsiveTrajectory
+%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Parameters
+sma1 = 6700;
+sma2 = 7000;
+inc1 = 28; % degrees
+inc2 = 31;
+
+ecc = 0.0; % if desired, small nonzero value
+
+elInitial = [sma1 inc1*pi/180 0 0 ecc 1.5776]; % a in km  % 2*pi*rand(1) , 6.0287
+elFinal   = [sma2 inc2*pi/180 0 0 ecc 0.1]; % a in km
+
+dInc = (inc2-inc1)*pi/180;
+
+%% analytical delta-Vs
+% Hohmann alone
+[dVHoh, dV1, dV2] = DVHoh( sma1, sma2, VOrbit(sma1) );
+DispWithTitle(dVHoh,'deltaV for Hohmann transfer alone');
+% Inclination alone
+dVInc = OrbMnvrInclination( VOrbit(sma2), ecc, pi, abs(inc1-inc2)*pi/180 );
+DispWithTitle(dVInc,'deltaV for inclination alone');
+% combined
+[deltaV, deltaI] = OrbMnvrInclAndHohm( sma1, sma2, inc1*pi/180, inc2*pi/180 );
+% saved by distributing inclination change
+deltaVsaved = dVHoh+dVInc.total - deltaV.total;
+DispWithTitle(deltaVsaved,'Delta V saved by doing inclination and Hohmann transfer together');
+
+% for comparison, low-thrust spiral
+dVLow = LTPlaneChange(sma1,sma2,dInc);
+DispWithTitle(dVLow,'Delta V for low thrust spiral');
+
+%% With analytic targeting; ~1 sec
+disp('Optimizing with analytic targeting...')
+tic
+[burnsA,elOut,opt] = OptimizeImpulsiveLVLH(elInitial,elFinal);
+toc
+disp('...finished.')
+
+OptimizerReport( opt, true )
+
+dVopt = sum(burnsA(:,1));
+errDV = dVopt - deltaV.total;
+fprintf('\nHohmann/Inc DV: %g km/s\n',deltaV.total);
+fprintf('Optimizer DV: %g km/s\n',dVopt);
+fprintf('Error in DV from Hohmann: %g km/s (%g %%)\n\n\n',errDV,errDV/deltaV.total*100);
+
+PlotImpulsiveTrajectory(elInitial, burnsA, elFinal, 'lvlh');
+
+%% Implement with a DV limit per rev
+burnMaxDeltaV = 0.005;
+burnsL = BreakImpulsesByDeltaV(burnsA,burnMaxDeltaV,elInitial);
+PlotElementsImpulsive(elInitial, burnsL, 'lvlh');
+PlotImpulsiveTrajectory(elInitial, burnsL, elFinal, 'lvlh');
+ 
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-27 16:44:12 -0400 (Fri, 27 Sep 2019) $
+% $Revision: 49894 $
+
+
+##### SOURCE END #####
+--></body></html>

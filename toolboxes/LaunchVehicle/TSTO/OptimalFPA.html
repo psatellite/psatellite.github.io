@@ -1,0 +1,278 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Compute the optimal flight path angle as a function of altitude.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="OptimalFPA.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Compute the optimal flight path angle as a function of altitude.</h1><!--introduction--><p>The goal is a circular orbit. This script computes the optimal flight path angle at the time of separation after the second stage burn, to be on the desired transfer orbit to the final circular orbit. An angle of zero would indicate the perigee of a Hohmann transfer ellipse. The script allows for multiple burn segments with different exhaust velocities and thrust.</p><p>The engines in the example are a Merlin first stage, a J-2X second stage, and an AJ26-58 third stage.</p><p>The script also sizes an ellipsoid that can contain the volume of H2 and O2, based on the altitude with the minimum delta-V. This is needed by some drag models. -------------------------------------------------------------------------  See also RHSOptimalFPA, SurfaceAreaEllipsoidRevolution -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Mission data</a></li><li><a href="#4">Begin calculations</a></li><li><a href="#5">Plot</a></li><li><a href="#6">Calculate fuel volume and ellipsoids</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2013 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%-----------</span>
+mu        = Constant(<span class="string">'mu earth'</span>);
+rE        = 6378.14;
+rhoH2     = 84;   <span class="comment">% kg/m^3</span>
+rhoRP1    = 800;  <span class="comment">% kg/m^3</span>
+rhoO2     = 1141; <span class="comment">% kg/m^3</span>
+g         = 9.806;
+</pre><h2 id="3">Mission data</h2><p>Define three segments</p><pre class="codeinput"><span class="comment">%----------------------</span>
+engine    = {<span class="string">'Merlin'</span> <span class="string">'J-2X'</span> <span class="string">'AJ26-58'</span>};
+mixRatio  = [ 2.24 5.5  2.24];
+uE        = g*[ 311  448  331];
+rhoFuel   = [rhoRP1 rhoH2 rhoRP1];
+
+bC        = 2000/.05/4; <span class="comment">% Ballistic coefficient</span>
+f        	= 4.5; <span class="comment">% Ellipse coefficient</span>
+mDry      = 12000;
+
+<span class="comment">% Target conditions, Mach and altitude</span>
+<span class="comment">% This example is from DARPA's XS-1</span>
+<span class="comment">%-------------------</span>
+mach = 10;
+hF   = 100*Constant(<span class="string">'nmi to m'</span>)/1000;
+
+<span class="comment">% Compute as a function of 100 altitude points.</span>
+<span class="comment">% This is the altitude achieved by the first stage.</span>
+<span class="comment">%--------------------------------------------------</span>
+h = linspace(15,80);
+</pre><h2 id="4">Begin calculations</h2><pre class="codeinput"><span class="comment">% Conditions at separation altitude</span>
+<span class="comment">%----------------------------------</span>
+p = StdAtm(h*1000);
+v = mach*p.speedOfSound/1000;
+
+<span class="comment">% Orbit radii</span>
+<span class="comment">%------------</span>
+rF = rE + hF;
+r0 = rE + h;
+
+<span class="comment">% Perform a numerical search for each specified altitude</span>
+<span class="comment">%-------------------------------------------------------</span>
+n         = length(h);
+dV        = zeros(1,n);
+gamma     = zeros(1,n);
+fprintf(1,<span class="string">'Perfoming fminsearch for %d points...\n'</span>,n);
+<span class="keyword">for</span> k = 1:n
+   gamma(k)	= fminsearch( @RHSOptimalFPA, 0, [], h(k), hF, v(k), bC );
+   dV(k)	= RHSOptimalFPA( gamma(k), h(k), hF, v(k), bC );
+<span class="keyword">end</span>
+<span class="comment">% Altitude producing the minimum delta-V</span>
+[dVMinH,kM] = min(dV);
+</pre><pre class="codeoutput">Perfoming fminsearch for 100 points...
+wE =
+      7.29211542941961e-05
+</pre><h2 id="5">Plot</h2><pre class="codeinput">Plot2D(h,[gamma*180/pi;dV],<span class="string">'h (km)'</span>,{<span class="string">'FPA (deg)'</span>,<span class="string">'\Delta V (km/s)'</span>},<span class="string">'Delta-V for Transfer Orbit'</span>,[],{},{},1,[],1)
+subplot(2,1,1)
+hold <span class="string">on</span>
+plot(h(kM),gamma(kM)*180/pi,<span class="string">'*'</span>);
+subplot(2,1,2)
+hold <span class="string">on</span>
+plot(h(kM),dV(kM),<span class="string">'*'</span>);
+</pre><img vspace="5" hspace="5" src="OptimalFPA_01.png" alt=""> <h2 id="6">Calculate fuel volume and ellipsoids</h2><pre class="codeinput">dVFirst     = 1954.9; <span class="comment">% delta-V from the first stage</span>
+dVTotal     = dVMinH*1000 + dVFirst;
+mR          = exp(dVTotal./uE);
+mFuel       = mDry*mR - mDry;
+mO2         = mixRatio.*mFuel./(1 + mixRatio);
+mH2         = mFuel./(1 + mixRatio);
+vol         = mO2/rhoO2 + mH2./rhoFuel;
+
+<span class="comment">% Find the ellipsoids enclosing the propellant</span>
+<span class="comment">%---------------------------------------------</span>
+a = sqrt(3*f*vol/(4*pi));
+c = a/f;
+s = zeros(1,3);
+<span class="keyword">for</span> k = 1:3
+	s(k)	= SurfaceAreaEllipsoidRevolution(a(k),c(k));
+<span class="keyword">end</span>
+disp(<span class="string">'Elliosiod surface areas (m^2)'</span>)
+disp(s)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Elliosiod surface areas (m^2)
+          702.954731482056          822.589285228891          605.033412176421
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Compute the optimal flight path angle as a function of altitude.
+% The goal is a circular orbit. This script computes the optimal flight
+% path angle at the time of separation after the second stage burn, to be
+% on the desired transfer orbit to the final circular orbit. An angle of
+% zero would indicate the perigee of a Hohmann transfer ellipse. The script
+% allows for multiple burn segments with different exhaust velocities and
+% thrust.
+%
+% The engines in the example are a Merlin first stage, a J-2X second stage,
+% and an AJ26-58 third stage.
+%
+% The script also sizes an ellipsoid that can contain the volume of H2 and
+% O2, based on the altitude with the minimum delta-V. This is needed by
+% some drag models.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also RHSOptimalFPA, SurfaceAreaEllipsoidRevolution
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2013 Princeton Satellite Systems, Inc. 
+%   All rights reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mu        = Constant('mu earth');
+rE        = 6378.14;
+rhoH2     = 84;   % kg/m^3
+rhoRP1    = 800;  % kg/m^3
+rhoO2     = 1141; % kg/m^3
+g         = 9.806;
+
+%% Mission data
+% Define three segments
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+engine    = {'Merlin' 'J-2X' 'AJ26-58'};
+mixRatio  = [ 2.24 5.5  2.24];
+uE        = g*[ 311  448  331];
+rhoFuel   = [rhoRP1 rhoH2 rhoRP1];
+
+bC        = 2000/.05/4; % Ballistic coefficient
+f        	= 4.5; % Ellipse coefficient
+mDry      = 12000;
+
+% Target conditions, Mach and altitude
+% This example is from DARPA's XS-1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mach = 10;
+hF   = 100*Constant('nmi to m')/1000;
+
+% Compute as a function of 100 altitude points.
+% This is the altitude achieved by the first stage.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+h = linspace(15,80);
+
+%% Begin calculations
+
+% Conditions at separation altitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p = StdAtm(h*1000);
+v = mach*p.speedOfSound/1000;
+
+% Orbit radii
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rF = rE + hF;
+r0 = rE + h;
+
+% Perform a numerical search for each specified altitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+n         = length(h);
+dV        = zeros(1,n);
+gamma     = zeros(1,n);
+fprintf(1,'Perfoming fminsearch for %d points...\n',n);
+for k = 1:n
+   gamma(k)	= fminsearch( @RHSOptimalFPA, 0, [], h(k), hF, v(k), bC );
+   dV(k)	= RHSOptimalFPA( gamma(k), h(k), hF, v(k), bC );
+end
+% Altitude producing the minimum delta-V
+[dVMinH,kM] = min(dV);
+
+%% Plot
+Plot2D(h,[gamma*180/pi;dV],'h (km)',{'FPA (deg)','\Delta V (km/s)'},'Delta-V for Transfer Orbit',[],{},{},1,[],1)
+subplot(2,1,1)
+hold on
+plot(h(kM),gamma(kM)*180/pi,'*');
+subplot(2,1,2)
+hold on
+plot(h(kM),dV(kM),'*');
+
+%% Calculate fuel volume and ellipsoids
+
+dVFirst     = 1954.9; % delta-V from the first stage
+dVTotal     = dVMinH*1000 + dVFirst;
+mR          = exp(dVTotal./uE);
+mFuel       = mDry*mR - mDry;
+mO2         = mixRatio.*mFuel./(1 + mixRatio);
+mH2         = mFuel./(1 + mixRatio);
+vol         = mO2/rhoO2 + mH2./rhoFuel;
+
+% Find the ellipsoids enclosing the propellant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a = sqrt(3*f*vol/(4*pi));
+c = a/f;
+s = zeros(1,3);
+for k = 1:3
+	s(k)	= SurfaceAreaEllipsoidRevolution(a(k),c(k));
+end
+disp('Elliosiod surface areas (m^2)')
+disp(s)
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-10-01 18:23:52 -0400 (Mon, 01 Oct 2018) $
+% $Revision: 47221 $
+
+
+##### SOURCE END #####
+--></body></html>

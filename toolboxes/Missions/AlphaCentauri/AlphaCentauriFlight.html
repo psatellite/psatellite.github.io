@@ -1,0 +1,282 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate a mission to Alpha-Centauri.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="AlphaCentauriFlight.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate a mission to Alpha-Centauri.</h1><!--introduction--><p>The model includes the sun, earth, alpha centauri</p><p>------------------------------------------------------------------------- See also Constant, Date2JD, SunV1, RK4, RHSAlphaCentauriMission -------------------------------------------------------------------------</p><!--/introduction--><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2011 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 10.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+aU    = Constant(<span class="string">'au'</span>);
+year  = 365.25*86400;
+tEnd  = 110*year;
+dT    = 3*86400; <span class="comment">% days</span>
+c     = Constant(<span class="string">'speed of light'</span>);
+lY    = c*365.25*86400;
+
+n     = ceil(tEnd/dT);
+
+d     = struct;
+d.jD0 = Date2JD([2030 4 1 0 0 0]);
+
+<span class="comment">% Initial location of Alpha-Centauri</span>
+<span class="comment">%-----------------------------------</span>
+rA       = HMS2Rad(14,39,36.4951);
+dec      = DMS2Rad(-60,50,2.308);
+d.rAC    = 4.3*lY*RaDec2U(rA,dec);
+d.aU     = aU;
+
+d.rE     = -SunV1(d.jD0)*aU;
+d.center = 1;
+u        = RaDec2U(rA,dec);
+d.thrust = 50*u;
+d.mDry   = 1000;
+d.uE     = 2e7;
+
+d.muE    = 3.98600436e5;
+d.muS    = Constant(<span class="string">'mu sun'</span>);
+d.muA    = 1.10*d.muS;
+d.muB    = 0.93*d.muS;
+d.muP    = d.muE;
+
+xP       = zeros(8,n);
+
+<span class="comment">% Initial conditions</span>
+<span class="comment">%-------------------</span>
+x        = [];
+x(1:3,1) = d.rE + 8000*u;
+x(4:6,1) = 50*u;
+x(7,1)   = 8000; <span class="comment">% Mass</span>
+
+t        = 0;
+
+h = waitbar(0,<span class="string">'Simulation Running'</span>);
+<span class="keyword">for</span> k = 1:n
+    <span class="comment">% Switch centers</span>
+    <span class="comment">%---------------</span>
+    <span class="keyword">if</span>( d.center &lt; 2 )
+        rMag = Mag(x);
+        <span class="keyword">if</span>( rMag/lY &gt; 2.15 )
+            disp(<span class="string">'Switching centers'</span>);
+            d.center = 2;
+            x(1:3) = d.rAC - x(1:3);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    xP(:,k) = [x;d.center];
+    waitbar(k/n,h);
+
+    x       = RK4(<span class="string">'RHSAlphaCentauriMission'</span>,x,dT,t,d);
+    t       = t + dT;
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> k = 1:n
+    <span class="keyword">if</span>( xP(8,k) == 2 )
+        xP(1:3,k) = d.rAC - xP(1:3,k);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+NewFig(<span class="string">'Alpha-Centauri Mission'</span>)
+plot3( xP(1,:)/lY, xP(2,:)/lY, xP(3,:)/lY, <span class="string">'linewidth'</span>, 1 );
+XLabelS(<span class="string">'x (lY)'</span>)
+YLabelS(<span class="string">'y (lY)'</span>)
+ZLabelS(<span class="string">'z (lY)'</span>)
+hold <span class="string">on</span>
+
+plot3(d.rAC(1)/lY,d.rAC(2)/lY,d.rAC(3)/lY,<span class="string">'.'</span>);
+text(d.rAC(1)/lY,d.rAC(2)/lY,d.rAC(3)/lY,<span class="string">' Alpha-Centauri'</span>);
+
+grid <span class="string">on</span>
+rotate3d <span class="string">on</span>
+axis <span class="string">square</span>
+TitleS( <span class="string">'Flight to Alpha-Centauri'</span> );
+
+view(3)
+
+hold <span class="string">off</span>
+
+[t,tL] = TimeLabl((0:n-1)*dT);
+Plot2D( t, [Mag(xP(4:6,:))/c;xP(7,:)], tL, {<span class="string">'Velocity (1/c)'</span> <span class="string">'Fuel (kg)'</span>}, <span class="string">'Velocity and Fuel'</span>);
+close(h)
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Switching centers
+</pre><img vspace="5" hspace="5" src="AlphaCentauriFlight_01.png" alt=""> <img vspace="5" hspace="5" src="AlphaCentauriFlight_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate a mission to Alpha-Centauri.
+% The model includes the sun, earth, alpha centauri
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% See also Constant, Date2JD, SunV1, RK4, RHSAlphaCentauriMission
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2011 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 10.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+aU    = Constant('au');
+year  = 365.25*86400;
+tEnd  = 110*year;
+dT    = 3*86400; % days
+c     = Constant('speed of light');
+lY    = c*365.25*86400; 
+
+n     = ceil(tEnd/dT);
+
+d     = struct;
+d.jD0 = Date2JD([2030 4 1 0 0 0]);
+
+% Initial location of Alpha-Centauri
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rA       = HMS2Rad(14,39,36.4951);
+dec      = DMS2Rad(-60,50,2.308);
+d.rAC    = 4.3*lY*RaDec2U(rA,dec);
+d.aU     = aU;
+
+d.rE     = -SunV1(d.jD0)*aU;
+d.center = 1;
+u        = RaDec2U(rA,dec);
+d.thrust = 50*u;
+d.mDry   = 1000;
+d.uE     = 2e7;
+
+d.muE    = 3.98600436e5;
+d.muS    = Constant('mu sun');
+d.muA    = 1.10*d.muS;
+d.muB    = 0.93*d.muS;
+d.muP    = d.muE;
+
+xP       = zeros(8,n);
+
+% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x        = [];
+x(1:3,1) = d.rE + 8000*u;
+x(4:6,1) = 50*u;
+x(7,1)   = 8000; % Mass
+
+t        = 0;
+
+h = waitbar(0,'Simulation Running');
+for k = 1:n
+    % Switch centers
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    if( d.center < 2 )
+        rMag = Mag(x);
+        if( rMag/lY > 2.15 )
+            disp('Switching centers');
+            d.center = 2;
+            x(1:3) = d.rAC - x(1:3);
+        end
+    end
+    xP(:,k) = [x;d.center];
+    waitbar(k/n,h);
+    
+    x       = RK4('RHSAlphaCentauriMission',x,dT,t,d);
+    t       = t + dT;
+end
+
+for k = 1:n
+    if( xP(8,k) == 2 )
+        xP(1:3,k) = d.rAC - xP(1:3,k);
+    end
+end
+
+NewFig('Alpha-Centauri Mission')
+plot3( xP(1,:)/lY, xP(2,:)/lY, xP(3,:)/lY, 'linewidth', 1 ); 
+XLabelS('x (lY)')
+YLabelS('y (lY)')
+ZLabelS('z (lY)')
+hold on
+
+plot3(d.rAC(1)/lY,d.rAC(2)/lY,d.rAC(3)/lY,'.');
+text(d.rAC(1)/lY,d.rAC(2)/lY,d.rAC(3)/lY,' Alpha-Centauri');
+
+grid on
+rotate3d on
+axis square
+TitleS( 'Flight to Alpha-Centauri' );
+    
+view(3)
+
+hold off
+
+[t,tL] = TimeLabl((0:n-1)*dT);
+Plot2D( t, [Mag(xP(4:6,:))/c;xP(7,:)], tL, {'Velocity (1/c)' 'Fuel (kg)'}, 'Velocity and Fuel');
+close(h)
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-08 14:23:01 -0400 (Mon, 08 Jun 2020) $
+% $Revision: 52683 $
+
+##### SOURCE END #####
+--></body></html>

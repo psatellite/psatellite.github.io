@@ -1,0 +1,241 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates star identification using the Hipparcos catalog.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-03-09"><meta name="DC.source" content="HipparcosDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates star identification using the Hipparcos catalog.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also StarIdentification, StarDataGeneration, PinholeCamera, Q2Mat,
+QRand, SaveStructure, ComputePixelMapScale, PinholeStarCamera, LoadCatalog
+----------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Camera parameters</a></li><li><a href="#3">Set the directory to the location of this function</a></li><li><a href="#4">Create the catalog if it does not exist</a></li><li><a href="#5">Flag to plot the stars</a></li><li><a href="#6">This option is used if one star is in the field of view</a></li></ul></div><pre class="codeinput"><span class="comment">%------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2001 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%------------------------------------------------------------------------</span>
+
+demoMode           = <span class="string">'polar'</span>; <span class="comment">% demoMode = 'random';</span>
+testIntensity      = 0; <span class="comment">% Reduces the measurement to one star</span>
+</pre><h2>Camera parameters<a name="2"></a></h2><pre class="codeinput"><span class="comment">%------------------</span>
+pixels             = 1280;
+degToRad           = pi/180;
+fieldOfView        = 30*degToRad;
+fScale             = ComputePixelMapScale( pixels, fieldOfView );
+camera.fScale      = fScale;
+camera.wX          = pixels;
+camera.wY          = pixels;
+camera.gain        = 1e9;
+
+pixelInterpolation = 0.1;
+angularResolution  = pixelInterpolation*(fieldOfView)/pixels;
+
+catalogName        = <span class="string">'HipparcosDemo.mat'</span>;
+</pre><h2>Set the directory to the location of this function<a name="3"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+cd(fileparts(which(<span class="string">'HipparcosDemo'</span>)));
+</pre><h2>Create the catalog if it does not exist<a name="4"></a></h2><pre class="codeinput"><span class="comment">%----------------------------------------</span>
+<span class="keyword">if</span>( isempty(which(catalogName))  )
+  vMCutoff    = 4.3; <span class="comment">% 4.2 gives 1 polar stars, 4.5 gives 5</span>
+  starCatalog = LoadCatalog(<span class="string">'Hipparcos'</span>,vMCutoff);
+  d           = StarDataGeneration( starCatalog, fieldOfView, angularResolution );
+  SaveStructure( d, catalogName );
+<span class="keyword">else</span>
+  d           = load(catalogName);
+<span class="keyword">end</span>
+</pre><h2>Flag to plot the stars<a name="5"></a></h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+plotStars        = 1;
+
+<span class="keyword">switch</span> demoMode
+  <span class="keyword">case</span> <span class="string">'polar'</span>
+	b = eye(3);
+  <span class="keyword">case</span> <span class="string">'random'</span>
+	b = Q2Mat( QRand );
+  <span class="keyword">otherwise</span>
+	disp(sprintf(<span class="string">'%s is not an available demo mode'</span>,demoMode));
+<span class="keyword">end</span>
+
+starMeasurement               = PinholeStarCamera( b, camera, d.starCatalog, plotStars )
+d.pixelMapScale               = fScale;
+
+d.starMatrix(1,:)             = d.starMatrix(1,:)*camera.gain;
+<span class="keyword">if</span>( testIntensity )
+  starMeasurement.pixelLocation  = starMeasurement.pixelLocation(:,1);
+  starMeasurement.pixelIntensity = starMeasurement.pixelIntensity(1);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Table of Star Names
+-------------------
+Number Name
+    24 
+    57 Polari
+   293 
+   515 
+
+starMeasurement = 
+
+              star: [24 57 293 515]
+     pixelLocation: [2x4 double]
+    pixelIntensity: [0.50746 4.1058 0.4891 0.52168]
+
+</pre><img vspace="5" hspace="5" src="HipparcosDemo_01.png" alt=""> <h2>This option is used if one star is in the field of view<a name="6"></a></h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------</span>
+options = struct(<span class="string">'useAbsoluteIntensity'</span>,1);
+options.intensityTolerance   = 0.01;
+options.usePivot = 1;
+
+stars            = StarIdentification( starMeasurement, d, options, plotStars );
+
+identifiedStars  = stars
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+identifiedStars =
+
+    24    57   293   515
+
+</pre><img vspace="5" hspace="5" src="HipparcosDemo_02.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates star identification using the Hipparcos catalog.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also StarIdentification, StarDataGeneration, PinholeCamera, Q2Mat, 
+%  QRand, SaveStructure, ComputePixelMapScale, PinholeStarCamera, LoadCatalog
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2001 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+demoMode           = 'polar'; % demoMode = 'random';
+testIntensity      = 0; % Reduces the measurement to one star
+
+%% Camera parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+pixels             = 1280;
+degToRad           = pi/180;
+fieldOfView        = 30*degToRad;
+fScale             = ComputePixelMapScale( pixels, fieldOfView );
+camera.fScale      = fScale;
+camera.wX          = pixels;
+camera.wY          = pixels;
+camera.gain        = 1e9;
+
+pixelInterpolation = 0.1;
+angularResolution  = pixelInterpolation*(fieldOfView)/pixels;
+
+catalogName        = 'HipparcosDemo.mat';
+
+%% Set the directory to the location of this function
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cd(fileparts(which('HipparcosDemo')));
+
+%% Create the catalog if it does not exist
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( isempty(which(catalogName))  )
+  vMCutoff    = 4.3; % 4.2 gives 1 polar stars, 4.5 gives 5
+  starCatalog = LoadCatalog('Hipparcos',vMCutoff);
+  d           = StarDataGeneration( starCatalog, fieldOfView, angularResolution );
+  SaveStructure( d, catalogName );
+else
+  d           = load(catalogName);
+end
+
+%% Flag to plot the stars
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+plotStars        = 1;
+
+switch demoMode
+  case 'polar'
+	b = eye(3);
+  case 'random'
+	b = Q2Mat( QRand );
+  otherwise
+	disp(sprintf('%s is not an available demo mode',demoMode));
+end
+
+starMeasurement               = PinholeStarCamera( b, camera, d.starCatalog, plotStars )
+d.pixelMapScale               = fScale;
+
+d.starMatrix(1,:)             = d.starMatrix(1,:)*camera.gain;
+if( testIntensity )
+  starMeasurement.pixelLocation  = starMeasurement.pixelLocation(:,1);
+  starMeasurement.pixelIntensity = starMeasurement.pixelIntensity(1);
+end
+
+%% This option is used if one star is in the field of view
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+options = struct('useAbsoluteIntensity',1);
+options.intensityTolerance   = 0.01;
+options.usePivot = 1;
+
+stars            = StarIdentification( starMeasurement, d, options, plotStars );
+
+identifiedStars  = stars
+
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2012-07-18 15:31:50 -0400 (Wed, 18 Jul 2012) $
+% $Revision: 29990 $
+
+##### SOURCE END #####
+--></body></html>

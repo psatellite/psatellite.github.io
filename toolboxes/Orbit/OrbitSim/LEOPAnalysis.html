@@ -1,0 +1,512 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Perform LEOP (Launch and Early Analysis Phase) analysis.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="LEOPAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Perform LEOP (Launch and Early Analysis Phase) analysis.</h1><!--introduction--><pre class="language-matlab">This <span class="string">script</span> <span class="string">allows</span> <span class="string">you</span> <span class="string">to</span> <span class="string">select</span> <span class="string">the</span> <span class="string">number</span> <span class="string">of</span> <span class="string">burns</span>, the <span class="string">rev</span> <span class="string">(orbit)</span>
+of <span class="string">each</span> <span class="string">burn</span> <span class="string">and</span> <span class="string">the</span> <span class="string">fraction</span> <span class="string">of</span> <span class="string">the</span> <span class="string">total</span> <span class="string">delta-v</span> <span class="string">per</span> <span class="string">burn.</span> <span class="string">It</span> <span class="string">then</span>
+propagates <span class="string">the</span> <span class="string">orbit</span> <span class="string">using</span> <span class="string">ode113.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Constant</span>, Plot2D, TimeLabl, Mag, Unit, RARP2A, RARP2E,
+OrbTrackECI3D, El2RV, Period, RV2A, RV2El, FOrbLEOP
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">ode113 accuracy</a></li><li><a href="#4">Plan is the fraction of the total required burn in a particular rev</a></li><li><a href="#5">The insertion orbit</a></li><li><a href="#6">Find the orbit r and v</a></li><li><a href="#7">The drift orbit</a></li><li><a href="#8">Compute apogee to find the total required velocity change</a></li><li><a href="#9">Specify the ode113 accuracy</a></li><li><a href="#10">Initialize the state vector</a></li><li><a href="#11">Propagate the orbits</a></li><li><a href="#12">Plot states</a></li><li><a href="#13">Plot elements</a></li><li><a href="#14">3D orbit picture</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2007, 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+dToR = pi/180;
+rToD = 180/pi;
+</pre><h2 id="3">ode113 accuracy</h2><pre class="codeinput"><span class="comment">%----------------</span>
+absTol = 1e-12;
+relTol = 1e-12;
+</pre><h2 id="4">Plan is the fraction of the total required burn in a particular rev</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------</span>
+burnFraction = [0 0.5 0 0.3 0 0.15 0 0.05 0];
+
+<span class="comment">% LAE engine</span>
+<span class="comment">% http://cs.space.eads.net/sp/SpacecraftPropulsion/Bipropellant_Thrusters</span>
+<span class="comment">%   /400N_Bipropellant_Apogee_Engine_S400.html</span>
+<span class="comment">%------------------------------------------------------------------------</span>
+d        = struct();
+d.thrust = 420;  <span class="comment">% N</span>
+d.uE     = 318*9.806; <span class="comment">% km/s</span>
+d.cDA    = 2.7; <span class="comment">% For drag model</span>
+d.mu     = Constant(<span class="string">'mu earth'</span>);
+mass     = 3000; <span class="comment">% Total fueled spacecraft mass in kg</span>
+</pre><h2 id="5">The insertion orbit</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+rA       = 42167;
+rP       =  6578;
+i        = 28.5*dToR;
+M        = pi/4; <span class="comment">% This is the separation point from the upper stage</span>
+</pre><h2 id="6">Find the orbit r and v</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+e        = RARP2E( rA, rP );
+a        = RARP2A( rA, rP );
+
+el       = [a i 0 0 e M];
+[r, v]   = El2RV( el );
+
+fprintf(<span class="string">'-----------------\n Transfer Orbit\n-----------------\n'</span>);
+fprintf(<span class="string">'Semi-major axis     = %12.2f km '</span>,el(1)     );
+fprintf(<span class="string">'Inclination         = %12.2f deg'</span>,el(2)*rToD);
+fprintf(<span class="string">'Argument of perigee = %12.2f deg'</span>,el(3)*rToD);
+fprintf(<span class="string">'Ascending node      = %12.2f deg'</span>,el(4)*rToD);
+fprintf(<span class="string">'Eccentricity        = %12.2f    '</span>,el(5)     );
+fprintf(<span class="string">'Mean Anomaly        = %12.2f deg'</span>,el(6)*rToD);
+</pre><pre class="codeoutput">-----------------
+ Transfer Orbit
+-----------------
+Semi-major axis     =     24372.50 km Inclination         =        28.50 degArgument of perigee =         0.00 degAscending node      =         0.00 degEccentricity        =         0.73    Mean Anomaly        =        45.00 deg</pre><h2 id="7">The drift orbit</h2><pre class="codeinput"><span class="comment">%----------------</span>
+aD = rA;
+eD = 0;
+iD = 0;
+
+[rDrift, vDrift] = El2RV( [aD, iD, el(3), el(4), eD, pi ]);
+</pre><h2 id="8">Compute apogee to find the total required velocity change</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------</span>
+[rA, vA] = El2RV( [el(1:5) pi] );
+
+dV     = vDrift - vA;
+
+dVMag  = Mag(dV);
+
+mRatio = exp(dVMag/(d.uE/1000));
+mFuel  = mass*(mRatio - 1)/mRatio;
+tBurn  = mFuel*d.uE/d.thrust;
+mDry   = mass - mFuel;
+
+fprintf(<span class="string">'\n-----------------\n Burn Plan \n-----------------\n'</span>);
+fprintf(<span class="string">'Delta V             = %12.2f km/s\n'</span>,dVMag );
+fprintf(<span class="string">'Burn vector         = [%8.5f;%8.5f;%8.5f]\n'</span>,Unit(dV));
+fprintf(<span class="string">'Fuel mass           = %12.2f kg\n'</span>,  mFuel);
+fprintf(<span class="string">'Burn duration       = %12.1f sec\n'</span>, tBurn);
+</pre><pre class="codeoutput">
+-----------------
+ Burn Plan 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =       9913.5 sec
+</pre><h2 id="9">Specify the ode113 accuracy</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+xODEOptions = odeset( <span class="string">'AbsTol'</span>, absTol, <span class="string">'RelTol'</span>, relTol, <span class="string">'events'</span>, @FOrbLEOPStopping );
+</pre><h2 id="10">Initialize the state vector</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+x = [r;v;mass];
+</pre><h2 id="11">Propagate the orbits</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+tP = [];
+xP = [];
+t0 = 0;
+<span class="keyword">for</span> k = 1:length(burnFraction)
+  tBurnRev = tBurn*burnFraction(k);
+  a        = RV2A( Mag(x(1:3)), Mag(x(4:6)) );
+  p        = Period( a );
+
+  fprintf(<span class="string">'\n-----------------\n Burn Plan Rev %d \n-----------------\n'</span>,k);
+  fprintf(<span class="string">'Delta V             = %12.2f km/s\n'</span>,dVMag );
+  fprintf(<span class="string">'Burn vector         = [%8.5f;%8.5f;%8.5f]\n'</span>,Unit(dV));
+  fprintf(<span class="string">'Fuel mass           = %12.2f kg\n'</span>,  mFuel);
+  fprintf(<span class="string">'Burn duration       = %12.1f sec\n'</span>, tBurnRev);
+
+  <span class="comment">% Thrust vector</span>
+  <span class="comment">%--------------</span>
+  d.uThrust   = Unit(dV);
+
+  <span class="comment">% To prevent thruster firings</span>
+  <span class="comment">%----------------------------</span>
+  d.burnStart = 1e9;
+  d.burnEnd   = 1e9;
+
+  <span class="comment">% If a burn is scheduled use ode113 events</span>
+  <span class="comment">%-----------------------------------------</span>
+  <span class="keyword">if</span>( burnFraction(k) &gt; 0 )
+    inBurn = 1;
+    xODEOptions = odeset( <span class="string">'AbsTol'</span>, absTol, <span class="string">'RelTol'</span>, relTol, <span class="string">'events'</span>, @FOrbLEOPStopping  );
+  <span class="keyword">else</span>
+    inBurn = 0;
+    xODEOptions = odeset( <span class="string">'AbsTol'</span>, absTol, <span class="string">'RelTol'</span>, relTol, <span class="string">'events'</span>, @FOrbLEOPStopping   );
+  <span class="keyword">end</span>
+
+  <span class="comment">% We propagate until apogee and then back up early enough to do the next</span>
+  <span class="comment">% burn</span>
+  <span class="comment">%-----------------------------------------------------------------------</span>
+  [t, x]     = ode113( @FOrbLEOP, [0,p], x, xODEOptions, d );
+
+  <span class="comment">% Finish the propagation with the rest of the orbit starting with the</span>
+  <span class="comment">% burn</span>
+  <span class="comment">%--------------------------------------------------------------------</span>
+  <span class="keyword">if</span>( inBurn == 1)
+    tApogee      = t(end);
+    tStart       = tApogee - tBurnRev/2;
+    j            = find( t &lt;= tStart , 1, <span class="string">'last'</span> );
+    x            = x';
+    xP           = [xP x(:,2:j)];
+    tP           = [tP t(2:j)'+ t0];
+    x            = x(:,j);
+    xODEOptions  = odeset( <span class="string">'AbsTol'</span>, absTol, <span class="string">'RelTol'</span>, relTol );
+    d.burnStart  = tStart;
+    d.burnEnd    = tStart + tBurnRev;
+    [t, x]       = ode113( @FOrbLEOP, [d.burnStart p], x, xODEOptions, d );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Assemble the plotting arrays</span>
+  <span class="comment">%-----------------------------</span>
+  x          = x';
+  xP         = [xP x(:,2:end)];
+  tP         = [tP t(2:end)' + t0];
+  t0         = t0 + p;
+
+  <span class="comment">% The next initial condition</span>
+  <span class="comment">%---------------------------</span>
+  x          = x(:,end);
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+-----------------
+ Burn Plan Rev 1 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =          0.0 sec
+
+-----------------
+ Burn Plan Rev 2 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =       4956.8 sec
+
+-----------------
+ Burn Plan Rev 3 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =          0.0 sec
+
+-----------------
+ Burn Plan Rev 4 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =       2974.1 sec
+
+-----------------
+ Burn Plan Rev 5 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =          0.0 sec
+
+-----------------
+ Burn Plan Rev 6 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =       1487.0 sec
+
+-----------------
+ Burn Plan Rev 7 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =          0.0 sec
+
+-----------------
+ Burn Plan Rev 8 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =        495.7 sec
+
+-----------------
+ Burn Plan Rev 9 
+-----------------
+Delta V             =         1.84 km/s
+Burn vector         = [ 0.00000;-0.90982; 0.41501]
+Fuel mass           =      1335.24 kg
+Burn duration       =          0.0 sec
+</pre><h2 id="12">Plot states</h2><pre class="codeinput"><span class="comment">%------------</span>
+[t, tL] = TimeLabl( tP );
+xP(7,:) = xP(7,:) - mDry;
+Plot2D( t, xP, tL, {<span class="string">'x (km)'</span>, <span class="string">'y (km)'</span>, <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span> <span class="string">'m_f (kg)'</span>}, <span class="string">'State'</span> );
+</pre><img vspace="5" hspace="5" src="LEOPAnalysis_01.png" alt=""> <h2 id="13">Plot elements</h2><pre class="codeinput"><span class="comment">%---------------</span>
+n = size(xP,2);
+el = zeros(6,n);
+<span class="keyword">for</span> k = 1:n
+  el(:,k) = RV2El( xP(1:3,k), xP(4:6,k) );
+<span class="keyword">end</span>
+
+el([2:4 6],:) = el([2:4 6],:)*rToD;
+Plot2D( t, el([1 2 5],:), tL, {<span class="string">'a (km)'</span>, <span class="string">'i (deg)'</span>, <span class="string">'e'</span>}, <span class="string">'Elements'</span> );
+</pre><img vspace="5" hspace="5" src="LEOPAnalysis_02.png" alt=""> <h2 id="14">3D orbit picture</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+OrbTrackECI3D( xP(1:3,:));
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LEOPAnalysis_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Perform LEOP (Launch and Early Analysis Phase) analysis.
+%   This script allows you to select the number of burns, the rev (orbit)
+%   of each burn and the fraction of the total delta-v per burn. It then
+%   propagates the orbit using ode113.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Constant, Plot2D, TimeLabl, Mag, Unit, RARP2A, RARP2E, 
+%  OrbTrackECI3D, El2RV, Period, RV2A, RV2El, FOrbLEOP
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2007, 2014 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dToR = pi/180;
+rToD = 180/pi;
+
+%% ode113 accuracy
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+absTol = 1e-12;
+relTol = 1e-12;
+
+%% Plan is the fraction of the total required burn in a particular rev
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+burnFraction = [0 0.5 0 0.3 0 0.15 0 0.05 0];
+
+% LAE engine
+% http://cs.space.eads.net/sp/SpacecraftPropulsion/Bipropellant_Thrusters
+%   /400N_Bipropellant_Apogee_Engine_S400.html
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d        = struct();
+d.thrust = 420;  % N
+d.uE     = 318*9.806; % km/s
+d.cDA    = 2.7; % For drag model
+d.mu     = Constant('mu earth');
+mass     = 3000; % Total fueled spacecraft mass in kg
+
+%% The insertion orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rA       = 42167;
+rP       =  6578;
+i        = 28.5*dToR;
+M        = pi/4; % This is the separation point from the upper stage
+
+%% Find the orbit r and v
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+e        = RARP2E( rA, rP );
+a        = RARP2A( rA, rP );
+
+el       = [a i 0 0 e M];
+[r, v]   = El2RV( el );
+
+fprintf('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n Transfer Orbit\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n');
+fprintf('Semi-major axis     = %12.2f km ',el(1)     );
+fprintf('Inclination         = %12.2f deg',el(2)*rToD);
+fprintf('Argument of perigee = %12.2f deg',el(3)*rToD);
+fprintf('Ascending node      = %12.2f deg',el(4)*rToD);
+fprintf('Eccentricity        = %12.2f    ',el(5)     );
+fprintf('Mean Anomaly        = %12.2f deg',el(6)*rToD);
+
+%% The drift orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aD = rA;
+eD = 0;
+iD = 0;
+
+[rDrift, vDrift] = El2RV( [aD, iD, el(3), el(4), eD, pi ]);
+
+%% Compute apogee to find the total required velocity change
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[rA, vA] = El2RV( [el(1:5) pi] );
+
+dV     = vDrift - vA;
+
+dVMag  = Mag(dV);
+
+mRatio = exp(dVMag/(d.uE/1000));
+mFuel  = mass*(mRatio - 1)/mRatio;
+tBurn  = mFuel*d.uE/d.thrust;
+mDry   = mass - mFuel;
+
+fprintf('\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n Burn Plan \nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n');
+fprintf('Delta V             = %12.2f km/s\n',dVMag );
+fprintf('Burn vector         = [%8.5f;%8.5f;%8.5f]\n',Unit(dV));
+fprintf('Fuel mass           = %12.2f kg\n',  mFuel);
+fprintf('Burn duration       = %12.1f sec\n', tBurn);
+
+%% Specify the ode113 accuracy
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xODEOptions = odeset( 'AbsTol', absTol, 'RelTol', relTol, 'events', @FOrbLEOPStopping );
+
+%% Initialize the state vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x = [r;v;mass];
+
+%% Propagate the orbits
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tP = [];
+xP = [];
+t0 = 0;
+for k = 1:length(burnFraction)
+  tBurnRev = tBurn*burnFraction(k);
+  a        = RV2A( Mag(x(1:3)), Mag(x(4:6)) );
+  p        = Period( a );
+  
+  fprintf('\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n Burn Plan Rev %d \nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n',k);
+  fprintf('Delta V             = %12.2f km/s\n',dVMag );
+  fprintf('Burn vector         = [%8.5f;%8.5f;%8.5f]\n',Unit(dV));
+  fprintf('Fuel mass           = %12.2f kg\n',  mFuel);
+  fprintf('Burn duration       = %12.1f sec\n', tBurnRev);
+  
+  % Thrust vector
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  d.uThrust   = Unit(dV);
+  
+  % To prevent thruster firings
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  d.burnStart = 1e9;
+  d.burnEnd   = 1e9;
+  
+  % If a burn is scheduled use ode113 events
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( burnFraction(k) > 0 )
+    inBurn = 1;
+    xODEOptions = odeset( 'AbsTol', absTol, 'RelTol', relTol, 'events', @FOrbLEOPStopping  );
+  else
+    inBurn = 0;
+    xODEOptions = odeset( 'AbsTol', absTol, 'RelTol', relTol, 'events', @FOrbLEOPStopping   );
+  end
+  
+  % We propagate until apogee and then back up early enough to do the next
+  % burn
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [t, x]     = ode113( @FOrbLEOP, [0,p], x, xODEOptions, d );
+    
+  % Finish the propagation with the rest of the orbit starting with the
+  % burn
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( inBurn == 1)
+    tApogee      = t(end);
+    tStart       = tApogee - tBurnRev/2;
+    j            = find( t <= tStart , 1, 'last' );
+    x            = x';
+    xP           = [xP x(:,2:j)];
+    tP           = [tP t(2:j)'+ t0];
+    x            = x(:,j);
+    xODEOptions  = odeset( 'AbsTol', absTol, 'RelTol', relTol );
+    d.burnStart  = tStart;
+    d.burnEnd    = tStart + tBurnRev;
+    [t, x]       = ode113( @FOrbLEOP, [d.burnStart p], x, xODEOptions, d );
+  end
+  
+  % Assemble the plotting arrays
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x          = x';
+  xP         = [xP x(:,2:end)];
+  tP         = [tP t(2:end)' + t0];
+  t0         = t0 + p;
+  
+  % The next initial condition
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x          = x(:,end);
+
+end
+
+%% Plot states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t, tL] = TimeLabl( tP );
+xP(7,:) = xP(7,:) - mDry;
+Plot2D( t, xP, tL, {'x (km)', 'y (km)', 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)' 'm_f (kg)'}, 'State' );
+
+%% Plot elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+n = size(xP,2);
+el = zeros(6,n);
+for k = 1:n
+  el(:,k) = RV2El( xP(1:3,k), xP(4:6,k) );
+end
+
+el([2:4 6],:) = el([2:4 6],:)*rToD;
+Plot2D( t, el([1 2 5],:), tL, {'a (km)', 'i (deg)', 'e'}, 'Elements' );
+
+%% 3D orbit picture
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+OrbTrackECI3D( xP(1:3,:));
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-10-18 16:43:14 -0400 (Fri, 18 Oct 2019) $
+% $Revision: 50079 $
+
+
+##### SOURCE END #####
+--></body></html>

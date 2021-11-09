@@ -1,0 +1,267 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test fmincon against an analytical solution for the linear tangent law</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-17"><meta name="DC.source" content="LunarLandingFminCon2D.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test fmincon against an analytical solution for the linear tangent law</h1><!--introduction--><p>The test is for a lunar landing in 2D. The surface is assumed flat. The acceleration is constant.</p><p>See also: Constant, Simulate2DLanding, LandingCost2D, LandingConst2D</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters</a></li><li><a href="#3">Now repeat with fmincon</a></li><li><a href="#4">Set up the simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2021 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2021.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><pre class="codeinput">muMoon      = Constant(<span class="string">'mu moon'</span>);
+rMoon       = Constant(<span class="string">'equatorial radius moon'</span>);
+d.n         = 100; <span class="comment">% Number of increments</span>
+d.g         = muMoon/rMoon^2;
+d.a         = 3*d.g; <span class="comment">% Engine acceleration</span>
+h           = 15;
+
+<span class="comment">% Find the thrust direction angles</span>
+beta        = zeros(1,d.n);
+
+<span class="comment">% We don't want the last beta since the vehicle is on the ground</span>
+beta        = beta(1:end-1);
+d.n         = d.n-1;
+
+r           = rMoon + h;
+x           = [0;r;sqrt(muMoon/r);0];
+
+tMin        = x(3)/d.a;
+t           = linspace(0,tMin,d.n+1);
+d.h         = h;
+d.u         = x(3);
+
+<span class="comment">% Simulate the landing</span>
+Simulate2DLanding( t, beta, d, <span class="string">'Analytical'</span> );
+</pre><img vspace="5" hspace="5" src="LunarLandingFminCon2D_01.png" alt=""> <img vspace="5" hspace="5" src="LunarLandingFminCon2D_02.png" alt=""> <h2 id="3">Now repeat with fmincon</h2><pre class="codeinput"><span class="comment">% fmincon options</span>
+opts      = optimset(<span class="string">'Display'</span>,<span class="string">'iter-detailed'</span>,<span class="keyword">...</span>
+                     <span class="string">'TolFun'</span>,1e-4,<span class="keyword">...</span>
+                     <span class="string">'algorithm'</span>,<span class="string">'interior-point'</span>,<span class="keyword">...</span>
+                     <span class="string">'TolCon'</span>,1e-5,<span class="keyword">...</span>
+                     <span class="string">'MaxFunEvals'</span>,3500);
+
+<span class="comment">% Pass the initial state to the optimizer</span>
+d.x =  x;
+
+<span class="comment">% The cost is time, which is a decision variable</span>
+<span class="comment">% The cost is the time to reach the final state vector</span>
+costFun   = @(x) LandingCost2D(x,d);
+
+<span class="comment">% The numerical integration of the state is in the constraint function</span>
+constFun	= @(x) LandingConst2D(x,d);
+
+<span class="comment">% The final state vector is [x;0;0;0];</span>
+<span class="comment">% We don't care what x is since we can always start the descent at the</span>
+<span class="comment">% appropriate time.</span>
+
+<span class="comment">% First guess for the time decision variable</span>
+dT        = t(2:end) - t(1:end-1);
+
+<span class="comment">% The decision variables are acceleration angle and time increment</span>
+u0        = [beta';dT'];
+
+<span class="comment">% Lower and upper bounds</span>
+lB        = [-(pi/2)*ones(length(dT),1);zeros(length(dT),1)];
+uB        = [(pi/2)*ones(length(dT),1);100*ones(length(dT),1)];
+
+<span class="comment">% Find the optimal decision variables.</span>
+u         = fmincon(costFun,u0,[],[],[],[],lB,uB,constFun,opts);
+</pre><pre class="codeoutput">                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0     199    3.434516e+02    1.657e+03    1.212e-06
+    1     398    2.909333e+02    1.598e+03    9.920e-01    1.037e+01
+    2     597    3.545084e+02    1.521e+03    1.157e+00    7.586e+00
+    3     796    3.955306e+02    1.474e+03    1.307e+00    4.443e+00
+    4     995    4.510892e+02    1.406e+03    1.589e+00    6.062e+00
+    5    1194    5.211936e+02    1.312e+03    1.992e+00    7.761e+00
+    6    1393    5.594808e+02    1.260e+03    2.269e+00    4.362e+00
+    7    1592    5.808764e+02    1.230e+03    2.401e+00    2.615e+00
+    8    1791    5.871804e+02    1.221e+03    2.256e+00    8.665e-01
+    9    1990    5.952486e+02    1.207e+03    2.271e+00    1.329e+00
+   10    2189    6.109752e+02    1.185e+03    2.389e+00    2.711e+00
+   11    2388    6.219461e+02    1.169e+03    2.481e+00    2.440e+00
+   12    2587    6.233785e+02    1.167e+03    2.619e+00    1.546e+01
+   13    2786    6.484953e+02    1.075e+03    7.376e-03    6.018e+00
+   14    2985    6.486025e+02    1.074e+03    7.557e-03    3.105e-01
+   15    3184    6.486394e+02    1.074e+03    7.693e-03    8.762e-02
+   16    3383    6.613633e+02    1.027e+03    3.296e-02    2.992e+00
+   17    3583    6.613715e+02    1.027e+03    3.294e-02    3.912e-02
+
+Solver stopped prematurely.
+
+fmincon stopped because it exceeded the function evaluation limit,
+options.MaxFunctionEvaluations = 3.500000e+03.
+
+</pre><h2 id="4">Set up the simulation</h2><pre class="codeinput">beta      = u(1:d.n)';
+dT        = u(d.n+1:2*d.n);
+t         = zeros(1,length(dT));
+<span class="keyword">for</span> k = 2:d.n+1
+  t(k) = t(k-1) + dT(k-1);
+<span class="keyword">end</span>
+
+<span class="comment">% Simulate the landing</span>
+Simulate2DLanding( t, beta, d, <span class="string">'FMinCon'</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LunarLandingFminCon2D_03.png" alt=""> <img vspace="5" hspace="5" src="LunarLandingFminCon2D_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test fmincon against an analytical solution for the linear tangent law
+% The test is for a lunar landing in 2D. The surface is assumed flat.
+% The acceleration is constant.
+%
+% See also: Constant, Simulate2DLanding, LandingCost2D, LandingConst2D
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2021 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2021.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+%% Parameters
+muMoon      = Constant('mu moon');
+rMoon       = Constant('equatorial radius moon');
+d.n         = 100; % Number of increments
+d.g         = muMoon/rMoon^2;
+d.a         = 3*d.g; % Engine acceleration
+h           = 15;
+
+% Find the thrust direction angles
+beta        = zeros(1,d.n);
+
+% We don't want the last beta since the vehicle is on the ground
+beta        = beta(1:end-1);
+d.n         = d.n-1;
+
+r           = rMoon + h;
+x           = [0;r;sqrt(muMoon/r);0];
+
+tMin        = x(3)/d.a;
+t           = linspace(0,tMin,d.n+1);
+d.h         = h;
+d.u         = x(3);
+
+% Simulate the landing
+Simulate2DLanding( t, beta, d, 'Analytical' );
+
+%% Now repeat with fmincon
+
+% fmincon options
+opts      = optimset('Display','iter-detailed',...
+                     'TolFun',1e-4,...
+                     'algorithm','interior-point',...
+                     'TolCon',1e-5,...
+                     'MaxFunEvals',3500);
+                   
+% Pass the initial state to the optimizer
+d.x =  x;
+
+% The cost is time, which is a decision variable
+% The cost is the time to reach the final state vector
+costFun   = @(x) LandingCost2D(x,d);
+
+% The numerical integration of the state is in the constraint function
+constFun	= @(x) LandingConst2D(x,d);
+
+% The final state vector is [x;0;0;0];
+% We don't care what x is since we can always start the descent at the 
+% appropriate time.
+
+% First guess for the time decision variable
+dT        = t(2:end) - t(1:end-1);
+
+% The decision variables are acceleration angle and time increment
+u0        = [beta';dT'];
+
+% Lower and upper bounds
+lB        = [-(pi/2)*ones(length(dT),1);zeros(length(dT),1)];
+uB        = [(pi/2)*ones(length(dT),1);100*ones(length(dT),1)];
+
+% Find the optimal decision variables.
+u         = fmincon(costFun,u0,[],[],[],[],lB,uB,constFun,opts);
+
+%% Set up the simulation
+beta      = u(1:d.n)';
+dT        = u(d.n+1:2*d.n);
+t         = zeros(1,length(dT));
+for k = 2:d.n+1
+  t(k) = t(k-1) + dT(k-1);
+end
+
+% Simulate the landing
+Simulate2DLanding( t, beta, d, 'FMinCon' );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-13 $
+% $Revision: e0f9bb4c827861ba2de36252e39bc1b559acec55 $
+
+
+##### SOURCE END #####
+--></body></html>

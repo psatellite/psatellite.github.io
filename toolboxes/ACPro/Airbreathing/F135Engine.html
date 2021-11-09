@@ -1,0 +1,325 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Model of the Pratt &amp; Whitney F135 Engine.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="F135Engine.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Model of the Pratt &amp; Whitney F135 Engine.</h1><p>The afterburner temperature was scaled to produce the correct thrust with reheat. The mass flow was set to produce the correct thrust without reheat.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% References:</span>
+<span class="comment">%   [1] www.f-16.net/f-16_forum_viewtopic-t-6295.html</span>
+<span class="comment">%   [2] www.f135engine.com/proven-tech/engine_chacter.shtml</span>
+<span class="comment">%   [3] www.turbokart.com/about_f135.htm</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2010 Princeton Satellite Systems</span>
+<span class="comment">% 	All rights reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">d</span> <span class="string">p</span> <span class="string">q</span> <span class="string">s</span>
+
+<span class="comment">% F135 parameters</span>
+<span class="comment">%----------------</span>
+thrustMax     = 191.3e3;          <span class="comment">% N [2] [1] Afternburner</span>
+thrustInter   = 128.1e3;          <span class="comment">% N [2] [1] No reheat</span>
+radius        = 1.30/2;           <span class="comment">% m [2]</span>
+mass          = 3750/2.250;       <span class="comment">% kg [3]</span>
+d             = struct();
+d.h0          = 0;                <span class="comment">% Sea level reference</span>
+d.alpha       = 0.57;             <span class="comment">% Bypass ratio   [2]</span>
+d.cPAB        = 0.295*4186.8;     <span class="comment">% Afterburner specific heat (J/kg-K)</span>
+d.cPC         = 0.240*4186.8;     <span class="comment">% Air specific heat (J/kg-K)</span>
+d.cPT         = 0.295*4186.8;     <span class="comment">% Air/Fuel specific heat (J/kg-K)'</span>
+d.etaAB       = 0.95;             <span class="comment">% Afterburner efficiency</span>
+d.etaB        = 0.99;             <span class="comment">% Burner efficiency</span>
+d.etaCH       = 0.8761;           <span class="comment">% High pressure compressor efficiency</span>
+d.etaF        = 0.8663;           <span class="comment">% Fan efficiency'</span>
+d.etaMH       = 0.99;             <span class="comment">% High pressure machinery efficiency</span>
+d.etaML       = 0.99;             <span class="comment">% Low pressure machinery efficiency</span>
+d.etaTL       = 0.9169;           <span class="comment">% Low pressure turbine efficiency</span>
+d.f           = 0.0308;           <span class="comment">% Fuel/air ratio</span>
+d.gammaC      = 1.4;              <span class="comment">% Atmosphere gamma</span>
+d.gammaAB     = 1.3;              <span class="comment">% Afterburner ratio of specific heats</span>
+d.gammaT      = 1.3;              <span class="comment">% Burner ratio of specific heats</span>
+d.hPR         = 18400*2326;       <span class="comment">% Fuel heating value (J/kg)</span>
+d.m0Dot       = 306/2.205;        <span class="comment">% Mass flow at entrance to inlet (kg/sec) [1]</span>
+d.m16         = 0.386;            <span class="comment">% Mach number at mixer entrance</span>
+d.m6          = 0.4;              <span class="comment">% Mach number at the jet nozzle exit</span>
+d.m0          = 0;
+d.p0OverP9    = 1;                <span class="comment">% Inlet/outlet pressure ratio</span>
+d.piAB        = 0.94;             <span class="comment">% Afterburner pressure ratio</span>
+d.piB         = 0.94;             <span class="comment">% Burner pressure ratio</span>
+d.piC         = 28;               <span class="comment">% Compressor pressure ratio [2]</span>
+d.piF         = 4.16;             <span class="comment">% Fan pressure ratio</span>
+d.piN         = 0.98;             <span class="comment">% Nozzle pressure ratio</span>
+d.piTH        = 0.46591;          <span class="comment">% High pressure turbine pressure ratio</span>
+d.piTL        = 0.474813996061;   <span class="comment">% Low pressure turbine pressure ratio</span>
+d.piMMax      = 0.96;             <span class="comment">% Mixer maximum pressure ratio</span>
+d.piDMax      = 0.98;             <span class="comment">% Diffuser maximum pressure ratio</span>
+d.tauTH       = 0.8548;           <span class="comment">% High pressure turbine temperature ratio</span>
+d.tauTL       = 0.8552;           <span class="comment">% Low pressure turbine temperature ratio</span>
+d.tauR        = 1;
+d.tT4         = (2800 + 459.67)*5/9; <span class="comment">% Reference combustor temperature (K) [3]</span>
+d.tT7         = 3900*5/9;         <span class="comment">% Reference afterburner temperature (K) [1]</span>
+d.pT16OverPT6 = 1;
+d.theta0      = 1;
+
+m               = linspace(0,2);
+h               = [0 1 10 20 30]*1000;
+p.afterburner   = 0;
+p.throttleRatio = 1;                <span class="comment">% Throttle ratio</span>
+p.tT4           = d.tT4;            <span class="comment">% Combustor temperature   (K)</span>
+p.tT7           = d.tT7;            <span class="comment">% Afterburner temperature (K)</span>
+
+<span class="comment">% Mach number and altitude</span>
+<span class="comment">%-------------------------</span>
+q.m = m;
+q.h = h;
+
+<span class="comment">% Set path for generated files</span>
+<span class="comment">%-----------------------------</span>
+cd0 = cd;
+P = mfilename(<span class="string">'fullpath'</span>);
+cd(fileparts(P));
+
+<span class="comment">% Without afterburner</span>
+<span class="comment">%--------------------</span>
+disp(<span class="string">'Turbofan without afterburner...'</span>);
+[t, sFC] = EngineTable( <span class="string">'turbofan'</span>, h, m, d, p );
+
+fprintf(1,<span class="string">'Max thruster without afterburner = %12.4f kN\n'</span>,t(1,1)/1000);
+
+q.thrust = t;
+q.sFC    = sFC;
+WriteEngineData( <span class="string">'F135Turbofan.txt'</span>, q );
+
+<span class="comment">% With afterburner</span>
+<span class="comment">%-----------------</span>
+disp(<span class="string">'Turbofan with afterburner...'</span>);
+p.afterburner = 1;
+[t, sFC] = EngineTable( <span class="string">'turbofan'</span>, h, m, d, p );
+
+q.thrust = t;
+q.sFC    = sFC;
+
+WriteEngineData( <span class="string">'F135Afterburner.txt'</span>, q );
+
+fprintf(1,<span class="string">'Max thruster with afterburner = %12.4f kN\n'</span>,t(1,1)/1000);
+
+<span class="comment">% Ramjet</span>
+<span class="comment">%-----------------</span>
+disp(<span class="string">'Ramjet...'</span>);
+m                 = linspace(1.3,6);
+d                 = EngineExample(<span class="string">'ramjet'</span>);
+
+d.m               = m;
+d.h               = h;
+s.m               = m;
+s.h               = h;
+[s.thrust, s.sFC] = EngineTable( <span class="string">'ramjet'</span>, h, m, d );
+
+WriteEngineData( <span class="string">'F135Ramjet.txt'</span>, s );
+
+cd(cd0);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Turbofan without afterburner...
+Max thruster without afterburner =     128.1377 kN
+Turbofan with afterburner...
+Max thruster with afterburner =     191.6907 kN
+Ramjet...
+</pre><img vspace="5" hspace="5" src="F135Engine_01.png" alt=""> <img vspace="5" hspace="5" src="F135Engine_02.png" alt=""> <img vspace="5" hspace="5" src="F135Engine_03.png" alt=""> <img vspace="5" hspace="5" src="F135Engine_04.png" alt=""> <img vspace="5" hspace="5" src="F135Engine_05.png" alt=""> <img vspace="5" hspace="5" src="F135Engine_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Model of the Pratt & Whitney F135 Engine.
+% The afterburner temperature was scaled to produce the correct thrust
+% with reheat. The mass flow was set to produce the correct thrust
+% without reheat.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% References:
+%   [1] www.f-16.net/f-16_forum_viewtopic-t-6295.html
+%   [2] www.f135engine.com/proven-tech/engine_chacter.shtml
+%   [3] www.turbokart.com/about_f135.htm
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2010 Princeton Satellite Systems
+% 	All rights reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  
+clear d p q s
+
+% F135 parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+thrustMax     = 191.3e3;          % N [2] [1] Afternburner
+thrustInter   = 128.1e3;          % N [2] [1] No reheat
+radius        = 1.30/2;           % m [2]
+mass          = 3750/2.250;       % kg [3]
+d             = struct();
+d.h0          = 0;                % Sea level reference
+d.alpha       = 0.57;             % Bypass ratio   [2]    
+d.cPAB        = 0.295*4186.8;     % Afterburner specific heat (J/kg-K)
+d.cPC         = 0.240*4186.8;     % Air specific heat (J/kg-K)
+d.cPT         = 0.295*4186.8;     % Air/Fuel specific heat (J/kg-K)'
+d.etaAB       = 0.95;             % Afterburner efficiency
+d.etaB        = 0.99;             % Burner efficiency         
+d.etaCH       = 0.8761;           % High pressure compressor efficiency
+d.etaF        = 0.8663;           % Fan efficiency'
+d.etaMH       = 0.99;             % High pressure machinery efficiency
+d.etaML       = 0.99;             % Low pressure machinery efficiency
+d.etaTL       = 0.9169;           % Low pressure turbine efficiency
+d.f           = 0.0308;           % Fuel/air ratio
+d.gammaC      = 1.4;              % Atmosphere gamma
+d.gammaAB     = 1.3;              % Afterburner ratio of specific heats
+d.gammaT      = 1.3;              % Burner ratio of specific heats
+d.hPR         = 18400*2326;       % Fuel heating value (J/kg)
+d.m0Dot       = 306/2.205;        % Mass flow at entrance to inlet (kg/sec) [1]
+d.m16         = 0.386;            % Mach number at mixer entrance
+d.m6          = 0.4;              % Mach number at the jet nozzle exit
+d.m0          = 0;
+d.p0OverP9    = 1;                % Inlet/outlet pressure ratio
+d.piAB        = 0.94;             % Afterburner pressure ratio
+d.piB         = 0.94;             % Burner pressure ratio
+d.piC         = 28;               % Compressor pressure ratio [2]
+d.piF         = 4.16;             % Fan pressure ratio
+d.piN         = 0.98;             % Nozzle pressure ratio 
+d.piTH        = 0.46591;          % High pressure turbine pressure ratio
+d.piTL        = 0.474813996061;   % Low pressure turbine pressure ratio 
+d.piMMax      = 0.96;             % Mixer maximum pressure ratio 
+d.piDMax      = 0.98;             % Diffuser maximum pressure ratio
+d.tauTH       = 0.8548;           % High pressure turbine temperature ratio      
+d.tauTL       = 0.8552;           % Low pressure turbine temperature ratio      
+d.tauR        = 1;
+d.tT4         = (2800 + 459.67)*5/9; % Reference combustor temperature (K) [3]
+d.tT7         = 3900*5/9;         % Reference afterburner temperature (K) [1]
+d.pT16OverPT6 = 1;
+d.theta0      = 1;
+
+m               = linspace(0,2);
+h               = [0 1 10 20 30]*1000;
+p.afterburner   = 0;
+p.throttleRatio = 1;                % Throttle ratio
+p.tT4           = d.tT4;            % Combustor temperature   (K)     
+p.tT7           = d.tT7;            % Afterburner temperature (K) 
+
+% Mach number and altitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+q.m = m;
+q.h = h;
+
+% Set path for generated files
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cd0 = cd;
+P = mfilename('fullpath');
+cd(fileparts(P));
+
+% Without afterburner
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('Turbofan without afterburner...');
+[t, sFC] = EngineTable( 'turbofan', h, m, d, p );
+
+fprintf(1,'Max thruster without afterburner = %12.4f kN\n',t(1,1)/1000);
+
+q.thrust = t;
+q.sFC    = sFC;
+WriteEngineData( 'F135Turbofan.txt', q );
+ 
+% With afterburner
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Turbofan with afterburner...');
+p.afterburner = 1;
+[t, sFC] = EngineTable( 'turbofan', h, m, d, p );
+
+q.thrust = t;
+q.sFC    = sFC;
+
+WriteEngineData( 'F135Afterburner.txt', q );
+
+fprintf(1,'Max thruster with afterburner = %12.4f kN\n',t(1,1)/1000);
+
+% Ramjet
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Ramjet...');
+m                 = linspace(1.3,6);
+d                 = EngineExample('ramjet');
+
+d.m               = m;
+d.h               = h;
+s.m               = m;
+s.h               = h;
+[s.thrust, s.sFC] = EngineTable( 'ramjet', h, m, d );
+
+WriteEngineData( 'F135Ramjet.txt', s );
+
+cd(cd0);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-11-07 14:16:16 -0500 (Thu, 07 Nov 2019) $
+% $Revision: 50269 $
+
+
+##### SOURCE END #####
+--></body></html>

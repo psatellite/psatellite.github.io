@@ -1,0 +1,459 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate camera pointing. The default 10 deg FOV camera is used.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-10"><meta name="DC.source" content="PointCameraDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate camera pointing. The default 10 deg FOV camera is used.</h1><!--introduction--><p>Uses echo and pause to step through different cases.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">8.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">AutoPoint</span>, PointCameraModel, DrawPatch, QLVLH, AddAxes, VOrbit
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Use DrawPatch for example objects</a></li><li><a href="#3">Point at green object from above (looking down along r)</a></li><li><a href="#4">LVLH pointing</a></li><li><a href="#5">Fixed pointing</a></li><li><a href="#6">Demonstrate pointing at the center of multiple targets</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2009 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="keyword">global</span> PSS_NO_INTERACTIVE_DEMOS
+
+echo <span class="string">on</span>
+</pre><h2 id="2">Use DrawPatch for example objects</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+DrawPatch;
+echo <span class="string">off</span>
+set(gca,<span class="string">'projection'</span>,<span class="string">'perspective'</span>);
+set(gca,<span class="string">'PlotBoxAspectRatio'</span>,[1 1 1]);
+aMax = max(axis);
+axis(aMax*[-1 1 -1 1 -1 1]);
+view(3);
+<span class="keyword">if</span> PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+<span class="keyword">else</span>
+  pause
+<span class="keyword">end</span>
+
+echo <span class="string">on</span>
+</pre><pre class="codeoutput">
+%% Use DrawPatch for example objects
+%-----------------------------------
+DrawPatch;
+echo off
+</pre><img vspace="5" hspace="5" src="PointCameraDemo_01.png" alt=""> <h2 id="3">Point at green object from above (looking down along r)</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+set(gcf,<span class="string">'name'</span>,<span class="string">'Pointing from above'</span>)
+
+<span class="comment">% Specify rECI in km and radius in m</span>
+<span class="comment">%------------------------------------</span>
+gTarget      = [];
+gTarget.rECI = [6;0;0]/1000;
+gTarget.radius = 2;
+
+<span class="comment">% Use AutoPoint to locate and orient the camera</span>
+<span class="comment">%-----------------------------------------------</span>
+[qCamera,rCamera,distance] = AutoPoint( <span class="string">'above'</span>, [], gTarget );
+
+<span class="comment">% Use PointCameraModel with the default camera model to get the Matlab axes</span>
+<span class="comment">% camera properties including "up" and view angle.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+<span class="comment">% Set the computed camera properties on the current axis</span>
+<span class="comment">%--------------------------------------------------------</span>
+set(gca,<span class="string">'cameraPosition'</span>,position);
+set(gca,<span class="string">'cameraTarget'</span>,target);
+set(gca,<span class="string">'cameraUpVector'</span>,up);
+set(gca,<span class="string">'cameraViewAngle'</span>,angle);
+echo <span class="string">off</span>
+<span class="keyword">if</span> PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+<span class="keyword">else</span>
+  pause
+<span class="keyword">end</span>
+
+<span class="comment">% Reset axes</span>
+camlookat(gca)
+
+echo <span class="string">on</span>
+</pre><pre class="codeoutput">%% Point at green object from above (looking down along r)
+%---------------------------------------------------------
+set(gcf,'name','Pointing from above')
+
+% Specify rECI in km and radius in m
+%------------------------------------
+gTarget      = [];
+gTarget.rECI = [6;0;0]/1000;
+gTarget.radius = 2;
+
+% Use AutoPoint to locate and orient the camera
+%-----------------------------------------------
+[qCamera,rCamera,distance] = AutoPoint( 'above', [], gTarget );
+
+% Use PointCameraModel with the default camera model to get the Matlab axes 
+% camera properties including "up" and view angle.
+%--------------------------------------------------------------------------
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+% Set the computed camera properties on the current axis
+%--------------------------------------------------------
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+</pre><img vspace="5" hspace="5" src="PointCameraDemo_02.png" alt=""> <h2 id="4">LVLH pointing</h2><pre class="codeinput"><span class="comment">%---------------</span>
+set(gcf,<span class="string">'name'</span>,<span class="string">'Pointing in LVLH frame'</span>)
+gTarget.rECI = [6;0;0]/1000;
+gTarget.vECI = [0;VOrbit(6);0]/1000;
+[qCamera,rCamera,distance] = AutoPoint( <span class="string">'lvlh'</span>, [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,<span class="string">'cameraPosition'</span>,position);
+set(gca,<span class="string">'cameraTarget'</span>,target);
+set(gca,<span class="string">'cameraUpVector'</span>,up);
+set(gca,<span class="string">'cameraViewAngle'</span>,angle);
+<span class="comment">% Add a set of LVLH axes to verify camera orientation</span>
+<span class="comment">%-----------------------------------------------------</span>
+qLVLH = QLVLH(gTarget.rECI,gTarget.vECI);
+hA = AddAxes( 10, [], qLVLH,  gcf );
+echo <span class="string">off</span>
+<span class="keyword">if</span> PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+<span class="keyword">else</span>
+  pause
+<span class="keyword">end</span>
+
+<span class="comment">% Reset axes</span>
+camlookat(gca)
+
+echo <span class="string">on</span>
+</pre><pre class="codeoutput">%% LVLH pointing
+%---------------
+set(gcf,'name','Pointing in LVLH frame')
+gTarget.rECI = [6;0;0]/1000;
+gTarget.vECI = [0;VOrbit(6);0]/1000;
+[qCamera,rCamera,distance] = AutoPoint( 'lvlh', [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+% Add a set of LVLH axes to verify camera orientation
+%-----------------------------------------------------
+qLVLH = QLVLH(gTarget.rECI,gTarget.vECI);
+hA = AddAxes( 10, [], qLVLH,  gcf );
+echo off
+</pre><img vspace="5" hspace="5" src="PointCameraDemo_03.png" alt=""> <h2 id="5">Fixed pointing</h2><pre class="codeinput"><span class="comment">%----------------</span>
+set(gcf,<span class="string">'name'</span>,<span class="string">'Orienting a fixed camera'</span>)
+
+<span class="comment">% Specify the fixed location of the camera</span>
+<span class="comment">%------------------------------------------</span>
+rCamera = 30*[1;1;1];
+
+<span class="comment">% Use the origin as the target location</span>
+<span class="comment">%---------------------------------------</span>
+gTarget.rECI = [0;0;0];
+
+<span class="comment">% Point the camera</span>
+<span class="comment">%------------------</span>
+[qCamera,rCamera,distance] = AutoPoint( <span class="string">'fixed'</span>, [], gTarget, rCamera/1000 );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+<span class="comment">% Set the axes props</span>
+<span class="comment">%--------------------</span>
+set(gca,<span class="string">'cameraPosition'</span>,position);
+set(gca,<span class="string">'cameraTarget'</span>,target);
+set(gca,<span class="string">'cameraUpVector'</span>,up);
+set(gca,<span class="string">'cameraViewAngle'</span>,angle);
+echo <span class="string">off</span>
+<span class="keyword">if</span> PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+<span class="keyword">else</span>
+  pause
+<span class="keyword">end</span>
+
+echo <span class="string">on</span>
+</pre><pre class="codeoutput">%% Fixed pointing
+%----------------
+set(gcf,'name','Orienting a fixed camera')
+
+% Specify the fixed location of the camera
+%------------------------------------------
+rCamera = 30*[1;1;1];
+
+% Use the origin as the target location
+%---------------------------------------
+gTarget.rECI = [0;0;0];
+
+% Point the camera
+%------------------
+[qCamera,rCamera,distance] = AutoPoint( 'fixed', [], gTarget, rCamera/1000 );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+% Set the axes props
+%--------------------
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+</pre><img vspace="5" hspace="5" src="PointCameraDemo_04.png" alt=""> <h2 id="6">Demonstrate pointing at the center of multiple targets</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------</span>
+set(gcf,<span class="string">'name'</span>,<span class="string">'Pointing at multiple targets'</span>)
+camera = [];
+
+<span class="comment">% Add the positions and sizes of the additional bodies</span>
+<span class="comment">%------------------------------------------------------</span>
+gTarget(2).rECI = [8;4;0]/1000;
+gTarget(2).radius = 1.5;
+gTarget(3).rECI = [8;-4;0]/1000;
+gTarget(3).radius = 1.5;
+
+<span class="comment">% Point the camera</span>
+<span class="comment">%------------------</span>
+[qCamera,rCamera,distance] = AutoPoint( <span class="string">'above'</span>, [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,<span class="string">'cameraPosition'</span>,position);
+set(gca,<span class="string">'cameraTarget'</span>,target);
+set(gca,<span class="string">'cameraUpVector'</span>,up);
+set(gca,<span class="string">'cameraViewAngle'</span>,angle);
+echo <span class="string">off</span>
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">%% Demonstrate pointing at the center of multiple targets
+%--------------------------------------------------------
+set(gcf,'name','Pointing at multiple targets')
+camera = [];
+
+% Add the positions and sizes of the additional bodies
+%------------------------------------------------------
+gTarget(2).rECI = [8;4;0]/1000;
+gTarget(2).radius = 1.5;
+gTarget(3).rECI = [8;-4;0]/1000;
+gTarget(3).radius = 1.5;
+
+% Point the camera
+%------------------
+[qCamera,rCamera,distance] = AutoPoint( 'above', [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+
+%--------------------------------------
+% $Date: 2020-06-08 16:21:43 -0400 (Mon, 08 Jun 2020) $
+% $Revision: 52690 $
+</pre><img vspace="5" hspace="5" src="PointCameraDemo_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate camera pointing. The default 10 deg FOV camera is used.
+% Uses echo and pause to step through different cases.
+%
+%   Since version 8.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also AutoPoint, PointCameraModel, DrawPatch, QLVLH, AddAxes, VOrbit
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2009 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+global PSS_NO_INTERACTIVE_DEMOS
+
+echo on
+
+%% Use DrawPatch for example objects
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+DrawPatch;
+echo off
+set(gca,'projection','perspective');
+set(gca,'PlotBoxAspectRatio',[1 1 1]);
+aMax = max(axis);
+axis(aMax*[-1 1 -1 1 -1 1]);
+view(3);
+if PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+else
+  pause
+end
+
+echo on
+%% Point at green object from above (looking down along r)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+set(gcf,'name','Pointing from above')
+
+% Specify rECI in km and radius in m
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+gTarget      = [];
+gTarget.rECI = [6;0;0]/1000;
+gTarget.radius = 2;
+
+% Use AutoPoint to locate and orient the camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[qCamera,rCamera,distance] = AutoPoint( 'above', [], gTarget );
+
+% Use PointCameraModel with the default camera model to get the Matlab axes 
+% camera properties including "up" and view angle.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+% Set the computed camera properties on the current axis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+if PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+else
+  pause
+end
+
+% Reset axes
+camlookat(gca)
+
+echo on
+%% LVLH pointing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+set(gcf,'name','Pointing in LVLH frame')
+gTarget.rECI = [6;0;0]/1000;
+gTarget.vECI = [0;VOrbit(6);0]/1000;
+[qCamera,rCamera,distance] = AutoPoint( 'lvlh', [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+% Add a set of LVLH axes to verify camera orientation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qLVLH = QLVLH(gTarget.rECI,gTarget.vECI);
+hA = AddAxes( 10, [], qLVLH,  gcf );
+echo off
+if PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+else
+  pause
+end
+
+% Reset axes
+camlookat(gca)
+
+echo on
+%% Fixed pointing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+set(gcf,'name','Orienting a fixed camera')
+
+% Specify the fixed location of the camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rCamera = 30*[1;1;1];
+
+% Use the origin as the target location
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+gTarget.rECI = [0;0;0];
+
+% Point the camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[qCamera,rCamera,distance] = AutoPoint( 'fixed', [], gTarget, rCamera/1000 );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+
+% Set the axes props
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+if PSS_NO_INTERACTIVE_DEMOS
+  pause(1)
+else
+  pause
+end
+
+echo on
+%% Demonstrate pointing at the center of multiple targets
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+set(gcf,'name','Pointing at multiple targets')
+camera = [];
+
+% Add the positions and sizes of the additional bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+gTarget(2).rECI = [8;4;0]/1000;
+gTarget(2).radius = 1.5;
+gTarget(3).rECI = [8;-4;0]/1000;
+gTarget(3).radius = 1.5;
+
+% Point the camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[qCamera,rCamera,distance] = AutoPoint( 'above', [], gTarget );
+[position,target,up,angle] = PointCameraModel([],rCamera,qCamera,distance);
+set(gca,'cameraPosition',position);
+set(gca,'cameraTarget',target);
+set(gca,'cameraUpVector',up);
+set(gca,'cameraViewAngle',angle);
+echo off
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-08 16:21:43 -0400 (Mon, 08 Jun 2020) $
+% $Revision: 52690 $
+
+##### SOURCE END #####
+--></body></html>

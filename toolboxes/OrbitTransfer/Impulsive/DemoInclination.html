@@ -1,0 +1,249 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>DemoInclination</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="DemoInclination.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Compare an optimized transfer to a pure inclination maneuver</a></li><li><a href="#2">Parameters</a></li><li><a href="#3">Pure inclination change - one-burn analytical solution(s)</a></li><li><a href="#4">Node change</a></li></ul></div><h2 id="1">Compare an optimized transfer to a pure inclination maneuver</h2><p>See also OrbMnvrInclination, OrbMnvrLongAndIncl, OptimizeImpulsiveLVLH, PlotImpulsiveTrajectory</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><pre class="codeinput">sma = 12000;
+ecc = 0.2;
+i0  = 0.6;
+</pre><h2 id="3">Pure inclination change - one-burn analytical solution(s)</h2><p>The solver doesn't "know" that it's cheaper to do the inclination at apogee; some combinations of mean anomaly/flags result in the burn being done at more expensive perigee.</p><p>Increase inclination: [dV -pi   pi/2-dI/2]  (LVLH angles) - at apogee Decrease inclination: [dV -pi -(pi/2-dI/2)]</p><p>CAREFUL of ratio of error in SMA to that of angles/inc in cost function</p><pre class="codeinput">deltaI = -pi/6;
+
+<span class="comment">% ex. try mean anom of -0.01, +0.05, etc.</span>
+elInitial = [sma i0        0.1 0 ecc 2*pi*rand(1)];
+elFinal   = [sma i0+deltaI 0.1 0 ecc 0];
+
+<span class="comment">% Analytical</span>
+disp(<span class="string">'Analytical inclination calculation:'</span>)
+deltaV = OrbMnvrInclination( VOrbit(sma*(1+ecc),sma), ecc, 0, abs(deltaI) );
+deltaV_a = deltaV.total;
+DispWithTitle(deltaV_a,<span class="string">'deltaV from apoapsis'</span>);
+deltaV = OrbMnvrInclination( VOrbit(sma*(1-ecc),sma), ecc, 0, abs(deltaI) );
+deltaV_p = deltaV.total;
+DispWithTitle(deltaV_p,<span class="string">'deltaV from periapsis'</span>);
+
+<span class="comment">% Optimizer</span>
+tic
+[burnsOpt,elA,out] = OptimizeImpulsiveLVLH(elInitial,elFinal);
+toc
+OptimizerReport(out,true);
+
+<span class="comment">% Compare to analytical</span>
+errDVa = sum(burnsOpt(:,1)) - deltaV_a;
+fprintf(<span class="string">'\nError in DV from Inclination (apogee): %g km/s\n'</span>,errDVa);
+errDVp = sum(burnsOpt(:,1)) - deltaV_p;
+fprintf(<span class="string">'\nError in DV from Inclination (perigee): %g km/s\n'</span>,errDVp);
+
+burnsC = Burns2Cart(burnsOpt);
+burnsR = Burns2RelAngles(burnsC,elInitial);
+
+PlotImpulsiveTrajectory(elInitial, burnsOpt, elFinal,<span class="string">'lvlh'</span>);
+</pre><pre class="codeoutput">Analytical inclination calculation:
+deltaV from apoapsis
+          2.43589665134825
+deltaV from periapsis
+          3.65384497702238
+Elapsed time is 1.258106 seconds.
+Total Delta-V (km/s):
+          2.43588693310696
+Number of burns:
+     1
+Initial elements, target, achieved:
+  Columns 1 through 3
+                     12000                       0.6                       0.1
+                     12000        0.0764012244017012                       0.1
+          12000.0017756428          0.07640339215526        0.0999997232400016
+  Columns 4 through 6
+                         0                       0.2          2.41502702978638
+                         0                       0.2                         0
+          6.28318462383501           0.1999998224359         -3.14159119037213
+Mission duration:
+	25.2131 Time (min)
+Cost value:
+          2.43588693310696
+Iterations:
+   460
+Burns (lvlh: DV, alpha, beta, dT):
+  Columns 1 through 3
+          2.43588693310696          3.14159086412886          1.30899822996007
+  Column 4
+         0.115636520391578
+
+Error in DV from Inclination (apogee): -9.71824e-06 km/s
+
+Error in DV from Inclination (perigee): -1.21796 km/s
+</pre><img vspace="5" hspace="5" src="DemoInclination_01.png" alt=""> <h2 id="4">Node change</h2><pre class="codeinput">elInitial2 = [sma 5*pi/180 10*pi/180 0 0 2*pi*rand(1)];
+elFinal2 = [sma 15*pi/180 50*pi/180 0 0 0];
+
+[deltaVW, uW] = OrbMnvrLongAndIncl( VOrbit(sma), elInitial2(2), elFinal2(2), elFinal2(3)-elInitial2(3) );
+DispWithTitle(deltaVW,<span class="string">'deltaVW'</span>);
+
+[burns2,elOutput,opt] = OptimizeImpulsiveLVLH( elInitial2, elFinal2 );
+disp(<span class="string">'Longitude and Node burns'</span>)
+disp(<span class="string">'       DV           phi          theta       time'</span>)
+disp(burns2)
+
+PlotImpulsiveTrajectory(elInitial2, burns2, elFinal2,<span class="string">'lvlh'</span>);
+
+errDVn = sum(burns2(:,1)) - deltaVW.total;
+fprintf(<span class="string">'\nError in DV from Node change: %g km/s\n'</span>,errDVn);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">deltaVW
+    total: 1.16613587657156
+Longitude and Node burns
+       DV           phi          theta       time
+  Columns 1 through 3
+          1.16612589445818            3.141588281672          1.46945697043112
+  Column 4
+         0.261455420020639
+
+Error in DV from Node change: -9.98211e-06 km/s
+</pre><img vspace="5" hspace="5" src="DemoInclination_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Compare an optimized transfer to a pure inclination maneuver
+%
+% See also OrbMnvrInclination, OrbMnvrLongAndIncl, OptimizeImpulsiveLVLH,
+% PlotImpulsiveTrajectory
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Parameters
+sma = 12000;
+ecc = 0.2;
+i0  = 0.6;
+
+%% Pure inclination change - one-burn analytical solution(s)
+% The solver doesn't "know" that it's cheaper to do the inclination at apogee;
+% some combinations of mean anomaly/flags result in the burn being done at more
+% expensive perigee.
+% 
+% Increase inclination: [dV -pi   pi/2-dI/2]  (LVLH angles) - at apogee
+% Decrease inclination: [dV -pi -(pi/2-dI/2)]
+%
+% CAREFUL of ratio of error in SMA to that of angles/inc in cost function
+deltaI = -pi/6;
+
+% ex. try mean anom of -0.01, +0.05, etc.
+elInitial = [sma i0        0.1 0 ecc 2*pi*rand(1)];
+elFinal   = [sma i0+deltaI 0.1 0 ecc 0];
+
+% Analytical
+disp('Analytical inclination calculation:')
+deltaV = OrbMnvrInclination( VOrbit(sma*(1+ecc),sma), ecc, 0, abs(deltaI) );
+deltaV_a = deltaV.total;
+DispWithTitle(deltaV_a,'deltaV from apoapsis');
+deltaV = OrbMnvrInclination( VOrbit(sma*(1-ecc),sma), ecc, 0, abs(deltaI) );
+deltaV_p = deltaV.total;
+DispWithTitle(deltaV_p,'deltaV from periapsis');
+
+% Optimizer
+tic
+[burnsOpt,elA,out] = OptimizeImpulsiveLVLH(elInitial,elFinal);
+toc
+OptimizerReport(out,true);
+
+% Compare to analytical
+errDVa = sum(burnsOpt(:,1)) - deltaV_a;
+fprintf('\nError in DV from Inclination (apogee): %g km/s\n',errDVa);
+errDVp = sum(burnsOpt(:,1)) - deltaV_p;
+fprintf('\nError in DV from Inclination (perigee): %g km/s\n',errDVp);
+
+burnsC = Burns2Cart(burnsOpt);
+burnsR = Burns2RelAngles(burnsC,elInitial);
+
+PlotImpulsiveTrajectory(elInitial, burnsOpt, elFinal,'lvlh');
+
+%% Node change
+elInitial2 = [sma 5*pi/180 10*pi/180 0 0 2*pi*rand(1)];
+elFinal2 = [sma 15*pi/180 50*pi/180 0 0 0];
+
+[deltaVW, uW] = OrbMnvrLongAndIncl( VOrbit(sma), elInitial2(2), elFinal2(2), elFinal2(3)-elInitial2(3) );
+DispWithTitle(deltaVW,'deltaVW');
+
+[burns2,elOutput,opt] = OptimizeImpulsiveLVLH( elInitial2, elFinal2 );
+disp('Longitude and Node burns')
+disp('       DV           phi          theta       time')
+disp(burns2)
+
+PlotImpulsiveTrajectory(elInitial2, burns2, elFinal2,'lvlh');
+
+errDVn = sum(burns2(:,1)) - deltaVW.total;
+fprintf('\nError in DV from Node change: %g km/s\n',errDVn);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-27 16:44:12 -0400 (Fri, 27 Sep 2019) $
+% $Revision: 49894 $
+##### SOURCE END #####
+--></body></html>

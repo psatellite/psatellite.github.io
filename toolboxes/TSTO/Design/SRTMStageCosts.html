@@ -1,0 +1,296 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>TSTO Ferry and Orbiter costs.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-05-26"><meta name="DC.source" content="SRTMStageCosts.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>TSTO Ferry and Orbiter costs.</h1><p>See also: AircraftCostCalculation</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2019.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+CPI_1982      = 96.5;
+CPI_2007      = 207.3;
+CPI_2013      = 233;
+CEF_1982      = 1 + (CPI_2013 - CPI_1982)/CPI_1982;
+CEF_2007      = 1 + (CPI_2013 - CPI_2007)/CPI_1982;
+weightPayload = 1500*2.205;
+kgM3ToLbsGal  = 0.0083454063545262;
+
+costO2      = 0.43*CEF_1982; <span class="comment">% 1982</span>
+costH2      = 4.50*CEF_1982; <span class="comment">% 1982</span>
+costJP      = 3.15*CEF_2007; <span class="comment">% 2007</span>
+mPSToKnots  = 1.94384;
+kgToLbm     = 2.205;
+rhoH2       = 70.85; <span class="comment">% kg/m^3</span>
+rhoO2       = 1141; <span class="comment">% kg/m^3</span>
+rhoJP       = 810; <span class="comment">% kg/m^3</span>
+mach        = 3;
+alt         = 15000;
+p           = StdAtm(alt);
+v           = mach*p.speedOfSound*mPSToKnots;
+year        = 2013;
+cPI         = 233;
+r_bl        = 200; <span class="comment">% nm</span>
+tol         = 1e-3;
+
+
+<span class="comment">% First stage</span>
+d             = load(<span class="string">'SRTFerryData'</span>);
+<span class="comment">%d.fuel        = d.massFuel;</span>
+<span class="comment">%d.massPayload = 450;</span>
+<span class="comment">%[d, h]        = HSVMassEstimation( d.s.d, tol, 'Ferry' );</span>
+wFuel         = d.s.g.fuel*kgToLbm;
+W_ampr        = (d.s.g.gM - d.s.g.fuel)*kgToLbm;
+costFuel      = (costH2*d.s.massH2)/d.s.g.fuel;
+rhoFuel       = rhoH2;
+
+<span class="comment">%cF = AircraftCostCalculation('weight', W_ampr,...  % This function doesn't have an output as committed</span>
+AircraftCostCalculation(<span class="string">'weight'</span>,                      W_ampr,<span class="keyword">...</span>
+                <span class="string">'filename'</span>,                                 <span class="string">'Ferry'</span>,<span class="keyword">...</span>
+                <span class="string">'cpi_now'</span>,                                  cPI,<span class="keyword">...</span>
+                <span class="string">'speed'</span>,                                    v,<span class="keyword">...</span>
+                <span class="string">'cost per engine'</span>,                          20e6,<span class="keyword">...</span>
+                <span class="string">'number of static test airplanes'</span>,          1,<span class="keyword">...</span>
+                <span class="string">'number of rdte airplanes'</span>,                 2,<span class="keyword">...</span>
+                <span class="string">'number of engines'</span>,                        2,<span class="keyword">...</span>
+                <span class="string">'block distance'</span>,                           r_bl,<span class="keyword">...</span>
+                <span class="string">'fuel weight'</span>,                              wFuel,<span class="keyword">...</span>
+                <span class="string">'fuel price'</span>,                               costFuel,<span class="keyword">...</span>
+                <span class="string">'fuel density'</span>,                             rhoFuel,<span class="keyword">...</span>
+                <span class="string">'number of years'</span>,                          10,<span class="keyword">...</span>
+                <span class="string">'number of airplanes'</span>,                      450,<span class="keyword">...</span>
+                <span class="string">'number of crew'</span>,                           2,<span class="keyword">...</span>
+                <span class="string">'number of passengers'</span>,                     0,<span class="keyword">...</span>
+                <span class="string">'cost passenger insurance'</span>,                 0,<span class="keyword">...</span>
+                <span class="string">'cost cabin attendants'</span>,                    0,<span class="keyword">...</span>
+                <span class="string">'cost of maintaining ground equipment'</span>,     20000,<span class="keyword">...</span>
+                <span class="string">'cost passenger handling'</span>,                  0,<span class="keyword">...</span>
+                <span class="string">'cost of depreciation of ground equipment'</span>, 10000,<span class="keyword">...</span>
+                <span class="string">'cost of airplane servicing'</span>,               50000,<span class="keyword">...</span>
+                <span class="string">'year'</span>,                                     year);
+
+<span class="comment">% Orbiter</span>
+<span class="comment">%--------</span>
+d2                  = load(<span class="string">'SRTOrbiterData'</span>);
+weightPayload       = d2.s.d.massPayload*kgToLbm;
+W_ampr              = (d2.s.g.gM - d2.s.g.fuel)*kgToLbm;
+wFuel               = d2.s.g.fuel*kgToLbm;
+costFuel            = (costO2*d2.s.massO2 + costH2*d2.s.massH2)/d2.s.g.fuel;
+rhoFuel             = ( rhoO2*d2.s.massO2 +  rhoH2*d2.s.massH2)*kgM3ToLbsGal/d2.s.g.fuel;
+
+<span class="comment">% cO = AircraftCostCalculation('weight', W_ampr,... % This function doesn't have an output as committed</span>
+AircraftCostCalculation(<span class="string">'weight'</span>,                          	W_ampr,<span class="keyword">...</span>
+                <span class="string">'filename'</span>,                                 <span class="string">'Orbiter'</span>,<span class="keyword">...</span>
+                <span class="string">'cpi_now'</span>,                                  cPI,<span class="keyword">...</span>
+                <span class="string">'speed'</span>,                                    v,<span class="keyword">...</span>
+                <span class="string">'cost per engine'</span>,                          4e6,<span class="keyword">...</span>
+                <span class="string">'number of engines'</span>,                        3,<span class="keyword">...</span>
+                <span class="string">'number of static test airplanes'</span>,          1,<span class="keyword">...</span>
+                <span class="string">'number of rdte airplanes'</span>,                 2,<span class="keyword">...</span>
+                <span class="string">'block distance'</span>,                           r_bl,<span class="keyword">...</span>
+                <span class="string">'fuel weight'</span>,                              wFuel,<span class="keyword">...</span>
+                <span class="string">'fuel price'</span>,                               costFuel,<span class="keyword">...</span>
+                <span class="string">'fuel density'</span>,                             rhoFuel,<span class="keyword">...</span>
+                <span class="string">'number of years'</span>,                          10,<span class="keyword">...</span>
+                <span class="string">'number of airplanes'</span>,                      450,<span class="keyword">...</span>
+                <span class="string">'number of crew'</span>,                           2,<span class="keyword">...</span>
+                <span class="string">'number of passengers'</span>,                     0,<span class="keyword">...</span>
+                <span class="string">'cost passenger insurance'</span>,                 0,<span class="keyword">...</span>
+                <span class="string">'cost cabin attendants'</span>,                    0,<span class="keyword">...</span>
+                <span class="string">'cost of maintaining ground equipment'</span>,     20000,<span class="keyword">...</span>
+                <span class="string">'cost passenger handling'</span>,                  0,<span class="keyword">...</span>
+                <span class="string">'cost of depreciation of ground equipment'</span>, 10000,<span class="keyword">...</span>
+                <span class="string">'cost of airplane servicing'</span>,               200000,<span class="keyword">...</span>
+                <span class="string">'year'</span>,                                     year);
+
+
+<span class="comment">% costPerLb = (cF.costPerFlight + cO.costPerFlight)/weightPayload;</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% TSTO Ferry and Orbiter costs.
+% See also: AircraftCostCalculation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems, Inc. 
+%   All rights reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2019.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+CPI_1982      = 96.5;
+CPI_2007      = 207.3;
+CPI_2013      = 233;
+CEF_1982      = 1 + (CPI_2013 - CPI_1982)/CPI_1982; 
+CEF_2007      = 1 + (CPI_2013 - CPI_2007)/CPI_1982; 
+weightPayload = 1500*2.205;
+kgM3ToLbsGal  = 0.0083454063545262;
+
+costO2      = 0.43*CEF_1982; % 1982
+costH2      = 4.50*CEF_1982; % 1982
+costJP      = 3.15*CEF_2007; % 2007
+mPSToKnots  = 1.94384;
+kgToLbm     = 2.205;
+rhoH2       = 70.85; % kg/m^3
+rhoO2       = 1141; % kg/m^3
+rhoJP       = 810; % kg/m^3
+mach        = 3;
+alt         = 15000;
+p           = StdAtm(alt);
+v           = mach*p.speedOfSound*mPSToKnots;
+year        = 2013;  
+cPI         = 233;
+r_bl        = 200; % nm
+tol         = 1e-3;
+
+
+% First stage
+d             = load('SRTFerryData');
+%d.fuel        = d.massFuel;
+%d.massPayload = 450;
+%[d, h]        = HSVMassEstimation( d.s.d, tol, 'Ferry' );
+wFuel         = d.s.g.fuel*kgToLbm;
+W_ampr        = (d.s.g.gM - d.s.g.fuel)*kgToLbm;
+costFuel      = (costH2*d.s.massH2)/d.s.g.fuel;
+rhoFuel       = rhoH2;
+    
+%cF = AircraftCostCalculation('weight', W_ampr,...  % This function doesn't have an output as committed
+AircraftCostCalculation('weight',                      W_ampr,...
+                'filename',                                 'Ferry',...
+                'cpi_now',                                  cPI,...
+                'speed',                                    v,...
+                'cost per engine',                          20e6,...
+                'number of static test airplanes',          1,...
+                'number of rdte airplanes',                 2,...
+                'number of engines',                        2,...
+                'block distance',                           r_bl,...
+                'fuel weight',                              wFuel,...            
+                'fuel price',                               costFuel,... 
+                'fuel density',                             rhoFuel,...
+                'number of years',                          10,...
+                'number of airplanes',                      450,...
+                'number of crew',                           2,...
+                'number of passengers',                     0,...
+                'cost passenger insurance',                 0,...
+                'cost cabin attendants',                    0,...
+                'cost of maintaining ground equipment',     20000,...
+                'cost passenger handling',                  0,...
+                'cost of depreciation of ground equipment', 10000,...
+                'cost of airplane servicing',               50000,...
+                'year',                                     year);
+              
+% Orbiter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d2                  = load('SRTOrbiterData');
+weightPayload       = d2.s.d.massPayload*kgToLbm;
+W_ampr              = (d2.s.g.gM - d2.s.g.fuel)*kgToLbm;
+wFuel               = d2.s.g.fuel*kgToLbm;
+costFuel            = (costO2*d2.s.massO2 + costH2*d2.s.massH2)/d2.s.g.fuel;
+rhoFuel             = ( rhoO2*d2.s.massO2 +  rhoH2*d2.s.massH2)*kgM3ToLbsGal/d2.s.g.fuel;
+
+% cO = AircraftCostCalculation('weight', W_ampr,... % This function doesn't have an output as committed
+AircraftCostCalculation('weight',                          	W_ampr,...
+                'filename',                                 'Orbiter',...
+                'cpi_now',                                  cPI,...
+                'speed',                                    v,...
+                'cost per engine',                          4e6,...
+                'number of engines',                        3,...
+                'number of static test airplanes',          1,...
+                'number of rdte airplanes',                 2,...
+                'block distance',                           r_bl,...
+                'fuel weight',                              wFuel,...            
+                'fuel price',                               costFuel,... 
+                'fuel density',                             rhoFuel,...
+                'number of years',                          10,...
+                'number of airplanes',                      450,...
+                'number of crew',                           2,...
+                'number of passengers',                     0,...
+                'cost passenger insurance',                 0,...
+                'cost cabin attendants',                    0,...
+                'cost of maintaining ground equipment',     20000,...
+                'cost passenger handling',                  0,...
+                'cost of depreciation of ground equipment', 10000,...
+                'cost of airplane servicing',               200000,...
+                'year',                                     year);
+
+    
+% costPerLb = (cF.costPerFlight + cO.costPerFlight)/weightPayload;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-12 16:36:11 -0400 (Tue, 12 May 2020) $
+% $Revision: 52231 $
+
+
+##### SOURCE END #####
+--></body></html>

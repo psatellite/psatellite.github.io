@@ -1,0 +1,532 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>EarthOrbitOpticalNav</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="EarthOrbitOpticalNav.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Demonstrate optical navigation in earth geosynchronous transfer orbit.</a></li><li><a href="#3">Constants</a></li><li><a href="#4">User inputs</a></li><li><a href="#5">Orbit</a></li><li><a href="#6">Optical navigation setup</a></li><li><a href="#7">Optical navigation simulation</a></li><li><a href="#8">Plot</a></li></ul></div><h2 id="1">Demonstrate optical navigation in earth geosynchronous transfer orbit.</h2><p>Uses an earth sensor and a star sensor. The earth sensor measures the earth chord. The star sensor measures an angle from the nadir vector to the star.</p><p>The gravity model is point mass without any perturbations or disturbances such as solar or aerodynamics.</p><p>It is interesting to try the sim without the update step. If you do this you will find that the error gets extremely large after 4 orbits. This happens because the covariance grows and eventually at perigee, the mean orbit will be hyperbolic.</p><p>The star sensor assumes that it can see multiple stars. This can be accomplished by a wide field of view sensor or by an articulated sensor.</p><p>This demo uses the new UKF framework with separate propagate and measurement update functions.</p><p>Things to try:</p><pre class="language-matlab">1. Change <span class="string">the</span> <span class="string">orbit</span>
+2. Change <span class="string">the</span> <span class="string">sensor</span> <span class="string">noise</span>
+3. Change <span class="string">the</span> <span class="string">star</span> <span class="string">vector</span>
+4. Add <span class="string">disturbances.</span>
+5. Use <span class="string">only</span> <span class="string">the</span> <span class="string">earth</span> <span class="string">chord</span> <span class="string">measurement</span>
+6. Turn <span class="string">off</span> <span class="string">the</span> <span class="string">update</span> <span class="string">step</span>
+7. Vary <span class="string">the</span> <span class="string">initial</span> <span class="string">covariances</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">2014.1</span>
+</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="3">Constants</h2><pre class="codeinput"><span class="comment">%-----------</span>
+rE              = Constant(<span class="string">'equatorial radius earth'</span>);
+mu              = Constant(<span class="string">'mu earth'</span>);
+radToDeg        = pi/180;
+
+<span class="comment">% Set the seed for the random number generators.</span>
+<span class="comment">% If the seed is not set each run will be different.</span>
+<span class="comment">%---------------------------------------------------</span>
+rng(<span class="string">'default'</span>);
+rng(0);
+</pre><h2 id="4">User inputs</h2><pre class="codeinput"><span class="comment">%-------------</span>
+
+<span class="comment">% Script control</span>
+<span class="comment">%---------------</span>
+useStarSensor     = 1;      <span class="comment">% 1 = use the star sensor</span>
+useHorizonSensor  = 1;      <span class="comment">% 1 = use the horizon sensor</span>
+
+<span class="comment">% Separation angle between stars</span>
+<span class="comment">%-------------------------------</span>
+angleStarSensor   = 45;
+
+<span class="comment">% Time control</span>
+<span class="comment">%-------------</span>
+nOrbits           = 1;
+nSamples          = 2000;
+
+<span class="comment">% Covariance control</span>
+<span class="comment">%-------------------</span>
+dR                = 2e-3;     <span class="comment">% GPS position accuracy, 1 sigma (km)</span>
+dV                = 4e-6;     <span class="comment">% The initial velocity error 1 sigma (km/s)</span>
+fQ0               = 0.0011;   <span class="comment">% The model covariance will be this fraction of the initial acceleration</span>
+                              <span class="comment">% Roughly the effect of the J2 term</span>
+qR                = [1; 1; 1]*1e-8; <span class="comment">% Uncertainty in the derivative states</span>
+
+sigmaAltitude     = 0;        <span class="comment">% Earth chord altitude variation</span>
+hPerigee          = 400;      <span class="comment">% km</span>
+hApogee           = 327670;    <span class="comment">% km</span>
+inclination       = 0;        <span class="comment">% degrees</span>
+hCO2              = 40;       <span class="comment">% CO2 layer altitude</span>
+sigmaNadirStar    = 1e-6;     <span class="comment">% Angle noise for the star sensor</span>
+
+<span class="comment">% Set up the star sensor unit vectors</span>
+<span class="comment">%------------------------------------</span>
+c                 = CosD(angleStarSensor);
+s                 = SinD(angleStarSensor);
+uStar             = Unit([0 c -c;-1 s s;1 1 1]);  <span class="comment">% Unit vectors to the stars</span>
+nStarMeas         = size(uStar,2);
+</pre><h2 id="5">Orbit</h2><pre class="codeinput"><span class="comment">%-------</span>
+i                 = inclination*radToDeg; <span class="comment">% Inclination (rad)</span>
+[a, e]            = RPRA2AE(rE + hPerigee, rE + hApogee); <span class="comment">% Semi-major axis and eccentricity</span>
+p                 = Period(a); <span class="comment">% Orbit period</span>
+dT                = nOrbits*p/nSamples;
+el                = [a i 0 0 e 0];
+
+<span class="comment">% Generate the initial orbit</span>
+<span class="comment">%---------------------------</span>
+[r0, v0]        = El2RV(el);
+x0              = [r0;v0];
+</pre><h2 id="6">Optical navigation setup</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+
+<span class="comment">% Build the optical navigation data structures</span>
+<span class="comment">%---------------------------------------------</span>
+
+<span class="comment">% The initial covariance</span>
+<span class="comment">%-----------------------</span>
+p0      = diag([dR dR dR dV dV dV].^2);
+
+<span class="comment">% Base the initial model covariance on a fraction of the gravitational</span>
+<span class="comment">% acceleration</span>
+<span class="comment">%---------------------------------------------------------------------</span>
+a0      = mu*r0/Mag(r0)^3;
+q0      = diag([qR; (fQ0*a0).^2]);
+
+dRHSEst	= struct(<span class="string">'mu'</span>,mu,<span class="string">'a'</span>,[0;0;0]);
+dRHS    = struct(<span class="string">'mu'</span>,mu,<span class="string">'a'</span>,[0;0;0]);
+
+<span class="comment">% Initialize the Unscented Kalman Filter</span>
+<span class="comment">%---------------------------------------</span>
+ukf     = KFInitialize( <span class="string">'ukf'</span>,<span class="string">'f'</span>,@RHSOrbit,<span class="string">'alpha'</span>,100,<span class="keyword">...</span>
+                        <span class="string">'kappa'</span>,0,<span class="string">'beta'</span>,2,<span class="string">'dT'</span>,dT,<span class="string">'fData'</span>,dRHSEst,<span class="keyword">...</span>
+                        <span class="string">'p'</span>,p0,<span class="string">'q'</span>,q0,<span class="string">'x'</span>,[r0;v0], <span class="string">'m'</span>,[r0;v0]);
+
+<span class="comment">% The measurement data structure</span>
+<span class="comment">%-------------------------------</span>
+dEarthChordSim.cO2Altitude	= hCO2; <span class="comment">% The CO2 layer</span>
+dEarthChordSim.rE           = rE;
+dEarthChord                 = dEarthChordSim;
+
+<span class="comment">% Nondimensionalize for the estimator</span>
+<span class="comment">%------------------------------------</span>
+dEarthChord.rE              = dEarthChord.rE;
+dEarthChord.cO2Altitude     = dEarthChord.cO2Altitude;
+
+<span class="comment">% Add noise to the simulation data structure</span>
+<span class="comment">%-------------------------------------------</span>
+sigmaChord                  = atan(sigmaAltitude/Mag(r0));
+dEarthChordSim.angleNoise   = 0; <span class="comment">% This is generic noise added to the chord measurement</span>
+dEarthChordSim.altNoise     = sigmaAltitude; <span class="comment">% Error in the altitude of the CO2 layer</span>
+
+dNadirStar.uStar            = uStar;
+dNadirStarSim               = dNadirStar;
+dNadirStarSim.angleNoise    = sigmaNadirStar;
+</pre><h2 id="7">Optical navigation simulation</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">if</span>( useHorizonSensor )
+    nHorizMeas = 1;
+    jStar      = 2:nStarMeas+1;
+<span class="keyword">else</span>
+    nHorizMeas = 0;
+    jStar      = 1:nStarMeas;
+<span class="keyword">end</span>
+
+<span class="comment">% Run the optical navigation</span>
+<span class="comment">%---------------------------</span>
+rEst        = zeros(3,nSamples);
+vEst        = zeros(3,nSamples);
+y           = zeros(nHorizMeas+nStarMeas,nSamples);
+r           = zeros(3,nSamples);
+v           = zeros(3,nSamples);
+
+x           = x0;
+t           = 0;
+
+<span class="keyword">for</span> k = 1:nSamples
+
+  <span class="comment">% Plotting storage</span>
+  <span class="comment">%-----------------</span>
+  rEst(:,k)	= ukf.m(1:3);
+  vEst(:,k)	= ukf.m(4:6);
+  r(:,k)    = x(1:3);
+  v(:,k)    = x(4:6);
+
+  <span class="comment">% Numerically integrate the truth orbit</span>
+  <span class="comment">%--------------------------------------</span>
+  x         = RK4(@RHSOrbit,x,dT,0,dRHS);
+
+  <span class="comment">% Earth sensor</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">if</span>( useHorizonSensor )
+    ukf.y(1).data           = MeasEarthChord( x, dEarthChordSim );
+    ukf.y(1).param.hFun     = @MeasEarthChord;
+    ukf.y(1).param.hData    = dEarthChord;
+    ukf.y(1).param.r        = sigmaChord^2;
+    y(1,k)                  = ukf.y(1).data;
+    jM                      = 2;
+  <span class="keyword">else</span>
+    jM                      = 1;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Star sensor</span>
+  <span class="comment">%------------</span>
+  <span class="keyword">if</span>( useStarSensor )
+    ukf.y(jM).data          = MeasNadirStar( x, dNadirStarSim );
+    ukf.y(jM).param.hFun    = @MeasNadirStar;
+    ukf.y(jM).param.hData   = dNadirStar;
+    ukf.y(jM).param.r       = sigmaNadirStar^2*eye(3);
+    y(jStar,k)              = ukf.y(jM).data;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Propagate the orbit</span>
+  <span class="comment">%--------------------</span>
+  ukf.t                   = t;
+	ukf                     = UKFPredict( ukf );
+
+  <span class="comment">% Incorporate the measurements</span>
+  <span class="comment">% ----------------------------</span>
+  <span class="keyword">if</span>( useHorizonSensor || useStarSensor )
+    ukf	= UKFUpdate( ukf );
+  <span class="keyword">end</span>
+
+	t	= t + dT;
+
+
+<span class="keyword">end</span>
+</pre><h2 id="8">Plot</h2><pre class="codeinput"><span class="comment">%------</span>
+[t, tL]	= TimeLabl((0:(nSamples-1))*dT);
+
+nP = {<span class="string">'[1 4]'</span> <span class="string">'[2 5]'</span> <span class="string">'[3 6]'</span>};
+Plot2D(t,[r;rEst],tL,{<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span>},  <span class="string">'Optical Navigation: Position Estimate and Truth model'</span>, <span class="string">'lin'</span>,nP)
+legend(<span class="string">'Truth'</span>, <span class="string">'Estimate'</span>)
+
+Plot2D(t,r-rEst,tL,{<span class="string">'\delta x (km)'</span> <span class="string">'\delta y (km)'</span> <span class="string">'\delta z (km)'</span>},	<span class="string">'Optical Navigation: Position Estimate Error'</span>)
+Plot2D(t,v-vEst,tL,{<span class="string">'\delta v_x (km/s)'</span> <span class="string">'\delta v_y (km/s)'</span> <span class="string">'\delta v_z (km/s)'</span>},	<span class="string">'Optical Navigation: Velocity Estimate Error'</span>)
+
+<span class="comment">% Plot measurement if there are any</span>
+<span class="comment">%----------------------------------</span>
+<span class="keyword">if</span>( useStarSensor || useHorizonSensor )
+  yL      = cell(1,nStarMeas+nHorizMeas);
+  yL{1}   = <span class="string">'Earth Chord (rad)'</span>;
+  <span class="keyword">for</span> k = 1:nStarMeas
+      yL{k+1} = sprintf(<span class="string">'Nadir/Star %d'</span>,k);
+  <span class="keyword">end</span>
+  Plot2D(t,y,tL,yL, <span class="string">'Optical Navigation: Measurements'</span>)
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="EarthOrbitOpticalNav_01.png" alt=""> <img vspace="5" hspace="5" src="EarthOrbitOpticalNav_02.png" alt=""> <img vspace="5" hspace="5" src="EarthOrbitOpticalNav_03.png" alt=""> <img vspace="5" hspace="5" src="EarthOrbitOpticalNav_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate optical navigation in earth geosynchronous transfer orbit.
+% Uses an earth sensor and a star sensor. The earth sensor measures
+% the earth chord. The star sensor measures an angle from the nadir 
+% vector to the star.
+%
+% The gravity model is point mass without any perturbations or
+% disturbances such as solar or aerodynamics.
+%
+% It is interesting to try the sim without the update step. If you do 
+% this you will find that the error gets extremely large after 4 orbits.
+% This happens because the covariance grows and eventually at perigee,
+% the mean orbit will be hyperbolic. 
+%
+% The star sensor assumes that it can see multiple stars. This can
+% be accomplished by a wide field of view sensor or by an articulated
+% sensor.
+%
+% This demo uses the new UKF framework with separate propagate and
+% measurement update functions.
+%
+% Things to try:
+%
+%   1. Change the orbit
+%   2. Change the sensor noise
+%   3. Change the star vector
+%   4. Add disturbances.
+%   5. Use only the earth chord measurement
+%   6. Turn off the update step
+%   7. Vary the initial covariances
+%
+%   Since version 2014.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2014 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rE              = Constant('equatorial radius earth');
+mu              = Constant('mu earth');
+radToDeg        = pi/180;
+
+% Set the seed for the random number generators. 
+% If the seed is not set each run will be different.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rng('default');
+rng(0);
+
+
+%% User inputs
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Script control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+useStarSensor     = 1;      % 1 = use the star sensor
+useHorizonSensor  = 1;      % 1 = use the horizon sensor
+
+% Separation angle between stars
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+angleStarSensor   = 45;
+
+% Time control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nOrbits           = 1;
+nSamples          = 2000;
+
+% Covariance control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dR                = 2e-3;     % GPS position accuracy, 1 sigma (km)
+dV                = 4e-6;     % The initial velocity error 1 sigma (km/s)
+fQ0               = 0.0011;   % The model covariance will be this fraction of the initial acceleration
+                              % Roughly the effect of the J2 term
+qR                = [1; 1; 1]*1e-8; % Uncertainty in the derivative states
+
+sigmaAltitude     = 0;        % Earth chord altitude variation
+hPerigee          = 400;      % km
+hApogee           = 327670;    % km
+inclination       = 0;        % degrees
+hCO2              = 40;       % CO2 layer altitude
+sigmaNadirStar    = 1e-6;     % Angle noise for the star sensor
+
+% Set up the star sensor unit vectors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+c                 = CosD(angleStarSensor);
+s                 = SinD(angleStarSensor);
+uStar             = Unit([0 c -c;-1 s s;1 1 1]);  % Unit vectors to the stars
+nStarMeas         = size(uStar,2);
+
+%% Orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+i                 = inclination*radToDeg; % Inclination (rad)
+[a, e]            = RPRA2AE(rE + hPerigee, rE + hApogee); % Semi-major axis and eccentricity
+p                 = Period(a); % Orbit period
+dT                = nOrbits*p/nSamples;
+el                = [a i 0 0 e 0];
+
+% Generate the initial orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[r0, v0]        = El2RV(el);
+x0              = [r0;v0];
+
+%% Optical navigation setup
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Build the optical navigation data structures
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% The initial covariance
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+p0      = diag([dR dR dR dV dV dV].^2);
+
+% Base the initial model covariance on a fraction of the gravitational
+% acceleration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a0      = mu*r0/Mag(r0)^3;
+q0      = diag([qR; (fQ0*a0).^2]);
+
+dRHSEst	= struct('mu',mu,'a',[0;0;0]);
+dRHS    = struct('mu',mu,'a',[0;0;0]);
+
+% Initialize the Unscented Kalman Filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+ukf     = KFInitialize( 'ukf','f',@RHSOrbit,'alpha',100,...
+                        'kappa',0,'beta',2,'dT',dT,'fData',dRHSEst,...
+                        'p',p0,'q',q0,'x',[r0;v0], 'm',[r0;v0]);                  
+                    
+% The measurement data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dEarthChordSim.cO2Altitude	= hCO2; % The CO2 layer
+dEarthChordSim.rE           = rE;
+dEarthChord                 = dEarthChordSim;
+
+% Nondimensionalize for the estimator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dEarthChord.rE              = dEarthChord.rE;
+dEarthChord.cO2Altitude     = dEarthChord.cO2Altitude;
+
+% Add noise to the simulation data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sigmaChord                  = atan(sigmaAltitude/Mag(r0));
+dEarthChordSim.angleNoise   = 0; % This is generic noise added to the chord measurement 
+dEarthChordSim.altNoise     = sigmaAltitude; % Error in the altitude of the CO2 layer
+
+dNadirStar.uStar            = uStar;
+dNadirStarSim               = dNadirStar;
+dNadirStarSim.angleNoise    = sigmaNadirStar;
+
+%% Optical navigation simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( useHorizonSensor )
+    nHorizMeas = 1;
+    jStar      = 2:nStarMeas+1;
+else
+    nHorizMeas = 0;
+    jStar      = 1:nStarMeas;
+end
+
+% Run the optical navigation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rEst        = zeros(3,nSamples);
+vEst        = zeros(3,nSamples);
+y           = zeros(nHorizMeas+nStarMeas,nSamples);
+r           = zeros(3,nSamples);
+v           = zeros(3,nSamples);
+
+x           = x0;
+t           = 0;
+
+for k = 1:nSamples
+   
+  % Plotting storage
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  rEst(:,k)	= ukf.m(1:3);
+  vEst(:,k)	= ukf.m(4:6);
+  r(:,k)    = x(1:3);
+  v(:,k)    = x(4:6);
+
+  % Numerically integrate the truth orbit
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x         = RK4(@RHSOrbit,x,dT,0,dRHS);
+
+  % Earth sensor
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( useHorizonSensor )
+    ukf.y(1).data           = MeasEarthChord( x, dEarthChordSim );
+    ukf.y(1).param.hFun     = @MeasEarthChord;
+    ukf.y(1).param.hData    = dEarthChord;
+    ukf.y(1).param.r        = sigmaChord^2;
+    y(1,k)                  = ukf.y(1).data;
+    jM                      = 2;
+  else
+    jM                      = 1;
+  end
+
+  % Star sensor
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( useStarSensor )
+    ukf.y(jM).data          = MeasNadirStar( x, dNadirStarSim );
+    ukf.y(jM).param.hFun    = @MeasNadirStar;
+    ukf.y(jM).param.hData   = dNadirStar;
+    ukf.y(jM).param.r       = sigmaNadirStar^2*eye(3);
+    y(jStar,k)              = ukf.y(jM).data;
+  end
+      
+  % Propagate the orbit
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  ukf.t                   = t; 
+	ukf                     = UKFPredict( ukf );  
+
+  % Incorporate the measurements
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( useHorizonSensor || useStarSensor )
+    ukf	= UKFUpdate( ukf );
+  end
+
+	t	= t + dT;
+
+
+end
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t, tL]	= TimeLabl((0:(nSamples-1))*dT);
+
+nP = {'[1 4]' '[2 5]' '[3 6]'};
+Plot2D(t,[r;rEst],tL,{'x (km)' 'y (km)' 'z (km)'},  'Optical Navigation: Position Estimate and Truth model', 'lin',nP)
+legend('Truth', 'Estimate')
+
+Plot2D(t,r-rEst,tL,{'\delta x (km)' '\delta y (km)' '\delta z (km)'},	'Optical Navigation: Position Estimate Error')
+Plot2D(t,v-vEst,tL,{'\delta v_x (km/s)' '\delta v_y (km/s)' '\delta v_z (km/s)'},	'Optical Navigation: Velocity Estimate Error')
+
+% Plot measurement if there are any
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( useStarSensor || useHorizonSensor )
+  yL      = cell(1,nStarMeas+nHorizMeas);
+  yL{1}   = 'Earth Chord (rad)';
+  for k = 1:nStarMeas
+      yL{k+1} = sprintf('Nadir/Star %d',k);
+  end
+  Plot2D(t,y,tL,yL, 'Optical Navigation: Measurements')
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-06-18 10:51:38 -0400 (Mon, 18 Jun 2018) $
+% $Revision: 46621 $
+
+
+
+##### SOURCE END #####
+--></body></html>

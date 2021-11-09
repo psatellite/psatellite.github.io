@@ -1,0 +1,626 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Implements and simulates the MAP normal mode control.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-11-01"><meta name="DC.source" content="MAPControlSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Implements and simulates the MAP normal mode control.</h1><!--introduction--><p>Demonstrate 3 axis control of a spinner using wheels. This is not the  NASA design but one done in house. It shows how to integrate control design and simulation into a single script. This spacecraft is a spinner and has reaction wheels. The reaction wheels are used to control the orientation of the spin axis. The simulation demonstrates precession of the spin axis.</p><p>This script also generates an STK attitude file. -------------------------------------------------------------------------  See also PIDMIMO, PIDesign, FGs, QForm, QTForm, NPlot, Plot2D, PlotV,  TimeGUI, STKAtt, CosD, RK4, SinD, JD2Date -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setting up the simulation</a></li><li><a href="#3">Parameters for the spacecraft model</a></li><li><a href="#4">Design the control loops</a></li><li><a href="#5">Initialize the control system</a></li><li><a href="#6">Momentum Management gain</a></li><li><a href="#7">Plotting arrays</a></li><li><a href="#8">Initial conditions</a></li><li><a href="#9">Initialize the time display</a></li><li><a href="#10">Run the simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1996-2010, 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Since version 1.</span>
+<span class="comment">% 2016.1 - Update RHS to use function handle.</span>
+<span class="comment">% Save STK file in same directory as this file.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% -------------------------------------------------------------------------</span>
+</pre><h2 id="2">Setting up the simulation</h2><p>-------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">% Global for the TimeGUI</span>
+<span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+
+<span class="comment">% Constants</span>
+<span class="comment">% ---------</span>
+degToRad = pi/180;
+radToDeg = 180/pi;
+rPMToRPS = pi/30;
+
+<span class="comment">% STK Information</span>
+<span class="comment">%----------------</span>
+sTKVersion = <span class="string">'3.0'</span>;
+
+<span class="comment">% The control sampling period and the simulation integration time step</span>
+<span class="comment">% --------------------------------------------------------------------</span>
+tSamp       = 0.25;
+
+<span class="comment">% Number of sim steps</span>
+<span class="comment">% -------------------</span>
+nSim        = 4*3600;
+
+<span class="comment">% Plot every nPMax steps</span>
+<span class="comment">% ----------------------</span>
+nPMax       = 40;
+nPlot       = nSim/nPMax;
+
+<span class="comment">% Print the time to go message every nTTGo steps</span>
+<span class="comment">% -----------------------------------------------</span>
+nTTGo       = 1000;
+
+<span class="comment">% -------------------------------------------------------------------------</span>
+</pre><h2 id="3">Parameters for the spacecraft model</h2><p>-------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">% Spacecraft Inertias</span>
+<span class="comment">% -------------------</span>
+inr         = [2000,0,0;0,2000,0;0,0,4000];
+inrRWA      = 1;
+inrW        = [inrRWA,inrRWA,inrRWA];
+invInr      = inv(inr);
+tDist       = [0;0;0];
+
+<span class="comment">% Wheel spin axis unit vectors</span>
+<span class="comment">% ----------------------------</span>
+uW          = eye(3);
+
+<span class="comment">% -------------------------------------------------------------------------</span>
+</pre><h2 id="4">Design the control loops</h2><p>RWA Tach loops --------------</p><pre class="codeinput">zeta        = 0.7071;   <span class="comment">% Damping ratio</span>
+wN          = 1.0;      <span class="comment">% Closed loop undamped natural frequency</span>
+
+[aTL,bTL,cTL,dTL] = PIDesign( zeta, wN, inrW(3), tSamp, <span class="string">'Delta'</span> );
+
+<span class="comment">% Attitude Loops</span>
+<span class="comment">% --------------</span>
+zeta        = 0.7071;   <span class="comment">% Damping ratio</span>
+wN          = 0.5;      <span class="comment">% Closed loop undamped natural frequency</span>
+wR          = 4.0;      <span class="comment">% Rate filter break frequency</span>
+tau         =  50;      <span class="comment">% Integrator time constant</span>
+
+[aRoll ,bRoll, cRoll, dRoll]  = PIDMIMO( inr(1,1), zeta, wN, tau, wR, tSamp, <span class="string">'Delta'</span>);
+[aPitch,bPitch,cPitch,dPitch] = PIDMIMO( inr(2,2), zeta, wN, tau, wR, tSamp, <span class="string">'Delta'</span>);
+
+<span class="comment">% Rate Loops</span>
+<span class="comment">% ----------</span>
+zeta        = 1.0;  <span class="comment">% Damping ratio</span>
+wN          = 0.5;  <span class="comment">% Closed loop undamped natural frequency</span>
+
+[aYaw,  bYaw,  cYaw,  dYaw]  = PIDesign( zeta, wN, inr(3,3), tSamp, <span class="string">'Delta'</span> );
+</pre><h2 id="5">Initialize the control system</h2><p>-----------------------------</p><pre class="codeinput">xTL             = zeros(3,1);
+xRoll           = [0;0];
+xPitch          = [0;0];
+xYaw            = 0;
+tC              = [0;0;0];
+spinRate        = 0.464*rPMToRPS;
+precRate        = 2*pi/3600;
+precAngleDemand = 22.5;
+precAngle       = 0;
+precAngleGain   = 0.995;
+</pre><h2 id="6">Momentum Management gain</h2><p>------------------------</p><pre class="codeinput">kMM             = 0.00500;
+
+<span class="comment">% The control distribution matrix converts</span>
+<span class="comment">% torque demand to angular acceleration demand</span>
+<span class="comment">% --------------------------------------------</span>
+aRWA       = eye(3)/inrW(3);
+wRWAC      = [0;0;0];
+</pre><h2 id="7">Plotting arrays</h2><p>---------------</p><pre class="codeinput">cPlot      = zeros( 3,nPlot);
+hPlot      = zeros( 3,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(10,nPlot);
+zPlot      = zeros( 3,nPlot);
+rPlot      = zeros( 3,nPlot);
+pPlot      = zeros( 2,nPlot);
+ePlot      = zeros( 2,nPlot);
+wPlot      = zeros( 3,nPlot);
+yPlot      = zeros( 3,nPlot);
+</pre><h2 id="8">Initial conditions</h2><p>------------------                 q         w            wRWA</p><pre class="codeinput">x          = [[1;0;0;0];[0;0;spinRate];[0;0;0]];
+
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+tW         = zeros(3,1);
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+</pre><h2 id="9">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, tSamp, <span class="string">'TMAPSim'</span> );
+</pre><img vspace="5" hspace="5" src="MAPControlSim_01.png" alt=""> <h2 id="10">Run the simulation</h2><p>------------------</p><pre class="codeinput"><span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, tSamp );
+
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+  <span class="comment">% Sensors</span>
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+
+  <span class="comment">% RWA Tachometer</span>
+  <span class="comment">% --------------</span>
+  wTach  = x(8:10);
+
+  <span class="comment">% Gyros</span>
+  <span class="comment">% -----</span>
+  wCore  = x(5:7);
+
+  <span class="comment">% Attitude</span>
+  <span class="comment">%---------</span>
+  qIToB  = x(1:4);
+
+  <span class="comment">% -----------------------------------------------------------------------</span>
+  <span class="comment">% The Attitude Control System</span>
+  <span class="comment">% -----------------------------------------------------------------------</span>
+
+  <span class="comment">% Momentum Management</span>
+  <span class="comment">% -------------------</span>
+
+  <span class="comment">% Neglect the rate errors in the body component-assume exact tracking</span>
+  <span class="comment">% -------------------------------------------------------------------</span>
+  hTotal = QTForm( qIToB, inr*[wCore(1);wCore(2);wCore(3)] + inrRWA*uW*(wTach+wCore) );
+
+  <span class="comment">% Proportional controller for momentum</span>
+  <span class="comment">% We could feedforward this to the controller</span>
+  <span class="comment">% -------------------------------------------</span>
+  tMM    = QForm( qIToB, -kMM*hTotal );
+
+  <span class="comment">% Compute the errors</span>
+  <span class="comment">%-------------------</span>
+  precAngle  = precAngleGain*precAngle + (1-precAngleGain)*precAngleDemand;
+  cP         = CosD(precAngle);
+  sP         = SinD(precAngle);
+  xT         = [sP*cos(precRate*t);sP*sin(precRate*t);cP];
+  xTB        = QForm( qIToB, xT );
+  rollError  =  asin(xTB(2));
+  pitchError = -asin(xTB(1));
+  yawError   = wCore(3) - spinRate;
+
+  <span class="comment">% The attitude control loops</span>
+  <span class="comment">% --------------------------</span>
+  tC(1)  = -cRoll*xRoll - dRoll*rollError;
+  xRoll  =  xRoll + aRoll*xRoll + bRoll*rollError;
+
+  tC(2)  = -cPitch*xPitch - dPitch*pitchError;
+  xPitch =  xPitch + aPitch*xPitch + bPitch*pitchError;
+
+  tC(3)  = -cYaw*xYaw - dYaw*yawError;
+  xYaw   =  xYaw + aYaw*xYaw + bYaw*yawError;
+
+  <span class="comment">% Convert torque demand to RWA angular acceleration demand</span>
+  <span class="comment">% --------------------------------------------------------</span>
+  wDRWA  = -aRWA*tC;
+
+  <span class="comment">% Integrate to get wheel speed demand</span>
+  <span class="comment">% -----------------------------------</span>
+  wRWAC  = wRWAC + tSamp*wDRWA;
+
+  <span class="comment">% The RWA Tach Loops</span>
+  <span class="comment">% ------------------</span>
+  wError =  wTach - wRWAC;
+  tRWA   = -dTL*wError - cTL*xTL;
+  xTL    =  xTL + aTL*xTL + bTL*wError;
+
+  <span class="comment">% -----------------------------------------------------------------------</span>
+  <span class="comment">% Update the equations of motion</span>
+  <span class="comment">% -----------------------------------------------------------------------</span>
+  x = RK4(@FGs,x,dTSim,t,inr,invInr,tDist+tMM,inrW,uW,tRWA');
+  t = t + dTSim;
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">% --------</span>
+  <span class="keyword">if</span>( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = x;
+    tPlot(1,kP) = t;
+    cPlot(:,kP) = tC;
+    hPlot(:,kP) = hTotal;
+    zPlot(:,kP) = tMM;
+    xI          = QTForm(qIToB,[0;0;1]);
+    rPlot(:,kP) = xI;
+    pPlot(:,kP) = acos([xI(3);xT(3)]);
+    ePlot(:,kP) = [rollError;pitchError];
+    wPlot(:,kP) = xT;
+    yPlot(:,kP) = xTB;
+    nP          = nPMax - 1;
+  <span class="keyword">else</span>
+    nP          = nP - 1;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+j     = 1:kP;
+tPlot = tPlot(j);
+epoch = JD2Date;
+
+filePath = fileparts(mfilename(<span class="string">'fullpath'</span>));
+[err, message] = STKAtt( fullfile(filePath,<span class="string">'STKAttitudeFile.txt'</span>),sTKVersion,epoch,kP,tPlot,xPlot( 1: 4,j),<span class="string">'quaternion'</span>);
+
+Plot2D(tPlot,xPlot( 1: 4,j),<span class="string">'Time (sec)'</span>,[<span class="string">'Q_s'</span>;<span class="string">'Q_x'</span>;<span class="string">'Q_y'</span>;<span class="string">'Q_z'</span>],<span class="string">'Quaternion'</span>)
+Plot2D(tPlot,xPlot( 5: 7,j),<span class="string">'Time (sec)'</span>,[<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>],<span class="string">'Body Rates'</span>)
+Plot2D(tPlot,xPlot( 8:10,j),<span class="string">'Time (sec)'</span>,[<span class="string">'W1'</span>;<span class="string">'W2'</span>;<span class="string">'W3'</span>],<span class="string">'Reaction Wheels'</span>)
+Plot2D(tPlot,cPlot(:,j),<span class="string">'Time (sec)'</span>,[<span class="string">'X'</span>;<span class="string">'Y'</span>;<span class="string">'Z'</span>],<span class="string">'Control Torque Demand'</span>)
+Plot2D(tPlot,hPlot(:,j),<span class="string">'Time (sec)'</span>,[<span class="string">'X'</span>;<span class="string">'Y'</span>;<span class="string">'Z'</span>],<span class="string">'Body Momentum'</span>)
+Plot2D(tPlot,zPlot(:,j),<span class="string">'Time (sec)'</span>,[<span class="string">'X'</span>;<span class="string">'Y'</span>;<span class="string">'Z'</span>],<span class="string">'Momentum Management Torque'</span>)
+Plot2D(tPlot,pPlot(:,j)*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Precession Angle (deg)'</span>,<span class="string">'Precession Angle'</span>)
+PlotV([rPlot(:,j);wPlot(:,j)],<span class="string">'X'</span>,<span class="string">'Y'</span>,<span class="string">'Z'</span>,<span class="string">'Spin Axis and Target'</span>)
+Plot2D(tPlot,ePlot(:,j)*radToDeg,<span class="string">'Time (sec)'</span>,[<span class="string">'Roll  (deg)'</span>;<span class="string">'Pitch (deg)'</span>],<span class="string">'Attitude Errors'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MAPControlSim_02.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_03.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_04.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_05.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_06.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_07.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_08.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_09.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_10.png" alt=""> <img vspace="5" hspace="5" src="MAPControlSim_11.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Implements and simulates the MAP normal mode control. 
+% Demonstrate 3 axis control of a spinner using wheels.
+% This is not the  NASA design but one done in house. It shows how to 
+% integrate control design and simulation into a single script.
+% This spacecraft is a spinner and has reaction wheels. The reaction
+% wheels are used to control the orientation of the spin axis.
+% The simulation demonstrates precession of the spin axis.
+%
+% This script also generates an STK attitude file.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also PIDMIMO, PIDesign, FGs, QForm, QTForm, NPlot, Plot2D, PlotV, 
+%  TimeGUI, STKAtt, CosD, RK4, SinD, JD2Date
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1996-2010, 2016 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Since version 1.
+% 2016.1 - Update RHS to use function handle. 
+% Save STK file in same directory as this file.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Setting up the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+% Constants
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+degToRad = pi/180;
+radToDeg = 180/pi;
+rPMToRPS = pi/30;
+
+% STK Information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sTKVersion = '3.0';
+
+% The control sampling period and the simulation integration time step
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSamp       = 0.25;
+
+% Number of sim steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSim        = 4*3600;
+
+% Plot every nPMax steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nPMax       = 40;
+nPlot       = nSim/nPMax;
+
+% Print the time to go message every nTTGo steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nTTGo       = 1000;
+
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Parameters for the spacecraft model
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+			     
+% Spacecraft Inertias
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr         = [2000,0,0;0,2000,0;0,0,4000];
+inrRWA      = 1;
+inrW        = [inrRWA,inrRWA,inrRWA]; 
+invInr      = inv(inr);
+tDist       = [0;0;0];
+			     
+% Wheel spin axis unit vectors
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+uW          = eye(3); 
+
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Design the control loops
+% RWA Tach loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+zeta        = 0.7071;   % Damping ratio
+wN          = 1.0;      % Closed loop undamped natural frequency
+
+[aTL,bTL,cTL,dTL] = PIDesign( zeta, wN, inrW(3), tSamp, 'Delta' );
+
+% Attitude Loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+zeta        = 0.7071;   % Damping ratio
+wN          = 0.5;      % Closed loop undamped natural frequency
+wR          = 4.0;      % Rate filter break frequency
+tau         =  50;      % Integrator time constant
+
+[aRoll ,bRoll, cRoll, dRoll]  = PIDMIMO( inr(1,1), zeta, wN, tau, wR, tSamp, 'Delta');
+[aPitch,bPitch,cPitch,dPitch] = PIDMIMO( inr(2,2), zeta, wN, tau, wR, tSamp, 'Delta');
+
+% Rate Loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+zeta        = 1.0;  % Damping ratio
+wN          = 0.5;  % Closed loop undamped natural frequency
+
+[aYaw,  bYaw,  cYaw,  dYaw]  = PIDesign( zeta, wN, inr(3,3), tSamp, 'Delta' );
+
+%% Initialize the control system
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xTL             = zeros(3,1);
+xRoll           = [0;0];
+xPitch          = [0;0];
+xYaw            = 0;
+tC              = [0;0;0];
+spinRate        = 0.464*rPMToRPS;
+precRate        = 2*pi/3600;
+precAngleDemand = 22.5;
+precAngle       = 0;
+precAngleGain   = 0.995;
+
+%% Momentum Management gain
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kMM             = 0.00500;
+
+% The control distribution matrix converts
+% torque demand to angular acceleration demand
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aRWA       = eye(3)/inrW(3);
+wRWAC      = [0;0;0];
+
+%% Plotting arrays
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cPlot      = zeros( 3,nPlot);
+hPlot      = zeros( 3,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(10,nPlot);
+zPlot      = zeros( 3,nPlot);
+rPlot      = zeros( 3,nPlot);
+pPlot      = zeros( 2,nPlot);
+ePlot      = zeros( 2,nPlot);
+wPlot      = zeros( 3,nPlot);
+yPlot      = zeros( 3,nPlot);
+
+%% Initial conditions
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%                 q         w            wRWA
+x          = [[1;0;0;0];[0;0;spinRate];[0;0;0]];
+
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+tW         = zeros(3,1);
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, tSamp, 'TMAPSim' );
+
+
+%% Run the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim 
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, tSamp );
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % Sensors
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  
+  % RWA Tachometer
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wTach  = x(8:10);
+
+  % Gyros
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  wCore  = x(5:7);
+  
+  % Attitude
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qIToB  = x(1:4);
+
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % The Attitude Control System
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  
+  % Momentum Management
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+  % Neglect the rate errors in the body component-assume exact tracking
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  hTotal = QTForm( qIToB, inr*[wCore(1);wCore(2);wCore(3)] + inrRWA*uW*(wTach+wCore) );
+
+  % Proportional controller for momentum
+  % We could feedforward this to the controller
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  tMM    = QForm( qIToB, -kMM*hTotal ); 
+  
+  % Compute the errors
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  precAngle  = precAngleGain*precAngle + (1-precAngleGain)*precAngleDemand;
+  cP         = CosD(precAngle);
+  sP         = SinD(precAngle);
+  xT         = [sP*cos(precRate*t);sP*sin(precRate*t);cP];
+  xTB        = QForm( qIToB, xT );
+  rollError  =  asin(xTB(2));
+  pitchError = -asin(xTB(1));
+  yawError   = wCore(3) - spinRate;
+  
+  % The attitude control loops
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tC(1)  = -cRoll*xRoll - dRoll*rollError;
+  xRoll  =  xRoll + aRoll*xRoll + bRoll*rollError;
+  
+  tC(2)  = -cPitch*xPitch - dPitch*pitchError;
+  xPitch =  xPitch + aPitch*xPitch + bPitch*pitchError;
+  
+  tC(3)  = -cYaw*xYaw - dYaw*yawError;
+  xYaw   =  xYaw + aYaw*xYaw + bYaw*yawError;
+  
+  % Convert torque demand to RWA angular acceleration demand
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wDRWA  = -aRWA*tC;
+  
+  % Integrate to get wheel speed demand
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  wRWAC  = wRWAC + tSamp*wDRWA;
+  
+  % The RWA Tach Loops
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wError =  wTach - wRWAC; 
+  tRWA   = -dTL*wError - cTL*xTL; 
+  xTL    =  xTL + aTL*xTL + bTL*wError;
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Update the equations of motion
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x = RK4(@FGs,x,dTSim,t,inr,invInr,tDist+tMM,inrW,uW,tRWA');
+  t = t + dTSim;
+  
+  % Plotting
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = x;
+    tPlot(1,kP) = t;
+    cPlot(:,kP) = tC;
+    hPlot(:,kP) = hTotal;
+    zPlot(:,kP) = tMM;
+    xI          = QTForm(qIToB,[0;0;1]);
+    rPlot(:,kP) = xI;
+    pPlot(:,kP) = acos([xI(3);xT(3)]);
+    ePlot(:,kP) = [rollError;pitchError];
+    wPlot(:,kP) = xT;
+    yPlot(:,kP) = xTB;
+    nP          = nPMax - 1;
+  else
+    nP          = nP - 1;
+  end
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+j     = 1:kP;
+tPlot = tPlot(j);
+epoch = JD2Date;
+
+filePath = fileparts(mfilename('fullpath'));
+[err, message] = STKAtt( fullfile(filePath,'STKAttitudeFile.txt'),sTKVersion,epoch,kP,tPlot,xPlot( 1: 4,j),'quaternion');
+
+Plot2D(tPlot,xPlot( 1: 4,j),'Time (sec)',['Q_s';'Q_x';'Q_y';'Q_z'],'Quaternion')
+Plot2D(tPlot,xPlot( 5: 7,j),'Time (sec)',['\omega_x';'\omega_y';'\omega_z'],'Body Rates')
+Plot2D(tPlot,xPlot( 8:10,j),'Time (sec)',['W1';'W2';'W3'],'Reaction Wheels')
+Plot2D(tPlot,cPlot(:,j),'Time (sec)',['X';'Y';'Z'],'Control Torque Demand')
+Plot2D(tPlot,hPlot(:,j),'Time (sec)',['X';'Y';'Z'],'Body Momentum')
+Plot2D(tPlot,zPlot(:,j),'Time (sec)',['X';'Y';'Z'],'Momentum Management Torque')
+Plot2D(tPlot,pPlot(:,j)*radToDeg,'Time (sec)','Precession Angle (deg)','Precession Angle')
+PlotV([rPlot(:,j);wPlot(:,j)],'X','Y','Z','Spin Axis and Target')
+Plot2D(tPlot,ePlot(:,j)*radToDeg,'Time (sec)',['Roll  (deg)';'Pitch (deg)'],'Attitude Errors')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-09-03 $
+% $Revision: d9cd148cff11f89a3463c316eb17832bd0207b91 $
+
+##### SOURCE END #####
+--></body></html>

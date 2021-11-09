@@ -1,0 +1,406 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Six body simulation of a spacecraft with a robot arm.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="RobotArm.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Six body simulation of a spacecraft with a robot arm.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also BHinge, BuildCADModel, CreateBody, CreateComponent, DrawSC,
+TreeBldCAD, TreeDraw, QLVLH, TimeGUI, Mag, Odd, RK4, TreeH, TreeInit,
+TreePlot
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">Vehicle parameters</a></li><li><a href="#4">Initial core states</a></li><li><a href="#5">Initialize</a></li><li><a href="#6">Add spacecraft properties</a></li><li><a href="#7">Create the bodies</a></li><li><a href="#8">Create paths from end bodies to the core</a></li><li><a href="#9">Core</a></li><li><a href="#10">Add the links for the arm</a></li><li><a href="#11">Get the model from the GUI</a></li><li><a href="#12">Simulate and display the arm in a loop</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1997-2004 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction drawSCOutput
+simulationAction = <span class="string">' '</span>;
+drawSCOutput     = <span class="string">'Do Nothing'</span>;
+</pre><h2 id="3">Vehicle parameters</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+lLink     = 2.25;
+lShoulder = 0.5;
+rLink     = 0.125;
+wCore     = 6;
+tLink     = 4e-3; <span class="comment">% 4 mm walls</span>
+densityAl = 2700; <span class="comment">% kg/m^3</span>
+massLink  = 2*pi*rLink*lLink*tLink*densityAl;
+massCore  = 1000;
+</pre><h2 id="4">Initial core states</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+r        = 7000;
+v        = sqrt(3.98600436e5/r);
+rECI     = [r;0;0];
+vECI     = [0;v;0];
+qLVLH    = QLVLH( rECI, vECI );
+q        = [1;0;0;0];
+omega    = [0;-v/r;0];
+</pre><h2 id="5">Initialize</h2><pre class="codeinput"><span class="comment">%-----------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+</pre><img vspace="5" hspace="5" src="RobotArm_01.png" alt=""> <h2 id="6">Add spacecraft properties</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+BuildCADModel( <span class="string">'set name'</span> ,      <span class="string">'Robot Arm'</span> );
+BuildCADModel( <span class="string">'set units'</span>,      <span class="string">'mks'</span>       );
+BuildCADModel( <span class="string">'set rECI'</span> ,      rECI   );
+BuildCADModel( <span class="string">'set vECI'</span> ,      vECI   );
+BuildCADModel( <span class="string">'set qLVLH'</span>,      qLVLH  );
+BuildCADModel( <span class="string">'set qECIToBody'</span>, q      );
+BuildCADModel( <span class="string">'set omega'</span>,      omega  );
+</pre><img vspace="5" hspace="5" src="RobotArm_02.png" alt=""> <h2 id="7">Create the bodies</h2><pre class="codeinput"><span class="comment">%------------------</span>
+m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, <span class="string">'Core'</span> );
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% The vector from the previous hinge to the body hinge</span>
+<span class="comment">%-----------------------------------------------------</span>
+rHinge = [0 0 0 0 0;0 0 0 0 0;wCore/2 lShoulder lLink lLink lLink];
+bHinge          = {};
+bHinge{1}.axis  = 3;
+bHinge{1}.angle = 0;
+bHinge{2}.axis  = 1;
+bHinge{2}.angle = 0;
+bHinge{3}.q     = [1;0;0;0]; <span class="comment">% 3 DOF "flex hinge"</span>
+bHinge{4}.axis  = 1;
+bHinge{4}.angle = 0;
+bHinge{5}.q     = [1;0;0;0]; <span class="comment">% 3 DOF "flex hinge"</span>
+
+<span class="comment">% Hinge 1 is about z. Hinge 2 and 4 are about x. Hinges 3 and 5 have 3 dof and have springs</span>
+<span class="comment">%------------------------------------------------------------------------------------------</span>
+<span class="keyword">for</span> k = 1:5
+  m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, sprintf(<span class="string">'Link %i'</span>,k), <span class="string">'previousBody'</span>, k, <span class="string">'rHinge'</span>, rHinge(:,k), <span class="string">'bHinge'</span>, bHinge{k} );
+  BuildCADModel(<span class="string">'add body'</span>, m ) ;
+<span class="keyword">end</span>
+</pre><h2 id="8">Create paths from end bodies to the core</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+BuildCADModel(<span class="string">'compute paths'</span>);
+</pre><h2 id="9">Core</h2><pre class="codeinput"><span class="comment">%-------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, wCore, <span class="string">'y'</span>, wCore, <span class="string">'z'</span>, wCore, <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="keyword">...</span>
+                     <span class="string">'mass'</span>, massCore, <span class="string">'name'</span>, <span class="string">'Core'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+</pre><h2 id="10">Add the links for the arm</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+<span class="keyword">for</span> k = 1:5
+  m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rLink, <span class="string">'rLower'</span>, rLink, <span class="string">'h'</span>, lLink, <span class="string">'n'</span>, 12, <span class="keyword">...</span>
+                       <span class="string">'name'</span>, sprintf(<span class="string">'Link %i'</span>,k), <span class="string">'body'</span>, k+1, <span class="string">'faceColor'</span>, [Odd(k) 0 1], <span class="string">'mass'</span>, massLink );
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="RobotArm_03.png" alt=""> <h2 id="11">Get the model from the GUI</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+g    = BuildCADModel( <span class="string">'get model'</span> );
+</pre><h2 id="12">Simulate and display the arm in a loop</h2><pre class="codeinput"><span class="comment">% Converts the CAD data structure to the Tree data structure</span>
+<span class="comment">%-----------------------------------------------------------</span>
+body = TreeBldCAD( g );
+
+<span class="comment">% Internal torque</span>
+<span class="comment">%----------------</span>
+body(2).torque = 0.1;
+
+<span class="comment">% Initialize the multibody tree</span>
+<span class="comment">%------------------------------</span>
+[treeDS, x]  = TreeInit( body, rECI, vECI );
+
+<span class="comment">% Plotting and initialization</span>
+<span class="comment">%----------------------------</span>
+tSim        = 20;
+dTSim       = 0.1;
+nSim        = floor(tSim/dTSim);
+hPlot       = zeros(1,nSim);
+tPlot       = zeros(1,nSim);
+xPlot       = zeros(length(x),nSim);
+t           = 0;
+
+<span class="comment">% Initialize the time display</span>
+<span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, <span class="string">'Tree Sim'</span> );
+
+<span class="comment">% Initialize the 3D display</span>
+<span class="comment">%--------------------------</span>
+e       = [];
+e.units = <span class="string">'mks'</span>;
+tag = DrawSCPlanPlugIn( <span class="string">'initialize'</span>, g );
+
+<span class="comment">% Run the simulation</span>
+<span class="comment">%-------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% Save for plotting</span>
+  <span class="comment">%------------------</span>
+  hPlot(k)   = Mag( TreeH( x, t, treeDS, body ) ); <span class="comment">% Angular momentum</span>
+  xPlot(:,k) = x;
+  tPlot(k)   = t;
+
+  <span class="comment">% Update the equations of motion</span>
+  <span class="comment">%-------------------------------</span>
+  x          = RK4( <span class="string">'Tree'</span>, x, dTSim, t, treeDS, body );
+  t          = t + dTSim;
+
+  <span class="comment">% Update the 3D display</span>
+  <span class="comment">%----------------------</span>
+  g = TreeDraw( g, x, treeDS );
+  DrawSCPlanPlugIn( <span class="string">'update'</span>, tag, g );
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% Plot all of the tree parameters</span>
+<span class="comment">%--------------------------------</span>
+TreePlot( tPlot, xPlot, treeDS, body, hPlot )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Max Momentum Error =   1.6900e-03 Nms
+</pre><img vspace="5" hspace="5" src="RobotArm_04.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_05.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_06.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_07.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_08.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_09.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_10.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_11.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_12.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_13.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_14.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_15.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_16.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_17.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_18.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_19.png" alt=""> <img vspace="5" hspace="5" src="RobotArm_20.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Six body simulation of a spacecraft with a robot arm.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BHinge, BuildCADModel, CreateBody, CreateComponent, DrawSC, 
+%  TreeBldCAD, TreeDraw, QLVLH, TimeGUI, Mag, Odd, RK4, TreeH, TreeInit, 
+%  TreePlot
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1997-2004 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction drawSCOutput
+simulationAction = ' ';
+drawSCOutput     = 'Do Nothing';
+
+%% Vehicle parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+lLink     = 2.25;
+lShoulder = 0.5;
+rLink     = 0.125;
+wCore     = 6;
+tLink     = 4e-3; % 4 mm walls
+densityAl = 2700; % kg/m^3
+massLink  = 2*pi*rLink*lLink*tLink*densityAl;
+massCore  = 1000;
+
+%% Initial core states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r        = 7000;
+v        = sqrt(3.98600436e5/r);
+rECI     = [r;0;0];
+vECI     = [0;v;0];
+qLVLH    = QLVLH( rECI, vECI );
+q        = [1;0;0;0];
+omega    = [0;-v/r;0];
+
+%% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+
+%% Add spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'set name' ,      'Robot Arm' );
+BuildCADModel( 'set units',      'mks'       );
+BuildCADModel( 'set rECI' ,      rECI   );
+BuildCADModel( 'set vECI' ,      vECI   );
+BuildCADModel( 'set qLVLH',      qLVLH  );
+BuildCADModel( 'set qECIToBody', q      );
+BuildCADModel( 'set omega',      omega  );
+
+%% Create the bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateBody( 'make', 'name', 'Core' );
+BuildCADModel('add body', m );
+
+% The vector from the previous hinge to the body hinge
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rHinge = [0 0 0 0 0;0 0 0 0 0;wCore/2 lShoulder lLink lLink lLink];
+bHinge          = {};
+bHinge{1}.axis  = 3;
+bHinge{1}.angle = 0;
+bHinge{2}.axis  = 1;
+bHinge{2}.angle = 0;
+bHinge{3}.q     = [1;0;0;0]; % 3 DOF "flex hinge"
+bHinge{4}.axis  = 1;
+bHinge{4}.angle = 0;
+bHinge{5}.q     = [1;0;0;0]; % 3 DOF "flex hinge"
+
+% Hinge 1 is about z. Hinge 2 and 4 are about x. Hinges 3 and 5 have 3 dof and have springs
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:5
+  m = CreateBody( 'make', 'name', sprintf('Link %i',k), 'previousBody', k, 'rHinge', rHinge(:,k), 'bHinge', bHinge{k} );
+  BuildCADModel('add body', m ) ;
+end
+
+%%% Create paths from end bodies to the core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel('compute paths');
+
+%%% Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateComponent( 'make', 'box', 'x', wCore, 'y', wCore, 'z', wCore, 'faceColor', 'gold foil',...
+                     'mass', massCore, 'name', 'Core', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+%%% Add the links for the arm
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:5
+  m = CreateComponent( 'make', 'cylinder', 'rUpper', rLink, 'rLower', rLink, 'h', lLink, 'n', 12, ...
+                       'name', sprintf('Link %i',k), 'body', k+1, 'faceColor', [Odd(k) 0 1], 'mass', massLink );
+  BuildCADModel( 'add component', m );
+end
+
+%% Get the model from the GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g    = BuildCADModel( 'get model' );
+
+%% Simulate and display the arm in a loop
+
+% Converts the CAD data structure to the Tree data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+body = TreeBldCAD( g );
+
+% Internal torque
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+body(2).torque = 0.1;
+
+% Initialize the multibody tree
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[treeDS, x]  = TreeInit( body, rECI, vECI );
+  
+% Plotting and initialization
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSim        = 20;
+dTSim       = 0.1;
+nSim        = floor(tSim/dTSim);
+hPlot       = zeros(1,nSim);
+tPlot       = zeros(1,nSim);
+xPlot       = zeros(length(x),nSim);
+t           = 0;
+
+% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, 'Tree Sim' );
+
+% Initialize the 3D display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+e       = [];
+e.units = 'mks';
+tag = DrawSCPlanPlugIn( 'initialize', g );
+
+% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim 
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+
+  % Save for plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  hPlot(k)   = Mag( TreeH( x, t, treeDS, body ) ); % Angular momentum
+  xPlot(:,k) = x;
+  tPlot(k)   = t;
+  
+  % Update the equations of motion
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x          = RK4( 'Tree', x, dTSim, t, treeDS, body );
+  t          = t + dTSim;
+
+  % Update the 3D display
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  g = TreeDraw( g, x, treeDS );
+  DrawSCPlanPlugIn( 'update', tag, g );
+
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+% Plot all of the tree parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+TreePlot( tPlot, xPlot, treeDS, body, hPlot )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 14:37:50 -0400 (Thu, 28 May 2020) $
+% $Revision: 52512 $
+
+##### SOURCE END #####
+--></body></html>

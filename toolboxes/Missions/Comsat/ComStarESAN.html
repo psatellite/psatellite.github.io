@@ -1,0 +1,226 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Designs earth sensor noise filters for the ComStar satellite.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-19"><meta name="DC.source" content="ComStarESAN.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Designs earth sensor noise filters for the ComStar satellite.</h1><!--introduction--><p>These filter earth sensor roll and pitch measurements. Earth sensors tend to be very noisy which is a problem for high bandwidth loops. Saves the filter to the mat-file NoiseF.</p><p>-------------------------------------------------------------------------  See also CButter, StatePrp, ComStar, Plot2D, WriteCM -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Simulation parameters</a></li><li><a href="#3">Filter parameters</a></li><li><a href="#4">Call like this to get a plot</a></li><li><a href="#5">Get the discrete time equations</a></li><li><a href="#6">If requested save and dump the controller matrices</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	 Copyright 1994-1996 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%  Since version 2.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Simulation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+nSim      = 1000;
+cMatrices = <span class="string">'yes'</span>; <span class="comment">% If yes will dump matrices to a file and display them</span>
+</pre><h2 id="3">Filter parameters</h2><pre class="codeinput"><span class="comment">%------------------</span>
+tSamp     = 0.5;
+wCutoff   = 1;
+nOrder    = 2;
+</pre><h2 id="4">Call like this to get a plot</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+CButter(nOrder,wCutoff);
+</pre><img vspace="5" hspace="5" src="ComStarESAN_01.png" alt=""> <h2 id="5">Get the discrete time equations</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+[a,b,c,d] = CButter(nOrder,wCutoff,tSamp,<span class="string">'Delta'</span>);
+
+x     = zeros(length(a),1);
+yPlot = zeros(1,nSim);
+u     = ComStar(<span class="string">'ESA Roll Std'</span>)*randn(1,nSim);
+
+<span class="keyword">for</span> k = 1:nSim
+  [yPlot(k),x] = StatePrp(a,b,c,d,x,u(k),<span class="string">'Delta'</span>);
+<span class="keyword">end</span>
+
+fprintf(1,<span class="string">'Filter Order       = %12i          \n'</span>,nOrder);
+fprintf(1,<span class="string">'Filter Cutoff      = %12.8f rad/sec\n'</span>,wCutoff);
+fprintf(1,<span class="string">'Sampling Period    = %12.8f sec    \n'</span>,tSamp);
+fprintf(1,<span class="string">'Mean               = %12.8f        \n'</span>,mean(yPlot));
+fprintf(1,<span class="string">'Attenuation        = %12.8f        \n'</span>, std(yPlot)/std(u));
+
+Plot2D(1:nSim,[u;yPlot],<span class="string">'Step'</span>,<span class="string">'Output'</span>,<span class="string">'Response to White Noise'</span>);
+
+[aN,bN,cN,dN] = CButter(nOrder,wCutoff);
+
+fPath = fileparts(which(mfilename));
+save(fullfile(fPath,<span class="string">'NoiseF'</span>),<span class="string">'aN'</span>,<span class="string">'bN'</span>,<span class="string">'cN'</span>,<span class="string">'dN'</span>,<span class="string">'-v6'</span>)
+</pre><pre class="codeoutput">Filter Order       =            2          
+Filter Cutoff      =   1.00000000 rad/sec
+Sampling Period    =   0.50000000 sec    
+Mean               =  -0.00066414        
+Attenuation        =   0.43095041        
+</pre><img vspace="5" hspace="5" src="ComStarESAN_02.png" alt=""> <h2 id="6">If requested save and dump the controller matrices</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+<span class="keyword">if</span>( strcmp(cMatrices,<span class="string">'yes'</span>) )
+  fID           = fopen(fullfile(fPath,<span class="string">'ESANoise.txt'</span>),<span class="string">'w'</span>);
+  [aD,bD,cD,dD] = CButter(nOrder,wCutoff,tSamp,<span class="string">'Delta'</span>);
+  WriteCM(fID,<span class="string">'A Matrix'</span>,<span class="string">'fRollAMatrix'</span>,reshape(aD',1,length(aD)^2),12,20,3);
+  WriteCM(fID,<span class="string">'B Matrix'</span>,<span class="string">'fRollBMatrix'</span>,bD,12,20,3);
+  WriteCM(fID,<span class="string">'C Matrix'</span>,<span class="string">'fRollCMatrix'</span>,cD,12,20,3);
+  WriteCM(fID,<span class="string">'D Matrix'</span>,<span class="string">'fRollDMatrix'</span>,dD,12,20,3);
+  WriteCM(fID,<span class="string">'A Matrix'</span>,<span class="string">'fPitchAMatrix'</span>,reshape(aD',1,length(aD)^2),12,20,3);
+  WriteCM(fID,<span class="string">'B Matrix'</span>,<span class="string">'fPitchBMatrix'</span>,bD,12,20,3);
+  WriteCM(fID,<span class="string">'C Matrix'</span>,<span class="string">'fPitchCMatrix'</span>,cD,12,20,3);
+  WriteCM(fID,<span class="string">'D Matrix'</span>,<span class="string">'fPitchDMatrix'</span>,dD,12,20,3);
+  fclose(fID);
+  disp(<span class="string">'Noise Filter Matrices'</span>)
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Noise Filter Matrices
+    -0.098122      0.34383
+     -0.34383     -0.58436
+     0.098122
+      0.34383
+     1     0
+     0
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Designs earth sensor noise filters for the ComStar satellite. 
+% These filter earth sensor roll and pitch measurements. Earth sensors tend to
+% be very noisy which is a problem for high bandwidth loops.
+% Saves the filter to the mat-file NoiseF.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also CButter, StatePrp, ComStar, Plot2D, WriteCM
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	 Copyright 1994-1996 Princeton Satellite Systems, Inc. All rights reserved.
+%  Since version 2.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim      = 1000;
+cMatrices = 'yes'; % If yes will dump matrices to a file and display them
+
+%% Filter parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSamp     = 0.5;
+wCutoff   = 1;
+nOrder    = 2;
+
+%% Call like this to get a plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+CButter(nOrder,wCutoff);
+
+%% Get the discrete time equations
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a,b,c,d] = CButter(nOrder,wCutoff,tSamp,'Delta');   
+
+x     = zeros(length(a),1);
+yPlot = zeros(1,nSim);
+u     = ComStar('ESA Roll Std')*randn(1,nSim);
+
+for k = 1:nSim
+  [yPlot(k),x] = StatePrp(a,b,c,d,x,u(k),'Delta');
+end
+
+fprintf(1,'Filter Order       = %12i          \n',nOrder);
+fprintf(1,'Filter Cutoff      = %12.8f rad/sec\n',wCutoff);
+fprintf(1,'Sampling Period    = %12.8f sec    \n',tSamp);
+fprintf(1,'Mean               = %12.8f        \n',mean(yPlot));
+fprintf(1,'Attenuation        = %12.8f        \n', std(yPlot)/std(u));
+
+Plot2D(1:nSim,[u;yPlot],'Step','Output','Response to White Noise');
+    
+[aN,bN,cN,dN] = CButter(nOrder,wCutoff);   
+
+fPath = fileparts(which(mfilename));
+save(fullfile(fPath,'NoiseF'),'aN','bN','cN','dN','-v6')
+
+%% If requested save and dump the controller matrices
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( strcmp(cMatrices,'yes') )
+  fID           = fopen(fullfile(fPath,'ESANoise.txt'),'w');
+  [aD,bD,cD,dD] = CButter(nOrder,wCutoff,tSamp,'Delta');   
+  WriteCM(fID,'A Matrix','fRollAMatrix',reshape(aD',1,length(aD)^2),12,20,3);
+  WriteCM(fID,'B Matrix','fRollBMatrix',bD,12,20,3);
+  WriteCM(fID,'C Matrix','fRollCMatrix',cD,12,20,3);
+  WriteCM(fID,'D Matrix','fRollDMatrix',dD,12,20,3);
+  WriteCM(fID,'A Matrix','fPitchAMatrix',reshape(aD',1,length(aD)^2),12,20,3);
+  WriteCM(fID,'B Matrix','fPitchBMatrix',bD,12,20,3);
+  WriteCM(fID,'C Matrix','fPitchCMatrix',cD,12,20,3);
+  WriteCM(fID,'D Matrix','fPitchDMatrix',dD,12,20,3);
+  fclose(fID);
+  disp('Noise Filter Matrices')
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-19 11:20:40 -0400 (Fri, 19 Jun 2020) $
+% $Revision: 52841 $
+
+##### SOURCE END #####
+--></body></html>

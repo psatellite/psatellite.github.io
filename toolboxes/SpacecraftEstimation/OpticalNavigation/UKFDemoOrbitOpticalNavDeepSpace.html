@@ -1,0 +1,400 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate orbit estimation using a UKF and planet centroid data.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="UKFDemoOrbitOpticalNavDeepSpace.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate orbit estimation using a UKF and planet centroid data.</h1><!--introduction--><p>The spacecraft can be in the Messenger or New Horizons orbits. Uses the Hipparcos catalog.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">9.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">RaDec2U</span>, Constant, Plot2D, TimeLabl, RK4,
+NavTargetTrackingPlanetary, OpticalNavPlanetStar,
+OpticalNavPlanetStarNoiseMatrix, LoadCatalog, UKF, Planets
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Select a mission</a></li><li><a href="#4">Select the filter</a></li><li><a href="#5">Measurement options</a></li><li><a href="#6">Simulation parameters</a></li><li><a href="#7">Allocate memory for plotting</a></li><li><a href="#8">Earth gravitational parameter</a></li><li><a href="#9">Star Catalog</a></li><li><a href="#10">Position and velocity uncertainty</a></li><li><a href="#11">Measurement noise</a></li><li><a href="#12">State estimate at start</a></li><li><a href="#13">Covariance based on the uncertainty</a></li><li><a href="#14">Initialize the time display</a></li><li><a href="#15">Create a time sequence for the x-axis</a></li><li><a href="#16">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2009-2010 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+
+clear <span class="string">g</span>; clear <span class="string">d</span>; clear <span class="string">noise</span>;
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+au          = Constant(<span class="string">'au'</span>);
+
+years       = 6;
+
+planet      = Planets(<span class="string">'rad'</span>,1:9);
+
+pixel       = 10e-3; <span class="comment">% mm</span>
+fL          = 200; <span class="comment">% mm</span>
+centroiding = 0.1; <span class="comment">% pixel</span>
+</pre><h2 id="3">Select a mission</h2><pre class="codeinput"><span class="comment">%------------------</span>
+mission     = <span class="string">'messenger'</span>;
+mission     = <span class="string">'new horizons'</span>;
+
+<span class="keyword">switch</span> mission
+    <span class="keyword">case</span> <span class="string">'messenger'</span>
+        x = [-5.102050761318097E+07; -3.914630171469574E+07; -1.563888544075625E+07;<span class="keyword">...</span>
+              2.159852087150890E+01; -3.063444535492430E+01; -1.827429443660471E+01];
+
+        jD0 = 2455755.50;
+    <span class="keyword">case</span> <span class="string">'new horizons'</span>
+
+        x   = [-6.983445814653811E+07; -1.441036100591167E+09; -5.821377265514169E+08;<span class="keyword">...</span>
+                5.922525925977417E+00; -1.594089850539337E+01; -6.215007577164026E+00];
+        jD0 = 2454660.5;
+<span class="keyword">end</span>
+</pre><h2 id="4">Select the filter</h2><pre class="codeinput"><span class="comment">%------------------</span>
+filter        = @UKF;   <span class="comment">% Full covariance matrix filter</span>
+</pre><h2 id="5">Measurement options</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+g.fOV         = 8.8*pi/180;
+</pre><h2 id="6">Simulation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+nSim          = years*24*365;
+dT            = 3600; <span class="comment">% sec</span>
+tEnd          = nSim*dT;
+</pre><h2 id="7">Allocate memory for plotting</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+xP            = zeros(13,nSim);
+</pre><h2 id="8">Earth gravitational parameter</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+mu            = Constant(<span class="string">'mu sun'</span>);
+</pre><h2 id="9">Star Catalog</h2><pre class="codeinput"><span class="comment">%-------------</span>
+starCatalog   = LoadCatalog( <span class="string">'Hipparcos'</span>, 7 );
+g.uSCatalog   = RaDec2U( starCatalog.rA, starCatalog.dec );
+g.pCatalog    = Planets(<span class="string">'rad'</span>,1:9);
+</pre><h2 id="10">Position and velocity uncertainty</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+r1Sigma       = 1; <span class="comment">% km</span>
+v1Sigma       = 0.0001; <span class="comment">% km/s</span>
+</pre><h2 id="11">Measurement noise</h2><pre class="codeinput"><span class="comment">%------------------</span>
+noise.angle       = 10*0.0000048481368111; <span class="comment">% 1 arcsecond in radians</span>
+noise.planet      = [1 1 1 1 100 600 1250 2250 2800];
+noise.radius      = [1 1 0.01 .1 6 6 7 19 6 140];
+noise.pixelAngle  = atan(centroiding*pixel/fL);
+</pre><h2 id="12">State estimate at start</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+d.x                      = x + [r1Sigma*randn(3,1);v1Sigma*randn(3,1)];
+d.x                      = x;
+</pre><h2 id="13">Covariance based on the uncertainty</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+d.p                      = diag([r1Sigma^2*ones(1,3) v1Sigma^2*ones(1,3)]);
+d.int                    =<span class="string">'RK4'</span>;
+d.rHSFun                 =<span class="string">'RHSOrbitUKF'</span>;
+d.measFun                =<span class="string">'OpticalNavPlanetStar'</span>;
+d.integrator             = @RK4;
+d.alpha                  = 0.8e-3; <span class="comment">% UKF spread of sigma points</span>
+d.kappa                  = 0; <span class="comment">% UKF weighting factor</span>
+d.beta                   = 2; <span class="comment">% UKF incorporation of a priori knowledge</span>
+d.dT                     = dT;
+d.rHSFunData             = struct(<span class="string">'mu'</span>,mu,<span class="string">'a'</span>,[0;0;0]);
+vecP                     = [0 0 0 1e-6 1e-6 1e-6]';
+d.rP                     = diag(vecP.^2); <span class="comment">% Plant noise covariance</span>
+d                        = filter(<span class="string">'initialize'</span>, d );
+t                        = 0;
+g.planet                 = planet;
+g.trackPlanet            = 1;
+g.trackCount             = 0;
+g.trackCountMax          = 10;
+g.kP                     = 0;
+</pre><h2 id="14">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Optical Navigation Sim'</span>, nSim )
+
+
+<span class="keyword">for</span> k = 1:nSim
+
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  TimeDisplay( <span class="string">'update'</span> );
+
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  xP(:,k)                   = [d.x; x; g.kP];
+
+  <span class="comment">% Update the RHS</span>
+  <span class="comment">%---------------</span>
+  x                         = RK4( d.rHSFun, x, dT, t, d.rHSFunData );
+  t                         = t + dT;
+
+  <span class="comment">% Measurements</span>
+  <span class="comment">%-------------</span>
+  g.jD                      = jD0 + t/86400;
+  g.mode                    = <span class="string">'polar star'</span>;
+  g                         = NavTargetTrackingPlanetary( x, g );
+  y                         = OpticalNavPlanetStar( x, g, noise );
+
+  <span class="comment">% Kalman Filter</span>
+  <span class="comment">%--------------</span>
+  d.measFunData             = g;
+  [d.dY, d.rM]              = OpticalNavPlanetStarNoiseMatrix( g, x(1:3), noise );
+  d.t                       = t;
+  d                         = filter( <span class="string">'update'</span>, d, y );
+
+<span class="keyword">end</span>
+
+TimeDisplay( <span class="string">'close'</span> );
+</pre><h2 id="15">Create a time sequence for the x-axis</h2><pre class="codeinput"><span class="comment">%--------------------------------------</span>
+[t,tL] = TimeLabl((0:(nSim-1))*dT);
+</pre><h2 id="16">Plot</h2><pre class="codeinput"><span class="comment">%-----</span>
+err = xP(1:6,:) - xP(7:12,:);
+yL  = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span>, <span class="string">'Planet id'</span>};
+Plot2D( t, [err;xP(13,:)], tL, yL, <span class="string">'Estimation Errors'</span> );
+Plot2D( t, xP(7:9,:)/au, tL, {<span class="string">'x (au)'</span> <span class="string">'y (au)'</span> <span class="string">'z (au)'</span>}, <span class="string">'Orbit'</span> );
+Plot2D( xP(7,:)/au, xP(8,:)/au, {<span class="string">'x (au)'</span>, <span class="string">'y (au)'</span>}, <span class="string">'Ecliptic Plane'</span>)
+
+rng = floor(0.75*nSim):nSim;
+err = err(:,rng);
+meanSquareError = mean(sqrt(err.^2),2)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">meanSquareError =
+       2284.2
+       2319.6
+       2688.1
+   8.6891e-05
+   0.00019067
+   0.00019401
+</pre><img vspace="5" hspace="5" src="UKFDemoOrbitOpticalNavDeepSpace_01.png" alt=""> <img vspace="5" hspace="5" src="UKFDemoOrbitOpticalNavDeepSpace_02.png" alt=""> <img vspace="5" hspace="5" src="UKFDemoOrbitOpticalNavDeepSpace_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate orbit estimation using a UKF and planet centroid data.
+% The spacecraft can be in the Messenger or New Horizons orbits.
+% Uses the Hipparcos catalog.
+%
+%   Since version 9.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also RaDec2U, Constant, Plot2D, TimeLabl, RK4, 
+%  NavTargetTrackingPlanetary, OpticalNavPlanetStar, 
+%  OpticalNavPlanetStarNoiseMatrix, LoadCatalog, UKF, Planets
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 2009-2010 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+clear g; clear d; clear noise;
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+au          = Constant('au');
+
+years       = 6;
+
+planet      = Planets('rad',1:9);
+
+pixel       = 10e-3; % mm
+fL          = 200; % mm
+centroiding = 0.1; % pixel
+
+%% Select a mission
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mission     = 'messenger';
+mission     = 'new horizons';
+
+switch mission
+    case 'messenger'
+        x = [-5.102050761318097E+07; -3.914630171469574E+07; -1.563888544075625E+07;...
+              2.159852087150890E+01; -3.063444535492430E+01; -1.827429443660471E+01];
+
+        jD0 = 2455755.50;
+    case 'new horizons'
+        
+        x   = [-6.983445814653811E+07; -1.441036100591167E+09; -5.821377265514169E+08;...
+                5.922525925977417E+00; -1.594089850539337E+01; -6.215007577164026E+00];
+        jD0 = 2454660.5;
+end
+
+%% Select the filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+filter        = @UKF;   % Full covariance matrix filter
+
+%% Measurement options
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH                        
+g.fOV         = 8.8*pi/180;
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim          = years*24*365;
+dT            = 3600; % sec
+tEnd          = nSim*dT;
+
+%% Allocate memory for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP            = zeros(13,nSim);
+
+%% Earth gravitational parameter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mu            = Constant('mu sun');
+
+%% Star Catalog
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+starCatalog   = LoadCatalog( 'Hipparcos', 7 );
+g.uSCatalog   = RaDec2U( starCatalog.rA, starCatalog.dec );
+g.pCatalog    = Planets('rad',1:9);
+
+%% Position and velocity uncertainty
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r1Sigma       = 1; % km
+v1Sigma       = 0.0001; % km/s
+
+%% Measurement noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+noise.angle       = 10*0.0000048481368111; % 1 arcsecond in radians
+noise.planet      = [1 1 1 1 100 600 1250 2250 2800];
+noise.radius      = [1 1 0.01 .1 6 6 7 19 6 140];
+noise.pixelAngle  = atan(centroiding*pixel/fL);
+
+%% State estimate at start
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.x                      = x + [r1Sigma*randn(3,1);v1Sigma*randn(3,1)];
+d.x                      = x;
+
+%% Covariance based on the uncertainty
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.p                      = diag([r1Sigma^2*ones(1,3) v1Sigma^2*ones(1,3)]);
+d.int                    ='RK4';
+d.rHSFun                 ='RHSOrbitUKF';
+d.measFun                ='OpticalNavPlanetStar';
+d.integrator             = @RK4;
+d.alpha                  = 0.8e-3; % UKF spread of sigma points
+d.kappa                  = 0; % UKF weighting factor
+d.beta                   = 2; % UKF incorporation of a priori knowledge
+d.dT                     = dT;
+d.rHSFunData             = struct('mu',mu,'a',[0;0;0]);
+vecP                     = [0 0 0 1e-6 1e-6 1e-6]';
+d.rP                     = diag(vecP.^2); % Plant noise covariance
+d                        = filter('initialize', d );
+t                        = 0;
+g.planet                 = planet;
+g.trackPlanet            = 1;
+g.trackCount             = 0;
+g.trackCountMax          = 10;
+g.kP                     = 0;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+TimeDisplay( 'initialize', 'Optical Navigation Sim', nSim )
+
+
+for k = 1:nSim
+    
+        
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  TimeDisplay( 'update' );
+
+  
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xP(:,k)                   = [d.x; x; g.kP];
+
+  % Update the RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x                         = RK4( d.rHSFun, x, dT, t, d.rHSFunData );
+  t                         = t + dT;
+  
+  % Measurements
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  g.jD                      = jD0 + t/86400;
+  g.mode                    = 'polar star';
+  g                         = NavTargetTrackingPlanetary( x, g );
+  y                         = OpticalNavPlanetStar( x, g, noise ); 
+  
+  % Kalman Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  d.measFunData             = g;
+  [d.dY, d.rM]              = OpticalNavPlanetStarNoiseMatrix( g, x(1:3), noise );
+  d.t                       = t;
+  d                         = filter( 'update', d, y );
+  
+end
+
+TimeDisplay( 'close' );
+
+
+%% Create a time sequence for the x-axis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t,tL] = TimeLabl((0:(nSim-1))*dT);
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+err = xP(1:6,:) - xP(7:12,:);
+yL  = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)', 'Planet id'};
+Plot2D( t, [err;xP(13,:)], tL, yL, 'Estimation Errors' );
+Plot2D( t, xP(7:9,:)/au, tL, {'x (au)' 'y (au)' 'z (au)'}, 'Orbit' );
+Plot2D( xP(7,:)/au, xP(8,:)/au, {'x (au)', 'y (au)'}, 'Ecliptic Plane')
+
+rng = floor(0.75*nSim):nSim;
+err = err(:,rng);
+meanSquareError = mean(sqrt(err.^2),2)
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2020-11-03 $
+% $Revision: c1771aeded9bdd75076bb07821524042221e92e1 $
+
+##### SOURCE END #####
+--></body></html>

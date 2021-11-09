@@ -1,0 +1,487 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a Pluto mission using DFD</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="PlutoMission.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a Pluto mission using DFD</h1><!--introduction--><p>Perform a Lambert analysis for trajectories over a number of years, considering the true planetary positions (from the almanac).</p><pre>------------------------------------------------------------------------
+See also Constant, Plot2D, TimeDisplay, Date2JD, Mag, LambertTOF,
+RocketMass, PlanetPosition
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Lambert Analysis - varying start date, fixed duration</a></li><li><a href="#3">Compare DFD to fission electric (Vasimr type engine) - Specific Power Plot</a></li><li><a href="#4">Plot</a></li><li><a href="#5">DV and duration analysis</a></li><li><a href="#6">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2016.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Parameters</span>
+mP        = 1000; <span class="comment">% payload mass (kg)</span>
+kWPerKg   = 0.71; <span class="comment">% specific power</span>
+tankF     = 0.02; <span class="comment">% ratio of tank mass to fuel mass</span>
+eff       = 0.5; <span class="comment">% Power to thrust conversion efficiency</span>
+
+<span class="comment">% Specify a delta-V for comparison</span>
+dVTotal   = 65; <span class="comment">% km/s</span>
+fDuration = 0.15; <span class="comment">% fraction of duration that is burn time</span>
+power     = 2e3; <span class="comment">% kW</span>
+
+<span class="comment">% Constants</span>
+muSun     = Constant(<span class="string">'mu sun'</span>);
+muPluto   = Constant(<span class="string">'mu pluto'</span>);
+rPluto    = Constant(<span class="string">'equatorial radius pluto'</span>);
+g         = 9.806;
+
+<span class="comment">% Epoch</span>
+jD0         = Date2JD([2016 1 1 0 0 0]);
+PlanetPosition( <span class="string">'initialize'</span>, [3 9] );
+
+h         = 600; <span class="comment">% orbital altitude at Pluto (km)</span>
+dVOrbit   = sqrt(muPluto/(rPluto+h));
+
+<span class="comment">% launch vehicle mass to heliocentric orbit</span>
+k = 1;
+lV{k,1}   =  8000; lV{k,2} = <span class="string">'Delta IV Heavy'</span>;  k = k + 1;
+lV{k,1}   = 13200; lV{k,2} = <span class="string">'Falcon 9 Heavy'</span>;  k = k + 1;
+lV{k,1}   = 22000; lV{k,2} = <span class="string">'SLS Block 1'</span>;     k = k + 1;
+lV{k,1}   = 46000; lV{k,2} = <span class="string">'SLS Block 4'</span>;     k = k + 1;
+</pre><h2 id="2">Lambert Analysis - varying start date, fixed duration</h2><pre class="codeinput">nYears    = 4;
+nA        = 100;
+nPP       = 25;
+start     = linspace(0,nA);
+nS        = length(start);
+duration  = nYears*365.25; <span class="comment">% days</span>
+dVs       = zeros(1,nS*nPP);
+dVMax     = zeros(1,nS);
+dVMin     = zeros(1,nS);
+p         = 1;
+time      = zeros(1,nS*nPP);
+<span class="keyword">for</span> j = 1:nS
+  dVThis = zeros(1,nPP);
+  <span class="keyword">for</span> k = 1:nPP
+    days = (k-1)*365/nPP;
+    time(p)       = start(j)*365.25+days;
+	  jDS           = jD0+start(j)*365.25+days;
+	  [r0, ~, v]    = PlanetPosition( <span class="string">'update'</span>, jDS );
+    [rI, ~, vI]   = PlanetPosition( <span class="string">'update'</span>, jDS+duration );
+    [vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+    dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+    dVs(p)        = dV + dVOrbit;
+    dVThis(k)     = dVs(p);
+    p = p+1;
+  <span class="keyword">end</span>
+  dVMin(j) = min(dVThis);
+  dVMax(j) = max(dVThis);
+<span class="keyword">end</span>
+Plot2D(time/365,dVs,<span class="string">'Start Date (years)'</span>,<span class="string">'Delta-V (km/s)'</span>,sprintf(<span class="string">'Lambert Results - %d Years Duration'</span>,nYears))
+hold <span class="string">on</span>
+plot(start,dVMin)
+plot(start,dVMax)
+</pre><img vspace="5" hspace="5" src="PlutoMission_01.png" alt=""> <h2 id="3">Compare DFD to fission electric (Vasimr type engine) - Specific Power Plot</h2><p>Specify a duration of the mission. Specify the amount of the duration that is burn time. Exhaust velocity is driven by the thrust.</p><pre class="codeinput">tol           = 10;
+specificPower = linspace(0.03,2);
+nP            = length(specificPower);
+mT            = zeros(1,nP);
+mE            = zeros(1,nP);
+mF            = zeros(1,nP);
+uE            = zeros(1,nP);
+thrust        = zeros(1,nP);
+duration      = nYears*365.25*86400;
+
+<span class="comment">% Calculate thrust needed to achieve delta-V in the specified burn duration;</span>
+<span class="comment">% use the power equation to compute exhaust</span>
+<span class="keyword">for</span> k = 1:nP
+  dM      = 100;
+  mE(k)   = power/specificPower(k);
+  mD      = mE(k) + mP; <span class="comment">% add payload mass</span>
+  mT(k)   = mD;
+  mFOld   = 0;
+  <span class="keyword">while</span>( dM &gt; tol )
+    <span class="comment">% average mass includes 1/2 the fuel</span>
+    mAv           = mT(k) - 0.5*mFOld;
+    thrust(k)     = mAv*dVTotal*1000/(fDuration*duration);
+    uE(k)         = 2*power*1e3*eff/thrust(k); <span class="comment">% Power needs to be in W</span>
+    <span class="keyword">try</span>
+      [mF(k),mT(k)]	= RocketMass( uE(k)/g, mD, tankF, dVTotal );
+      dM            = abs(mF(k)-mFOld);
+      accel         = thrust(k)/(mT(k) - 0.5*mF(k));
+    <span class="keyword">catch</span>
+      mF(k) = 0;
+      mT(k) = 0;
+      thrust(k) = 0;
+      uE(k) = 0;
+      dM = -1;
+    <span class="keyword">end</span>
+    mFOld = mF(k);
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="4">Plot</h2><pre class="codeinput">Plot2D(specificPower,[uE/g;thrust],<span class="string">'Specific Power (kW/kg)'</span>,{<span class="string">'Isp (s)'</span>,<span class="string">'Thrust (N)'</span>},<span class="string">'Thrust and Isp'</span>)
+uE_dfd = interp1(specificPower,uE/g,kWPerKg);
+subplot(2,1,1)
+hold <span class="string">on</span>
+plot(kWPerKg,uE_dfd,<span class="string">'*'</span>);
+subplot(2,1,2)
+hold <span class="string">on</span>
+thrust_dfd = interp1(specificPower,thrust,kWPerKg);
+plot(kWPerKg,thrust_dfd,<span class="string">'*'</span>);
+
+titlestr = sprintf(<span class="string">'Mass for %d Year Mission/ %d km/s Delta-V/ 2 MW Power Plant'</span>,nYears,dVTotal);
+[~,hA] = Plot2D(specificPower,[mT;mF;mE],<span class="string">'Specific Power (kW/kg)'</span>,<span class="string">'Mass (kg)'</span>,titlestr,<span class="string">'ylog'</span>);
+
+xLim = get(gca,<span class="string">'xlim'</span>);
+yLim = get(gca,<span class="string">'ylim'</span>);
+
+<span class="comment">% launch vehicle</span>
+<span class="keyword">for</span> k = 1:4
+  line(xLim, [lV{k,1},lV{k,1}],yLim,<span class="string">'color'</span>,[0 0.9 0.9]);
+  text(0.8*xLim(2),0.85*lV{k,1},lV{k,2},<span class="string">'fontsize'</span>,12);
+<span class="keyword">end</span>
+
+line(kWPerKg*[1 1], yLim,<span class="string">'color'</span>,[0 0.8 0]);
+text(1.03*kWPerKg, 1.5*yLim(1),<span class="string">'DFD'</span>,<span class="string">'fontsize'</span>,12);
+line([0.06 0.06],yLim,<span class="string">'color'</span>,[0 0.8 0]);
+text(0.07,1.5*yLim(1),<span class="string">'Fission'</span>,<span class="string">'fontsize'</span>,12);
+set(gca,<span class="string">'fontsize'</span>,11)
+legend(hA.h,{<span class="string">'Total'</span>,<span class="string">'Fuel'</span>,<span class="string">'Engine'</span>})
+</pre><img vspace="5" hspace="5" src="PlutoMission_02.png" alt=""> <img vspace="5" hspace="5" src="PlutoMission_03.png" alt=""> <h2 id="5">DV and duration analysis</h2><p>DFD, Nuclear Electric, Nuclear Thermal, Chemical</p><pre class="codeinput">k         = 1;
+tech{k}   = <span class="string">'Chemical'</span>;                 uETech(k)	= 462*g; k = k + 1;
+tech{k}   = <span class="string">'Nuclear Thermal'</span>;          uETech(k)	= 900*g; k = k + 1;
+tech{k}   = <span class="string">'DFD'</span>;                      uETech(k)	= 100e3; k = k + 1;
+tech{k}   = <span class="string">'Nuclear Electric Hall'</span>;    uETech(k)	= 20e3; k = k + 1;
+tech{k}   = <span class="string">'Nuclear Electric VASIMR'</span>;	uETech(k)	= 49e3;
+
+[r0, ~, v]  = PlanetPosition( <span class="string">'update'</span>, jD0 );
+
+<span class="comment">% Delta-V analysis considering location of Pluto</span>
+disp(<span class="string">'Run loop over start dates and mission duration...'</span>)
+years   = linspace(1,30,200);
+nY      = length(years);
+start   = linspace(0,20*365,600);
+nS      = length(start);
+
+dVTotal = zeros(1,nY);
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Pluto Lambert Loop'</span>, nY );
+<span class="keyword">for</span> k = nY:-1:1
+  dVJ = zeros(1,nS);
+  <span class="keyword">for</span> j = 1:nS
+    jDS           = jD0+start(j);
+    [r0, ~, v]    = PlanetPosition( <span class="string">'update'</span>, jDS );
+    duration      = years(k)*365.25; <span class="comment">% days</span>
+    [rI, ~, vI]   = PlanetPosition( <span class="string">'update'</span>, jDS+duration );
+    [vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+    dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+    dVJ(j)        = dV + dVOrbit;
+  <span class="keyword">end</span>
+  dVTotal(k) = min(dVJ);
+  TimeDisplay(<span class="string">'update'</span>);
+<span class="keyword">end</span>
+TimeDisplay(<span class="string">'close'</span>);
+disp(<span class="string">'Done.'</span>)
+</pre><h2 id="6">Plot</h2><pre class="codeinput">figure(<span class="string">'Name'</span>,<span class="string">'Theoretical Maximum Delta-V'</span>)
+plot(years,dVTotal)
+grid <span class="string">on</span>
+xlabel(<span class="string">'Pluto Transfer Time (yrs)'</span>,<span class="string">'fontsize'</span>,12);
+ylabel(<span class="string">'Lambert \Delta V (km/s)'</span>,<span class="string">'fontsize'</span>,12);
+title(<span class="string">'Theoretical Maximum Delta-V'</span>,<span class="string">'fontsize'</span>,14,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>);
+
+maxDV = uETech*log((1+tankF)/tankF)/1000;
+hold <span class="string">on</span>;
+<span class="keyword">for</span> k = 1:length(uETech)
+  str = sprintf(<span class="string">'%s\n  Isp: %.0f s'</span>,tech{k},uETech(k)/g);
+  j = find(dVTotal &lt; maxDV(k),1);
+  <span class="keyword">if</span> ~isempty(j)
+    line([years(j);years(j)],[0,dVTotal(j)+2],<span class="string">'color'</span>,[1 0 0]);
+    text(years(j),4+dVTotal(j),str,<span class="string">'fontsize'</span>,12);
+    p(k) = plot(years(j),2+dVTotal(j),<span class="string">'.'</span>);
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+set(gca,<span class="string">'fontsize'</span>,11)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Run loop over start dates and mission duration...
+Done.
+</pre><img vspace="5" hspace="5" src="PlutoMission_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a Pluto mission using DFD
+% Perform a Lambert analysis for trajectories over a number of years,
+% considering the true planetary positions (from the almanac). 
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, Plot2D, TimeDisplay, Date2JD, Mag, LambertTOF, 
+%  RocketMass, PlanetPosition
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2015 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2016.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Parameters
+mP        = 1000; % payload mass (kg)
+kWPerKg   = 0.71; % specific power
+tankF     = 0.02; % ratio of tank mass to fuel mass
+eff       = 0.5; % Power to thrust conversion efficiency
+
+% Specify a delta-V for comparison
+dVTotal   = 65; % km/s
+fDuration = 0.15; % fraction of duration that is burn time
+power     = 2e3; % kW
+
+% Constants
+muSun     = Constant('mu sun');
+muPluto   = Constant('mu pluto');
+rPluto    = Constant('equatorial radius pluto');
+g         = 9.806;
+
+% Epoch
+jD0         = Date2JD([2016 1 1 0 0 0]);
+PlanetPosition( 'initialize', [3 9] );
+
+h         = 600; % orbital altitude at Pluto (km)
+dVOrbit   = sqrt(muPluto/(rPluto+h));
+
+% launch vehicle mass to heliocentric orbit
+k = 1;
+lV{k,1}   =  8000; lV{k,2} = 'Delta IV Heavy';  k = k + 1;
+lV{k,1}   = 13200; lV{k,2} = 'Falcon 9 Heavy';  k = k + 1;
+lV{k,1}   = 22000; lV{k,2} = 'SLS Block 1';     k = k + 1;
+lV{k,1}   = 46000; lV{k,2} = 'SLS Block 4';     k = k + 1;
+
+%% Lambert Analysis - varying start date, fixed duration
+nYears    = 4;
+nA        = 100;
+nPP       = 25;
+start     = linspace(0,nA);
+nS        = length(start);
+duration  = nYears*365.25; % days
+dVs       = zeros(1,nS*nPP);
+dVMax     = zeros(1,nS);
+dVMin     = zeros(1,nS);
+p         = 1;
+time      = zeros(1,nS*nPP);
+for j = 1:nS
+  dVThis = zeros(1,nPP);
+  for k = 1:nPP
+    days = (k-1)*365/nPP;
+    time(p)       = start(j)*365.25+days;
+	  jDS           = jD0+start(j)*365.25+days;
+	  [r0, ~, v]    = PlanetPosition( 'update', jDS );
+    [rI, ~, vI]   = PlanetPosition( 'update', jDS+duration ); 
+    [vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+    dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+    dVs(p)        = dV + dVOrbit;
+    dVThis(k)     = dVs(p);
+    p = p+1;
+  end
+  dVMin(j) = min(dVThis);
+  dVMax(j) = max(dVThis);
+end
+Plot2D(time/365,dVs,'Start Date (years)','Delta-V (km/s)',sprintf('Lambert Results - %d Years Duration',nYears))
+hold on
+plot(start,dVMin)
+plot(start,dVMax)
+
+%% Compare DFD to fission electric (Vasimr type engine) - Specific Power Plot
+% Specify a duration of the mission. Specify the amount of the duration that is
+% burn time. Exhaust velocity is driven by the thrust.
+
+
+tol           = 10;
+specificPower = linspace(0.03,2);
+nP            = length(specificPower);
+mT            = zeros(1,nP);
+mE            = zeros(1,nP);
+mF            = zeros(1,nP);
+uE            = zeros(1,nP);
+thrust        = zeros(1,nP);
+duration      = nYears*365.25*86400;
+
+% Calculate thrust needed to achieve delta-V in the specified burn duration;
+% use the power equation to compute exhaust
+for k = 1:nP
+  dM      = 100;
+  mE(k)   = power/specificPower(k);
+  mD      = mE(k) + mP; % add payload mass
+  mT(k)   = mD;
+  mFOld   = 0;
+  while( dM > tol )
+    % average mass includes 1/2 the fuel
+    mAv           = mT(k) - 0.5*mFOld;
+    thrust(k)     = mAv*dVTotal*1000/(fDuration*duration);
+    uE(k)         = 2*power*1e3*eff/thrust(k); % Power needs to be in W
+    try
+      [mF(k),mT(k)]	= RocketMass( uE(k)/g, mD, tankF, dVTotal );
+      dM            = abs(mF(k)-mFOld);
+      accel         = thrust(k)/(mT(k) - 0.5*mF(k));
+    catch
+      mF(k) = 0;
+      mT(k) = 0;
+      thrust(k) = 0;
+      uE(k) = 0;
+      dM = -1;
+    end
+    mFOld = mF(k);
+  end
+end
+
+%% Plot
+Plot2D(specificPower,[uE/g;thrust],'Specific Power (kW/kg)',{'Isp (s)','Thrust (N)'},'Thrust and Isp')
+uE_dfd = interp1(specificPower,uE/g,kWPerKg);
+subplot(2,1,1)
+hold on
+plot(kWPerKg,uE_dfd,'*');
+subplot(2,1,2)
+hold on
+thrust_dfd = interp1(specificPower,thrust,kWPerKg);
+plot(kWPerKg,thrust_dfd,'*');
+
+titlestr = sprintf('Mass for %d Year Mission/ %d km/s Delta-V/ 2 MW Power Plant',nYears,dVTotal);
+[~,hA] = Plot2D(specificPower,[mT;mF;mE],'Specific Power (kW/kg)','Mass (kg)',titlestr,'ylog');
+
+xLim = get(gca,'xlim');
+yLim = get(gca,'ylim');
+
+% launch vehicle
+for k = 1:4
+  line(xLim, [lV{k,1},lV{k,1}],yLim,'color',[0 0.9 0.9]);
+  text(0.8*xLim(2),0.85*lV{k,1},lV{k,2},'fontsize',12);
+end
+
+line(kWPerKg*[1 1], yLim,'color',[0 0.8 0]);
+text(1.03*kWPerKg, 1.5*yLim(1),'DFD','fontsize',12);
+line([0.06 0.06],yLim,'color',[0 0.8 0]);
+text(0.07,1.5*yLim(1),'Fission','fontsize',12);
+set(gca,'fontsize',11)
+legend(hA.h,{'Total','Fuel','Engine'})
+
+
+%% DV and duration analysis
+% DFD, Nuclear Electric, Nuclear Thermal, Chemical
+k         = 1;
+tech{k}   = 'Chemical';                 uETech(k)	= 462*g; k = k + 1;
+tech{k}   = 'Nuclear Thermal';          uETech(k)	= 900*g; k = k + 1;
+tech{k}   = 'DFD';                      uETech(k)	= 100e3; k = k + 1;
+tech{k}   = 'Nuclear Electric Hall';    uETech(k)	= 20e3; k = k + 1;
+tech{k}   = 'Nuclear Electric VASIMR';	uETech(k)	= 49e3;
+
+[r0, ~, v]  = PlanetPosition( 'update', jD0 );
+ 
+% Delta-V analysis considering location of Pluto
+disp('Run loop over start dates and mission duration...')
+years   = linspace(1,30,200);
+nY      = length(years);
+start   = linspace(0,20*365,600);
+nS      = length(start);
+
+dVTotal = zeros(1,nY);
+TimeDisplay( 'initialize', 'Pluto Lambert Loop', nY );
+for k = nY:-1:1
+  dVJ = zeros(1,nS);
+  for j = 1:nS
+    jDS           = jD0+start(j);
+    [r0, ~, v]    = PlanetPosition( 'update', jDS );
+    duration      = years(k)*365.25; % days
+    [rI, ~, vI]   = PlanetPosition( 'update', jDS+duration ); 
+    [vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+    dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+    dVJ(j)        = dV + dVOrbit;
+  end
+  dVTotal(k) = min(dVJ);
+  TimeDisplay('update');
+end
+TimeDisplay('close');
+disp('Done.')
+
+%%% Plot
+figure('Name','Theoretical Maximum Delta-V')
+plot(years,dVTotal)
+grid on
+xlabel('Pluto Transfer Time (yrs)','fontsize',12);
+ylabel('Lambert \Delta V (km/s)','fontsize',12);
+title('Theoretical Maximum Delta-V','fontsize',14,'fontweight','bold');
+
+maxDV = uETech*log((1+tankF)/tankF)/1000;
+hold on;
+for k = 1:length(uETech)
+  str = sprintf('%s\n  Isp: %.0f s',tech{k},uETech(k)/g);
+  j = find(dVTotal < maxDV(k),1);
+  if ~isempty(j)
+    line([years(j);years(j)],[0,dVTotal(j)+2],'color',[1 0 0]);
+    text(years(j),4+dVTotal(j),str,'fontsize',12);
+    p(k) = plot(years(j),2+dVTotal(j),'.');
+  end
+end
+set(gca,'fontsize',11)
+     
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-29 16:44:15 -0400 (Fri, 29 May 2020) $
+% $Revision: 52569 $
+
+
+##### SOURCE END #####
+--></body></html>

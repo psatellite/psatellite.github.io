@@ -1,0 +1,506 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test attitude determination using the batch methods</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="TBAD.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test attitude determination using the batch methods</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also ConjGrad, DiffCorr, Delay, Quant, RaDec2U, IsVersionAfter, UE,
+ADGen
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Define global variables</a></li><li><a href="#3">The orbital elements</a></li><li><a href="#4">Physical spacecraft data</a></li><li><a href="#5">Generate attitude data</a></li><li><a href="#6">Just a change of variable for convenience</a></li><li><a href="#7">Extract the data with chordwidths above a threshold</a></li><li><a href="#8">This is the data used by the estimators</a></li><li><a href="#9">Create the measurement vector.</a></li><li><a href="#10">States to be solved for</a></li><li><a href="#11">Nelder-Meade</a></li><li><a href="#12">Conjugate Gradient</a></li><li><a href="#13">Differential Corrector</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1994-2001 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Define global variables</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> uss_ us1_ us2_ ue1_ ue2_ er1_ er2_ zs_ zh1_ zh2_ zd1_ zd2_;
+<span class="keyword">global</span> Ws_ Wh1_ Wh2_ Wd1_ Wd2_ cant1 cant2;
+
+
+nsamples  = 400;
+
+degToRad  = pi/180;
+rPMToRPS  = 2*pi/60;
+
+cant1     = 94*degToRad;
+cant2     = 86*degToRad;
+dihedral1 =  0*degToRad;
+dihedral2 = 45*degToRad;
+
+sigcw     = 1;
+sigda     = 1;
+sigss     = 1;
+
+ssbias    = 0.01;
+ssnoise   = 0.0*degToRad;
+ssquant   = 0.00000000001*degToRad;
+
+erbias    =  0.0;
+cw1bias   =  0.0;
+cw2bias   =  0.0;
+da1bias   =  0.0;
+da2bias   =  0.0;
+cant1bias =  0.0;
+cant2bias =  0.0;
+
+c10      = cos(10*degToRad);
+s10      = sin(10*degToRad);
+
+sun      = [c10;0;s10];
+
+usun     = [ c10*ones(1,nsamples);zeros(1,nsamples);s10*ones(1,nsamples)];
+
+qtype    = <span class="string">'round'</span>;
+onesigma = 0.0;
+spinrate = 10*rPMToRPS;
+quant    = 1.e-12;
+delay    = 0;
+</pre><h2 id="3">The orbital elements</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+el(1)        = (42167 + 6800)/2;
+el(2)        = 7 * pi/180;
+el(3)        = 0;
+el(4)        = 0;
+el(5)        = 0.7;
+
+ra           =  1.5;
+dec          = -0.4;
+uspin        = RaDec2U(ra,dec);
+</pre><h2 id="4">Physical spacecraft data</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+cantAngle    = [cant1;cant2];
+cantBias     = [cant1bias;cant2bias];
+dihedralBias = [dihedral1;dihedral2];
+mA           = linspace(pi/2,3*pi/2,nsamples);
+</pre><h2 id="5">Generate attitude data</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+[tLE,tTE,sa,unadir,eradius] = ADGen( el, usun, uspin, spinrate, mA, [delay;delay], <span class="keyword">...</span>
+                                    [quant;quant], [qtype;qtype], [onesigma;onesigma], <span class="keyword">...</span>
+                                    cantAngle, cantBias, dihedralBias, ssquant, <span class="keyword">...</span>
+                                    <span class="string">'round'</span>, ssnoise, ssbias, erbias );
+</pre><img vspace="5" hspace="5" src="TBAD_01.png" alt=""> <h2 id="6">Just a change of variable for convenience</h2><pre class="codeinput"><span class="comment">%-------------------------------------------</span>
+tte1 = tTE(1,:);
+tte2 = tTE(2,:);
+tle1 = tLE(1,:);
+tle2 = tLE(2,:);
+</pre><h2 id="7">Extract the data with chordwidths above a threshold</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+chordwidth1 = spinrate*(tte1-tle1);
+chordwidth2 = spinrate*(tte2-tle2);
+
+<span class="comment">% Short chords have lots of information but tend to be unreliable because the model</span>
+<span class="comment">% is inaccurate when chords are small</span>
+<span class="comment">%----------------------------------------------------------------------------------</span>
+kr  = find(chordwidth1 &gt; 6*degToRad | chordwidth2 &gt; 6*degToRad);
+</pre><h2 id="8">This is the data used by the estimators</h2><p>The first three are ephemeris data the next two are chordwidths, the following two are dihedral angles and the last is the sun angle</p><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+us  =   usun(:,kr);
+ue  = unadir(:,kr);
+er  = eradius(kr);
+cw1 = chordwidth1(kr) + cw1bias;
+cw2 = chordwidth2(kr) + cw2bias;
+da1 = 0.5*spinrate*(tte1(kr)+tle1(kr))-dihedral1 + da1bias;
+da2 = 0.5*spinrate*(tte2(kr)+tle2(kr))-dihedral2 + da2bias;
+sb  = sa(kr);
+
+<span class="comment">% The state vector:</span>
+<span class="comment">%          1          2        3        4        5        6</span>
+<span class="comment">% [       ra,       dec, cwbias1, cwbias2, dabias1, dabias2,</span>
+<span class="comment">%          7          8        9      10</span>
+<span class="comment">%  cantbias1, cantbias2, sunbias, erbias]</span>
+
+lkr = length(kr);
+</pre><h2 id="9">Create the measurement vector.</h2><p>Must conform to definitions in hname and Hname</p><pre class="codeinput">k1 = find(cw1 &gt; 0);
+k2 = find(cw2 &gt; 0);
+
+uss_ = us;
+us1_ = us(:,k1);
+us2_ = us(:,k2);
+ue1_ = ue(:,k1);
+ue2_ = ue(:,k2);
+er1_ = er(k1);
+er2_ = er(k2);
+zs_  = sb';
+zh1_ = cw1(k1)';
+zh2_ = cw2(k2)';
+zd1_ = da1(k1)';
+zd2_ = da2(k2)';
+Ws_  = ones(lkr,1)       /sigss^2;
+Wh1_ = ones(length(k1),1)/sigcw^2;
+Wh2_ = ones(length(k2),1)/sigcw^2;
+Wd1_ = ones(length(k1),1)/sigda^2;
+Wd2_ = ones(length(k2),1)/sigda^2;
+
+length([zs_;zh1_;zh2_;zd1_;zd2_]);
+
+x0      = [1.6 -0.3  0.01 0 0  0 0 0  0 0]';
+
+P  = diag([100,100,1,1,1,1,1,1,1,1]);
+S0 = inv(P);
+<span class="comment">%SO = zeros(10,10);</span>
+</pre><h2 id="10">States to be solved for</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+kX = 1:2;
+</pre><h2 id="11">Nelder-Meade</h2><pre class="codeinput">disp(<span class="string">'---------------------------------------------------------------------'</span>)
+disp(<span class="string">'Nelder-Meade'</span>)
+disp(<span class="string">'---------------------------------------------------------------------'</span>)
+
+<span class="comment">% options(1)  is nonzero, intermediate steps in the solution are displayed;</span>
+<span class="comment">% options(2)  is the termination tolerance for x; the default is 1.e-4.</span>
+<span class="comment">% options(3)  is the termination tolerance for F(x); the default is 1.e-4.</span>
+<span class="comment">% options(14) is the maximum number of steps; the default is 500.</span>
+
+options           = zeros(1,14);
+options([2 3 14]) = [1.e-4 1.e-4 500];
+
+<span class="keyword">if</span>( IsVersionAfter( 5.3 ) )
+  TolX    = options(2); TolFun = options(3); MaxFunEvals = options(14);
+  Options = optimset(<span class="string">'TolX'</span>,TolX,<span class="string">'TolFun'</span>,TolFun,<span class="string">'MaxFunEvals'</span>,MaxFunEvals);
+  x       = fminsearch( <span class="string">'CostNM'</span>,x0(kX), Options,   kX,S0,x0,10);
+<span class="keyword">else</span>
+  x       = fmins     ( <span class="string">'CostNM'</span>,x0(kX), options,[],kX,S0,x0,10);
+<span class="keyword">end</span>
+
+x = rem(x,2*pi);
+uSpinNM = RaDec2U( x(1), x(2) );
+</pre><pre class="codeoutput">---------------------------------------------------------------------
+Nelder-Meade
+---------------------------------------------------------------------
+</pre><h2 id="12">Conjugate Gradient</h2><pre class="codeinput">disp(<span class="string">'---------------------------------------------------------------------'</span>)
+disp(<span class="string">'Conjugate Gradient'</span>)
+disp(<span class="string">'---------------------------------------------------------------------'</span>)
+
+x = ConjGrad( <span class="string">'FX'</span>, <span class="string">'CostF'</span>, S0, x0, kX, 0.00001, 1, 0 );
+
+x = rem(x(:,end),2*pi);
+uSpinCG = RaDec2U( x(1,end), x(2,end) );
+</pre><pre class="codeoutput">---------------------------------------------------------------------
+Conjugate Gradient
+---------------------------------------------------------------------
+Using conjugate gradients
+Initial cost   4.9760e+00
+
+Cost and number of measurements used   6.3084e-01 863
+
+Cost and number of measurements used   2.6663e-01 958
+
+Cost and number of measurements used   2.1131e-01 971
+
+Cost and number of measurements used   2.1082e-01 975
+
+Cost and number of measurements used   2.1081e-01 975
+
+Cost and number of measurements used   2.1081e-01 975
+
+</pre><h2 id="13">Differential Corrector</h2><pre class="codeinput">disp(<span class="string">'---------------------------------------------------------------------'</span>)
+disp(<span class="string">'Differential Corrector'</span>)
+disp(<span class="string">'---------------------------------------------------------------------'</span>)
+
+[x,~,rsvd,cHWH,rank,P,wmr,sr,J,sig,nz] = DiffCorr( <span class="string">'FX'</span>, S0, x0, kX, .001, 0 );
+
+x = rem(x(:,end),2*pi);
+uSpinDC = RaDec2U( x(1,end), x(2,end) );
+
+fprintf(<span class="string">'\nSpin Vectors\n\n'</span>)
+fprintf(<span class="string">'%24s %24s %24s\n\n'</span>,<span class="string">'Nelder Meade'</span>,<span class="string">'Conjugate Gradient'</span>,<span class="keyword">...</span>
+             <span class="string">'Differential Corrector'</span>)
+ax = [<span class="string">'x'</span> <span class="string">'y'</span> <span class="string">'z'</span>];
+<span class="keyword">for</span> k = 1:3
+  fprintf(<span class="string">'%s %24.8f %24.8f %24.8f\n\n'</span>,ax(k),uSpinNM(k),uSpinCG(k),uSpinDC(k));
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">---------------------------------------------------------------------
+Differential Corrector
+---------------------------------------------------------------------
+
+Spin Vectors
+
+            Nelder Meade       Conjugate Gradient   Differential Corrector
+
+x               0.06367329               0.06406641               0.06400678
+
+y               0.91190515               0.91482650               0.91484554
+
+z              -0.40543151              -0.39873296              -0.39869884
+
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test attitude determination using the batch methods
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also ConjGrad, DiffCorr, Delay, Quant, RaDec2U, IsVersionAfter, UE, 
+%  ADGen
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1994-2001 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+
+%% Define global variables
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global uss_ us1_ us2_ ue1_ ue2_ er1_ er2_ zs_ zh1_ zh2_ zd1_ zd2_; 
+global Ws_ Wh1_ Wh2_ Wd1_ Wd2_ cant1 cant2;
+
+
+nsamples  = 400;
+
+degToRad  = pi/180;
+rPMToRPS  = 2*pi/60;
+
+cant1     = 94*degToRad;
+cant2     = 86*degToRad;
+dihedral1 =  0*degToRad;
+dihedral2 = 45*degToRad;
+
+sigcw     = 1;
+sigda     = 1;
+sigss     = 1;
+
+ssbias    = 0.01;
+ssnoise   = 0.0*degToRad;
+ssquant   = 0.00000000001*degToRad;
+
+erbias    =  0.0;
+cw1bias   =  0.0;
+cw2bias   =  0.0;
+da1bias   =  0.0;
+da2bias   =  0.0;
+cant1bias =  0.0;
+cant2bias =  0.0;
+
+c10      = cos(10*degToRad);
+s10      = sin(10*degToRad);
+
+sun      = [c10;0;s10];
+
+usun     = [ c10*ones(1,nsamples);zeros(1,nsamples);s10*ones(1,nsamples)];
+
+qtype    = 'round';
+onesigma = 0.0;
+spinrate = 10*rPMToRPS;
+quant    = 1.e-12;
+delay    = 0;
+
+%% The orbital elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+el(1)        = (42167 + 6800)/2;
+el(2)        = 7 * pi/180;
+el(3)        = 0;
+el(4)        = 0;
+el(5)        = 0.7;
+
+ra           =  1.5;
+dec          = -0.4;
+uspin        = RaDec2U(ra,dec);
+
+
+%% Physical spacecraft data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cantAngle    = [cant1;cant2];
+cantBias     = [cant1bias;cant2bias];
+dihedralBias = [dihedral1;dihedral2];
+mA           = linspace(pi/2,3*pi/2,nsamples);
+
+%% Generate attitude data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[tLE,tTE,sa,unadir,eradius] = ADGen( el, usun, uspin, spinrate, mA, [delay;delay], ...
+                                    [quant;quant], [qtype;qtype], [onesigma;onesigma], ...
+                                    cantAngle, cantBias, dihedralBias, ssquant, ...
+                                    'round', ssnoise, ssbias, erbias );
+
+%% Just a change of variable for convenience
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tte1 = tTE(1,:);
+tte2 = tTE(2,:);
+tle1 = tLE(1,:);
+tle2 = tLE(2,:);
+
+
+%% Extract the data with chordwidths above a threshold
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+chordwidth1 = spinrate*(tte1-tle1);
+chordwidth2 = spinrate*(tte2-tle2);
+
+% Short chords have lots of information but tend to be unreliable because the model
+% is inaccurate when chords are small
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kr  = find(chordwidth1 > 6*degToRad | chordwidth2 > 6*degToRad);
+
+%% This is the data used by the estimators
+% The first three are ephemeris data the next two are chordwidths, the following 
+% two are dihedral angles and the last is the sun angle
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+us  =   usun(:,kr);
+ue  = unadir(:,kr);
+er  = eradius(kr); 
+cw1 = chordwidth1(kr) + cw1bias;  
+cw2 = chordwidth2(kr) + cw2bias;  
+da1 = 0.5*spinrate*(tte1(kr)+tle1(kr))-dihedral1 + da1bias;  
+da2 = 0.5*spinrate*(tte2(kr)+tle2(kr))-dihedral2 + da2bias;  
+sb  = sa(kr);
+
+% The state vector:
+%          1          2        3        4        5        6
+% [       ra,       dec, cwbias1, cwbias2, dabias1, dabias2,
+%          7          8        9      10
+%  cantbias1, cantbias2, sunbias, erbias]
+
+lkr = length(kr);
+
+%% Create the measurement vector. 
+% Must conform to definitions in hname and Hname
+
+k1 = find(cw1 > 0);
+k2 = find(cw2 > 0);
+
+uss_ = us;
+us1_ = us(:,k1);
+us2_ = us(:,k2);
+ue1_ = ue(:,k1);
+ue2_ = ue(:,k2);
+er1_ = er(k1);
+er2_ = er(k2);
+zs_  = sb';
+zh1_ = cw1(k1)';
+zh2_ = cw2(k2)';
+zd1_ = da1(k1)';
+zd2_ = da2(k2)';
+Ws_  = ones(lkr,1)       /sigss^2;
+Wh1_ = ones(length(k1),1)/sigcw^2;  
+Wh2_ = ones(length(k2),1)/sigcw^2;  
+Wd1_ = ones(length(k1),1)/sigda^2;  
+Wd2_ = ones(length(k2),1)/sigda^2; 
+
+length([zs_;zh1_;zh2_;zd1_;zd2_]);
+
+x0      = [1.6 -0.3  0.01 0 0  0 0 0  0 0]';
+
+P  = diag([100,100,1,1,1,1,1,1,1,1]);
+S0 = inv(P);
+%SO = zeros(10,10);
+
+%% States to be solved for
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kX = 1:2;
+
+%% Nelder-Meade
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('Nelder-Meade')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+
+% options(1)  is nonzero, intermediate steps in the solution are displayed;
+% options(2)  is the termination tolerance for x; the default is 1.e-4.
+% options(3)  is the termination tolerance for F(x); the default is 1.e-4.
+% options(14) is the maximum number of steps; the default is 500.
+ 
+options           = zeros(1,14);
+options([2 3 14]) = [1.e-4 1.e-4 500];
+
+if( IsVersionAfter( 5.3 ) ) 
+  TolX    = options(2); TolFun = options(3); MaxFunEvals = options(14);
+  Options = optimset('TolX',TolX,'TolFun',TolFun,'MaxFunEvals',MaxFunEvals);
+  x       = fminsearch( 'CostNM',x0(kX), Options,   kX,S0,x0,10);
+else
+  x       = fmins     ( 'CostNM',x0(kX), options,[],kX,S0,x0,10);  
+end
+
+x = rem(x,2*pi);
+uSpinNM = RaDec2U( x(1), x(2) );
+
+%% Conjugate Gradient
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('Conjugate Gradient')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+
+x = ConjGrad( 'FX', 'CostF', S0, x0, kX, 0.00001, 1, 0 );
+
+x = rem(x(:,end),2*pi);
+uSpinCG = RaDec2U( x(1,end), x(2,end) );
+
+%% Differential Corrector
+
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('Differential Corrector')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+ 
+[x,~,rsvd,cHWH,rank,P,wmr,sr,J,sig,nz] = DiffCorr( 'FX', S0, x0, kX, .001, 0 );
+
+x = rem(x(:,end),2*pi);
+uSpinDC = RaDec2U( x(1,end), x(2,end) );
+
+fprintf('\nSpin Vectors\n\n')
+fprintf('%24s %24s %24s\n\n','Nelder Meade','Conjugate Gradient',...
+             'Differential Corrector')
+ax = ['x' 'y' 'z'];
+for k = 1:3
+  fprintf('%s %24.8f %24.8f %24.8f\n\n',ax(k),uSpinNM(k),uSpinCG(k),uSpinDC(k));
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-09-08 $
+% $Revision: 2214725ef0ffebb764ae379aec0e0d7b46e2b4a8 $
+
+
+##### SOURCE END #####
+--></body></html>

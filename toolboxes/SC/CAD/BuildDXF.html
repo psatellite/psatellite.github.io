@@ -1,0 +1,506 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Loads in dxf data for Cassini and Huygens, and saves data to mat-files.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="BuildDXF.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Loads in dxf data for Cassini and Huygens, and saves data to mat-files.</h1><!--introduction--><p>The source dxf data files are located in the SCData directory. The models are saved to the SCModels directory. This demo may take several minutes.</p><p>-------------------------------------------------------------------------  See also LoadCAD, FindDirectory, SaveStructure -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Process the dxf files</a></li><li><a href="#3">Save as mat files</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998,2013 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Process the dxf files</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+gCassiniOrbiter = LoadCAD( <span class="string">'cassini.dxf'</span>, [], <span class="string">''</span>, 0.2 );
+gHuygensProbe   = LoadCAD( <span class="string">'probe.dxf'</span>,   [], <span class="string">''</span>, 0.1227 );
+</pre><pre class="codeoutput">
+-------------------------------------
+DXF Warnings
+-------------------------------------
+
+Comment: Flat DXF output from StudioPro(TM) 3d 1.5.
+
+-------------------------------------
+Statistics for file: cassini.dxf 
+-------------------------------------
+ Lines     =  260802 
+ Tables    =       0
+ Sections  =       1
+ 3DFaces   =    9314
+ Polylines =       0
+ Vertices  =       0
+
+-------------------------------------
+AutoCAD internal parameters
+-------------------------------------
+
+$UCSORG  = [0.000000 0.000000 0.000000]
+$UCSXDIR = [0.000000 0.000000 0.000000]
+$UCSYDIR = [0.000000 0.000000 0.000000]
+$EXTMIN  = [0.000000 0.000000 0.000000]
+$EXTMAX  = [0.000000 0.000000 0.000000]
+
+-------------------------------------
+Layers
+-------------------------------------
+Layer   1 name is Mesh #31-2
+Layer   2 name is Mesh #30-2
+Layer   3 name is Mesh #29-2
+Layer   4 name is Mesh #28-2
+Layer   5 name is Mesh #27-2
+Layer   6 name is Mesh #26-1
+Layer   7 name is Mesh #24-2
+Layer   8 name is Mesh #23-2
+Layer   9 name is Mesh #22-2
+Layer  10 name is Mesh #21-2
+Layer  11 name is Mesh #20-2
+Layer  12 name is Mesh #19-2
+Layer  13 name is Mesh #18-2
+Layer  14 name is Mesh #17-2
+Layer  15 name is Mesh #16-2
+Layer  16 name is Mesh #15-2
+Layer  17 name is Mesh #14-2
+Layer  18 name is Mesh #13-2
+Layer  19 name is 14
+Layer  20 name is Mesh #12-2
+Layer  21 name is Mesh #11-1
+Layer  22 name is Mesh #10-1
+Layer  23 name is Mesh #09-1
+Layer  24 name is Mesh #08-1
+Layer  25 name is Mesh #07-1
+Layer  26 name is Mesh #06-1
+Layer  27 name is Mesh #05-1
+Layer  28 name is Mesh #04-1
+Layer  29 name is Mesh #03-1
+Layer  30 name is Mesh #02-1
+Layer  31 name is Mesh #01-1
+Layer  32 name is Mesh #00-1
+Layer  33 name is 0-1
+Layer  34 name is Mesh #00
+Layer  35 name is Mesh #01
+Layer  36 name is Mesh #02
+Layer  37 name is Mesh #03
+Layer  38 name is 4
+Layer  39 name is Mesh #04
+Layer  40 name is Mesh #05
+Layer  41 name is Mesh #06
+Layer  42 name is Mesh #07
+Layer  43 name is Mesh #08
+Layer  44 name is Mesh #09
+Layer  45 name is Mesh #10
+Layer  46 name is Mesh #11
+Layer  47 name is 13
+Layer  48 name is Mesh #12
+Layer  49 name is Mesh #13
+Layer  50 name is Mesh #14
+Layer  51 name is Mesh #15
+Layer  52 name is 18
+Layer  53 name is Mesh #16
+Layer  54 name is Mesh #17
+Layer  55 name is Mesh #18
+Layer  56 name is Mesh #19
+Layer  57 name is Mesh #20
+Layer  58 name is Mesh #21
+Layer  59 name is Mesh #22
+Layer  60 name is Mesh #23
+Layer  61 name is Mesh #24
+Layer  62 name is Mesh #25
+Layer  63 name is Mesh #27
+Layer  64 name is Mesh #28
+Layer  65 name is Mesh #29
+Layer  66 name is Mesh #30
+Layer  67 name is 34
+Layer  68 name is Mesh #31
+Layer  69 name is Mesh #32
+Layer  70 name is Mesh #33
+Layer  71 name is Mesh #34
+Layer  72 name is 39
+Layer  73 name is Mesh #35
+Layer  74 name is Mesh #36
+Layer  75 name is Mesh #37
+Layer  76 name is Mesh #38
+Layer  77 name is 44
+Layer  78 name is Mesh #39
+Layer  79 name is Mesh #40
+Layer  80 name is Mesh #41
+Layer  81 name is Mesh #42
+Layer  82 name is Mesh #43
+Layer  83 name is Mesh #44
+Layer  84 name is Mesh #45
+Layer  85 name is Mesh #46
+Layer  86 name is Mesh #47
+Layer  87 name is Mesh #48
+Layer  88 name is Mesh #49
+Layer  89 name is Mesh #50
+Layer  90 name is Mesh #51
+Layer  91 name is Mesh #52
+Layer  92 name is Mesh #53
+Layer  93 name is Mesh #54
+Layer  94 name is Mesh #55
+Layer  95 name is Mesh #56
+Layer  96 name is Mesh #57
+Layer  97 name is Mesh #58
+Layer  98 name is 65
+Layer  99 name is Mesh #59
+Layer 100 name is Mesh #60
+Layer 101 name is Mesh #61
+Layer 102 name is Mesh #62
+Layer 103 name is Mesh #63
+Layer 104 name is Mesh #64
+Layer 105 name is Mesh #65
+Layer 106 name is 73
+Layer 107 name is Mesh #66
+Layer 108 name is Mesh #67
+Layer 109 name is Mesh #68
+Layer 110 name is Mesh #69
+Layer 111 name is Mesh #70
+Layer 112 name is Mesh #71
+Layer 113 name is Mesh #72
+Layer 114 name is 81
+Layer 115 name is Mesh #73
+Layer 116 name is Mesh #74
+Layer 117 name is Mesh #75
+Layer 118 name is Mesh #76
+Layer 119 name is Mesh #77
+Layer 120 name is Mesh #78
+Layer 121 name is Mesh #79
+Layer 122 name is 89
+Layer 123 name is Mesh #80
+Layer 124 name is Mesh #81
+Layer 125 name is Mesh #82
+Layer 126 name is Mesh #83
+Layer 127 name is Mesh #84
+Layer 128 name is Mesh #85
+Layer 129 name is Mesh #86
+Layer 130 name is 97
+Layer 131 name is Mesh #87
+Layer 132 name is Mesh #88
+Layer 133 name is Mesh #89
+Layer 134 name is Mesh #90
+Layer 135 name is Mesh #91
+Layer 136 name is Mesh #92
+Layer 137 name is Mesh #93
+Layer 138 name is Mesh #94
+Layer 139 name is Mesh #95
+Layer 140 name is Mesh #96
+Layer 141 name is 108
+Layer 142 name is Mesh #97
+Layer 143 name is Mesh #98
+Layer 144 name is Mesh #99
+Layer 145 name is Mesh #100
+Layer 146 name is 113
+Layer 147 name is Mesh #101
+Layer 148 name is Mesh #102
+Layer 149 name is Mesh #103
+Layer 150 name is Mesh #104
+Layer 151 name is 118
+Layer 152 name is Mesh #105
+Layer 153 name is Mesh #106
+Layer 154 name is Mesh #107
+Layer 155 name is Mesh #108
+Layer 156 name is Mesh #109
+Layer 157 name is Mesh #110
+Layer 158 name is Mesh #111
+Layer 159 name is Mesh #112
+Layer 160 name is Mesh #113
+Layer 161 name is Mesh #114
+Layer 162 name is Mesh #115
+Layer 163 name is Mesh #116
+Layer 164 name is Mesh #117
+Layer 165 name is Mesh #118
+Layer 166 name is Mesh #119
+Layer 167 name is 139
+Layer 168 name is Mesh #110-1
+Layer 169 name is Mesh #109-1
+Layer 170 name is Mesh #108-1
+Layer 171 name is Mesh #107-1
+Layer 172 name is Mesh #106-1
+Layer 173 name is Mesh #105-1
+Layer 174 name is Mesh #104-1
+Layer 175 name is Mesh #103-1
+Layer 176 name is Mesh #102-1
+Layer 177 name is Mesh #101-1
+Layer 178 name is Mesh #100-1
+Layer 179 name is Mesh #99-1
+Layer 180 name is Mesh #98-1
+Layer 181 name is Mesh #97-1
+Layer 182 name is Mesh #96-1
+Layer 183 name is Mesh #95-1
+Layer 184 name is Mesh #93-1
+Layer 185 name is 116
+Layer 186 name is Mesh #90-1
+Layer 187 name is Mesh #89-1
+Layer 188 name is Mesh #88-1
+Layer 189 name is 112
+Layer 190 name is 111
+Layer 191 name is Mesh #87-1
+Layer 192 name is Mesh #86-1
+Layer 193 name is Mesh #85-1
+Layer 194 name is Mesh #84-1
+Layer 195 name is Mesh #83-1
+Layer 196 name is Mesh #82-1
+Layer 197 name is 104
+Layer 198 name is 103
+Layer 199 name is Mesh #81-1
+Layer 200 name is Mesh #80-1
+Layer 201 name is Mesh #79-1
+Layer 202 name is Mesh #78-1
+Layer 203 name is Mesh #77-1
+Layer 204 name is Mesh #76-1
+Layer 205 name is Mesh #75-1
+Layer 206 name is Mesh #74-1
+Layer 207 name is 94
+Layer 208 name is 93
+Layer 209 name is Mesh #73-1
+Layer 210 name is Mesh #72-1
+Layer 211 name is Mesh #71-1
+Layer 212 name is Mesh #70-1
+Layer 213 name is Mesh #69-1
+Layer 214 name is Mesh #68-1
+Layer 215 name is 86
+Layer 216 name is Mesh #67-1
+Layer 217 name is Mesh #66-1
+Layer 218 name is 83
+Layer 219 name is Mesh #65-1
+Layer 220 name is Mesh #64-1
+Layer 221 name is 80
+Layer 222 name is Mesh #63-1
+Layer 223 name is Mesh #62-1
+Layer 224 name is 77
+Layer 225 name is Mesh #61-1
+Layer 226 name is Mesh #60-1
+Layer 227 name is Mesh #59-1
+Layer 228 name is Mesh #58-1
+Layer 229 name is Mesh #57-1
+Layer 230 name is Mesh #56-1
+Layer 231 name is Mesh #55-1
+Layer 232 name is Mesh #54-1
+Layer 233 name is Mesh #53-1
+Layer 234 name is Mesh #52-1
+Layer 235 name is Mesh #51-1
+Layer 236 name is 65-1
+Layer 237 name is Mesh #50-1
+Layer 238 name is Mesh #49-1
+Layer 239 name is Mesh #48-1
+Layer 240 name is Mesh #47-1
+Layer 241 name is 60
+Layer 242 name is Mesh #46-1
+Layer 243 name is Mesh #45-1
+Layer 244 name is Mesh #44-1
+Layer 245 name is 56
+Layer 246 name is Mesh #43-1
+Layer 247 name is Mesh #42-1
+Layer 248 name is Mesh #41-1
+Layer 249 name is Mesh #40-1
+Layer 250 name is Mesh #39-1
+Layer 251 name is Mesh #38-1
+Layer 252 name is Mesh #37-1
+Layer 253 name is Mesh #36-1
+Layer 254 name is 47
+Layer 255 name is Mesh #35-1
+Layer 256 name is 45
+Layer 257 name is Mesh #34-1
+Layer 258 name is Mesh #33-1
+Layer 259 name is Mesh #32-1
+Layer 260 name is Mesh #31-1
+Layer 261 name is Mesh #30-1
+Layer 262 name is Mesh #29-1
+Layer 263 name is Mesh #28-1
+Layer 264 name is Mesh #27-1
+Layer 265 name is Mesh #26
+Layer 266 name is Mesh #25-1
+Layer 267 name is 34-1
+Layer 268 name is Mesh #24-1
+Layer 269 name is Mesh #23-1
+Layer 270 name is Mesh #22-1
+Layer 271 name is Mesh #21-1
+Layer 272 name is Mesh #20-1
+Layer 273 name is Mesh #19-1
+Layer 274 name is 27
+Layer 275 name is 26
+Layer 276 name is 25
+Layer 277 name is Mesh #18-1
+Layer 278 name is Mesh #17-1
+Layer 279 name is 22
+Layer 280 name is Mesh #16-1
+Layer 281 name is Mesh #15-1
+Layer 282 name is 19
+Layer 283 name is Mesh #14-1
+Layer 284 name is Mesh #13-1
+Layer 285 name is Mesh #12-1
+Layer 286 name is Mesh #11-3
+Layer 287 name is Mesh #10-3
+Layer 288 name is Mesh #09-3
+Layer 289 name is Mesh #08-3
+Layer 290 name is 11
+Layer 291 name is 10
+Layer 292 name is Mesh #07-3
+Layer 293 name is Mesh #06-3
+Layer 294 name is Mesh #05-3
+Layer 295 name is Mesh #04-3
+Layer 296 name is 5
+Layer 297 name is Mesh #03-3
+Layer 298 name is Mesh #02-3
+Layer 299 name is Mesh #01-3
+Layer 300 name is Mesh #00-3
+Layer 301 name is 0
+Layer 302 name is 123
+Layer 303 name is Mesh #94-1
+Layer 304 name is 119
+Layer 305 name is Mesh #92-1
+Layer 306 name is Mesh #91-1
+
+-------------------------------------
+Polylines
+-------------------------------------
+
+-------------------------------------
+DXF Warnings
+-------------------------------------
+
+Comment: Flat DXF output from StudioPro(TM) 3d 1.5.
+
+-------------------------------------
+Statistics for file: probe.dxf 
+-------------------------------------
+ Lines     =   26106 
+ Tables    =       0
+ Sections  =       1
+ 3DFaces   =     932
+ Polylines =       0
+ Vertices  =       0
+
+-------------------------------------
+AutoCAD internal parameters
+-------------------------------------
+
+$UCSORG  = [0.000000 0.000000 0.000000]
+$UCSXDIR = [0.000000 0.000000 0.000000]
+$UCSYDIR = [0.000000 0.000000 0.000000]
+$EXTMIN  = [0.000000 0.000000 0.000000]
+$EXTMAX  = [0.000000 0.000000 0.000000]
+
+-------------------------------------
+Layers
+-------------------------------------
+Layer   1 name is Mesh #11-2
+Layer   2 name is Mesh #10-2
+Layer   3 name is Mesh #09-2
+Layer   4 name is Mesh #08-2
+Layer   5 name is Mesh #07-2
+Layer   6 name is Mesh #06-2
+Layer   7 name is Mesh #05-2
+Layer   8 name is Mesh #04-2
+Layer   9 name is Mesh #03-2
+Layer  10 name is Mesh #02-2
+Layer  11 name is Mesh #01-2
+Layer  12 name is Mesh #00-2
+
+-------------------------------------
+Polylines
+-------------------------------------
+</pre><h2 id="3">Save as mat files</h2><pre class="codeinput"><span class="comment">%------------------</span>
+dataDir = FindDirectory(<span class="string">'SCModels'</span>);
+
+SaveStructure(gCassiniOrbiter,fullfile(dataDir,<span class="string">'Cassini'</span>))
+SaveStructure(gHuygensProbe,fullfile(dataDir,<span class="string">'Huygens'</span>))
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Loads in dxf data for Cassini and Huygens, and saves data to mat-files.
+% The source dxf data files are located in the SCData directory. The models are
+% saved to the SCModels directory. This demo may take several minutes.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also LoadCAD, FindDirectory, SaveStructure
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998,2013 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Since version 2.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Process the dxf files
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+gCassiniOrbiter = LoadCAD( 'cassini.dxf', [], '', 0.2 );
+gHuygensProbe   = LoadCAD( 'probe.dxf',   [], '', 0.1227 );
+
+%% Save as mat files
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dataDir = FindDirectory('SCModels');
+
+SaveStructure(gCassiniOrbiter,fullfile(dataDir,'Cassini'))
+SaveStructure(gHuygensProbe,fullfile(dataDir,'Huygens'))
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,647 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate raising to graveyard orbit from GEO.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="GEOGraveyard.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate raising to graveyard orbit from GEO.</h1><!--introduction--><p>This is a low-fidelity model with a specular sail using EarthGuidance and FOrbCart. Integration is with RK45 (variable integration timestep). The simulation is run three times, for three different sail areas. The spacecraft bus is 1730 kg (a Lockheed A2100AX bus). The largest sail modeled can achieve over 5 km SMA change per month. You can also run the sail perfectly sun-pointing for comparison. Plots: (1) Planar view of orbit (2) Elements for the last orbit (3) Control angles (for the last orbit) (4) Average change in elements each orbit (5) Perigree radius (6) Acceleration in LVLH frame (for last orbit)</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Cone</span>, NPlot, Plot2D, TimeLabl, Cross, Dot, RK4, Unit, JD2000,
+El2RV, RV2El, Eclipse, SunV1, Accel, ConeClockToU, UToConeClock, delta,
+EarthGuidance
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Set up the parameters.</a></li><li><a href="#4">Simulation initialization</a></li><li><a href="#5">Run the simulation(s)</a></li><li><a href="#6">Plot the results</a></li><li><a href="#7">Report</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">mu  = 398600.44; <span class="comment">% Earth</span>
+cLight = 3e8;  <span class="comment">% m/s</span>
+flux   = 1367; <span class="comment">% W/m2</span>
+m2km   = 0.001;
+</pre><h2 id="3">Set up the parameters.</h2><p>Area OR mass can be a vector, not both.</p><pre class="codeinput"><span class="comment">%----------------------------------------</span>
+Asail = [40 100 200]; <span class="comment">% m2</span>
+arealDensity = 0.025; <span class="comment">% g/m2</span>
+mSC   = [1730]; <span class="comment">% kg</span>
+
+<span class="comment">% Number of sim steps and duration</span>
+<span class="comment">%---------------------------------</span>
+nOrbits = 30;
+nPPO    = 50;
+dOrbits = 40; <span class="comment">% delta points between 3D plotting</span>
+
+<span class="comment">% Initial conditions</span>
+<span class="comment">%-------------------</span>
+SMA = 42167; <span class="comment">% 6378+1000; %</span>
+inc = 0;
+jD0 = JD2000;  <span class="comment">% eclipse will be seen for JD2000+90, equinox on 79</span>
+
+<span class="comment">% Control method (see EarthGuidance)</span>
+<span class="comment">%-----------------------------------</span>
+method = <span class="string">'sma'</span>;
+
+<span class="comment">% Results</span>
+<span class="comment">% 50 m square sail at 25 g/m2, 1730 kg bus, 3500 km/year with on/off</span>
+<span class="comment">% 50 m square sail and 25 g/m2, 1730 kg bus, 649.018358 km/year with on/30*</span>
+</pre><h2 id="4">Simulation initialization</h2><pre class="codeinput">el0 = [SMA inc 0 0 0 0];
+nSim  = nOrbits*nPPO;
+dT    = Period(SMA)/nPPO;
+
+<span class="comment">% Number of separate cases</span>
+mSail = Asail*arealDensity;   <span class="comment">% kg</span>
+mass  = mSail + mSC;
+mSim = length(mass);
+[r0,v0] = El2RV( el0, [], mu );
+
+<span class="comment">% Plotting arrays</span>
+<span class="comment">%----------------</span>
+dPlot = PlotArrays(<span class="string">'init'</span>,{mSim nPPO});
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'sma'</span>,SMA);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'nEclipse'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'inc'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'ecc'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'r'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'t'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'acc'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'cone'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'clock'</span>,0);
+dPlot = PlotArrays(<span class="string">'add'</span>,dPlot,<span class="string">'accLVLH'</span>,[0;0;0]);
+dAvg = PlotArrays(<span class="string">'init'</span>,{mSim nOrbits});
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'sma'</span>,SMA);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'inc'</span>,0);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'ecc'</span>,0);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'t'</span>,0);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'apogee'</span>,0);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'perigee'</span>,0);
+dAvg = PlotArrays(<span class="string">'add'</span>,dAvg,<span class="string">'r'</span>,0);
+xPlot = zeros(6,nPPO);
+
+<span class="comment">% Global for the time interface</span>
+<span class="comment">%------------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+
+d = struct;
+d.method = method;
+
+[rP, vP] = RVFromKepler( el0 );
+
+Plot3D(rP)
+hold <span class="string">on</span>
+</pre><img vspace="5" hspace="5" src="GEOGraveyard_01.png" alt=""> <h2 id="5">Run the simulation(s)</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+<span class="keyword">for</span> j = 1:mSim
+  <span class="comment">% Assume specular sail</span>
+  <span class="comment">%---------------------</span>
+  acc0 = 2*Asail(j)*flux/cLight/mass(j)*m2km;
+
+  x       = [r0;v0];
+  jD      = jD0;
+  disp(<span class="string">'-----------------------------'</span>)
+  disp([<span class="string">'Simulation '</span> num2str(j) <span class="string">' of '</span> num2str(mSim)])
+  disp(<span class="string">'-----------------------------'</span>)
+  kS = 1;
+  kO = 1;
+  h = dT;
+
+  <span class="keyword">for</span> k = 1:nSim
+
+    <span class="comment">% Local variables</span>
+    <span class="comment">%----------------</span>
+    r = x(1:3);
+    v = x(4:6);
+
+    <span class="comment">% Display the status message</span>
+    <span class="comment">%---------------------------</span>
+    <span class="keyword">if</span> floor(k/nSim*10) == kS
+      disp([<span class="string">'Sim is '</span> num2str(kS) <span class="string">'0% finished.'</span>])
+      kS = kS+1;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Control</span>
+    <span class="comment">%--------</span>
+    <span class="comment">% First determine sail unit vector.</span>
+    [uS, rS] = SunV1( jD );
+    <span class="keyword">if</span> 1
+      <span class="comment">% use EarthGuidance to compute an optimal angle</span>
+      d.method = method;
+      [q,alphaG,deltaG] = EarthGuidance( 0, [r;v], d, struct(<span class="string">'uSun'</span>,uS) );
+    <span class="keyword">else</span>
+      <span class="comment">% switch based on angle between sun projection in orbit plane and r</span>
+      hHat = Unit(Cross(r,v));
+      sunProj = Cross( hHat, Cross(uS,hHat) );
+      cosTheta = Unit(sunProj)'*Unit(v);
+      <span class="keyword">if</span> cosTheta &gt; 0
+        <span class="comment">% receding from sun</span>
+        alphaG = pi/2; <span class="comment">% off: pi/2</span>
+        deltaG = 0;
+      <span class="keyword">else</span>
+        <span class="comment">% approaching sun</span>
+        alphaG = 0;
+        deltaG = 0;
+      <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    u = ConeClockToU( alphaG, deltaG, r, v, uS );
+
+    <span class="comment">% Check for eclipses (not common in GEO)</span>
+    [n, eclipseType] = Eclipse( r, rS*uS );
+
+    <span class="comment">% Compute the acceleration</span>
+    accel          = n*acc0*cos(alphaG);
+    aExt           = -accel*u;
+
+    <span class="comment">% Plotting</span>
+    <span class="comment">%---------</span>
+    varNames = {<span class="string">'r'</span> <span class="string">'nEclipse'</span> <span class="string">'acc'</span> <span class="string">'cone'</span> <span class="string">'clock'</span> <span class="string">'sma'</span> <span class="string">'inc'</span> <span class="string">'ecc'</span>};
+    el = RV2El( r, v, mu )';
+    dPlot = PlotArrays(<span class="string">'logmulti'</span>,dPlot,varNames,{j kO},<span class="keyword">...</span>
+            {Mag(r) n accel alphaG deltaG el(1) el(2)*180/pi el(5)});
+    q = QLVLH( r, v );
+    dPlot = PlotArrays(<span class="string">'log'</span>,dPlot,<span class="string">'accLVLH'</span>,{j kO},QForm(q,aExt));
+    xPlot(:,kO)     = x;
+
+    <span class="comment">% Integrate the trajectory</span>
+    <span class="comment">%-------------------------</span>
+    <span class="comment">%x  = RK4( 'FOrbCart', x, dT, 0, aExt, mu );</span>
+    [x, h] = RK45( <span class="string">'FOrbCart'</span>, x, h, dT, dT/200, 1e-8, 0, aExt, mu );
+    jD = jD + dT/86400;
+    <span class="keyword">if</span> rem(k,nPPO) == 0
+      <span class="comment">% Compute averages over each day</span>
+      kO = 0;
+      iD = floor(k/nPPO);
+      smaLog = PlotArrays(<span class="string">'get'</span>,dPlot,<span class="string">'sma'</span>);
+      smaAvg = mean(smaLog(j,:));
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'sma'</span>,{j iD},smaAvg);
+      eccLog = PlotArrays(<span class="string">'get'</span>,dPlot,<span class="string">'ecc'</span>);
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'ecc'</span>,{j iD},mean(eccLog(j,:)));
+      incLog = PlotArrays(<span class="string">'get'</span>,dPlot,<span class="string">'inc'</span>);
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'ecc'</span>,{j iD},mean(incLog(j,:)));
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'perigee'</span>,{j iD},mean(smaLog(j,:).*(1-eccLog(j,:))));
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'apogee'</span>,{j iD},mean(smaLog(j,:).*(1+eccLog(j,:))));
+      dAvg = PlotArrays(<span class="string">'log'</span>,dAvg,<span class="string">'t'</span>,{j iD},dT*k);
+      <span class="comment">% Compute a new dT since orbit period will increase</span>
+      dT    = Period(smaAvg)/nPPO;
+      <span class="keyword">if</span> (rem(iD,dOrbits) == 0 &amp;&amp; mSim == 1)
+        <span class="comment">% add orbit to plot</span>
+        plot3(xPlot(1,:),xPlot(2,:),xPlot(3,:))
+      <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+    kO = kO + 1;
+
+  <span class="keyword">end</span>
+
+
+<span class="keyword">end</span>
+
+<span class="comment">% Finish orbit plot</span>
+axis <span class="string">equal</span>;
+view(0,90)
+</pre><pre class="codeoutput">-----------------------------
+Simulation 1 of 3
+-----------------------------
+Sim is 10% finished.
+Sim is 20% finished.
+Sim is 30% finished.
+Sim is 40% finished.
+Sim is 50% finished.
+Sim is 60% finished.
+Sim is 70% finished.
+Sim is 80% finished.
+Sim is 90% finished.
+Sim is 100% finished.
+-----------------------------
+Simulation 2 of 3
+-----------------------------
+Sim is 10% finished.
+Sim is 20% finished.
+Sim is 30% finished.
+Sim is 40% finished.
+Sim is 50% finished.
+Sim is 60% finished.
+Sim is 70% finished.
+Sim is 80% finished.
+Sim is 90% finished.
+Sim is 100% finished.
+-----------------------------
+Simulation 3 of 3
+-----------------------------
+Sim is 10% finished.
+Sim is 20% finished.
+Sim is 30% finished.
+Sim is 40% finished.
+Sim is 50% finished.
+Sim is 60% finished.
+Sim is 70% finished.
+Sim is 80% finished.
+Sim is 90% finished.
+Sim is 100% finished.
+</pre><img vspace="5" hspace="5" src="GEOGraveyard_02.png" alt=""> <h2 id="6">Plot the results</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+[t, tL] = TimeLabl( (0:(nPPO-1))*dT );
+mET = cumsum(dAvg.t.data')';
+[mT, mL] = TimeLabl(mET);
+
+tPlot = [(0:(nPPO-1))/nPPO];
+tL    = <span class="string">'Orbit Fraction'</span>;
+Plot2D(tPlot,[dPlot.sma.data;dPlot.inc.data;dPlot.ecc.data],<span class="keyword">...</span>
+  tL,{<span class="string">'a'</span> <span class="string">'i (deg)'</span> <span class="string">'e'</span>},<span class="string">'Elements for Last Orbit'</span>,<span class="string">'lin'</span>,<span class="keyword">...</span>
+  {[1:mSim],[1:mSim]+mSim,[1:mSim]+2*mSim});
+<span class="comment">%Plot2D(t,aPlot,tL,'SMA (km)', 'SemiMajor Axis Change with Sail Length (m)')</span>
+<span class="comment">%legend(num2str(sqrt(Asail)',3))</span>
+hF = Plot2D(tPlot,[dPlot.cone.data;dPlot.clock.data;dPlot.acc.data*1e6],<span class="keyword">...</span>
+           tL,{<span class="string">'\alpha'</span> <span class="string">'\delta'</span> <span class="string">'accel (mm/s^2)'</span>},<span class="keyword">...</span>
+           [<span class="string">'Control Angles and Accel'</span>],<span class="string">'lin'</span>,{1,2,[1:mSim]+2});
+<span class="keyword">if</span> mSim == 1
+  nPlot = floor(squeeze(dPlot.nEclipse.data)');
+  <span class="keyword">if</span> nPlot(1) == 1
+    colors = [1 1 1; 0.9 0.9 0.9];
+  <span class="keyword">else</span>
+    colors = [0.9 0.9 0.9; 1 1 1];
+  <span class="keyword">end</span>
+  AddFillToPlots( t, nPlot, hF, colors );
+<span class="keyword">end</span>
+Plot2D(tPlot,squeeze(dPlot.accLVLH.data(:,1,:))*1e6,tL,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Accel in LVLH frame (mm/s2)'</span>)
+
+tPlot = [1:nOrbits];
+tL    = <span class="string">'Orbits'</span>;
+
+Plot2D(tPlot,[dAvg.sma.data;dAvg.inc.data;dAvg.ecc.data],<span class="keyword">...</span>
+  mL,{<span class="string">'a'</span> <span class="string">'i (deg)'</span> <span class="string">'e'</span>},<span class="keyword">...</span>
+  <span class="string">'Average Change in Elements Each Orbit'</span>,<span class="string">'lin'</span>,<span class="keyword">...</span>
+  {[1:mSim],[1:mSim]+mSim,[1:mSim]+2*mSim});
+Plot2D(mT,dAvg.perigee.data,mL,{<span class="string">'R_P'</span>},<span class="string">'Perigee Radius'</span>);
+
+Figui;
+</pre><img vspace="5" hspace="5" src="GEOGraveyard_03.png" alt=""> <img vspace="5" hspace="5" src="GEOGraveyard_04.png" alt=""> <img vspace="5" hspace="5" src="GEOGraveyard_05.png" alt=""> <img vspace="5" hspace="5" src="GEOGraveyard_06.png" alt=""> <img vspace="5" hspace="5" src="GEOGraveyard_07.png" alt=""> <img vspace="5" hspace="5" src="GEOGraveyard_08.png" alt=""> <h2 id="7">Report</h2><pre class="codeinput">disp(<span class="string">'-----------------------------'</span>)
+fprintf(1,<span class="string">'Mission length: %d orbits\n'</span>,nOrbits);
+fprintf(1,<span class="string">'Sail average density: %d g/m2\n'</span>,arealDensity*1000);
+fprintf(1,<span class="string">'Mass of bus moved: %d kg\n'</span>,mSC);
+<span class="keyword">for</span> k = 1:length(Asail)
+  disp(<span class="string">'--------'</span>)
+  fprintf(1,<span class="string">'Sail length: %g m\n'</span>,sqrt(Asail(k)));
+  fprintf(1,<span class="string">'Change in perigee: %g km\n'</span>,dAvg.perigee.data(k,end)-dAvg.perigee.data(k,1));
+  fprintf(1,<span class="string">'%3.1f m square sail at %d g/m2, %d kg bus, %3.1f km/%d orbits\n'</span>,<span class="keyword">...</span>
+    sqrt(Asail(k)),arealDensity*1000,mSC,dAvg.perigee.data(k,end)-dAvg.perigee.data(k,1),nOrbits);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">-----------------------------
+Mission length: 30 orbits
+Sail average density: 25 g/m2
+Mass of bus moved: 1730 kg
+--------
+Sail length: 6.32456 m
+Change in perigee: 1.02879 km
+6.3 m square sail at 25 g/m2, 1730 kg bus, 1.0 km/30 orbits
+--------
+Sail length: 10 m
+Change in perigee: 2.80512 km
+10.0 m square sail at 25 g/m2, 1730 kg bus, 2.8 km/30 orbits
+--------
+Sail length: 14.1421 m
+Change in perigee: 5.75852 km
+14.1 m square sail at 25 g/m2, 1730 kg bus, 5.8 km/30 orbits
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate raising to graveyard orbit from GEO.
+% This is a low-fidelity model with a specular sail using EarthGuidance and 
+% FOrbCart. Integration is with RK45 (variable integration timestep). 
+% The simulation is run three times, for three different sail areas.
+% The spacecraft bus is 1730 kg (a Lockheed A2100AX bus).
+% The largest sail modeled can achieve over 5 km SMA change per month.
+% You can also run the sail perfectly sun-pointing for comparison.
+% Plots:
+% (1) Planar view of orbit
+% (2) Elements for the last orbit
+% (3) Control angles (for the last orbit)
+% (4) Average change in elements each orbit
+% (5) Perigree radius
+% (6) Acceleration in LVLH frame (for last orbit)
+%
+%   Since version 7.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Cone, NPlot, Plot2D, TimeLabl, Cross, Dot, RK4, Unit, JD2000, 
+%  El2RV, RV2El, Eclipse, SunV1, Accel, ConeClockToU, UToConeClock, delta, 
+%  EarthGuidance
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2006 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Constants
+mu  = 398600.44; % Earth
+cLight = 3e8;  % m/s
+flux   = 1367; % W/m2
+m2km   = 0.001;
+
+%% Set up the parameters. 
+% Area OR mass can be a vector, not both.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Asail = [40 100 200]; % m2
+arealDensity = 0.025; % g/m2
+mSC   = [1730]; % kg
+
+% Number of sim steps and duration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nOrbits = 30;
+nPPO    = 50;
+dOrbits = 40; % delta points between 3D plotting
+
+% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+SMA = 42167; % 6378+1000; % 
+inc = 0;
+jD0 = JD2000;  % eclipse will be seen for JD2000+90, equinox on 79
+
+% Control method (see EarthGuidance)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+method = 'sma';
+
+% Results
+% 50 m square sail at 25 g/m2, 1730 kg bus, 3500 km/year with on/off
+% 50 m square sail and 25 g/m2, 1730 kg bus, 649.018358 km/year with on/30*
+
+%% Simulation initialization
+
+el0 = [SMA inc 0 0 0 0];
+nSim  = nOrbits*nPPO;
+dT    = Period(SMA)/nPPO;
+
+% Number of separate cases
+mSail = Asail*arealDensity;   % kg
+mass  = mSail + mSC;
+mSim = length(mass);
+[r0,v0] = El2RV( el0, [], mu );
+
+% Plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dPlot = PlotArrays('init',{mSim nPPO});
+dPlot = PlotArrays('add',dPlot,'sma',SMA);
+dPlot = PlotArrays('add',dPlot,'nEclipse',0);
+dPlot = PlotArrays('add',dPlot,'inc',0);
+dPlot = PlotArrays('add',dPlot,'ecc',0);
+dPlot = PlotArrays('add',dPlot,'r',0);
+dPlot = PlotArrays('add',dPlot,'t',0);
+dPlot = PlotArrays('add',dPlot,'acc',0);
+dPlot = PlotArrays('add',dPlot,'cone',0);
+dPlot = PlotArrays('add',dPlot,'clock',0);
+dPlot = PlotArrays('add',dPlot,'accLVLH',[0;0;0]);
+dAvg = PlotArrays('init',{mSim nOrbits});
+dAvg = PlotArrays('add',dAvg,'sma',SMA);
+dAvg = PlotArrays('add',dAvg,'inc',0);
+dAvg = PlotArrays('add',dAvg,'ecc',0);
+dAvg = PlotArrays('add',dAvg,'t',0);
+dAvg = PlotArrays('add',dAvg,'apogee',0);
+dAvg = PlotArrays('add',dAvg,'perigee',0);
+dAvg = PlotArrays('add',dAvg,'r',0);
+xPlot = zeros(6,nPPO);
+
+% Global for the time interface
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+d = struct;
+d.method = method;
+
+[rP, vP] = RVFromKepler( el0 );
+
+Plot3D(rP)
+hold on
+
+%% Run the simulation(s)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for j = 1:mSim
+  % Assume specular sail
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  acc0 = 2*Asail(j)*flux/cLight/mass(j)*m2km;
+
+  x       = [r0;v0];
+  jD      = jD0;
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  disp(['Simulation ' num2str(j) ' of ' num2str(mSim)])
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  kS = 1;
+  kO = 1;
+  h = dT;
+
+  for k = 1:nSim 
+
+    % Local variables
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    r = x(1:3);
+    v = x(4:6);
+
+    % Display the status message
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    if floor(k/nSim*10) == kS
+      disp(['Sim is ' num2str(kS) '0% finished.'])
+      kS = kS+1;
+    end
+
+    % Control
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    % First determine sail unit vector.
+    [uS, rS] = SunV1( jD );
+    if 1
+      % use EarthGuidance to compute an optimal angle
+      d.method = method;
+      [q,alphaG,deltaG] = EarthGuidance( 0, [r;v], d, struct('uSun',uS) );
+    else
+      % switch based on angle between sun projection in orbit plane and r
+      hHat = Unit(Cross(r,v));
+      sunProj = Cross( hHat, Cross(uS,hHat) );
+      cosTheta = Unit(sunProj)'*Unit(v);
+      if cosTheta > 0
+        % receding from sun
+        alphaG = pi/2; % off: pi/2
+        deltaG = 0;
+      else
+        % approaching sun
+        alphaG = 0;
+        deltaG = 0;
+      end
+    end
+    u = ConeClockToU( alphaG, deltaG, r, v, uS );
+
+    % Check for eclipses (not common in GEO)
+    [n, eclipseType] = Eclipse( r, rS*uS );
+    
+    % Compute the acceleration
+    accel          = n*acc0*cos(alphaG);
+    aExt           = -accel*u;
+
+    % Plotting
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    varNames = {'r' 'nEclipse' 'acc' 'cone' 'clock' 'sma' 'inc' 'ecc'};
+    el = RV2El( r, v, mu )';
+    dPlot = PlotArrays('logmulti',dPlot,varNames,{j kO},...
+            {Mag(r) n accel alphaG deltaG el(1) el(2)*180/pi el(5)});  
+    q = QLVLH( r, v );
+    dPlot = PlotArrays('log',dPlot,'accLVLH',{j kO},QForm(q,aExt));
+    xPlot(:,kO)     = x;
+
+    % Integrate the trajectory
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    %x  = RK4( 'FOrbCart', x, dT, 0, aExt, mu );
+    [x, h] = RK45( 'FOrbCart', x, h, dT, dT/200, 1e-8, 0, aExt, mu );
+    jD = jD + dT/86400;
+    if rem(k,nPPO) == 0
+      % Compute averages over each day
+      kO = 0;
+      iD = floor(k/nPPO);
+      smaLog = PlotArrays('get',dPlot,'sma');
+      smaAvg = mean(smaLog(j,:));
+      dAvg = PlotArrays('log',dAvg,'sma',{j iD},smaAvg);    
+      eccLog = PlotArrays('get',dPlot,'ecc');
+      dAvg = PlotArrays('log',dAvg,'ecc',{j iD},mean(eccLog(j,:)));    
+      incLog = PlotArrays('get',dPlot,'inc');
+      dAvg = PlotArrays('log',dAvg,'ecc',{j iD},mean(incLog(j,:)));    
+      dAvg = PlotArrays('log',dAvg,'perigee',{j iD},mean(smaLog(j,:).*(1-eccLog(j,:))));    
+      dAvg = PlotArrays('log',dAvg,'apogee',{j iD},mean(smaLog(j,:).*(1+eccLog(j,:))));    
+      dAvg = PlotArrays('log',dAvg,'t',{j iD},dT*k);
+      % Compute a new dT since orbit period will increase
+      dT    = Period(smaAvg)/nPPO;
+      if (rem(iD,dOrbits) == 0 && mSim == 1)
+        % add orbit to plot
+        plot3(xPlot(1,:),xPlot(2,:),xPlot(3,:))
+      end
+
+    end
+    kO = kO + 1;
+
+  end
+  
+
+end
+
+% Finish orbit plot
+axis equal;
+view(0,90)
+
+%% Plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, tL] = TimeLabl( (0:(nPPO-1))*dT );
+mET = cumsum(dAvg.t.data')';
+[mT, mL] = TimeLabl(mET);
+
+tPlot = [(0:(nPPO-1))/nPPO];
+tL    = 'Orbit Fraction';
+Plot2D(tPlot,[dPlot.sma.data;dPlot.inc.data;dPlot.ecc.data],...
+  tL,{'a' 'i (deg)' 'e'},'Elements for Last Orbit','lin',...
+  {[1:mSim],[1:mSim]+mSim,[1:mSim]+2*mSim});
+%Plot2D(t,aPlot,tL,'SMA (km)', 'SemiMajor Axis Change with Sail Length (m)')
+%legend(num2str(sqrt(Asail)',3))
+hF = Plot2D(tPlot,[dPlot.cone.data;dPlot.clock.data;dPlot.acc.data*1e6],...
+           tL,{'\alpha' '\delta' 'accel (mm/s^2)'},...
+           ['Control Angles and Accel'],'lin',{1,2,[1:mSim]+2});
+if mSim == 1
+  nPlot = floor(squeeze(dPlot.nEclipse.data)');
+  if nPlot(1) == 1
+    colors = [1 1 1; 0.9 0.9 0.9];
+  else
+    colors = [0.9 0.9 0.9; 1 1 1];
+  end
+  AddFillToPlots( t, nPlot, hF, colors );
+end
+Plot2D(tPlot,squeeze(dPlot.accLVLH.data(:,1,:))*1e6,tL,{'x','y','z'},'Accel in LVLH frame (mm/s2)')
+
+tPlot = [1:nOrbits];
+tL    = 'Orbits';
+
+Plot2D(tPlot,[dAvg.sma.data;dAvg.inc.data;dAvg.ecc.data],...
+  mL,{'a' 'i (deg)' 'e'},...
+  'Average Change in Elements Each Orbit','lin',...
+  {[1:mSim],[1:mSim]+mSim,[1:mSim]+2*mSim});
+Plot2D(mT,dAvg.perigee.data,mL,{'R_P'},'Perigee Radius');
+
+Figui;
+
+%% Report
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+fprintf(1,'Mission length: %d orbits\n',nOrbits);
+fprintf(1,'Sail average density: %d g/m2\n',arealDensity*1000);
+fprintf(1,'Mass of bus moved: %d kg\n',mSC);
+for k = 1:length(Asail)
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+  fprintf(1,'Sail length: %g m\n',sqrt(Asail(k)));
+  fprintf(1,'Change in perigee: %g km\n',dAvg.perigee.data(k,end)-dAvg.perigee.data(k,1));
+  fprintf(1,'%3.1f m square sail at %d g/m2, %d kg bus, %3.1f km/%d orbits\n',...
+    sqrt(Asail(k)),arealDensity*1000,mSC,dAvg.perigee.data(k,end)-dAvg.perigee.data(k,1),nOrbits);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

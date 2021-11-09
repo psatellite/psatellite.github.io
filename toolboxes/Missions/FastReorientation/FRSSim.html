@@ -1,0 +1,416 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate the fast reorientation system.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="FRSSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate the fast reorientation system.</h1><!--introduction--><p>This system rotates a spacecraft about any arbitrary axis and automatically avoids exciting selected oscillatory modes. It uses shaping filters to do this. This causes phase lag, but in this application that does not pose a problem. A similar system is used on GGS Polar.</p><p>-------------------------------------------------------------------------  See also FRSTarg, FRSMPlan, FRSCGen, FTBRef%, ShapeFlt, QMult, QPose,  QTForm, Plot2D, TimeGUI, RK4, Unit, TBModel -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Simulation time step</a></li><li><a href="#4">The spacecraft</a></li><li><a href="#5">Design the shaping filter</a></li><li><a href="#6">Set up the parameters</a></li><li><a href="#7">Initialize the state vector</a></li><li><a href="#8">Compute the quaternion that will rotate the spacecraft to the target</a></li><li><a href="#9">The maximum allowable acceleration in rad/sec^2</a></li><li><a href="#10">The spacecraft inertia</a></li><li><a href="#11">PD Controller</a></li><li><a href="#12">Plotting variables</a></li><li><a href="#13">Start the maneuver</a></li><li><a href="#14">Initialize the time display</a></li><li><a href="#15">Plot the results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1997-1998 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Simulation time step</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+dT   = 0.5;
+n    = 5;
+nSim = 700;
+</pre><h2 id="4">The spacecraft</h2><pre class="codeinput"><span class="comment">%---------------</span>
+tBDS.x0     = [ 0 0  0 ]';
+tBDS.x1     = [ 0 0  5 ]';
+tBDS.l1     = [ 0 0 10 ]';
+tBDS.n0     = 1000.0;
+tBDS.n1     = 0.1;
+tBDS.i0     = [ 2300 0 0; 0 4500 0; 0 0 6600];
+tBDS.i1     = [ 100 0 0; 0 100 0; 0 0 100];
+tBDS.torque = zeros(6,1);
+tBDS.force  = zeros(6,1);
+</pre><h2 id="5">Design the shaping filter</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+wn        = [0.4835 0.9781 1.2437];
+wnw       = [0.5    0.5    0.5   ];
+wD        = [-40 -40 -40];
+
+[af,bf,cf,df] = ShapeFlt( wn, wnw, wD, 0.2, dT );
+xf            = zeros(length(af),1);
+</pre><h2 id="6">Set up the parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+qRefTo0      = Unit( [ 0.5 0.5 -0.5 0.5 ]' );
+xmodel       = zeros(2,1);
+
+utargetref   = Unit([ 0.1  0.5 -0.4]');
+usensor0     = [1;0;0];
+</pre><h2 id="7">Initialize the state vector</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+x      = [ qRefTo0'   1 0 0 0   0.0 0.0 0.0   0.0 0.0 0.0 ]';
+</pre><h2 id="8">Compute the quaternion that will rotate the spacecraft to the target</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+qRefTo1      = FRSTarg( qRefTo0, usensor0, utargetref );
+</pre><h2 id="9">The maximum allowable acceleration in rad/sec^2</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+maxaccel     = 0.006;
+</pre><h2 id="10">The spacecraft inertia</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+[wDot, hbody, iner] = TBModel( x(9:11), x(12:14), x(5:8), tBDS.x0, tBDS.x1,<span class="keyword">...</span>
+    tBDS.l1, tBDS.i0, tBDS.i1, tBDS.n0, tBDS.n1, tBDS.torque, tBDS.force );
+iCore               = iner(1:3,1:3);
+
+[qRefTo0i, axis0, maxaccel, nhalf, tbbscale, xmodel, umnvr] = <span class="keyword">...</span>
+    FRSMPlan( qRefTo0, maxaccel, dT, iCore, qRefTo1 );
+</pre><h2 id="11">PD Controller</h2><pre class="codeinput"><span class="comment">%--------------</span>
+rateGain     = 2.0*0.7071*0.1*diag(iCore);
+angleGain    =      2.0*0.1^2*diag(iCore);
+</pre><h2 id="12">Plotting variables</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+anglePlot = zeros(3,nSim);
+ratePlot  = zeros(1,nSim);
+errorPlot = zeros(1,nSim);
+a1Plot    = zeros(3,nSim);
+q0Plot    = zeros(4,nSim);
+tPlot     = zeros(1,nSim);
+uMnvrPlot = zeros(2,nSim);
+wPlot     = zeros(3,nSim);
+tCPlot    = zeros(3,nSim);
+</pre><h2 id="13">Start the maneuver</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+t = 0;
+dTSim = dT/n;
+</pre><h2 id="14">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dTSim, <span class="string">'FRSTest'</span> );
+
+<span class="keyword">for</span> i = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, i, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% FRS Gommand generator</span>
+  <span class="comment">%----------------------</span>
+  [qRefTo0, modelrate, tFRS, xmodel, umnvrf, umnvr, xf] = FRSCGen( axis0,<span class="keyword">...</span>
+      af, bf, cf, df, xmodel, tbbscale, qRefTo0i, umnvr, xf, dT, nhalf,<span class="keyword">...</span>
+      x(9:11), iCore, maxaccel, i );
+
+  <span class="comment">% Spacecraft PD</span>
+  <span class="comment">%--------------</span>
+  angleError        = QMult( QPose(x(1:4)), qRefTo0 );
+  rateError         = x(9:11) - modelrate;
+  pd                = - rateGain.*rateError - angleGain.*angleError(2:4);
+
+  <span class="comment">% Quantities for output of the simulation</span>
+  <span class="comment">%----------------------------------------</span>
+  uMnvrPlot(:,i)    = [umnvrf;umnvr];
+  anglePlot(:,i)    = angleError(2:4);
+  ratePlot(i)       = axis0'*x(9:11) ;
+  tPlot(i)          = t;
+  a1Plot(:,i)       = 2*x(6:8);
+  q0Plot(:,i)       = x(1:4);
+  wPlot(:,i)        = x(9:11);
+  tCPlot(:,i)       = tFRS;
+  errorPlot(i)      = acos( utargetref' * QTForm( qRefTo0, usensor0 ) );
+
+  <span class="comment">% Add the FRS torque and pd torque</span>
+  <span class="comment">%---------------------------------</span>
+  tBDS.torque(1:3) = tFRS + pd;
+
+  <span class="comment">% Simulation</span>
+  <span class="comment">%-----------</span>
+  <span class="keyword">for</span> k = 1:n
+    x = RK4( @FTBRef, x, dTSim, t, tBDS );
+    t = t + dTSim;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+j = 1:nSim;
+tPlot = tPlot(j);
+</pre><img vspace="5" hspace="5" src="FRSSim_01.png" alt=""> <h2 id="15">Plot the results</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+Plot2D( tPlot, anglePlot(:,j), <span class="string">'Time (sec)'</span>, <span class="string">'Angle (rad)'</span>,     <span class="string">'Tracking Error'</span>   )
+Plot2D( tPlot, errorPlot(j),   <span class="string">'Time (sec)'</span>, <span class="string">'Error (rad)'</span>,     <span class="string">'Maneuver Error'</span>   )
+Plot2D( tPlot, ratePlot(j),    <span class="string">'Time (sec)'</span>, <span class="string">'Rate (rad/sec)'</span>,  <span class="string">'Maneuver Rate'</span>    )
+Plot2D( tPlot, uMnvrPlot(:,j), <span class="string">'Time (sec)'</span>, <span class="string">'Command'</span>,         <span class="string">'Maneuver Command'</span> )
+Plot2D( tPlot, a1Plot(:,j),    <span class="string">'Time (sec)'</span>, <span class="string">'Angle (rad)'</span>,     <span class="string">'Appendage Angles'</span> )
+Plot2D( tPlot, q0Plot(:,j),    <span class="string">'Time (sec)'</span>, <span class="string">'Quaternion'</span>,      <span class="string">'Quaternion'</span>       )
+Plot2D( tPlot, wPlot(:,j),     <span class="string">'Time (sec)'</span>, <span class="string">'Rates (rad/sec)'</span>, <span class="string">'Body Rates'</span>       )
+Plot2D( tPlot, tCPlot(:,j),    <span class="string">'Time (sec)'</span>, <span class="string">'Torque'</span>,          <span class="string">'Commanded Torque'</span> )
+
+DispWithTitle(qRefTo0,<span class="string">'qRefTo0'</span>);
+DispWithTitle(qRefTo1,<span class="string">'qRefTo1'</span>);
+
+TimeGUI(<span class="string">'close'</span>);
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">qRefTo0
+   0.739652686203895
+  -0.173394343487369
+  -0.511390928781079
+  -0.401656100910185
+qRefTo1
+   0.739652658406988
+  -0.173394405597533
+  -0.511390892405858
+  -0.401656171598663
+</pre><img vspace="5" hspace="5" src="FRSSim_02.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_03.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_04.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_05.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_06.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_07.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_08.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_09.png" alt=""> <img vspace="5" hspace="5" src="FRSSim_10.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate the fast reorientation system. 
+% This system rotates a spacecraft about any arbitrary axis and 
+% automatically avoids exciting selected oscillatory modes. It uses shaping 
+% filters to do this. This causes phase lag, but in this application that does
+% not pose a problem. A similar system is used on GGS Polar.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also FRSTarg, FRSMPlan, FRSCGen, FTBRef%, ShapeFlt, QMult, QPose, 
+%  QTForm, Plot2D, TimeGUI, RK4, Unit, TBModel
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1997-1998 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Simulation time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = 0.5;
+n    = 5;
+nSim = 700;
+
+%% The spacecraft
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tBDS.x0     = [ 0 0  0 ]';
+tBDS.x1     = [ 0 0  5 ]';
+tBDS.l1     = [ 0 0 10 ]';
+tBDS.n0     = 1000.0;
+tBDS.n1     = 0.1;
+tBDS.i0     = [ 2300 0 0; 0 4500 0; 0 0 6600]; 
+tBDS.i1     = [ 100 0 0; 0 100 0; 0 0 100];
+tBDS.torque = zeros(6,1);
+tBDS.force  = zeros(6,1);
+
+%% Design the shaping filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+wn        = [0.4835 0.9781 1.2437];
+wnw       = [0.5    0.5    0.5   ];
+wD        = [-40 -40 -40];
+
+[af,bf,cf,df] = ShapeFlt( wn, wnw, wD, 0.2, dT );
+xf            = zeros(length(af),1);
+
+%% Set up the parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+qRefTo0      = Unit( [ 0.5 0.5 -0.5 0.5 ]' );
+xmodel       = zeros(2,1);
+
+utargetref   = Unit([ 0.1  0.5 -0.4]');
+usensor0     = [1;0;0];
+
+%% Initialize the state vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x      = [ qRefTo0'   1 0 0 0   0.0 0.0 0.0   0.0 0.0 0.0 ]';
+
+%% Compute the quaternion that will rotate the spacecraft to the target
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qRefTo1      = FRSTarg( qRefTo0, usensor0, utargetref );
+
+%% The maximum allowable acceleration in rad/sec^2
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+maxaccel     = 0.006;
+
+%% The spacecraft inertia
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[wDot, hbody, iner] = TBModel( x(9:11), x(12:14), x(5:8), tBDS.x0, tBDS.x1,...
+    tBDS.l1, tBDS.i0, tBDS.i1, tBDS.n0, tBDS.n1, tBDS.torque, tBDS.force );
+iCore               = iner(1:3,1:3);
+
+[qRefTo0i, axis0, maxaccel, nhalf, tbbscale, xmodel, umnvr] = ...
+    FRSMPlan( qRefTo0, maxaccel, dT, iCore, qRefTo1 );
+
+%% PD Controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rateGain     = 2.0*0.7071*0.1*diag(iCore); 
+angleGain    =      2.0*0.1^2*diag(iCore);  
+
+%% Plotting variables
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+anglePlot = zeros(3,nSim);
+ratePlot  = zeros(1,nSim);
+errorPlot = zeros(1,nSim);
+a1Plot    = zeros(3,nSim);
+q0Plot    = zeros(4,nSim);
+tPlot     = zeros(1,nSim);
+uMnvrPlot = zeros(2,nSim);
+wPlot     = zeros(3,nSim);
+tCPlot    = zeros(3,nSim);
+
+
+%% Start the maneuver
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t = 0;
+dTSim = dT/n;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dTSim, 'FRSTest' );
+
+for i = 1:nSim
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, i, tToGoMem, ratioRealTime, dTSim );
+
+  % FRS Gommand generator
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [qRefTo0, modelrate, tFRS, xmodel, umnvrf, umnvr, xf] = FRSCGen( axis0,...
+      af, bf, cf, df, xmodel, tbbscale, qRefTo0i, umnvr, xf, dT, nhalf,...
+      x(9:11), iCore, maxaccel, i );
+
+  % Spacecraft PD
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  angleError        = QMult( QPose(x(1:4)), qRefTo0 );
+  rateError         = x(9:11) - modelrate; 
+  pd                = - rateGain.*rateError - angleGain.*angleError(2:4); 
+
+  % Quantities for output of the simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  uMnvrPlot(:,i)    = [umnvrf;umnvr]; 
+  anglePlot(:,i)    = angleError(2:4);
+  ratePlot(i)       = axis0'*x(9:11) ; 
+  tPlot(i)          = t;
+  a1Plot(:,i)       = 2*x(6:8);    
+  q0Plot(:,i)       = x(1:4); 
+  wPlot(:,i)        = x(9:11);  
+  tCPlot(:,i)       = tFRS; 
+  errorPlot(i)      = acos( utargetref' * QTForm( qRefTo0, usensor0 ) ); 
+
+  % Add the FRS torque and pd torque
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  tBDS.torque(1:3) = tFRS + pd;
+
+  % Simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  for k = 1:n
+    x = RK4( @FTBRef, x, dTSim, t, tBDS );
+    t = t + dTSim;
+  end
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+ 
+end
+
+j = 1:nSim;
+tPlot = tPlot(j);
+
+%% Plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D( tPlot, anglePlot(:,j), 'Time (sec)', 'Angle (rad)',     'Tracking Error'   )
+Plot2D( tPlot, errorPlot(j),   'Time (sec)', 'Error (rad)',     'Maneuver Error'   )
+Plot2D( tPlot, ratePlot(j),    'Time (sec)', 'Rate (rad/sec)',  'Maneuver Rate'    )
+Plot2D( tPlot, uMnvrPlot(:,j), 'Time (sec)', 'Command',         'Maneuver Command' )
+Plot2D( tPlot, a1Plot(:,j),    'Time (sec)', 'Angle (rad)',     'Appendage Angles' )
+Plot2D( tPlot, q0Plot(:,j),    'Time (sec)', 'Quaternion',      'Quaternion'       )
+Plot2D( tPlot, wPlot(:,j),     'Time (sec)', 'Rates (rad/sec)', 'Body Rates'       )
+Plot2D( tPlot, tCPlot(:,j),    'Time (sec)', 'Torque',          'Commanded Torque' )
+
+DispWithTitle(qRefTo0,'qRefTo0');
+DispWithTitle(qRefTo1,'qRefTo1');
+
+TimeGUI('close');
+Figui;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-27 15:19:39 -0400 (Wed, 27 May 2020) $
+% $Revision: 52495 $
+
+##### SOURCE END #####
+--></body></html>

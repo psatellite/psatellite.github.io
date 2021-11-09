@@ -1,0 +1,338 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Integration Accuracy for PropagateOrbitPlugin.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-28"><meta name="DC.source" content="IntegrationAccuracyDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Integration Accuracy for PropagateOrbitPlugin.</h1><!--introduction--><p>Propagate a circular 7000 km orbit and look at various combinations of tolerance and relative tolerance. Loads OrbitIntegrationAccuracy.mat  ------------------------------------------------------------------------  See also NewFig, Mag, PropagateOrbitPlugIn  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Generate the plots</a></li><li><a href="#3">Test for different sample intervals</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2000 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+d          = load(<span class="string">'OrbitIntegrationAccuracy.mat'</span>);
+tag        = PropagateOrbitPlugIn( <span class="string">'initialize'</span> );
+
+d.relTol   = 1.e-12;
+d.tol      = 1.e-12;
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time1212 = toc;
+r          = PropagateOrbitPlugIn( <span class="string">'get r'</span>, tag );
+<span class="keyword">if</span>( isempty(r) )
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+
+error1212  = Mag(r) - 7000;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+
+d.relTol   = 1.e-6;
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time0612 = toc;
+r          = PropagateOrbitPlugIn( <span class="string">'get r'</span>, tag );
+<span class="keyword">if</span>( isempty(r) )
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+
+error0612  = Mag(r) - 7000;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+
+d.tol      = 1.e-6;
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time0606 = toc;
+r          = PropagateOrbitPlugIn( <span class="string">'get r'</span>, tag );
+<span class="keyword">if</span>( isempty(r) )
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+
+error0606  = Mag(r) - 7000;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+
+d.relTol   = 1.e-12;
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time1206 = toc;
+r          = PropagateOrbitPlugIn( <span class="string">'get r'</span>, tag );
+<span class="keyword">if</span>( isempty(r) )
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+
+error1206  = Mag(r) - 7000;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+</pre><img vspace="5" hspace="5" src="IntegrationAccuracyDemo_01.png" alt=""> <h2 id="2">Generate the plots</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+t          = 0:(d.nSamp-1);
+
+fprintf(<span class="string">'Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n'</span>,1e-12,1e-12,time1212)
+fprintf(<span class="string">'Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n'</span>,1e-6, 1e-12,time0612)
+fprintf(<span class="string">'Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n'</span>,1e-6, 1e-6, time0606)
+fprintf(<span class="string">'Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n'</span>,1e-12,1e-6, time1206)
+
+NewFig(<span class="string">'Orbit Integration Accuracy'</span>)
+
+subplot(2,2,1)
+plot( t(1:length(error1212)), error1212*1e5 )
+xlabel(<span class="string">'Time (hr)'</span>)
+ylabel(<span class="string">'Error (cm)'</span>);
+grid
+title(sprintf(<span class="string">'Rel Tol = %6.0e Abs Tol = %6.0e'</span>,1e-12,1e-12));
+
+subplot(2,2,2)
+plot( t(1:length(error0612)), error0612*1e3)
+xlabel(<span class="string">'Time (hr)'</span>)
+ylabel(<span class="string">'Error (m)'</span>);
+grid
+title(sprintf(<span class="string">'Rel Tol = %6.0e Abs Tol = %6.0e'</span>,1e-6,1e-12));
+
+subplot(2,2,3)
+plot( t(1:length(error0606)), error0606*1e3 )
+xlabel(<span class="string">'Time (hr)'</span>)
+ylabel(<span class="string">'Error (m)'</span>);
+grid
+title(sprintf(<span class="string">'Rel Tol = %6.0e Abs Tol = %6.0e'</span>,1e-6,1e-6));
+
+subplot(2,2,4)
+plot( t(1:length(error1206)), error1206*1e5 )
+xlabel(<span class="string">'Time (hr)'</span>)
+ylabel(<span class="string">'Error (cm)'</span>);
+grid
+title(sprintf(<span class="string">'Rel Tol = %6.0e Abs Tol = %6.0e'</span>,1e-12,1e-6));
+</pre><pre class="codeoutput">Time for Rel Tol =  1e-12 Abs Tol =  1e-12 is   3.8459e+00
+Time for Rel Tol =  1e-06 Abs Tol =  1e-12 is   2.8154e+00
+Time for Rel Tol =  1e-06 Abs Tol =  1e-06 is   2.8272e+01
+Time for Rel Tol =  1e-12 Abs Tol =  1e-06 is   2.9769e+00
+</pre><img vspace="5" hspace="5" src="IntegrationAccuracyDemo_02.png" alt=""> <h2 id="3">Test for different sample intervals</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+d.relTol   = 1.e-12;
+d.tol      = 1.e-12;
+d.nSamp    = 40;
+d.t        = linspace(0,d.duration,d.nSamp);
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time40 = toc;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+
+d.nSamp    = 20;
+d.t        = linspace(0,d.duration,d.nSamp);
+PropagateOrbitPlugIn( <span class="string">'set data'</span>, tag, d );
+tic
+PropagateOrbitPlugIn( <span class="string">'propagate'</span>, tag );
+time20 = toc;
+PropagateOrbitPlugIn( <span class="string">'close plots'</span>, tag  );
+
+
+fprintf(<span class="string">'Time for 81 samples %12.4e\n'</span>,time1212)
+fprintf(<span class="string">'Time for 40 samples %12.4e\n'</span>,time40  )
+fprintf(<span class="string">'Time for 20 samples %12.4e\n'</span>,time20  )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Time for 81 samples   3.8459e+00
+Time for 40 samples   3.4690e+00
+Time for 20 samples   4.3696e+00
+</pre><img vspace="5" hspace="5" src="IntegrationAccuracyDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Integration Accuracy for PropagateOrbitPlugin. 
+% Propagate a circular 7000 km orbit and look at various combinations of 
+% tolerance and relative tolerance. Loads OrbitIntegrationAccuracy.mat
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also NewFig, Mag, PropagateOrbitPlugIn
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2000 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+d          = load('OrbitIntegrationAccuracy.mat');
+tag        = PropagateOrbitPlugIn( 'initialize' );
+
+d.relTol   = 1.e-12;
+d.tol      = 1.e-12;
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time1212 = toc;
+r          = PropagateOrbitPlugIn( 'get r', tag );
+if( isempty(r) ) 
+  return; 
+end
+
+error1212  = Mag(r) - 7000;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+d.relTol   = 1.e-6;
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time0612 = toc;
+r          = PropagateOrbitPlugIn( 'get r', tag );
+if( isempty(r) ) 
+  return; 
+end
+
+error0612  = Mag(r) - 7000;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+d.tol      = 1.e-6;
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time0606 = toc;
+r          = PropagateOrbitPlugIn( 'get r', tag );
+if( isempty(r) ) 
+  return; 
+end
+
+error0606  = Mag(r) - 7000;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+d.relTol   = 1.e-12;
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time1206 = toc;
+r          = PropagateOrbitPlugIn( 'get r', tag );
+if( isempty(r) ) 
+  return; 
+end
+
+error1206  = Mag(r) - 7000;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+%% Generate the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t          = 0:(d.nSamp-1);
+
+fprintf('Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n',1e-12,1e-12,time1212)
+fprintf('Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n',1e-6, 1e-12,time0612)
+fprintf('Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n',1e-6, 1e-6, time0606)
+fprintf('Time for Rel Tol = %6.0e Abs Tol = %6.0e is %12.4e\n',1e-12,1e-6, time1206)
+
+NewFig('Orbit Integration Accuracy')
+
+subplot(2,2,1)
+plot( t(1:length(error1212)), error1212*1e5 )
+xlabel('Time (hr)')
+ylabel('Error (cm)');
+grid
+title(sprintf('Rel Tol = %6.0e Abs Tol = %6.0e',1e-12,1e-12));
+
+subplot(2,2,2)
+plot( t(1:length(error0612)), error0612*1e3)
+xlabel('Time (hr)')
+ylabel('Error (m)');
+grid
+title(sprintf('Rel Tol = %6.0e Abs Tol = %6.0e',1e-6,1e-12));
+
+subplot(2,2,3)
+plot( t(1:length(error0606)), error0606*1e3 )
+xlabel('Time (hr)')
+ylabel('Error (m)');
+grid
+title(sprintf('Rel Tol = %6.0e Abs Tol = %6.0e',1e-6,1e-6));
+
+subplot(2,2,4)
+plot( t(1:length(error1206)), error1206*1e5 )
+xlabel('Time (hr)')
+ylabel('Error (cm)');
+grid
+title(sprintf('Rel Tol = %6.0e Abs Tol = %6.0e',1e-12,1e-6));
+
+%% Test for different sample intervals
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.relTol   = 1.e-12;
+d.tol      = 1.e-12;
+d.nSamp    = 40;
+d.t        = linspace(0,d.duration,d.nSamp);
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time40 = toc;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+d.nSamp    = 20;
+d.t        = linspace(0,d.duration,d.nSamp);
+PropagateOrbitPlugIn( 'set data', tag, d );
+tic
+PropagateOrbitPlugIn( 'propagate', tag );
+time20 = toc;
+PropagateOrbitPlugIn( 'close plots', tag  );
+
+
+fprintf('Time for 81 samples %12.4e\n',time1212) 
+fprintf('Time for 40 samples %12.4e\n',time40  ) 
+fprintf('Time for 20 samples %12.4e\n',time20  ) 
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-24 $
+% $Revision: 4491413e4cf2b68e986140b356c53509507786c4 $
+
+##### SOURCE END #####
+--></body></html>

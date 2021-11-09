@@ -1,0 +1,251 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a PD controller for pitch for the ComStar satellite.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-19"><meta name="DC.source" content="ComStarPD.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a PD controller for pitch for the ComStar satellite.</h1><!--introduction--><p>If requested saves the matrices to a file PD.txt in the ComStar folder.</p><p>-------------------------------------------------------------------------  See also PDDesign, C2DelZOH, C2DZOH, Series, AC, ComStar, FResp,  Plot2D, WriteCM -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">System Parameters</a></li><li><a href="#4">Design the pitch loops</a></li><li><a href="#5">If requested save and dump the controller matrices</a></li><li><a href="#6">Append the ESA Noise filter</a></li><li><a href="#7">Look at the closed loop eigenvalues</a></li><li><a href="#8">Simulate the loop</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright 1996 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad = pi/180;
+radToDeg = 180/pi;
+</pre><h2 id="3">System Parameters</h2><pre class="codeinput"><span class="comment">%------------------</span>
+inr        = ComStar(<span class="string">'MO Inertia'</span>);
+cMatrices  = <span class="string">'yes'</span>;
+dT         = 0.25; <span class="comment">% This is the loop sampling time</span>
+</pre><h2 id="4">Design the pitch loops</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+zeta          = 1.0; <span class="comment">% This must be higher than 0.7071 because of the noise filter lag</span>
+wN            = 0.1;
+wD            = 1.0;
+[aC,bC,cC,dC] = PDDesign(zeta,wN,wD,inr(2,2));
+</pre><h2 id="5">If requested save and dump the controller matrices</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+<span class="keyword">if</span>( strcmp(cMatrices,<span class="string">'yes'</span>) )
+  fPath = fileparts(which(mfilename));
+  fID           = fopen(fullfile(fPath,<span class="string">'PD.txt'</span>),<span class="string">'w'</span>);
+  [aD,bD]       = C2DelZOH(aC,bC,dT);
+  cD = cC;
+  dD = dC;
+  WriteCM(fID,<span class="string">'A Matrix'</span>,<span class="string">'fPLAMatrix'</span>,reshape(aD',1,length(aD)^2),12,20,3)
+  WriteCM(fID,<span class="string">'B Matrix'</span>,<span class="string">'fPLBMatrix'</span>,bD,12,20,3)
+  WriteCM(fID,<span class="string">'C Matrix'</span>,<span class="string">'fPLCMatrix'</span>,cD,12,20,3)
+  WriteCM(fID,<span class="string">'D Matrix'</span>,<span class="string">'fRPLDMatrix'</span>,dD,12,20,3)
+  fclose(fID);
+  disp(<span class="string">'Pitch Loop PD Matrices'</span>)
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Pitch Loop PD Matrices
+     -0.25918
+      0.25918
+      -191.45
+       199.36
+</pre><h2 id="6">Append the ESA Noise filter</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+sN = load(<span class="string">'NoiseF'</span>);
+[aC,bC,cC,dC] = Series(aC,bC,cC,dC,sN.aN,sN.bN,sN.cN,sN.dN);
+
+w = logspace(-2,1,400);
+FResp(aC,bC,cC,dC,1,1,w,<span class="string">'unwrap'</span>);
+</pre><img vspace="5" hspace="5" src="ComStarPD_01.png" alt=""> <h2 id="7">Look at the closed loop eigenvalues</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+aP = [0,1;0 0];
+bP = [0;1]/inr(2,2);
+cP = [1,0];
+dP = 0;
+
+[a,b,c,d] = Series(aP,bP,cP,dP,aC,bC,cC,dC);
+
+aCL = a - b*c;
+disp(eig(aCL));
+</pre><pre class="codeoutput">     -0.88768 +     0.4804i
+     -0.88768 -     0.4804i
+     -0.50017 +          0i
+     -0.26449 +          0i
+    -0.074199 +          0i
+</pre><h2 id="8">Simulate the loop</h2><pre class="codeinput"><span class="comment">%------------------</span>
+nSim    = 300;
+yPlot   = zeros(1,nSim);
+uStep   = 0.1;
+n       = length(aCL);
+x       = zeros(n,1); <span class="comment">% Rest conditions at the start</span>
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+<span class="keyword">for</span> k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+<span class="keyword">end</span>
+
+titleStr = sprintf(<span class="string">'Pitch PD response to a %6.2f Nm step'</span>,uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Pitch (deg)'</span>,titleStr);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ComStarPD_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a PD controller for pitch for the ComStar satellite.
+% If requested saves the matrices to a file PD.txt in the ComStar folder.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also PDDesign, C2DelZOH, C2DZOH, Series, AC, ComStar, FResp, 
+%  Plot2D, WriteCM
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright 1996 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad = pi/180;
+radToDeg = 180/pi;
+			     
+%% System Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+inr        = ComStar('MO Inertia');
+cMatrices  = 'yes';
+dT         = 0.25; % This is the loop sampling time
+ 
+%% Design the pitch loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zeta          = 1.0; % This must be higher than 0.7071 because of the noise filter lag
+wN            = 0.1;
+wD            = 1.0;
+[aC,bC,cC,dC] = PDDesign(zeta,wN,wD,inr(2,2));
+
+%% If requested save and dump the controller matrices
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( strcmp(cMatrices,'yes') )
+  fPath = fileparts(which(mfilename));
+  fID           = fopen(fullfile(fPath,'PD.txt'),'w');
+  [aD,bD]       = C2DelZOH(aC,bC,dT);
+  cD = cC;
+  dD = dC;   
+  WriteCM(fID,'A Matrix','fPLAMatrix',reshape(aD',1,length(aD)^2),12,20,3)
+  WriteCM(fID,'B Matrix','fPLBMatrix',bD,12,20,3)
+  WriteCM(fID,'C Matrix','fPLCMatrix',cD,12,20,3)
+  WriteCM(fID,'D Matrix','fRPLDMatrix',dD,12,20,3)
+  fclose(fID);
+  disp('Pitch Loop PD Matrices')
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+end
+
+%% Append the ESA Noise filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sN = load('NoiseF');
+[aC,bC,cC,dC] = Series(aC,bC,cC,dC,sN.aN,sN.bN,sN.cN,sN.dN);
+
+w = logspace(-2,1,400);
+FResp(aC,bC,cC,dC,1,1,w,'unwrap');
+
+%% Look at the closed loop eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aP = [0,1;0 0];
+bP = [0;1]/inr(2,2);
+cP = [1,0];
+dP = 0;
+
+[a,b,c,d] = Series(aP,bP,cP,dP,aC,bC,cC,dC);
+
+aCL = a - b*c;
+disp(eig(aCL));
+
+%% Simulate the loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim    = 300;
+yPlot   = zeros(1,nSim);
+uStep   = 0.1;
+n       = length(aCL);
+x       = zeros(n,1); % Rest conditions at the start
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+for k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+end
+
+titleStr = sprintf('Pitch PD response to a %6.2f Nm step',uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,'Time (sec)','Pitch (deg)',titleStr);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-19 11:19:11 -0400 (Fri, 19 Jun 2020) $
+% $Revision: 52840 $
+
+##### SOURCE END #####
+--></body></html>

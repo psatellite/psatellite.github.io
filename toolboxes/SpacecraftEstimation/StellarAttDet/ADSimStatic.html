@@ -1,0 +1,650 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates static attitude determination.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-04-14"><meta name="DC.source" content="ADSimStatic.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates static attitude determination.</h1><!--introduction--><pre>Look at random locations in the sky to test the star identification
+algorithms.
+------------------------------------------------------------------------
+See also Mat2Q, Q2Mat, QPose, QRand, SaveStructure,
+ComputePixelMapScale, PinholeStarCamera, QFromU, StarIdentification,
+LoadCatalog, StarDataGeneration
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Script options</a></li><li><a href="#3">Star identification options</a></li><li><a href="#4">Camera parameters</a></li><li><a href="#5">Default FK5 catalog</a></li><li><a href="#6">Adjust intensity for the camera gain</a></li><li><a href="#7">Loop</a></li></ul></div><pre class="codeinput"><span class="comment">%------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2001 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 5.5</span>
+<span class="comment">%------------------------------------------------------------------------</span>
+</pre><h2>Script options<a name="2"></a></h2><pre class="codeinput"><span class="comment">%----------------</span>
+nSim           = 10;
+plotStars      = true;
+noiseOn        = false;
+</pre><h2>Star identification options<a name="3"></a></h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+options                      = struct;
+options.useAbsoluteIntensity = true;
+options.intensityTolerance   = 0.001;
+options.useTriad             = true;
+</pre><h2>Camera parameters<a name="4"></a></h2><pre class="codeinput"><span class="comment">%-------------------</span>
+pixels            = 256;
+degToRad          = pi/180;
+fieldOfView       = 30*degToRad;
+camera            = PinholeCameraStruct( pixels, fieldOfView );
+camera.gain       = 1e9;
+camera.sigmaXY    = 0.1; <span class="comment">% pixels</span>
+camera.noise      = noiseOn;
+angularResolution = 0.1*fieldOfView/pixels;
+</pre><h2>Default FK5 catalog<a name="5"></a></h2><pre class="codeinput"><span class="comment">%---------------------</span>
+catalogName        = <span class="string">'ADSimStaticCatalog.mat'</span>;
+
+<span class="comment">% Create the catalog if it does not exist</span>
+<span class="comment">% vM 4.2 will give 2 polar stars</span>
+<span class="comment">%----------------------------------------</span>
+<span class="keyword">if</span>( isempty(which(catalogName))  )
+  starCatalog = LoadCatalog(<span class="string">'Hipparcos'</span>,4.2);
+  d           = StarDataGeneration( starCatalog, fieldOfView, angularResolution );
+  SaveStructure( d, FileFullpath(catalogName) );
+<span class="keyword">else</span>
+  d = load(catalogName);
+<span class="keyword">end</span>
+
+d.pixelMapScale = camera.fScale;
+</pre><h2>Adjust intensity for the camera gain<a name="6"></a></h2><pre class="codeinput"><span class="comment">%--------------------------------------</span>
+d.starMatrix(1,:) = d.starMatrix(1,:)*camera.gain;
+</pre><h2>Loop<a name="7"></a></h2><pre class="codeinput"><span class="comment">%------</span>
+nGood  = 0;
+nStars = 0;
+
+<span class="keyword">for</span> j = 1:nSim
+	<span class="comment">% Generate a random quaternion, create an image, and identify stars.</span>
+
+  fprintf(1,<span class="string">'\n-----------\nRun %i\n-----------\n'</span>,j);
+
+  qECIToBody      = QRand;
+  [rA, dec]       = Q2RADec( [0;0;1], qECIToBody );
+  fprintf(1,<span class="string">'RA: %f Dec: %f\n'</span>,rA*180/pi,dec*180/pi);
+  bBodyToCamera   = [0 0  1;0 1 0;-1 0 0];
+  bECIToCamera    = bBodyToCamera*Q2Mat(qECIToBody);
+
+  <span class="comment">% Create measurements using a pinhole camera model</span>
+  starMeasurement = PinholeStarCamera( bECIToCamera, camera, d.starCatalog, plotStars );
+  <span class="keyword">if</span> (plotStars)
+    str = get(gcf,<span class="string">'name'</span>);
+    set(gcf,<span class="string">'name'</span>,[<span class="string">'Run '</span> num2str(j) <span class="string">': '</span> str]);
+    drawnow
+  <span class="keyword">end</span>
+  <span class="comment">% Identify the stars</span>
+  [starID, uMeas, uCatalog] = StarIdentification( starMeasurement, d, options, plotStars );
+  <span class="keyword">if</span> (plotStars)
+    pos = get(gcf,<span class="string">'position'</span>);
+    str = get(gcf,<span class="string">'name'</span>);
+    set(gcf,<span class="string">'position'</span>,[pos(1)+pos(3) pos(2:4)]);
+    set(gcf,<span class="string">'name'</span>,[<span class="string">'Run '</span> num2str(j) <span class="string">': '</span> str]);
+    drawnow
+  <span class="keyword">end</span>
+
+  <span class="keyword">if</span>( ~isempty(uMeas) )
+
+    <span class="comment">% Determine the attitude</span>
+    <span class="comment">%-----------------------</span>
+    starID
+    [qMeas, bMeas] = QFromU( uMeas, uCatalog );
+    qECIToBodyMeas = Mat2Q( (bMeas*bBodyToCamera));
+
+    <span class="keyword">if</span>( ~isempty(qMeas) )
+	    nGood  = nGood + 1;
+      nStars = nStars + length(starID);
+      fprintf(1,<span class="string">'qTrue     = [%8.4f %8.4f %8.4f %8.4f]\nqEstimate = [%8.4f %8.4f %8.4f %8.4f]\nerror = %12.4e\n'</span>,<span class="keyword">...</span>
+          qECIToBody,QPose(qECIToBodyMeas),norm(qECIToBody-QPose(qECIToBodyMeas)));
+    <span class="keyword">else</span>
+      fprintf(1,<span class="string">'qTrue = [%8.4f %8.4f %8.4f %8.4f] No estimate possible.\n'</span>,qECIToBody);
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">if</span>( nGood &gt; 0 )
+  fprintf(1,<span class="string">'\n%i out of %i tests produced a valid attitude using an average of %i stars\n'</span>,<span class="keyword">...</span>
+      nGood,nSim,floor(nStars/nGood));
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+-----------
+Run 1
+-----------
+RA: 72.955595 Dec: 17.942173
+Table of Star Names
+-------------------
+Number Name
+   594 
+   596 
+   642 
+   643 
+   652 IOT Cy
+   658 
+   664 
+   681 
+   682 
+   683 
+   692 
+   698 Dene
+   700 
+   710 
+   715 Alderami
+   716 
+   720 
+   721 
+   731 
+   736 
+   743 
+   753 
+starID =
+  Columns 1 through 13
+   594   596   642   643   652   658   664   681   682   683   692   698   700
+  Columns 14 through 22
+   710   715   716   720   721   731   736   743   753
+qTrue     = [  0.5383   0.2457  -0.5344  -0.6035]
+qEstimate = [  0.5383   0.2457  -0.5344  -0.6035]
+error =   5.6132e-16
+
+-----------
+Run 2
+-----------
+RA: 51.963516 Dec: -33.158233
+Table of Star Names
+-------------------
+Number Name
+   267 
+   275 
+   276 
+   279 
+   281 
+   298 
+   304 Alphar
+   310 
+   311 
+   312 
+   323 Regulu
+   332 
+starID =
+   267   275   276   279   281   298   304   310   311   312   323   332
+qTrue     = [  0.4503   0.8308  -0.2884   0.1541]
+qEstimate = [  0.4503   0.8308  -0.2884   0.1541]
+error =   5.2369e-16
+
+-----------
+Run 3
+-----------
+RA: 42.687506 Dec: -54.574573
+Table of Star Names
+-------------------
+Number Name
+   161 
+   166 
+   173 
+   177 
+   181 
+   182 
+   184 
+   188 
+   191 
+   193 
+   195 
+   198 GAM Ge
+   202 
+   203 
+   205 
+   210 
+   215 
+   225 
+   226 
+   229 
+   231 
+   245 
+   247 Pollu
+starID =
+  Columns 1 through 13
+   161   166   173   177   181   182   184   188   191   193   195   198   202
+  Columns 14 through 23
+   203   205   210   215   225   226   229   231   245   247
+qTrue     = [  0.3038   0.6822  -0.6649   0.0162]
+qEstimate = [  0.3038   0.6822  -0.6649   0.0162]
+error =   5.6899e-16
+
+-----------
+Run 4
+-----------
+RA: 131.905939 Dec: -29.360649
+Table of Star Names
+-------------------
+Number Name
+   494 
+   536 
+   539 
+   551 
+   553 
+   554 
+   555 
+   556 
+   557 
+   558 
+   560 
+   564 
+   570 
+   571 
+   573 
+   574 
+   576 
+   577 Shaul
+   579 
+   585 
+   587 
+   589 
+   592 
+   593 
+   604 
+   616 
+   620 
+   635 
+starID =
+  Columns 1 through 13
+   494   536   539   551   553   554   555   556   557   558   560   564   570
+  Columns 14 through 26
+   571   573   574   576   577   579   585   587   589   592   593   604   616
+  Columns 27 through 28
+   620   635
+qTrue     = [  0.5003   0.5595   0.6574   0.0676]
+qEstimate = [  0.5003   0.5595   0.6574   0.0676]
+error =   3.6428e-16
+
+-----------
+Run 5
+-----------
+RA: -133.839722 Dec: -11.607799
+Table of Star Names
+-------------------
+Number Name
+   562 
+   568 
+   594 
+   596 
+   612 
+   623 
+   631 
+   642 
+   643 
+   652 IOT Cy
+   658 
+   664 
+   700 
+   715 Alderami
+   716 
+   720 
+   721 
+starID =
+  Columns 1 through 13
+   562   568   594   596   612   623   631   642   643   652   658   664   700
+  Columns 14 through 17
+   715   716   720   721
+qTrue     = [  0.1260  -0.6374  -0.4408   0.6193]
+qEstimate = [  0.1260  -0.6374  -0.4408   0.6193]
+error =   4.9728e-16
+
+-----------
+Run 6
+-----------
+RA: -22.718027 Dec: 5.641214
+Table of Star Names
+-------------------
+Number Name
+    70 TET02 Er
+    77 
+    79 
+    83 
+    97 
+   109 
+   111 
+   115 d Er
+   119 
+   121 
+   125 
+   134 
+   147 
+starID =
+    70    77    79    83    97   109   111   115   119   121   125   134   147
+qTrue     = [  0.2104   0.5202  -0.4245   0.7105]
+qEstimate = [  0.2104   0.5202  -0.4245   0.7105]
+error =   4.2276e-16
+
+-----------
+Run 7
+-----------
+RA: -84.184298 Dec: -33.703217
+Table of Star Names
+-------------------
+Number Name
+   495 
+   532 
+   535 
+   547 
+   550 
+   562 
+   572 
+   584 
+   594 
+   596 
+   597 GAM Dr
+   605 
+starID =
+   495   532   535   547   550   562   572   584   594   596   597   605
+qTrue     = [  0.3932  -0.6817  -0.5593   0.2607]
+qEstimate = [  0.3932  -0.6817  -0.5593   0.2607]
+error =   2.0015e-16
+
+-----------
+Run 8
+-----------
+RA: -175.663306 Dec: -20.496385
+Table of Star Names
+-------------------
+Number Name
+   109 
+   111 
+   115 d Er
+   119 
+   120 
+   121 
+   125 
+   147 
+   154 
+   163 
+   168 
+   171 
+   178 
+   186 
+starID =
+  Columns 1 through 13
+   109   111   115   119   120   121   125   147   154   163   168   171   178
+  Column 14
+   186
+qTrue     = [  0.5363  -0.3362   0.7497   0.1932]
+qEstimate = [  0.5363  -0.3362   0.7497   0.1932]
+error =   6.1125e-16
+
+-----------
+Run 9
+-----------
+RA: 19.728100 Dec: -12.491299
+Table of Star Names
+-------------------
+Number Name
+   190 
+   196 
+   197 
+   201 
+   204 Siriu
+   211 
+   212 Adhara
+   213 
+   214 
+   216 
+   217 
+   219 
+   224 
+   228 
+   236 
+   239 
+   242 
+   244 
+   248 
+   250 
+   252 
+   256 
+   257 
+starID =
+  Columns 1 through 13
+   190   196   197   201   204   211   212   213   214   216   217   219   224
+  Columns 14 through 23
+   228   236   239   242   244   248   250   252   256   257
+qTrue     = [  0.4571   0.6938  -0.3561   0.4277]
+qEstimate = [  0.4571   0.6938  -0.3561   0.4277]
+error =   9.0024e-16
+
+-----------
+Run 10
+-----------
+RA: -71.187650 Dec: 62.764387
+Table of Star Names
+-------------------
+Number Name
+   569 
+   573 
+   577 Shaul
+   582 
+   585 
+   589 
+   591 
+   592 
+   593 
+   602 GAM Sg
+   606 
+   609 
+   610 
+   611 
+   615 Kaus Australi
+   617 
+   618 
+   624 
+   629 SIG Sg
+   632 
+   634 
+   637 
+   640 
+   641 
+   644 
+   646 
+starID =
+  Columns 1 through 13
+   569   573   577   582   585   589   591   592   593   602   606   609   610
+  Columns 14 through 26
+   611   615   617   618   624   629   632   634   637   640   641   644   646
+qTrue     = [  0.6455  -0.2048   0.1162  -0.7265]
+qEstimate = [  0.6455  -0.2048   0.1162  -0.7265]
+error =   5.4177e-16
+
+10 out of 10 tests produced a valid attitude using an average of 19 stars
+</pre><img vspace="5" hspace="5" src="ADSimStatic_01.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_02.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_03.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_04.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_05.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_06.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_07.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_08.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_09.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_10.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_11.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_12.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_13.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_14.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_15.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_16.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_17.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_18.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_19.png" alt=""> <img vspace="5" hspace="5" src="ADSimStatic_20.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates static attitude determination.
+%  Look at random locations in the sky to test the star identification
+%  algorithms.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Mat2Q, Q2Mat, QPose, QRand, SaveStructure, 
+%  ComputePixelMapScale, PinholeStarCamera, QFromU, StarIdentification, 
+%  LoadCatalog, StarDataGeneration
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2001 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 5.5
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Script options
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim           = 10;
+plotStars      = true;
+noiseOn        = false;
+
+%% Star identification options
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+options                      = struct;
+options.useAbsoluteIntensity = true;
+options.intensityTolerance   = 0.001;
+options.useTriad             = true;
+
+%% Camera parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+pixels            = 256;
+degToRad          = pi/180;
+fieldOfView       = 30*degToRad;
+camera            = PinholeCameraStruct( pixels, fieldOfView );
+camera.gain       = 1e9;
+camera.sigmaXY    = 0.1; % pixels
+camera.noise      = noiseOn;
+angularResolution = 0.1*fieldOfView/pixels;
+
+%% Default FK5 catalog
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+catalogName        = 'ADSimStaticCatalog.mat';
+
+% Create the catalog if it does not exist
+% vM 4.2 will give 2 polar stars
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( isempty(which(catalogName))  )
+  starCatalog = LoadCatalog('Hipparcos',4.2);
+  d           = StarDataGeneration( starCatalog, fieldOfView, angularResolution );
+  SaveStructure( d, FileFullpath(catalogName) );
+else
+  d = load(catalogName);
+end
+
+d.pixelMapScale = camera.fScale;
+
+%% Adjust intensity for the camera gain
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.starMatrix(1,:) = d.starMatrix(1,:)*camera.gain;
+
+%% Loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nGood  = 0;
+nStars = 0;
+
+for j = 1:nSim
+	% Generate a random quaternion, create an image, and identify stars.
+  
+  fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\nRun %i\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n',j);
+	
+  qECIToBody      = QRand;
+  [rA, dec]       = Q2RADec( [0;0;1], qECIToBody );
+  fprintf(1,'RA: %f Dec: %f\n',rA*180/pi,dec*180/pi);
+  bBodyToCamera   = [0 0  1;0 1 0;-1 0 0];
+  bECIToCamera    = bBodyToCamera*Q2Mat(qECIToBody);
+	
+  % Create measurements using a pinhole camera model
+  starMeasurement = PinholeStarCamera( bECIToCamera, camera, d.starCatalog, plotStars );
+  if (plotStars)
+    str = get(gcf,'name');
+    set(gcf,'name',['Run ' num2str(j) ': ' str]);
+    drawnow
+  end
+  % Identify the stars
+  [starID, uMeas, uCatalog] = StarIdentification( starMeasurement, d, options, plotStars );
+  if (plotStars)
+    pos = get(gcf,'position');
+    str = get(gcf,'name');
+    set(gcf,'position',[pos(1)+pos(3) pos(2:4)]);
+    set(gcf,'name',['Run ' num2str(j) ': ' str]);
+    drawnow
+  end
+  
+  if( ~isempty(uMeas) )
+ 	
+    % Determine the attitude
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    starID
+    [qMeas, bMeas] = QFromU( uMeas, uCatalog );
+    qECIToBodyMeas = Mat2Q( (bMeas*bBodyToCamera));
+  
+    if( ~isempty(qMeas) )
+	    nGood  = nGood + 1;
+      nStars = nStars + length(starID);
+      fprintf(1,'qTrue     = [%8.4f %8.4f %8.4f %8.4f]\nqEstimate = [%8.4f %8.4f %8.4f %8.4f]\nerror = %12.4e\n',...
+          qECIToBody,QPose(qECIToBodyMeas),norm(qECIToBody-QPose(qECIToBodyMeas)));
+    else
+      fprintf(1,'qTrue = [%8.4f %8.4f %8.4f %8.4f] No estimate possible.\n',qECIToBody);
+    end
+  end
+end
+
+if( nGood > 0 )
+  fprintf(1,'\n%i out of %i tests produced a valid attitude using an average of %i stars\n',...
+      nGood,nSim,floor(nStars/nGood));
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2016-04-14 17:09:05 -0400 (Thu, 14 Apr 2016) $
+% $Revision: 42321 $
+
+##### SOURCE END #####
+--></body></html>

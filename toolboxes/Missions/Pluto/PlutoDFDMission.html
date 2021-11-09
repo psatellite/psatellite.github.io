@@ -1,0 +1,423 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Pluto mission delta-Vs using DFD, Lambert solutions</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-19"><meta name="DC.source" content="PlutoDFDMission.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Pluto mission delta-Vs using DFD, Lambert solutions</h1><!--introduction--><p>Use Lambert to calculate the delta-V to Pluto over a range of transit times, from 2 to 10 years. Estimate the total mission mass using specific power to scale the spacecraft, plus allowing for a given tank fraction, thrust efficiency, and a payload of 1000 kg.</p><p>See also Constant, SaveStructure, Plot2D, Plot3D, Date2JD, RK4, Mag, LambertTOF, VEscape, RocketMass, FOrbCart, RV2El, PlanetPosition</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Script parameters</a></li><li><a href="#3">Lambert analysis</a></li><li><a href="#4">Plot the mission</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2016.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Script parameters</h2><p>These are the parameters that define the mission analysis. For simplicity we must assume a fixed thrust and Isp throughout the mission. The engine mass will be calculated solely based on the specific power.</p><pre class="codeinput"><span class="comment">% Payload mass (kg)</span>
+mPLD      = 1000;
+<span class="comment">% Assume a specific power</span>
+kWPerKg   = 1.2;
+<span class="comment">% Total engine power</span>
+power     = 2e6; <span class="comment">% W</span>
+<span class="comment">% Tank structural fraction</span>
+tankF     = 0.02;
+<span class="comment">% Engine thrust</span>
+thrust    = 20;  <span class="comment">% N</span>
+<span class="comment">% Engine efficiency</span>
+eff       = 0.5;
+
+<span class="comment">% orbital altitude at Pluto (km)</span>
+h         = 600;
+<span class="comment">% Epoch</span>
+jD0        = Date2JD([2028 7 2 0 0 0]);
+
+<span class="comment">% Fusion fuel computations</span>
+He3_STP = 0.1339;
+rho3He = 59;                <span class="comment">% density of liquid 3He, kg/m3</span>
+amu3He = 1.6605e-27*3.016;  <span class="comment">% mass of 3He atom, kg</span>
+ePerReaction = 18.3;        <span class="comment">% MeV, energy per D-3He reaction</span>
+eJPerReaction = ePerReaction*1e6*1.602e-19; <span class="comment">% J per reaction</span>
+</pre><h2 id="3">Lambert analysis</h2><p>Perform an analysis of the transfer to Pluto for an array of mission durations.</p><pre class="codeinput"><span class="comment">% Constants</span>
+muSun     = Constant(<span class="string">'mu sun'</span>);
+muPluto   = Constant(<span class="string">'mu pluto'</span>);
+rPluto    = Constant(<span class="string">'equatorial radius pluto'</span>);
+aU        = Constant(<span class="string">'au'</span>);
+
+<span class="comment">% Mass of the engine, using specific power</span>
+massDFD   = power/kWPerKg/1000;
+
+<span class="comment">% Exhaust velocity - will be fixed</span>
+uE        = 2*power*eff/thrust;
+
+PlanetPosition( <span class="string">'initialize'</span>, [3 9] );
+[r0, ~, v]  = PlanetPosition( <span class="string">'update'</span>, jD0 );
+dVOrbit     = VEscape(rPluto+h,muPluto) - sqrt(muPluto/(rPluto+h));
+
+years       = linspace(2,10);
+n           = length(years);
+dV          = zeros(1,n);
+mF          = zeros(1,n);
+mT          = zeros(1,n);
+tAccel      = zeros(1,n);
+hE3         = zeros(1,n);
+<span class="keyword">for</span> k = 1:n
+  duration      = years(k)*365.25;
+  [rI, ~, vI]   = PlanetPosition( <span class="string">'update'</span>, jD0+duration );
+  vT            = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+
+  dV(k)         = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+
+  dVTotal       = dV(k) + dVOrbit;
+  [mF(k),mT(k)] = RocketMass( uE/9.806, mPLD+massDFD, tankF, dVTotal );
+  accel         = thrust/(mT(k) - 0.5*mF(k));
+  tAccel(k)     = dV(k)*1000/accel/86400;
+
+  <span class="comment">% if available, see He3MassFromPower</span>
+  <span class="keyword">if</span> exist(<span class="string">'He3MassFromPower'</span>,<span class="string">'file'</span>)
+    [~,~,vol]   = He3MassFromPower( power*tAccel(k)*86400 );
+    hE3(k)      = vol(1);
+  <span class="keyword">else</span>
+    energy      = power*tAccel(k)*86400;
+    mass3He     = amu3He*energy/eJPerReaction;
+    hE3(k)      = mass3He*1e3/He3_STP;
+  <span class="keyword">end</span>
+
+  <span class="keyword">if</span> tAccel(k)&gt;duration
+    tAccel(k) = 0;
+    dV(k) = 0;
+    mF(k) = 0;
+    mT(k) = 0;
+    hE3(k) = 0;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+yL = {<span class="string">'Total \Delta V (km/s)'</span> <span class="string">'Total Mass (kg)'</span> <span class="string">'Accel Time (days)'</span> <span class="string">'^3He (L STP)'</span>};
+titleStr = sprintf(<span class="string">'Pluto Mission - %d MW DFD %d N Thrust'</span>,round(power/1e6),round(thrust));
+Plot2D(years,[dV;mT;tAccel;hE3],<span class="string">'Duration (Years)'</span>, yL,titleStr)
+subplot(4,1,2)
+hold <span class="string">on</span>
+yy = axis;
+plot(yy(1:2),9306*[1 1])
+</pre><img vspace="5" hspace="5" src="PlutoDFDMission_01.png" alt=""> <h2 id="4">Plot the mission</h2><pre class="codeinput">yearsMission  = 4; <span class="comment">% selected from prior plot</span>
+duration      = yearsMission*365.25;
+[rI, ~, vI]   = PlanetPosition( <span class="string">'update'</span>, jD0+duration );
+[vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+dVTotal       = dV + dVOrbit;
+
+[massFuelPluto, massTotalPluto] = RocketMass( uE/9.806, mPLD+massDFD, tankF, dVTotal );
+
+accel         = thrust/(massTotalPluto - 0.5*massFuelPluto);
+
+<span class="comment">% Calculate the 3He mass for the mission. See also He3MassFromPower in the</span>
+<span class="comment">% FusionPropulsion module, if available.</span>
+tAccel        = dV*1000/accel/86400;
+energy3He     = 18.3*1.6e-19*1e6;   <span class="comment">% J per D-3He reaction</span>
+energyTotal   = power*tAccel*86400; <span class="comment">% accel time only</span>
+mHe3          = 5.0082e-27; <span class="comment">% kg</span>
+massHe3       = mHe3*energyTotal/energy3He;
+
+<span class="comment">% Perform a point-mass heliocentric simulation</span>
+n             = 1000;
+rE            = zeros(3,n);
+rP            = zeros(3,n);
+vM            = zeros(1,n);
+day           = jD0 + linspace(0,duration,n);
+x             = [r0(:,1);vT(:,1)]; <span class="comment">% Note the 25% increase in velocity</span>
+rT            = zeros(3,n);
+el            = RV2El(x(1:3),x(4:6),muSun);
+dT            = (day(2)-day(1))*86400; <span class="comment">% sec</span>
+
+<span class="keyword">for</span> k = 1:n
+  r       = PlanetPosition(<span class="string">'update'</span>,day(k));
+  rE(:,k) = r(:,1);
+  rP(:,k) = r(:,2);
+  rT(:,k) = x(1:3);
+  vM(1,k) = Mag(x(4:6));
+  x       = RK4(@FOrbCart,x,dT,0,[0;0;0],muSun);
+<span class="keyword">end</span>
+
+<span class="comment">% Plot the trajectory with the planet orbits</span>
+rE = rE/aU;
+rP = rP/aU;
+rT = rT/aU;
+Plot3D( rE, <span class="string">'x (aU)'</span>, <span class="string">'y (aU)'</span>, <span class="string">'z (aU)'</span>, <span class="string">'Pluto Trajectory'</span> )
+hold <span class="string">on</span>
+plot3(rP(1,:),rP(2,:),rP(3,:));
+plot3(rT(1,:),rT(2,:),rT(3,:));
+<span class="comment">% Add year labels</span>
+year = (day - jD0)/365.25;
+j    = ceil(linspace(1,n,5));
+<span class="keyword">for</span> k = 2:5
+  i = j(k);
+  text(rT(1,i), rT(2,i), rT(3,i),sprintf(<span class="string">'- Year %d'</span>,floor(year(i))));
+<span class="keyword">end</span>
+
+<span class="comment">% Plot the velocity magnitude</span>
+Plot2D(year,vM,<span class="string">'Year'</span>,<span class="string">'Velocity (km/s)'</span>,<span class="string">'Velocity'</span>)
+
+<span class="comment">% Store mission data</span>
+q           = struct;
+q.massHe3   = massHe3;
+q.massFuel  = massFuelPluto;
+q.massDFD   = massDFD;
+q.massPld   = mPLD;
+q.power     = power;
+q.specPower = kWPerKg;
+thisP       = fileparts(mfilename(<span class="string">'fullpath'</span>));
+SaveStructure(q,fullfile(thisP,<span class="string">'PlutoSpacecraftData'</span>));
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="PlutoDFDMission_02.png" alt=""> <img vspace="5" hspace="5" src="PlutoDFDMission_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Pluto mission delta-Vs using DFD, Lambert solutions
+% Use Lambert to calculate the delta-V to Pluto over a range of transit times,
+% from 2 to 10 years. Estimate the total mission mass using specific power to
+% scale the spacecraft, plus allowing for a given tank fraction, thrust
+% efficiency, and a payload of 1000 kg.
+%
+% See also Constant, SaveStructure, Plot2D, Plot3D, Date2JD, RK4, Mag,
+% LambertTOF, VEscape, RocketMass, FOrbCart, RV2El, PlanetPosition
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2015 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2016.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Script parameters
+% These are the parameters that define the mission analysis. For simplicity we
+% must assume a fixed thrust and Isp throughout the mission. The engine mass
+% will be calculated solely based on the specific power.
+
+% Payload mass (kg)
+mPLD      = 1000;
+% Assume a specific power
+kWPerKg   = 1.2;
+% Total engine power
+power     = 2e6; % W
+% Tank structural fraction
+tankF     = 0.02;
+% Engine thrust
+thrust    = 20;  % N
+% Engine efficiency
+eff       = 0.5;
+
+% orbital altitude at Pluto (km)
+h         = 600;
+% Epoch
+jD0        = Date2JD([2028 7 2 0 0 0]);
+
+% Fusion fuel computations
+He3_STP = 0.1339;
+rho3He = 59;                % density of liquid 3He, kg/m3
+amu3He = 1.6605e-27*3.016;  % mass of 3He atom, kg
+ePerReaction = 18.3;        % MeV, energy per D-3He reaction
+eJPerReaction = ePerReaction*1e6*1.602e-19; % J per reaction
+
+
+%% Lambert analysis
+% Perform an analysis of the transfer to Pluto for an array of mission
+% durations.
+
+% Constants
+muSun     = Constant('mu sun');
+muPluto   = Constant('mu pluto');
+rPluto    = Constant('equatorial radius pluto');
+aU        = Constant('au');
+
+% Mass of the engine, using specific power
+massDFD   = power/kWPerKg/1000;
+
+% Exhaust velocity - will be fixed
+uE        = 2*power*eff/thrust;
+
+PlanetPosition( 'initialize', [3 9] );
+[r0, ~, v]  = PlanetPosition( 'update', jD0 );
+dVOrbit     = VEscape(rPluto+h,muPluto) - sqrt(muPluto/(rPluto+h));
+
+years       = linspace(2,10);
+n           = length(years);
+dV          = zeros(1,n);
+mF          = zeros(1,n);
+mT          = zeros(1,n);
+tAccel      = zeros(1,n);
+hE3         = zeros(1,n);
+for k = 1:n
+  duration      = years(k)*365.25;
+  [rI, ~, vI]   = PlanetPosition( 'update', jD0+duration );
+  vT            = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+  
+  dV(k)         = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+  
+  dVTotal       = dV(k) + dVOrbit;
+  [mF(k),mT(k)] = RocketMass( uE/9.806, mPLD+massDFD, tankF, dVTotal );
+  accel         = thrust/(mT(k) - 0.5*mF(k));
+  tAccel(k)     = dV(k)*1000/accel/86400;
+  
+  % if available, see He3MassFromPower
+  if exist('He3MassFromPower','file')
+    [~,~,vol]   = He3MassFromPower( power*tAccel(k)*86400 );
+    hE3(k)      = vol(1);
+  else
+    energy      = power*tAccel(k)*86400;
+    mass3He     = amu3He*energy/eJPerReaction;
+    hE3(k)      = mass3He*1e3/He3_STP;
+  end
+  
+  if tAccel(k)>duration
+    tAccel(k) = 0;
+    dV(k) = 0;
+    mF(k) = 0;
+    mT(k) = 0;
+    hE3(k) = 0;
+  end
+end
+
+yL = {'Total \Delta V (km/s)' 'Total Mass (kg)' 'Accel Time (days)' '^3He (L STP)'};
+titleStr = sprintf('Pluto Mission - %d MW DFD %d N Thrust',round(power/1e6),round(thrust));
+Plot2D(years,[dV;mT;tAccel;hE3],'Duration (Years)', yL,titleStr)
+subplot(4,1,2)
+hold on
+yy = axis;
+plot(yy(1:2),9306*[1 1])
+
+%% Plot the mission
+yearsMission  = 4; % selected from prior plot
+duration      = yearsMission*365.25;
+[rI, ~, vI]   = PlanetPosition( 'update', jD0+duration );
+[vT, a]       = LambertTOF( r0(:,1), rI(:,2), duration*86400, 1, muSun );
+dV            = Mag(vT(:,1) - v(:,1)) + Mag(vT(:,2) - vI(:,2));
+dVTotal       = dV + dVOrbit;
+
+[massFuelPluto, massTotalPluto] = RocketMass( uE/9.806, mPLD+massDFD, tankF, dVTotal );
+
+accel         = thrust/(massTotalPluto - 0.5*massFuelPluto);
+
+% Calculate the 3He mass for the mission. See also He3MassFromPower in the
+% FusionPropulsion module, if available.
+tAccel        = dV*1000/accel/86400;
+energy3He     = 18.3*1.6e-19*1e6;   % J per D-3He reaction
+energyTotal   = power*tAccel*86400; % accel time only
+mHe3          = 5.0082e-27; % kg
+massHe3       = mHe3*energyTotal/energy3He;
+
+% Perform a point-mass heliocentric simulation
+n             = 1000;
+rE            = zeros(3,n);
+rP            = zeros(3,n);
+vM            = zeros(1,n);
+day           = jD0 + linspace(0,duration,n);
+x             = [r0(:,1);vT(:,1)]; % Note the 25% increase in velocity
+rT            = zeros(3,n);
+el            = RV2El(x(1:3),x(4:6),muSun);
+dT            = (day(2)-day(1))*86400; % sec
+
+for k = 1:n
+  r       = PlanetPosition('update',day(k));
+  rE(:,k) = r(:,1);
+  rP(:,k) = r(:,2);
+  rT(:,k) = x(1:3);
+  vM(1,k) = Mag(x(4:6));
+  x       = RK4(@FOrbCart,x,dT,0,[0;0;0],muSun);
+end
+
+% Plot the trajectory with the planet orbits
+rE = rE/aU;
+rP = rP/aU;
+rT = rT/aU;
+Plot3D( rE, 'x (aU)', 'y (aU)', 'z (aU)', 'Pluto Trajectory' )
+hold on
+plot3(rP(1,:),rP(2,:),rP(3,:));
+plot3(rT(1,:),rT(2,:),rT(3,:));
+% Add year labels
+year = (day - jD0)/365.25;
+j    = ceil(linspace(1,n,5));
+for k = 2:5
+  i = j(k);
+  text(rT(1,i), rT(2,i), rT(3,i),sprintf('- Year %d',floor(year(i))));
+end
+
+% Plot the velocity magnitude
+Plot2D(year,vM,'Year','Velocity (km/s)','Velocity')
+
+% Store mission data
+q           = struct;
+q.massHe3   = massHe3;
+q.massFuel  = massFuelPluto;
+q.massDFD   = massDFD;
+q.massPld   = mPLD;
+q.power     = power;
+q.specPower = kWPerKg;
+thisP       = fileparts(mfilename('fullpath'));
+SaveStructure(q,fullfile(thisP,'PlutoSpacecraftData'));
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-17 13:19:42 -0400 (Wed, 17 Jun 2020) $
+% $Revision: 52801 $
+
+##### SOURCE END #####
+--></body></html>

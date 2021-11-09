@@ -1,0 +1,550 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>AsteroidProspectorSim</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="AsteroidProspectorSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Asteroid Prospector Simulation</a></li><li><a href="#2">Set up mission data</a></li><li><a href="#3">Simulate spiral out from Earth.</a></li><li><a href="#4">Phase 2: Heliocentric orbit, matching Apophis elements</a></li></ul></div><h2 id="1">Asteroid Prospector Simulation</h2><p>Simulate the Asteroid Prospector mission starting with a spiral out from Earth and performing a rendezvous with Apophis. Try different departure orbits to see the effect on the spiral portion of the orbit. The low-thrust rendezvous corrects each Keplerian orbital element sequentially.</p><p>See also TransformECIToSEMR, SunEarthMoonSystemConstants, FCRTBPRHS, LowThrustCRTBP_StopFcn, SEMRToSEMI, SEMToSEMND, LowThrustDVToTransfer, LowThrustRendezvousSim</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c)  Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Set up mission data</h2><pre class="codeinput"><span class="comment">% CONSTANTS</span>
+d       = SunEarthMoonSystemConstants;
+
+<span class="comment">% Spacecraft Parameters</span>
+g       = 9.806e-3;     <span class="comment">% km/s^2</span>
+mass0   = 20;           <span class="comment">% mass             (kg)</span>
+thrust  = 1.9 * 1e-6;   <span class="comment">% thrust           (kN)</span>
+Isp     = 2800;         <span class="comment">% specific impulse (sec)</span>
+uE      = g*Isp;        <span class="comment">% exhaust velocity (km/s)</span>
+
+<span class="comment">% Initial parking altitude</span>
+hParking = 35789; <span class="comment">% 850; LEO % 20200; GPS % 35789 % GEO</span>
+
+<span class="comment">% Initial State in ECI and SEM Rotating Frame</span>
+<span class="comment">%---------------------------------------------</span>
+offset = 7;
+jD0           = Date2JD([2012 8 1 12 0 0]) + offset;
+sma           = d.Re + hParking;
+inc           = 0*pi/180;     <span class="comment">% Inclination ...     Use 21 deg to match lunar inc</span>
+raan          = 348*pi/180;   <span class="comment">% Right ascension ... Use 348 deg to match lunar raan</span>
+ecc           = 0.0;          <span class="comment">% eccentricity</span>
+meanAnom      = pi/2;          <span class="comment">% mean anomaly</span>
+el0           = [sma, inc, raan, 0, ecc, meanAnom];
+[rECI,vECI]   = El2RV(el0,d.muEarth);
+
+<span class="comment">% Now transform from ECI to SEM rotating frame</span>
+<span class="comment">%---------------------------------------------</span>
+[rSEMR0,vSEMR0]	= TransformECIToSEMR(jD0,rECI,vECI);
+rSEMRND0        = rSEMR0/d.L;
+vSEMRND0        = vSEMR0/(d.L/d.T*2*pi);
+</pre><h2 id="3">Simulate spiral out from Earth.</h2><p>This accounts for the change in mass as fuel is consumed. The values are converted to non-dimensional units. T is an Earth year and L is 1 AU.</p><pre class="codeinput"><span class="comment">%----------------------------------------------------------</span>
+thrustND	  = thrust / (d.L*2*pi) * d.T * d.T;
+uEND        = uE / (d.L*2*pi) * d.T;
+afun        = @(y) thrustND*Unit(y(4:6))/y(7); <span class="comment">% acceleration function</span>
+rhs         = @(t,y) FCRTBPRHS(y,t,d.mu,afun(y),uEND);
+options     = odeset(<span class="string">'RelTol'</span>,1e-12,<span class="string">'AbsTol'</span>,1e-14);
+
+<span class="comment">% Stopping conditions</span>
+<span class="comment">%--------------------</span>
+rho             = d.muEarth/d.muSun;
+xB              = rho*d.L/(d.muSun + d.muEarth);
+xE              = d.L - xB;
+xS              = -xB;
+clear <span class="string">dStop</span>;
+dStop.muEarth   = d.muEarth;
+dStop.muSun     = d.muSun;
+dStop.L         = d.L;
+dStop.rE        = [xE;0;0];
+dStop.rS        = [xS;0;0];
+dStop.ratio     = 10; <span class="comment">% The ratio of solar gravity to earth gravity</span>
+
+<span class="comment">% Stop once sun gravity accel dominates that of Earth</span>
+<span class="comment">%----------------------------------------------------</span>
+options     = odeset(options,<span class="string">'events'</span>,@(t,x) LowThrustCRTBP_StopFcn(t,x,dStop),<span class="keyword">...</span>
+                     <span class="string">'outputfcn'</span>,@ODETimeDisplay);
+[t1,y1]     = ode113(rhs,[0 2],[rSEMRND0;vSEMRND0;mass0],options);
+t1d         = t1*d.T/86400; <span class="comment">% time in days</span>
+
+rSEMRND     = y1(:,1:3)';
+vSEMRND     = y1(:,4:6)';
+mass        = y1(:,7);
+
+rSEMR       = rSEMRND*d.L;
+vSEMR       = vSEMRND*d.L*2*pi/d.T;
+jD          = jD0+t1d';
+
+<span class="comment">% Transform position and velocity vectors into the heliocentric frame</span>
+<span class="comment">%---------------------------------------------------------------------</span>
+[rSEMI,vSEMI,m] = SEMRToSEMI( jD, rSEMR, vSEMR );
+elHelio = zeros(length(t1),6);
+<span class="keyword">for</span> i=1:length(t1)
+	elHelio(i,:) = RV2El(rSEMI(:,i), vSEMI(:,i), d.muSun);
+<span class="keyword">end</span>
+elHelioExit = elHelio(i,:);
+
+<span class="comment">% Plots</span>
+<span class="comment">%------</span>
+NewFig(<span class="string">'Low thrust spiral'</span>)
+plot3(rSEMR(1,:)-d.L,rSEMR(2,:),rSEMR(3,:))
+axis <span class="string">equal</span>
+set(gca,<span class="string">'fontsize'</span>,14)
+xlabel(<span class="string">'X [km]'</span>)
+ylabel(<span class="string">'Y [km]'</span>)
+view(0,90)
+hold <span class="string">on</span>
+<span class="comment">% add markers every 10 days for last 100 days</span>
+t1dd = 0:floor(t1d(end));
+tdEnd = floor(t1dd(end)/10)*10;
+rd = interp1(t1d,rSEMR',t1dd)';
+days0 = tdEnd-110;
+days10 = days0:10:tdEnd;
+plot3(rd(1,days10)-d.L,rd(2,days10),rd(3,days10),<span class="string">'s'</span>)
+text(rd(1,days10(end))-d.L,rd(2,days10(end)),rd(3,days10(end)),<span class="keyword">...</span>
+     sprintf(<span class="string">'   %d days'</span>,days10(end)));
+text(rd(1,days10(end-2))-d.L,rd(2,days10(end-2)),rd(3,days10(end-2)),<span class="keyword">...</span>
+     sprintf(<span class="string">'   %d days'</span>,days10(end-2)));
+grid <span class="string">on</span>
+
+<span class="comment">% Plot helio orbital elements of Earth spiral</span>
+<span class="comment">%--------------------------------------------</span>
+Plot2D(t1d',elHelio(:,1:5)',<span class="string">'Time (sec)'</span>,<span class="keyword">...</span>
+  {<span class="string">'a (km)'</span>,<span class="string">'i (rad)'</span>,<span class="string">'\Omega (rad)'</span>,<span class="string">'\omega (rad)'</span>,<span class="string">'ecc.'</span>},<span class="keyword">...</span>
+  <span class="string">'Heilocentric elements of Earth Spiral'</span>);
+
+<span class="comment">% Compute time and delta-v</span>
+<span class="comment">%--------------------------</span>
+dT1 = t1(end)*d.T;
+dV1Tot = -uE*log( mass(end)/mass0 );
+fprintf(<span class="string">'Spiral requires %f km/s delta-V in %.0f days\n'</span>,dV1Tot,dT1/86400);
+<span class="comment">% This estimate assumes point mass gravity</span>
+dVSpiral = LowThrustEscape(d.muEarth,sma);
+fprintf(<span class="string">'The delta-V estimate from LowThrustEscape was %f km/s.\n'</span>,dVSpiral);
+</pre><pre class="codeoutput">Spiral requires 2.635443 km/s delta-V in 306 days
+The delta-V estimate from LowThrustEscape was 3.074552 km/s.
+</pre><img vspace="5" hspace="5" src="AsteroidProspectorSim_01.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_02.png" alt=""> <h2 id="4">Phase 2: Heliocentric orbit, matching Apophis elements</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------</span>
+<span class="comment">% This is an approximation to a true trajectory optimization, by changing one</span>
+<span class="comment">% orbital element at a time. Try changing the order of the elements. In this</span>
+<span class="comment">% particular case, [3 1 2 5] works well. The mean anomaly is not controlled as</span>
+<span class="comment">% that would be managed by selection the working start date.</span>
+
+<span class="comment">% Apophis orbit in heliocentric frame</span>
+<span class="comment">%-------------------------------------</span>
+[elA,~,~,jDA0]      = ApophisOrbit;
+pA                  = Period(elA(1),d.muSun);
+tA                  = linspace(0,pA*35,7000);
+jDA                 = jDA0+tA/86400;
+[rA,vA]             = RVOrbGen(elA,tA,[],d.muSun);
+[rASEMR,vASEMR,m]   = SEMIToSEMR( jDA, rA, vA );
+[rASEMRND,vASEMRND]	= SEMToSEMND( rASEMR, vASEMR );
+
+<span class="comment">% Plot spiral out traj in rotating SEMR frame (non-dim)</span>
+<span class="comment">%------------------------------------------------------</span>
+PlotSEMTraj(rSEMRND,<span class="string">'SEMRND'</span>)
+<span class="comment">% Add ND traj of Apophis to last plot of trajectory</span>
+hold <span class="string">on</span>
+plot3(rASEMRND(1,:),rASEMRND(2,:),rASEMRND(3,:),<span class="string">'c'</span>)
+title(<span class="string">'Non-Dimensional Spiral Trajectory'</span>,<span class="string">'color'</span>,<span class="string">'w'</span>)
+
+<span class="comment">% Apophis orbit in SEMR</span>
+<span class="comment">%----------------------</span>
+NewFig(<span class="string">'Apophis Orbit'</span>);
+plot3(rASEMR(1,:),rASEMR(2,:),rASEMR(3,:)), grid <span class="string">on</span>, axis <span class="string">equal</span>
+title(<span class="string">'The Apophis orbit in the Sun-Earth/Moon CRTBP rotating frame'</span>)
+xlabel(<span class="string">'x'</span>), ylabel(<span class="string">'y'</span>), zlabel(<span class="string">'z'</span>)
+
+m02 = mass(end);          <span class="comment">% initial mass at start of phase 2 (kg)</span>
+aMax = thrust/mass(end);  <span class="comment">% acceleration at start of phase 2 (km/s/s)</span>
+[dT2,dT20,dT2T,elDot20,elDot2T] = <span class="keyword">...</span>
+  LowThrustTimeToTransfer( elHelio(end,:), elA, aMax, d.muSun );
+[dV2Tot,dV2Elem] = LowThrustDVToTransfer( dT2, mass(end), thrust, Isp );
+
+<span class="comment">% Low thrust rendezvous sim</span>
+<span class="comment">%---------------------------</span>
+elemOrder = [3 1 2 5];
+el0 = elHelioExit;
+elT = elA;
+[t2,el2,r2,v2,mass2,acc2,accRSW2] = LowThrustRendezvousSim(el0,elT,mass(end),<span class="keyword">...</span>
+                                                  thrust,Isp,elemOrder,d.muSun);
+t2d = t2/86400;
+fprintf(<span class="string">'---- Results of element matching: ----\n'</span>);
+fprintf(<span class="string">'Total transfer time: %f days\n'</span>,t2d(end));
+fprintf(<span class="string">'Total delta-V: %f km/s\n'</span>,sum(Mag(acc2(:,1:end-1)).*diff(t2)));
+fprintf(<span class="string">'Fuel consumed: %f kg\n'</span>,mass2(1)-mass2(end));
+
+<span class="comment">% Plots</span>
+<span class="comment">%------</span>
+
+rH = RVOrbGen(elHelioExit,[],[],d.muSun);
+hTraj = Plot3D(rA,[],[],[],<span class="string">'Heliocentric Trajectories'</span>);
+hold <span class="string">on</span>
+plot3(rH(1,:),rH(2,:),rH(3,:),<span class="string">'g'</span>)
+plot3(r2(1,:),r2(2,:),r2(3,:),<span class="string">'r--'</span>)
+legend(<span class="string">'Apophis'</span>,<span class="string">'Earth exit'</span>,<span class="string">'Transfer'</span>,<span class="string">'location'</span>,<span class="string">'best'</span>)
+
+<span class="comment">% Apophis distance to Earth</span>
+<span class="comment">%--------------------------</span>
+Plot2D(tA/d.T, Mag(rASEMRND-repmat([1;0;0],1,length(tA))), <span class="keyword">...</span>
+  <span class="string">'Time (yrs)'</span>,<span class="string">'N.D. Distance'</span>,<span class="string">'Earth-to-Apophis Distance'</span>)
+
+<span class="comment">% Rendezvous transfer elements</span>
+<span class="comment">%-----------------------------</span>
+NewFig(<span class="string">'Orbital Elements'</span>)
+k=1;
+subplot(5,1,1)
+plot(t2d,el2(:,k)), hold <span class="string">on</span>, grid <span class="string">on</span>, zoom <span class="string">on</span>, ylabel(<span class="string">'SMA (km)'</span>)
+line([0 t2d(end)],[1 1]*elT(k),<span class="string">'color'</span>,<span class="string">'r'</span>)
+k=5;
+subplot(5,1,2)
+plot(t2d,el2(:,k)), hold <span class="string">on</span>, grid <span class="string">on</span>, zoom <span class="string">on</span>, ylabel(<span class="string">'Ecc.'</span>)
+line([0 t2d(end)],[1 1]*elT(k),<span class="string">'color'</span>,<span class="string">'r'</span>)
+k=4;
+subplot(5,1,3)
+plot(t2d,el2(:,k)*180/pi), hold <span class="string">on</span>, grid <span class="string">on</span>, zoom <span class="string">on</span>, ylabel(<span class="string">'Perigee (deg)'</span>)
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,<span class="string">'color'</span>,<span class="string">'r'</span>)
+k=2;
+subplot(5,1,4)
+plot(t2d,el2(:,k)*180/pi), hold <span class="string">on</span>, grid <span class="string">on</span>, zoom <span class="string">on</span>, ylabel(<span class="string">'Inc (deg)'</span>)
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,<span class="string">'color'</span>,<span class="string">'r'</span>)
+k=3;
+subplot(5,1,5)
+plot(t2d,el2(:,k)*180/pi), hold <span class="string">on</span>, grid <span class="string">on</span>, zoom <span class="string">on</span>, ylabel(<span class="string">'RAAN (deg)'</span>)
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,<span class="string">'color'</span>,<span class="string">'r'</span>)
+xlabel(<span class="string">'Days'</span>)
+
+Plot2D(t2d,acc2,<span class="string">'Time (days)'</span>,<span class="string">'Accel. (km/s/s)'</span>,<span class="string">'Phase 2 Control'</span>)
+grid <span class="string">on</span>, zoom <span class="string">on</span>,
+
+Figui
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ans = 
+  Figure (PlotPSS) with properties:
+
+      Number: 3
+        Name: 'SEMRND'
+       Color: [0 0 0]
+    Position: [560 528 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+Right Ascension: Estimated 178.55604 deg change over 270.0 days
+Right Ascension: Actual    178.55568 deg change over 250.1 days
+SMA: Estimated -21466611.62540 km change over 295.0 days
+SMA: Actual    -21466452.16248 km change over 211.0 days
+Inclination: Estimated 3.21016 deg change over 2.5 years
+Inclination: Actual    1.10717 deg change over 64.5 days
+Eccentricity: Estimated 0.12804  change over 2.5 years
+Eccentricity: Actual    0.12685  change over 238.9 days
+---- Results of element matching: ----
+Total transfer time: 764.510106 days
+Total delta-V: 6.907269 km/s
+Fuel consumed: 4.569025 kg
+</pre><img vspace="5" hspace="5" src="AsteroidProspectorSim_03.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_04.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_05.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_06.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_07.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_08.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProspectorSim_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Asteroid Prospector Simulation
+% Simulate the Asteroid Prospector mission starting with a spiral out from
+% Earth and performing a rendezvous with Apophis. Try different departure
+% orbits to see the effect on the spiral portion of the orbit. The
+% low-thrust rendezvous corrects each Keplerian orbital element
+% sequentially. 
+%
+% See also TransformECIToSEMR, SunEarthMoonSystemConstants, FCRTBPRHS,
+% LowThrustCRTBP_StopFcn, SEMRToSEMI, SEMToSEMND, LowThrustDVToTransfer,
+% LowThrustRendezvousSim
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c)  Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Set up mission data
+
+% CONSTANTS
+d       = SunEarthMoonSystemConstants;
+
+% Spacecraft Parameters
+g       = 9.806e-3;     % km/s^2
+mass0   = 20;           % mass             (kg)
+thrust  = 1.9 * 1e-6;   % thrust           (kN)
+Isp     = 2800;         % specific impulse (sec)
+uE      = g*Isp;        % exhaust velocity (km/s)
+
+% Initial parking altitude
+hParking = 35789; % 850; LEO % 20200; GPS % 35789 % GEO
+
+% Initial State in ECI and SEM Rotating Frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+offset = 7;
+jD0           = Date2JD([2012 8 1 12 0 0]) + offset;
+sma           = d.Re + hParking;
+inc           = 0*pi/180;     % Inclination ...     Use 21 deg to match lunar inc
+raan          = 348*pi/180;   % Right ascension ... Use 348 deg to match lunar raan
+ecc           = 0.0;          % eccentricity
+meanAnom      = pi/2;          % mean anomaly
+el0           = [sma, inc, raan, 0, ecc, meanAnom];
+[rECI,vECI]   = El2RV(el0,d.muEarth);
+
+% Now transform from ECI to SEM rotating frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[rSEMR0,vSEMR0]	= TransformECIToSEMR(jD0,rECI,vECI);
+rSEMRND0        = rSEMR0/d.L;
+vSEMRND0        = vSEMR0/(d.L/d.T*2*pi);
+
+
+%% Simulate spiral out from Earth.
+% This accounts for the change in mass as fuel is consumed.
+% The values are converted to non-dimensional units.
+% T is an Earth year and L is 1 AU.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+thrustND	  = thrust / (d.L*2*pi) * d.T * d.T; 
+uEND        = uE / (d.L*2*pi) * d.T;
+afun        = @(y) thrustND*Unit(y(4:6))/y(7); % acceleration function
+rhs         = @(t,y) FCRTBPRHS(y,t,d.mu,afun(y),uEND);
+options     = odeset('RelTol',1e-12,'AbsTol',1e-14);
+
+% Stopping conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rho             = d.muEarth/d.muSun;
+xB              = rho*d.L/(d.muSun + d.muEarth);
+xE              = d.L - xB;
+xS              = -xB;
+clear dStop;
+dStop.muEarth   = d.muEarth;
+dStop.muSun     = d.muSun;
+dStop.L         = d.L;
+dStop.rE        = [xE;0;0];
+dStop.rS        = [xS;0;0];
+dStop.ratio     = 10; % The ratio of solar gravity to earth gravity
+
+% Stop once sun gravity accel dominates that of Earth
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+options     = odeset(options,'events',@(t,x) LowThrustCRTBP_StopFcn(t,x,dStop),...
+                     'outputfcn',@ODETimeDisplay); 
+[t1,y1]     = ode113(rhs,[0 2],[rSEMRND0;vSEMRND0;mass0],options);
+t1d         = t1*d.T/86400; % time in days
+
+rSEMRND     = y1(:,1:3)';
+vSEMRND     = y1(:,4:6)';
+mass        = y1(:,7);
+
+rSEMR       = rSEMRND*d.L; 
+vSEMR       = vSEMRND*d.L*2*pi/d.T;
+jD          = jD0+t1d';
+
+% Transform position and velocity vectors into the heliocentric frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[rSEMI,vSEMI,m] = SEMRToSEMI( jD, rSEMR, vSEMR );
+elHelio = zeros(length(t1),6);
+for i=1:length(t1)
+	elHelio(i,:) = RV2El(rSEMI(:,i), vSEMI(:,i), d.muSun);
+end
+elHelioExit = elHelio(i,:);
+
+% Plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+NewFig('Low thrust spiral')
+plot3(rSEMR(1,:)-d.L,rSEMR(2,:),rSEMR(3,:))
+axis equal
+set(gca,'fontsize',14)
+xlabel('X [km]')
+ylabel('Y [km]')
+view(0,90)
+hold on
+% add markers every 10 days for last 100 days
+t1dd = 0:floor(t1d(end));
+tdEnd = floor(t1dd(end)/10)*10;
+rd = interp1(t1d,rSEMR',t1dd)';
+days0 = tdEnd-110;
+days10 = days0:10:tdEnd;
+plot3(rd(1,days10)-d.L,rd(2,days10),rd(3,days10),'s')
+text(rd(1,days10(end))-d.L,rd(2,days10(end)),rd(3,days10(end)),...
+     sprintf('   %d days',days10(end)));
+text(rd(1,days10(end-2))-d.L,rd(2,days10(end-2)),rd(3,days10(end-2)),...
+     sprintf('   %d days',days10(end-2)));
+grid on
+
+% Plot helio orbital elements of Earth spiral
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D(t1d',elHelio(:,1:5)','Time (sec)',...
+  {'a (km)','i (rad)','\Omega (rad)','\omega (rad)','ecc.'},...
+  'Heilocentric elements of Earth Spiral');
+
+% Compute time and delta-v
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT1 = t1(end)*d.T;
+dV1Tot = -uE*log( mass(end)/mass0 );
+fprintf('Spiral requires %f km/s delta-V in %.0f days\n',dV1Tot,dT1/86400);
+% This estimate assumes point mass gravity
+dVSpiral = LowThrustEscape(d.muEarth,sma);
+fprintf('The delta-V estimate from LowThrustEscape was %f km/s.\n',dVSpiral);
+
+
+%% Phase 2: Heliocentric orbit, matching Apophis elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% This is an approximation to a true trajectory optimization, by changing one
+% orbital element at a time. Try changing the order of the elements. In this
+% particular case, [3 1 2 5] works well. The mean anomaly is not controlled as
+% that would be managed by selection the working start date.
+
+% Apophis orbit in heliocentric frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[elA,~,~,jDA0]      = ApophisOrbit;
+pA                  = Period(elA(1),d.muSun);
+tA                  = linspace(0,pA*35,7000);
+jDA                 = jDA0+tA/86400;
+[rA,vA]             = RVOrbGen(elA,tA,[],d.muSun);
+[rASEMR,vASEMR,m]   = SEMIToSEMR( jDA, rA, vA );   
+[rASEMRND,vASEMRND]	= SEMToSEMND( rASEMR, vASEMR );
+
+% Plot spiral out traj in rotating SEMR frame (non-dim)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+PlotSEMTraj(rSEMRND,'SEMRND')
+% Add ND traj of Apophis to last plot of trajectory
+hold on
+plot3(rASEMRND(1,:),rASEMRND(2,:),rASEMRND(3,:),'c')
+title('Non-Dimensional Spiral Trajectory','color','w')
+
+% Apophis orbit in SEMR
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+NewFig('Apophis Orbit');
+plot3(rASEMR(1,:),rASEMR(2,:),rASEMR(3,:)), grid on, axis equal
+title('The Apophis orbit in the Sun-Earth/Moon CRTBP rotating frame')
+xlabel('x'), ylabel('y'), zlabel('z')
+
+m02 = mass(end);          % initial mass at start of phase 2 (kg)
+aMax = thrust/mass(end);  % acceleration at start of phase 2 (km/s/s)
+[dT2,dT20,dT2T,elDot20,elDot2T] = ...
+  LowThrustTimeToTransfer( elHelio(end,:), elA, aMax, d.muSun );
+[dV2Tot,dV2Elem] = LowThrustDVToTransfer( dT2, mass(end), thrust, Isp );
+
+% Low thrust rendezvous sim
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+elemOrder = [3 1 2 5];
+el0 = elHelioExit;
+elT = elA;
+[t2,el2,r2,v2,mass2,acc2,accRSW2] = LowThrustRendezvousSim(el0,elT,mass(end),...
+                                                  thrust,Isp,elemOrder,d.muSun);
+t2d = t2/86400;
+fprintf('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH Results of element matching: REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n');
+fprintf('Total transfer time: %f days\n',t2d(end));
+fprintf('Total delta-V: %f km/s\n',sum(Mag(acc2(:,1:end-1)).*diff(t2)));
+fprintf('Fuel consumed: %f kg\n',mass2(1)-mass2(end));
+
+% Plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+rH = RVOrbGen(elHelioExit,[],[],d.muSun);
+hTraj = Plot3D(rA,[],[],[],'Heliocentric Trajectories');
+hold on
+plot3(rH(1,:),rH(2,:),rH(3,:),'g')
+plot3(r2(1,:),r2(2,:),r2(3,:),'rREPLACE_WITH_DASH_DASH')
+legend('Apophis','Earth exit','Transfer','location','best')
+
+% Apophis distance to Earth
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D(tA/d.T, Mag(rASEMRND-repmat([1;0;0],1,length(tA))), ...
+  'Time (yrs)','N.D. Distance','Earth-to-Apophis Distance')
+
+% Rendezvous transfer elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+NewFig('Orbital Elements')
+k=1;
+subplot(5,1,1)
+plot(t2d,el2(:,k)), hold on, grid on, zoom on, ylabel('SMA (km)')
+line([0 t2d(end)],[1 1]*elT(k),'color','r')
+k=5;
+subplot(5,1,2)
+plot(t2d,el2(:,k)), hold on, grid on, zoom on, ylabel('Ecc.')
+line([0 t2d(end)],[1 1]*elT(k),'color','r')
+k=4;
+subplot(5,1,3)
+plot(t2d,el2(:,k)*180/pi), hold on, grid on, zoom on, ylabel('Perigee (deg)')
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,'color','r')
+k=2;
+subplot(5,1,4)
+plot(t2d,el2(:,k)*180/pi), hold on, grid on, zoom on, ylabel('Inc (deg)')
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,'color','r')
+k=3;
+subplot(5,1,5)
+plot(t2d,el2(:,k)*180/pi), hold on, grid on, zoom on, ylabel('RAAN (deg)')
+line([0 t2d(end)],[1 1]*elT(k)*180/pi,'color','r')
+xlabel('Days')
+
+Plot2D(t2d,acc2,'Time (days)','Accel. (km/s/s)','Phase 2 Control')
+grid on, zoom on, 
+
+Figui
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-26 14:48:15 -0400 (Thu, 26 Sep 2019) $
+% $Revision: 49882 $
+
+##### SOURCE END #####
+--></body></html>

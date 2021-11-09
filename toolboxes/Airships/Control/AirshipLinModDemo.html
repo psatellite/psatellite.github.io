@@ -1,0 +1,613 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Compare linear and non-linear simulations of an airship.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="AirshipLinModDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Compare linear and non-linear simulations of an airship.</h1><!--introduction--><pre>------------------------------------------------------------------------</pre><pre>-------------------------------------------------------------------------
+See also EulNED, QECI, AC, ACInit, @acstate/acstate.m, AirshipLinMod,
+AirshipStatespace, AirshipTrim, BuildAirshipModel, C2DZOH, Altitude,
+QTForm, DeleteSuffix, Plot2D, Cross, Mag
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Default parameters for demo</a></li><li><a href="#3">ensure proper formatting of "cmd" data structure</a></li><li><a href="#4">time step</a></li><li><a href="#5">time info</a></li><li><a href="#6">load airship model data</a></li><li><a href="#7">compute the linearized model</a></li><li><a href="#8">get state space matrices</a></li><li><a href="#9">discretize</a></li><li><a href="#10">reorganize matrices (optional)</a></li><li><a href="#11">dimensions</a></li><li><a href="#12">set up control vector</a></li><li><a href="#13">discrete state-space propagation</a></li><li><a href="#14">Non-Linear Sim</a></li><li><a href="#15">initial state</a></li><li><a href="#16">trim condition</a></li><li><a href="#17">compute the position and velocity of the CG</a></li><li><a href="#18">compute the angle of attack and sidelsip</a></li><li><a href="#19">compute the altitude</a></li><li><a href="#20">output</a></li><li><a href="#21">add initial values to yLin</a></li><li><a href="#22">Create the plots</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright 2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Default parameters for demo</h2><pre class="codeinput"><span class="comment">%  Name of airship model</span>
+name  = <span class="string">'ASM3'</span>;
+
+<span class="comment">% Location of origin (from nose)      [m]</span>
+xo    = 0;
+
+<span class="comment">% Initial altitude                    [m]</span>
+h     = 21336;
+
+<span class="comment">% Initial flight path angle           [rad]</span>
+theta = 0*pi/180;
+
+<span class="comment">% Initial angle of attack             [rad]</span>
+alpha = 0*pi/180;
+
+<span class="comment">% Initial linear velocity magnitude   [m/s]</span>
+V     = 15;
+
+<span class="comment">% Simulation time                     [sec]</span>
+tSim  = 100;
+
+<span class="comment">% command data structure</span>
+cmd.actuator = {<span class="string">'dELVL'</span>,<span class="string">'dELVR'</span>};   <span class="comment">% which actuator  ('throttle','mu','dELVL','dELVR','dRUDB','dRUDT')</span>
+cmd.type     = {<span class="string">'step'</span>,<span class="string">'step'</span>};     <span class="comment">% type of input   ('step','impulse')</span>
+cmd.value    = [1 1]*pi/180;        <span class="comment">% value of applied control</span>
+cmd.tControl = 5;                   <span class="comment">% start and stop times of applied control</span>
+</pre><h2 id="3">ensure proper formatting of "cmd" data structure</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------</span>
+<span class="keyword">if</span>( ~iscell(cmd.actuator) )
+   cmd.actuator = {cmd.actuator};
+<span class="keyword">end</span>
+<span class="keyword">if</span>( ~iscell(cmd.type) )
+   cmd.type = {cmd.type};
+<span class="keyword">end</span>
+</pre><h2 id="4">time step</h2><pre class="codeinput"><span class="comment">%----------</span>
+dT   = 1;      <span class="comment">% seconds;</span>
+</pre><h2 id="5">time info</h2><pre class="codeinput"><span class="comment">%----------</span>
+tSim = round(tSim/dT)*dT;
+t    = 0:dT:tSim;
+nSim = length(t);
+</pre><h2 id="6">load airship model data</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+disp(<span class="string">'Building airship model...'</span>);
+name = DeleteSuffix(name);
+mdl  = BuildAirshipModel(name,xo);
+
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Linear Sim</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">Building airship model...
+</pre><h2 id="7">compute the linearized model</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+useAlpha = 0;
+g = AirshipLinMod( mdl, h, theta, alpha, V, useAlpha );
+</pre><h2 id="8">get state space matrices</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+[a,b,c,d] = getabcd( g );
+</pre><h2 id="9">discretize</h2><pre class="codeinput"><span class="comment">%-----------</span>
+[a, b]  = C2DZOH( a, b, dT );
+</pre><h2 id="10">reorganize matrices (optional)</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+<span class="comment">% lat = 3+[1 3 4 6 8];             % phi, psi, p, r, v</span>
+<span class="comment">% lon = 3+[2 5 7 9];               % theta, q, u, w</span>
+<span class="comment">% a   = a([lon,lat],[lon,lat]);</span>
+<span class="comment">% b   = b([lon,lat],:);</span>
+<span class="comment">% c   = c(:,[lon,lat]);</span>
+<span class="comment">%</span>
+<span class="comment">% % forcibly change c here if desired</span>
+<span class="comment">% c(10,:) = 0; c(10,4)=-1;</span>
+</pre><h2 id="11">dimensions</h2><pre class="codeinput"><span class="comment">%-----------</span>
+nX = length(a);
+nU = size(b,2);
+nY = size(c,1);
+</pre><h2 id="12">set up control vector</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+u      = zeros(nU,nSim);
+nC     = length(cmd.actuator);
+acts   = {<span class="string">'throttle'</span>,<span class="string">'mu'</span>,<span class="string">'dELVL'</span>,<span class="string">'dELVR'</span>,<span class="string">'dRUDB'</span>,<span class="string">'dRUDT'</span>};
+kStart = cmd.tControl/dT+1;
+<span class="keyword">for</span> i=1:nC
+   kAct = StringMatch(cmd.actuator{i},acts);
+   <span class="keyword">if</span>( strcmp( cmd.type{i}, <span class="string">'impulse'</span> ) )
+      u(kAct,kStart) = cmd.value(i);
+   <span class="keyword">elseif</span>( strcmp( cmd.type{i}, <span class="string">'step'</span> ) )
+      u(kAct,kStart:end) = cmd.value(i);
+   <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="13">discrete state-space propagation</h2><pre class="codeinput"><span class="comment">%---------------------------------</span>
+disp(<span class="string">'Running linear simulation...'</span>);
+x    = zeros(nX,1);
+yLin = zeros(nY,nSim);
+xLin = zeros(nX,nSim);
+<span class="keyword">for</span> k = 1:nSim
+   yLin(:,k) = c*x + d*u(:,k);
+   x         = a*x + b*u(:,k);
+   xLin(:,k) = x;
+<span class="keyword">end</span>
+
+<span class="comment">% now separate lat &amp; lon</span>
+[gLat,gLon] = AirshipStatespace(g);
+[a,b,c,d] = getabcd(gLat);
+latStates = [1 2 4]; <span class="comment">% p, r, beta</span>
+a = a(latStates,latStates);
+b = b(latStates,:);
+c = c(latStates,latStates);
+d = d(latStates,:);
+[a,b] = C2DZOH( a, b, dT );
+x1    = zeros(3,1);
+yLin1 = zeros(3,nSim);
+xLin1 = zeros(3,nSim);
+<span class="keyword">for</span> k = 1:nSim
+   rudk       = .5*(u(5,k)+u(6,k));
+   ailk       = u(3,k)-u(4,k)+u(5,k)-u(6,k);
+   yLin1(:,k) = c*x1 + d*[rudk;ailk];
+   x1         = a*x1 + b*[rudk;ailk];
+   xLin1(:,k) = x1;
+<span class="keyword">end</span>
+[a,b,c,d] = getabcd(gLon);
+[a,b] = C2DZOH( a, b, dT );
+lonStates = [1 2 3];
+a = a(lonStates,lonStates);
+b = b(lonStates,:);
+c = c(lonStates,lonStates);
+d = d(lonStates,:);
+x2    = zeros(3,1);
+yLin2 = zeros(3,nSim);
+xLin2 = zeros(3,nSim);
+<span class="keyword">for</span> k = 1:nSim
+   elvk       = .5*(u(3,k)+u(4,k));
+   yLin2(:,k) = c*x2 + d*[u(1:2,k);elvk];
+   x2         = a*x2 + b*[u(1:2,k);elvk];
+   xLin2(:,k) = x2;
+<span class="keyword">end</span>
+
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">Running linear simulation...
+</pre><h2 id="14">Non-Linear Sim</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+Re  = 6378.14*1e3;
+</pre><h2 id="15">initial state</h2><pre class="codeinput"><span class="comment">%--------------</span>
+r0  = [Re+h;0;0];
+v0  = V*[cos(alpha); 0; sin(alpha)];
+q0  = QECI( r0, [0; theta+alpha; 0] );
+w0  = zeros(3,1);
+xNL = acstate( r0, q0, w0, v0, [], mdl.mass, mdl.inertia, mdl.cG, [], [], [], [], [] );
+mdl = ACInit( xNL, mdl );
+</pre><h2 id="16">trim condition</h2><pre class="codeinput"><span class="comment">%---------------</span>
+[T,trimMu,trimDELV]  = AirshipTrim( mdl, h, theta, alpha, V );
+trimThrottle         = T/(2*mdl.engine.thrustMax);
+
+r = zeros(3,nSim);
+v = zeros(3,nSim);
+q = zeros(4,nSim);
+w = zeros(3,nSim);
+e = zeros(3,nSim);
+
+z = zeros(3,1);
+
+disp(<span class="string">'Running non-linear simulation...'</span>);
+<span class="keyword">for</span> k = 1:nSim
+
+   <span class="comment">% Store for Plotting</span>
+   <span class="comment">%-------------------</span>
+   r(:,k) = get(xNL,<span class="string">'r'</span>);
+   v(:,k) = get(xNL,<span class="string">'v'</span>);
+   q(:,k) = get(xNL,<span class="string">'q'</span>);
+   w(:,k) = get(xNL,<span class="string">'w'</span>);
+   e(:,k) = EulNED( r(:,k), q(:,k), z );
+
+   <span class="comment">% controls</span>
+   <span class="comment">%---------</span>
+   mdl.control.throttle = u(1,k) + trimThrottle;
+   mdl.control.mu       = u(2,k) + trimMu;
+   mdl.control.dELVL    = u(3,k) + trimDELV;
+   mdl.control.dELVR    = u(4,k) + trimDELV;
+   mdl.control.dRUDB    = u(5,k);
+   mdl.control.dRUDT    = u(6,k);
+
+   <span class="comment">% The simulation</span>
+   <span class="comment">%---------------</span>
+   xNL  = AC( xNL, t(k), dT, mdl  );
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Running non-linear simulation...
+</pre><h2 id="17">compute the position and velocity of the CG</h2><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+rCG = r + QTForm(q,mdl.cG);
+vCG = v + Cross(w,mdl.cG);
+</pre><h2 id="18">compute the angle of attack and sidelsip</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+alpha = atan( -vCG(3,:)./vCG(1,:) );
+beta  = asin( vCG(2,:)./Mag(vCG) );
+</pre><h2 id="19">compute the altitude</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+h = Altitude(rCG,<span class="string">'si'</span>);
+</pre><h2 id="20">output</h2><pre class="codeinput"><span class="comment">%-------</span>
+y = [w; v; alpha; beta; e(1,:); h];
+</pre><h2 id="21">add initial values to yLin</h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+<span class="comment">%yLin = yLin + y(:,ones(1,nSim));</span>
+y = y - y(:,ones(1,nSim));
+</pre><h2 id="22">Create the plots</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+tLab  = <span class="string">'Time [sec]'</span>;
+uLab  = {<span class="string">'throttle'</span>;<span class="string">'mu'</span>;<span class="string">'dELVL'</span>;<span class="string">'dELVR'</span>;<span class="string">'dRUDB'</span>;<span class="string">'dRUDT'</span>};
+p     = [y(1,:);  yLin(1,:); yLin1(1,:)]*180/pi;
+q     = [y(2,:);  yLin(2,:); yLin2(1,:)]*180/pi;
+r     = [y(3,:);  yLin(3,:); yLin1(2,:)]*180/pi;
+vx    = [y(4,:);  yLin(4,:); yLin2(2,:)];
+vy    = [y(5,:);  yLin(5,:); yLin1(3,:)];
+vz    = [y(6,:);  yLin(6,:); yLin2(3,:)];
+alpha = [y(7,:);  yLin(7,:);           ]*180/pi;
+beta  = [y(8,:);  yLin(8,:);           ]*180/pi;
+phi   = [y(9,:);  yLin(9,:);           ]*180/pi;
+alt   = [y(10,:); yLin(10,:)           ];
+
+u(2:6,:) = u(2:6,:)*180/pi;   <span class="comment">% rad to deg</span>
+
+Plot2D( t, u(1:6,:), tLab, uLab,                 <span class="string">'Control Inputs'</span>  )
+Plot2D( t, p,        tLab, <span class="string">'Roll Rate [deg/s]'</span>,  <span class="string">'Roll Rate'</span>       ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, q,        tLab, <span class="string">'Pitch Rate [deg/s]'</span>, <span class="string">'Pitch Rate'</span>      ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, r,        tLab, <span class="string">'Yaw Rate [deg/s]'</span>,   <span class="string">'Yaw Rate'</span>        ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, vx,       tLab, <span class="string">'x-Velocity [m/s]'</span>,   <span class="string">'x-Velocity'</span>      ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, vy,       tLab, <span class="string">'y-Velocity [m/s]'</span>,   <span class="string">'y-Velocity'</span>      ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, vz,       tLab, <span class="string">'z-Velocity [m/s]'</span>,   <span class="string">'z-Velocity'</span>      ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>,<span class="string">'3 State Linear'</span>);
+Plot2D( t, alpha,    tLab, <span class="string">'Alpha [deg]'</span>,        <span class="string">'Angle of attack'</span> ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>);
+Plot2D( t, beta,     tLab, <span class="string">'Beta [deg]'</span>,         <span class="string">'Sideslip'</span>        ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>);
+Plot2D( t, phi,      tLab, <span class="string">'Phi [deg]'</span>,          <span class="string">'Roll'</span>            ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>);
+Plot2D( t, alt,      tLab, <span class="string">'Altitude [m]'</span>,       <span class="string">'Altitude'</span>        ), legend(<span class="string">'Full Non-Linear'</span>,<span class="string">'Full Linear'</span>);
+
+fs  = <span class="string">'fontsize'</span>;
+rot = <span class="string">'rotation'</span>;
+lw  = <span class="string">'linewidth'</span>;
+ha  = <span class="string">'horizontalalignment'</span>;
+rt  = <span class="string">'right'</span>;
+NewFig(<span class="string">'Airship Summary'</span>),
+subplot(221), plot(t,q,lw,2),     grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'q\newline[deg/s]'</span>,   rot,0,fs,14,ha,rt);
+subplot(222), plot(t,vz,lw,2),    grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'w\newline[m/s]'</span>,     rot,0,fs,14,ha,rt);
+subplot(223), plot(t,alpha,lw,2), grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'\alpha\newline[deg]'</span>,rot,0,fs,14,ha,rt); xlabel(<span class="string">'Time [sec]'</span>,fs,14);
+subplot(224), plot(t,alt,lw,2),   grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'h\newline[m]'</span>,       rot,0,fs,14,ha,rt); xlabel(<span class="string">'Time [sec]'</span>,fs,14);
+
+NewFig(<span class="string">'Airship Summary'</span>),
+subplot(311), plot(t,r,lw,2),    grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'r\newline[deg/s]'</span>,   rot,0,fs,14,ha,rt);
+subplot(312), plot(t,vy,lw,2),   grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'v\newline[m/s]'</span>,     rot,0,fs,14,ha,rt);
+subplot(313), plot(t,beta,lw,2), grid <span class="string">on</span>, set(gca,fs,14), ylabel(<span class="string">'\beta\newline[deg]'</span>, rot,0,fs,14,ha,rt); xlabel(<span class="string">'Time [sec]'</span>,fs,14);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="AirshipLinModDemo_01.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_02.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_03.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_04.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_05.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_06.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_07.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_08.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_09.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_10.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_11.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_12.png" alt=""> <img vspace="5" hspace="5" src="AirshipLinModDemo_13.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Compare linear and non-linear simulations of an airship.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also EulNED, QECI, AC, ACInit, @acstate/acstate.m, AirshipLinMod, 
+%  AirshipStatespace, AirshipTrim, BuildAirshipModel, C2DZOH, Altitude, 
+%  QTForm, DeleteSuffix, Plot2D, Cross, Mag
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright 2003 Princeton Satellite Systems, Inc.
+%    All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Default parameters for demo
+
+%  Name of airship model 
+name  = 'ASM3';
+
+% Location of origin (from nose)      [m]
+xo    = 0;
+
+% Initial altitude                    [m]
+h     = 21336;
+
+% Initial flight path angle           [rad]
+theta = 0*pi/180;
+
+% Initial angle of attack             [rad]
+alpha = 0*pi/180;
+
+% Initial linear velocity magnitude   [m/s]
+V     = 15;
+
+% Simulation time                     [sec]
+tSim  = 100;
+
+% command data structure
+cmd.actuator = {'dELVL','dELVR'};   % which actuator  ('throttle','mu','dELVL','dELVR','dRUDB','dRUDT')
+cmd.type     = {'step','step'};     % type of input   ('step','impulse')
+cmd.value    = [1 1]*pi/180;        % value of applied control
+cmd.tControl = 5;                   % start and stop times of applied control
+
+%% ensure proper formatting of "cmd" data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( ~iscell(cmd.actuator) )
+   cmd.actuator = {cmd.actuator};
+end
+if( ~iscell(cmd.type) )
+   cmd.type = {cmd.type};
+end
+
+%% time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT   = 1;      % seconds;
+
+%% time info
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSim = round(tSim/dT)*dT;
+t    = 0:dT:tSim;
+nSim = length(t);
+
+%% load airship model data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('Building airship model...');
+name = DeleteSuffix(name);
+mdl  = BuildAirshipModel(name,xo);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Linear Sim
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% compute the linearized model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+useAlpha = 0;
+g = AirshipLinMod( mdl, h, theta, alpha, V, useAlpha );
+
+%% get state space matrices
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[a,b,c,d] = getabcd( g );
+
+%% discretize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[a, b]  = C2DZOH( a, b, dT );
+
+%% reorganize matrices (optional)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% lat = 3+[1 3 4 6 8];             % phi, psi, p, r, v
+% lon = 3+[2 5 7 9];               % theta, q, u, w
+% a   = a([lon,lat],[lon,lat]);
+% b   = b([lon,lat],:);
+% c   = c(:,[lon,lat]);
+% 
+% % forcibly change c here if desired
+% c(10,:) = 0; c(10,4)=-1;
+
+%% dimensions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nX = length(a);
+nU = size(b,2);
+nY = size(c,1);
+
+%% set up control vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+u      = zeros(nU,nSim);
+nC     = length(cmd.actuator);
+acts   = {'throttle','mu','dELVL','dELVR','dRUDB','dRUDT'};
+kStart = cmd.tControl/dT+1;
+for i=1:nC
+   kAct = StringMatch(cmd.actuator{i},acts);
+   if( strcmp( cmd.type{i}, 'impulse' ) )
+      u(kAct,kStart) = cmd.value(i);
+   elseif( strcmp( cmd.type{i}, 'step' ) )
+      u(kAct,kStart:end) = cmd.value(i);
+   end
+end
+
+%% discrete state-space propagation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Running linear simulation...');
+x    = zeros(nX,1);
+yLin = zeros(nY,nSim);
+xLin = zeros(nX,nSim);
+for k = 1:nSim
+   yLin(:,k) = c*x + d*u(:,k);
+   x         = a*x + b*u(:,k);
+   xLin(:,k) = x;
+end
+
+% now separate lat & lon
+[gLat,gLon] = AirshipStatespace(g);
+[a,b,c,d] = getabcd(gLat);
+latStates = [1 2 4]; % p, r, beta
+a = a(latStates,latStates);
+b = b(latStates,:);
+c = c(latStates,latStates);
+d = d(latStates,:);
+[a,b] = C2DZOH( a, b, dT );
+x1    = zeros(3,1);
+yLin1 = zeros(3,nSim);
+xLin1 = zeros(3,nSim);
+for k = 1:nSim
+   rudk       = .5*(u(5,k)+u(6,k));
+   ailk       = u(3,k)-u(4,k)+u(5,k)-u(6,k);
+   yLin1(:,k) = c*x1 + d*[rudk;ailk];
+   x1         = a*x1 + b*[rudk;ailk];
+   xLin1(:,k) = x1;
+end
+[a,b,c,d] = getabcd(gLon);
+[a,b] = C2DZOH( a, b, dT );
+lonStates = [1 2 3];
+a = a(lonStates,lonStates);
+b = b(lonStates,:);
+c = c(lonStates,lonStates);
+d = d(lonStates,:);
+x2    = zeros(3,1);
+yLin2 = zeros(3,nSim);
+xLin2 = zeros(3,nSim);
+for k = 1:nSim
+   elvk       = .5*(u(3,k)+u(4,k));
+   yLin2(:,k) = c*x2 + d*[u(1:2,k);elvk];
+   x2         = a*x2 + b*[u(1:2,k);elvk];
+   xLin2(:,k) = x2;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Non-Linear Sim
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Re  = 6378.14*1e3;
+
+%% initial state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r0  = [Re+h;0;0];
+v0  = V*[cos(alpha); 0; sin(alpha)];
+q0  = QECI( r0, [0; theta+alpha; 0] );
+w0  = zeros(3,1);
+xNL = acstate( r0, q0, w0, v0, [], mdl.mass, mdl.inertia, mdl.cG, [], [], [], [], [] );
+mdl = ACInit( xNL, mdl );
+
+%% trim condition
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[T,trimMu,trimDELV]  = AirshipTrim( mdl, h, theta, alpha, V );
+trimThrottle         = T/(2*mdl.engine.thrustMax);
+
+r = zeros(3,nSim);
+v = zeros(3,nSim);
+q = zeros(4,nSim);
+w = zeros(3,nSim);
+e = zeros(3,nSim);
+
+z = zeros(3,1);
+
+disp('Running non-linear simulation...');
+for k = 1:nSim
+      
+   % Store for Plotting
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   r(:,k) = get(xNL,'r');
+   v(:,k) = get(xNL,'v');
+   q(:,k) = get(xNL,'q');
+   w(:,k) = get(xNL,'w');
+   e(:,k) = EulNED( r(:,k), q(:,k), z );
+   
+   % controls
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   mdl.control.throttle = u(1,k) + trimThrottle;
+   mdl.control.mu       = u(2,k) + trimMu;
+   mdl.control.dELVL    = u(3,k) + trimDELV;
+   mdl.control.dELVR    = u(4,k) + trimDELV;
+   mdl.control.dRUDB    = u(5,k);
+   mdl.control.dRUDT    = u(6,k);
+   
+   % The simulation
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   xNL  = AC( xNL, t(k), dT, mdl  );
+   
+end
+
+%% compute the position and velocity of the CG
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rCG = r + QTForm(q,mdl.cG);
+vCG = v + Cross(w,mdl.cG);
+
+%% compute the angle of attack and sidelsip
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+alpha = atan( -vCG(3,:)./vCG(1,:) );
+beta  = asin( vCG(2,:)./Mag(vCG) );
+
+%% compute the altitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h = Altitude(rCG,'si');
+
+%% output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+y = [w; v; alpha; beta; e(1,:); h];
+
+%% add initial values to yLin
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%yLin = yLin + y(:,ones(1,nSim));
+y = y - y(:,ones(1,nSim));
+
+%% Create the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tLab  = 'Time [sec]';
+uLab  = {'throttle';'mu';'dELVL';'dELVR';'dRUDB';'dRUDT'};
+p     = [y(1,:);  yLin(1,:); yLin1(1,:)]*180/pi;
+q     = [y(2,:);  yLin(2,:); yLin2(1,:)]*180/pi;
+r     = [y(3,:);  yLin(3,:); yLin1(2,:)]*180/pi;
+vx    = [y(4,:);  yLin(4,:); yLin2(2,:)];
+vy    = [y(5,:);  yLin(5,:); yLin1(3,:)];
+vz    = [y(6,:);  yLin(6,:); yLin2(3,:)];
+alpha = [y(7,:);  yLin(7,:);           ]*180/pi;
+beta  = [y(8,:);  yLin(8,:);           ]*180/pi;
+phi   = [y(9,:);  yLin(9,:);           ]*180/pi;
+alt   = [y(10,:); yLin(10,:)           ];
+
+u(2:6,:) = u(2:6,:)*180/pi;   % rad to deg
+
+Plot2D( t, u(1:6,:), tLab, uLab,                 'Control Inputs'  )
+Plot2D( t, p,        tLab, 'Roll Rate [deg/s]',  'Roll Rate'       ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, q,        tLab, 'Pitch Rate [deg/s]', 'Pitch Rate'      ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, r,        tLab, 'Yaw Rate [deg/s]',   'Yaw Rate'        ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, vx,       tLab, 'x-Velocity [m/s]',   'x-Velocity'      ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, vy,       tLab, 'y-Velocity [m/s]',   'y-Velocity'      ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, vz,       tLab, 'z-Velocity [m/s]',   'z-Velocity'      ), legend('Full Non-Linear','Full Linear','3 State Linear');
+Plot2D( t, alpha,    tLab, 'Alpha [deg]',        'Angle of attack' ), legend('Full Non-Linear','Full Linear');
+Plot2D( t, beta,     tLab, 'Beta [deg]',         'Sideslip'        ), legend('Full Non-Linear','Full Linear');
+Plot2D( t, phi,      tLab, 'Phi [deg]',          'Roll'            ), legend('Full Non-Linear','Full Linear');
+Plot2D( t, alt,      tLab, 'Altitude [m]',       'Altitude'        ), legend('Full Non-Linear','Full Linear');
+
+fs  = 'fontsize';
+rot = 'rotation';
+lw  = 'linewidth';
+ha  = 'horizontalalignment';
+rt  = 'right';
+NewFig('Airship Summary'),
+subplot(221), plot(t,q,lw,2),     grid on, set(gca,fs,14), ylabel('q\newline[deg/s]',   rot,0,fs,14,ha,rt);
+subplot(222), plot(t,vz,lw,2),    grid on, set(gca,fs,14), ylabel('w\newline[m/s]',     rot,0,fs,14,ha,rt);
+subplot(223), plot(t,alpha,lw,2), grid on, set(gca,fs,14), ylabel('\alpha\newline[deg]',rot,0,fs,14,ha,rt); xlabel('Time [sec]',fs,14);
+subplot(224), plot(t,alt,lw,2),   grid on, set(gca,fs,14), ylabel('h\newline[m]',       rot,0,fs,14,ha,rt); xlabel('Time [sec]',fs,14);
+
+NewFig('Airship Summary'),
+subplot(311), plot(t,r,lw,2),    grid on, set(gca,fs,14), ylabel('r\newline[deg/s]',   rot,0,fs,14,ha,rt);
+subplot(312), plot(t,vy,lw,2),   grid on, set(gca,fs,14), ylabel('v\newline[m/s]',     rot,0,fs,14,ha,rt);
+subplot(313), plot(t,beta,lw,2), grid on, set(gca,fs,14), ylabel('\beta\newline[deg]', rot,0,fs,14,ha,rt); xlabel('Time [sec]',fs,14);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-05 08:57:28 -0400 (Thu, 05 Sep 2019) $
+% $Revision: 49710 $
+
+##### SOURCE END #####
+--></body></html>

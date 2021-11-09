@@ -1,0 +1,465 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate batch orbit determination</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="BatchLSQDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate batch orbit determination</h1><!--introduction--><pre class="language-matlab">Since <span class="string">version</span> <span class="string">8.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Constant</span>, CreateLatexTable, Plot2D, TimeLabl, Mag, RK4, Unit,
+BatchLSQOD, GroundStation, OrbitODGenObs, El2RV, Period, RV2El
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">clear variables used in demo</a></li><li><a href="#3">Run the simulation to get the measurements</a></li><li><a href="#4">ADD RANDOM NOISE to "rho" and "rhoDot" measurements</a></li><li><a href="#5">Estimator data structure</a></li><li><a href="#6">Estimate the orbit using Batch Least Squares</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2008 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2>clear variables used in demo<a name="2"></a></h2><pre class="codeinput"><span class="comment">%------------------------------</span>
+clear <span class="string">c</span> <span class="string">c2</span>
+
+nOrbits     = 1;
+a           = 7100;
+inc         = 95*pi/180;
+ecc         = 0.02;
+p           = Period(a);
+tEnd        = nOrbits*p;
+nSim        = 100;
+dT          = tEnd/(nSim-1);
+mu          = Constant(<span class="string">'mu earth'</span>);
+el          = [a inc 0 0 ecc 0];
+[r,v]       = El2RV(el,mu);
+x           = zeros(6,nSim);
+x(:,1)      = [r;v];
+rho         = zeros(1,nSim);
+rhoDot      = zeros(1,nSim);
+
+rGSEF       = 6378*Unit([1;0;0.1]); <span class="comment">% Ground station pos. in Earth-Fixed frame</span>
+omega       = 2*pi/86400;
+
+[rGS, vGS] = GroundStation(0,omega,rGSEF);
+dR         = r - rGS;
+dV         = v - vGS;
+rho(1)     = Mag(dR);
+rhoDot(1)  = dR'*dV/rho(1);
+
+<span class="comment">% initial guess...</span>
+el0         = [1.01*a inc+0.0175 0.01 0.01 ecc-.002 0.01];
+[r0,v0]     = El2RV(el0,mu);
+x0          = [r0;v0];
+</pre><h2>Run the simulation to get the measurements<a name="3"></a></h2><p>------------------------------------------</p><pre class="codeinput">r = [r,zeros(3,nSim-1)];
+v = [v,zeros(3,nSim-1)];
+rGS = [rGS,zeros(3,nSim-1)];
+vGS = [vGS,zeros(3,nSim-1)];
+t = 0;
+<span class="keyword">for</span> k = 2:nSim
+   x(:,k)    = RK4(<span class="string">'FOrbCart'</span>, x(:,k-1),dT,0,[0;0;0],mu);
+   t         = t + dT;
+   r(:,k)    = x(1:3,k);
+   v(:,k)    = x(4:6,k);
+   [rGS(:,k), vGS(:,k)] = GroundStation(t,omega,rGSEF);
+   dR        = r(:,k) - rGS(:,k);
+   dV        = v(:,k) - vGS(:,k);
+   rho(k)    = Mag(dR);
+   rhoDot(k) = dR'*dV/rho(k);
+<span class="keyword">end</span>
+tvec = (0:(nSim-1))*dT;
+</pre><h2>ADD RANDOM NOISE to "rho" and "rhoDot" measurements<a name="4"></a></h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+sigmaRho    = 5;     <span class="comment">% km</span>
+sigmaRhoDot = 0.5;   <span class="comment">% km/s</span>
+
+rho    = rho    + randn(1,nSim)*sigmaRho;
+rhoDot = rhoDot + randn(1,nSim)*sigmaRhoDot;
+Plot2D( (0:nSim-1)*dT, [rho;rhoDot] , <span class="string">'Time (s)'</span>, {<span class="string">'Range (km)'</span>,<span class="string">'Range Rate (km/s)'</span>}, <span class="string">'Measurements'</span> )
+</pre><img vspace="5" hspace="5" src="BatchLSQDemo_01.png" alt=""> <h2>Estimator data structure<a name="5"></a></h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+d         = struct;
+d.accTime = [];
+d.acc     = [];
+d.obsTime = tvec;
+d.rGS     = rGS;
+d.vGS     = vGS;
+d.dT      = dT;
+d.mu      = mu;
+d.name    = <span class="string">'OrbitODGenObs'</span>;
+
+<span class="comment">% store initial guess for comparison</span>
+x0Ref = x0;
+
+<span class="comment">% prepare the measurement vector:</span>
+zM = zeros(2*nSim,1);
+<span class="keyword">for</span> i=1:length(zM)/2,
+   zM((i-1)*2+1)=rho(i);
+   zM((i-1)*2+2)=rhoDot(i);
+<span class="keyword">end</span>
+
+<span class="comment">% weighting matrix</span>
+W = eye(2*nSim);
+</pre><h2>Estimate the orbit using Batch Least Squares<a name="6"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------</span>
+tic
+opts = struct(<span class="string">'tol'</span>,1e-6,<span class="string">'maxIter'</span>,10,<span class="string">'verbose'</span>,1);   <span class="comment">% algorithm options</span>
+[x0,dx0,P0,P0Inv] = BatchLSQOD( x0Ref, zM, W, d, opts );
+toc
+
+xF = x0;
+pE = norm(xF(1:3)-x(1:3,1));
+vE = norm(xF(4:6)-x(4:6,1));
+xErr = xF-x(:,1);
+fprintf(1,<span class="string">'position error: %f, velocity error: %f\n'</span>,pE,vE);
+
+elF = RV2El(xF(1:3),xF(4:6),mu);
+elE = elF - el;
+elE(3) = acos(cos(elE(3)));
+elE(4) = acos(cos(elE(4)));
+elE(6) = acos(cos(elE(6)));
+
+fprintf(1,<span class="string">'SMA error:  %f\n'</span>,elE(1));
+fprintf(1,<span class="string">'INC error:  %f\n'</span>,elE(2));
+fprintf(1,<span class="string">'RAAN error: %f\n'</span>,elE(3));
+fprintf(1,<span class="string">'Per. error: %f\n'</span>,elE(4));
+fprintf(1,<span class="string">'Ecc. error: %f\n'</span>,elE(5));
+fprintf(1,<span class="string">'M.A: error: %f\n'</span>,elE(6));
+
+<span class="comment">% compute expected orbit trajectory, xE</span>
+[z,xE,tt] = OrbitODGenObs( x0, d );
+
+[t, tL]  = TimeLabl( (0:(nSim-1))*dT );
+Plot2D( t, x-xE, tL, {<span class="string">'\Delta x'</span> <span class="string">'\Delta y'</span> <span class="string">'\Delta z'</span> <span class="string">'\Delta v_x'</span> <span class="string">'\Delta v_y'</span> <span class="string">'\Delta v_z'</span>}, <span class="string">'Orbit Errors'</span>,<span class="string">'lin'</span>)
+
+cols = {<span class="string">'  True ECI State'</span>,<span class="string">'   Est. ECI State'</span>,<span class="string">'      Initial Guess'</span>,<span class="string">'      Final Error'</span>};
+disp(cols)
+disp(<span class="string">'=========================================================================='</span>)
+l = {<span class="string">'km'</span> <span class="string">'km'</span> <span class="string">'km'</span> <span class="string">'km/s'</span> <span class="string">'km/s'</span> <span class="string">'km/s'</span>};
+c = cell(6,5);
+<span class="keyword">for</span> k = 1:6
+   c{k,1} =  x(k,1);
+   c{k,2} = xE(k,1);
+   c{k,3} = x0Ref(k,1);
+   c{k,4} = xErr(k,1);
+   c{k,5} = l{k};
+<span class="keyword">end</span>
+CreateLatexTable( c, <span class="string">'EstResultsECI'</span>, <span class="string">'%16.12f'</span> )
+disp(c)
+fprintf(1,<span class="string">'\n\n'</span>);
+
+cols2 = {<span class="string">'   True Elements'</span>,<span class="string">'    Est. Elements'</span>,<span class="string">'      Initial Guess'</span>,<span class="string">'      Final Error'</span>};
+disp(cols2)
+disp(<span class="string">'=========================================================================='</span>)
+l2 = {<span class="string">'SMA: km'</span> <span class="string">'INC: rad'</span> <span class="string">'RAAN: rad'</span> <span class="string">'PER.: rad'</span> <span class="string">'ECC -'</span> <span class="string">'M.ANOM: rad'</span>};
+c2 = cell(6,5);
+<span class="keyword">for</span> k = 1:6
+   c2{k,1} =  el(1,k);
+   c2{k,2} = elF(1,k);
+   c2{k,3} = el0(1,k);
+   c2{k,4} = elE(1,k);
+   c2{k,5} = l2{k};
+<span class="keyword">end</span>
+CreateLatexTable( c2, <span class="string">'EstResultsElem'</span>, <span class="string">'%16.12f'</span> )
+disp(c2)
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Norm of perturbation, dx0:
+
+	k = 1
+	mag(dx0) = 193.536069
+
+
+	k = 2
+	mag(dx0) = 34.223410
+
+
+	k = 3
+	mag(dx0) = 3.886364
+
+
+	k = 4
+	mag(dx0) = 0.469222
+
+
+	k = 5
+	mag(dx0) = 0.001394
+
+
+	k = 6
+	mag(dx0) = 0.000006
+
+
+	k = 7
+	mag(dx0) = 0.000003
+
+
+	k = 8
+	mag(dx0) = 0.000003
+
+
+	k = 9
+	mag(dx0) = 0.000003
+
+
+	k = 10
+	mag(dx0) = 0.000001
+
+Elapsed time is 3.934409 seconds.
+position error: 5.023703, velocity error: 0.023961
+SMA error:  0.183960
+INC error:  0.002998
+RAAN error: 0.000085
+Per. error: 0.010968
+Ecc. error: 0.000261
+M.A: error: 0.009874
+  Columns 1 through 3
+    '  True ECI State'    '   Est. ECI State'    '      Initial Guess'
+  Column 4
+    '      Final Error'
+==========================================================================
+    [    6958]    [   6956.3]    [  7040.3]    [    -1.6681]    'km'  
+    [       0]    [ -0.16237]    [  55.406]    [   -0.16237]    'km'  
+    [       0]    [  -4.7359]    [  142.64]    [    -4.7359]    'km'  
+    [       0]    [0.0067297]    [-0.14527]    [  0.0067297]    'km/s'
+    [-0.66623]    [ -0.68922]    [-0.79515]    [  -0.022996]    'km/s'
+    [   7.615]    [   7.6149]    [  7.5478]    [-0.00015185]    'km/s'
+
+
+  Columns 1 through 3
+    '   True Elements'    '    Est. Elements'    '      Initial Guess'
+  Column 4
+    '      Final Error'
+==========================================================================
+    [  7100]    [   7100.2]    [  7171]    [   0.18396]    'SMA: km'    
+    [1.6581]    [   1.6611]    [1.6756]    [ 0.0029978]    'INC: rad'   
+    [     0]    [   6.2831]    [  0.01]    [ 8.496e-05]    'RAAN: rad'  
+    [     0]    [   6.2722]    [  0.01]    [  0.010968]    'PER.: rad'  
+    [  0.02]    [ 0.020261]    [ 0.018]    [0.00026113]    'ECC -'      
+    [     0]    [0.0098738]    [  0.01]    [ 0.0098738]    'M.ANOM: rad'
+</pre><img vspace="5" hspace="5" src="BatchLSQDemo_02.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate batch orbit determination
+%   Since version 8.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, CreateLatexTable, Plot2D, TimeLabl, Mag, RK4, Unit, 
+%  BatchLSQOD, GroundStation, OrbitODGenObs, El2RV, Period, RV2El
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2008 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% clear variables used in demo
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear c c2
+
+nOrbits     = 1;
+a           = 7100;
+inc         = 95*pi/180;
+ecc         = 0.02;
+p           = Period(a);
+tEnd        = nOrbits*p;
+nSim        = 100;
+dT          = tEnd/(nSim-1);
+mu          = Constant('mu earth');
+el          = [a inc 0 0 ecc 0];
+[r,v]       = El2RV(el,mu);
+x           = zeros(6,nSim);
+x(:,1)      = [r;v];
+rho         = zeros(1,nSim);
+rhoDot      = zeros(1,nSim);
+
+rGSEF       = 6378*Unit([1;0;0.1]); % Ground station pos. in Earth-Fixed frame
+omega       = 2*pi/86400;
+
+[rGS, vGS] = GroundStation(0,omega,rGSEF);
+dR         = r - rGS;
+dV         = v - vGS;
+rho(1)     = Mag(dR);
+rhoDot(1)  = dR'*dV/rho(1);
+
+% initial guess...
+el0         = [1.01*a inc+0.0175 0.01 0.01 ecc-.002 0.01];
+[r0,v0]     = El2RV(el0,mu);
+x0          = [r0;v0];
+
+%% Run the simulation to get the measurements
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r = [r,zeros(3,nSim-1)];
+v = [v,zeros(3,nSim-1)];
+rGS = [rGS,zeros(3,nSim-1)];
+vGS = [vGS,zeros(3,nSim-1)];
+t = 0;
+for k = 2:nSim
+   x(:,k)    = RK4('FOrbCart', x(:,k-1),dT,0,[0;0;0],mu);
+   t         = t + dT;
+   r(:,k)    = x(1:3,k);
+   v(:,k)    = x(4:6,k);
+   [rGS(:,k), vGS(:,k)] = GroundStation(t,omega,rGSEF);
+   dR        = r(:,k) - rGS(:,k);
+   dV        = v(:,k) - vGS(:,k);
+   rho(k)    = Mag(dR);
+   rhoDot(k) = dR'*dV/rho(k);
+end
+tvec = (0:(nSim-1))*dT;
+
+%% ADD RANDOM NOISE to "rho" and "rhoDot" measurements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sigmaRho    = 5;     % km
+sigmaRhoDot = 0.5;   % km/s
+
+rho    = rho    + randn(1,nSim)*sigmaRho;
+rhoDot = rhoDot + randn(1,nSim)*sigmaRhoDot;
+Plot2D( (0:nSim-1)*dT, [rho;rhoDot] , 'Time (s)', {'Range (km)','Range Rate (km/s)'}, 'Measurements' )
+
+%% Estimator data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d         = struct;
+d.accTime = [];
+d.acc     = [];
+d.obsTime = tvec;
+d.rGS     = rGS;
+d.vGS     = vGS;
+d.dT      = dT;
+d.mu      = mu;
+d.name    = 'OrbitODGenObs';
+
+% store initial guess for comparison
+x0Ref = x0;
+
+% prepare the measurement vector:
+zM = zeros(2*nSim,1);
+for i=1:length(zM)/2,
+   zM((i-1)*2+1)=rho(i);
+   zM((i-1)*2+2)=rhoDot(i);
+end
+
+% weighting matrix
+W = eye(2*nSim);
+
+%% Estimate the orbit using Batch Least Squares
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tic
+opts = struct('tol',1e-6,'maxIter',10,'verbose',1);   % algorithm options
+[x0,dx0,P0,P0Inv] = BatchLSQOD( x0Ref, zM, W, d, opts );
+toc
+
+xF = x0;
+pE = norm(xF(1:3)-x(1:3,1));
+vE = norm(xF(4:6)-x(4:6,1));
+xErr = xF-x(:,1);
+fprintf(1,'position error: %f, velocity error: %f\n',pE,vE);
+
+elF = RV2El(xF(1:3),xF(4:6),mu);
+elE = elF - el;
+elE(3) = acos(cos(elE(3)));
+elE(4) = acos(cos(elE(4)));
+elE(6) = acos(cos(elE(6)));
+
+fprintf(1,'SMA error:  %f\n',elE(1));
+fprintf(1,'INC error:  %f\n',elE(2));
+fprintf(1,'RAAN error: %f\n',elE(3));
+fprintf(1,'Per. error: %f\n',elE(4));
+fprintf(1,'Ecc. error: %f\n',elE(5));
+fprintf(1,'M.A: error: %f\n',elE(6));
+
+% compute expected orbit trajectory, xE
+[z,xE,tt] = OrbitODGenObs( x0, d );
+
+[t, tL]  = TimeLabl( (0:(nSim-1))*dT );
+Plot2D( t, x-xE, tL, {'\Delta x' '\Delta y' '\Delta z' '\Delta v_x' '\Delta v_y' '\Delta v_z'}, 'Orbit Errors','lin')
+
+cols = {'  True ECI State','   Est. ECI State','      Initial Guess','      Final Error'};
+disp(cols)
+disp('==========================================================================')
+l = {'km' 'km' 'km' 'km/s' 'km/s' 'km/s'};
+c = cell(6,5);
+for k = 1:6
+   c{k,1} =  x(k,1);
+   c{k,2} = xE(k,1);
+   c{k,3} = x0Ref(k,1);
+   c{k,4} = xErr(k,1);
+   c{k,5} = l{k};
+end
+CreateLatexTable( c, 'EstResultsECI', '%16.12f' )
+disp(c)
+fprintf(1,'\n\n');
+
+cols2 = {'   True Elements','    Est. Elements','      Initial Guess','      Final Error'};
+disp(cols2)
+disp('==========================================================================')
+l2 = {'SMA: km' 'INC: rad' 'RAAN: rad' 'PER.: rad' 'ECC -' 'M.ANOM: rad'};
+c2 = cell(6,5);
+for k = 1:6
+   c2{k,1} =  el(1,k);
+   c2{k,2} = elF(1,k);
+   c2{k,3} = el0(1,k);
+   c2{k,4} = elE(1,k);
+   c2{k,5} = l2{k};
+end
+CreateLatexTable( c2, 'EstResultsElem', '%16.12f' )
+disp(c2)
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 14:40:37 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39870 $
+
+##### SOURCE END #####
+--></body></html>

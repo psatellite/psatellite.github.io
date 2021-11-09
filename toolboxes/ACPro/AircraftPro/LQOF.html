@@ -1,0 +1,271 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate linear quadratic output feedback.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="LQOF.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate linear quadratic output feedback.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also F16, IC, LQC, Step
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Control Weights</a></li><li><a href="#3">State Weighting</a></li><li><a href="#4">Control Weighting</a></li><li><a href="#5">Linear quadratic command tracking</a></li><li><a href="#6">Tracking matrices</a></li><li><a href="#7">Augment w</a></li><li><a href="#8">Augment the system for simulation purposes</a></li><li><a href="#9">Time weighted linear quadratic regulator</a></li><li><a href="#10">Control Weights</a></li><li><a href="#11">Control Weighting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1997 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+g = F16(<span class="string">'g lateral with washout'</span>);
+w = [];
+t = [];
+</pre><h2 id="2">Control Weights</h2><pre class="codeinput"><span class="comment">%----------------</span>
+rho = 0.1;
+</pre><h2 id="3">State Weighting</h2><pre class="codeinput"><span class="comment">%----------------</span>
+w.q  = diag([50,100,100,50,0,0,1]);
+</pre><h2 id="4">Control Weighting</h2><pre class="codeinput"><span class="comment">%------------------</span>
+w.r  = rho*eye(2);
+
+gC = LQC( g, w, <span class="string">'lqof'</span> );
+
+k  = get( gC, <span class="string">'d'</span> );
+disp(k)
+
+[a,b,c] = getabcd( g );
+
+g  = set( g, a - b*k*c, <span class="string">'a'</span> );
+IC( g, [1 0 0 0 0 0 0]', 0.01, 1000 );
+</pre><pre class="codeoutput">     -0.54311     -0.43168      0.11514     -0.33977
+      -1.2048      -0.2263     -0.45949      0.24691
+</pre><img vspace="5" hspace="5" src="LQOF_01.png" alt=""> <img vspace="5" hspace="5" src="LQOF_02.png" alt=""> <img vspace="5" hspace="5" src="LQOF_03.png" alt=""> <h2 id="5">Linear quadratic command tracking</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------------------</span>
+
+g = F16(<span class="string">'g longitudinal with integrator'</span>);
+</pre><h2 id="6">Tracking matrices</h2><pre class="codeinput"><span class="comment">%------------------</span>
+t.g = 	[0;0; 0;  0;1];
+t.h =   [-16.26 -0.9788 0.04852 0 0];
+t.f =   [0;0;1;0];
+</pre><h2 id="7">Augment w</h2><pre class="codeinput"><span class="comment">%----------</span>
+w.q  = [264 16  1  0   0;
+         16  1  0  0   0;
+		      1  0  0  0   0;
+		      0  0  0  0   0;
+		      0  0  0  0   1];
+w.r     = 1;
+w.r0    = 1;
+w.v     = [];
+
+gC      = LQC( g, w, <span class="string">'lqtof'</span>, t );
+
+k       = get( gC, <span class="string">'d'</span> );
+</pre><h2 id="8">Augment the system for simulation purposes</h2><pre class="codeinput"><span class="comment">%-------------------------------------------</span>
+[a,b,c,d] = getabcd( g );
+inputs    = get( g, <span class="string">'inputs'</span> );
+inputs    = char( inputs, <span class="string">'normal accel'</span> );
+g         = set( g, a - b*k*c, <span class="string">'a'</span> );
+g         = set( g, [b t.g], <span class="string">'b'</span> );
+g         = set( g, [d t.f], <span class="string">'d'</span> );
+g         = set( g, inputs, <span class="string">'inputs'</span> );
+Step( g, 2, 0.1, 500 );
+</pre><img vspace="5" hspace="5" src="LQOF_04.png" alt=""> <img vspace="5" hspace="5" src="LQOF_05.png" alt=""> <img vspace="5" hspace="5" src="LQOF_06.png" alt=""> <h2 id="9">Time weighted linear quadratic regulator</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------------------</span>
+
+g = F16(<span class="string">'g longitudinal with pitch rate integ'</span>);
+
+t.g = [0;0; 0;  0;1];
+t.h = [0 57.2958 0 0 0];
+t.f = [0;0;0];
+</pre><h2 id="10">Control Weights</h2><pre class="codeinput"><span class="comment">%----------------</span>
+w.q   = zeros(5,5);
+w.p   = t.h'*t.h;
+</pre><h2 id="11">Control Weighting</h2><pre class="codeinput"><span class="comment">%------------------</span>
+w.r  = 2;
+w.r0 = 1;
+w.n  = 2;
+
+[gC, j] = LQC( g, w, <span class="string">'lqtxwof'</span>, t );
+k = get( gC, <span class="string">'d'</span> );
+disp(k);
+
+[a,b,c,d] = getabcd( g );
+inputs    = get( g, <span class="string">'inputs'</span> );
+inputs    = strvcat( inputs, <span class="string">'pitch rate'</span> );
+g         = set( g, a - b*k*c, <span class="string">'a'</span> );
+g         = set( g, [b t.g], <span class="string">'b'</span> );
+g         = set( g, [d t.f], <span class="string">'d'</span> );
+g         = set( g, inputs, <span class="string">'inputs'</span> );
+Step( g, 2, 0.1, 100 );
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">       420.73       -28288        79378
+</pre><img vspace="5" hspace="5" src="LQOF_07.png" alt=""> <img vspace="5" hspace="5" src="LQOF_08.png" alt=""> <img vspace="5" hspace="5" src="LQOF_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate linear quadratic output feedback.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also F16, IC, LQC, Step
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1997 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+g = F16('g lateral with washout');
+w = [];
+t = [];
+	  
+%% Control Weights
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH	  
+rho = 0.1;
+
+%% State Weighting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.q  = diag([50,100,100,50,0,0,1]);
+
+%% Control Weighting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.r  = rho*eye(2);
+
+gC = LQC( g, w, 'lqof' );
+			
+k  = get( gC, 'd' );
+disp(k)
+
+[a,b,c] = getabcd( g );
+
+g  = set( g, a - b*k*c, 'a' );
+IC( g, [1 0 0 0 0 0 0]', 0.01, 1000 );
+
+
+%% Linear quadratic command tracking
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+				 
+g = F16('g longitudinal with integrator');
+
+%% Tracking matrices
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t.g = 	[0;0; 0;  0;1];   
+t.h =   [-16.26 -0.9788 0.04852 0 0];
+t.f =   [0;0;1;0];
+
+%% Augment w
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.q  = [264 16  1  0   0;
+         16  1  0  0   0;
+		      1  0  0  0   0;
+		      0  0  0  0   0;
+		      0  0  0  0   1];
+w.r     = 1;
+w.r0    = 1;
+w.v     = [];
+
+gC      = LQC( g, w, 'lqtof', t );
+
+k       = get( gC, 'd' );
+
+%% Augment the system for simulation purposes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[a,b,c,d] = getabcd( g );
+inputs    = get( g, 'inputs' );
+inputs    = char( inputs, 'normal accel' );
+g         = set( g, a - b*k*c, 'a' );
+g         = set( g, [b t.g], 'b' );
+g         = set( g, [d t.f], 'd' );
+g         = set( g, inputs, 'inputs' );
+Step( g, 2, 0.1, 500 );
+
+
+%% Time weighted linear quadratic regulator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+g = F16('g longitudinal with pitch rate integ');
+
+t.g = [0;0; 0;  0;1];
+t.h = [0 57.2958 0 0 0];
+t.f = [0;0;0];
+	  
+%% Control Weights
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH	  
+w.q   = zeros(5,5); 
+w.p   = t.h'*t.h;
+
+%% Control Weighting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.r  = 2;
+w.r0 = 1;
+w.n  = 2;
+
+[gC, j] = LQC( g, w, 'lqtxwof', t );
+k = get( gC, 'd' );
+disp(k);
+
+[a,b,c,d] = getabcd( g );
+inputs    = get( g, 'inputs' );
+inputs    = strvcat( inputs, 'pitch rate' );
+g         = set( g, a - b*k*c, 'a' );
+g         = set( g, [b t.g], 'b' );
+g         = set( g, [d t.f], 'd' );
+g         = set( g, inputs, 'inputs' );
+Step( g, 2, 0.1, 100 );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-04 15:40:34 -0400 (Wed, 04 Sep 2019) $
+% $Revision: 49706 $
+
+##### SOURCE END #####
+--></body></html>

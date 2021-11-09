@@ -1,0 +1,358 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Creates a model for the thermal demo.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="BuildSCModelForImaging.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Creates a model for the thermal demo.</h1><!--introduction--><p>The spacecraft has a bus and solar panels with no other components. The resulting file is called SCForImaging.mat and stored in SCModels/.  ------------------------------------------------------------------------  See also BuildCADModel, CreateComponent, ArrayPatch, Panels,  SaveStructure  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters</a></li><li><a href="#3">Initialize</a></li><li><a href="#4">Create Bodies</a></li><li><a href="#5">Components</a></li><li><a href="#6">Define subsystems</a></li><li><a href="#7">Get finished model</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998-2003, 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><pre class="codeinput"><span class="comment">%------------</span>
+inToM = 0.0254;
+
+<span class="comment">% Spacecraft dimensions</span>
+<span class="comment">%----------------------</span>
+xW = 66*inToM;
+yW = 62*inToM;
+zW = 74*inToM;
+</pre><h2 id="3">Initialize</h2><pre class="codeinput"><span class="comment">%-----------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+BuildCADModel( <span class="string">'set name'</span> , <span class="string">'Satellite'</span> );
+BuildCADModel( <span class="string">'set units'</span>, <span class="string">'m'</span> );
+
+clear <span class="string">m</span>;
+</pre><h2 id="4">Create Bodies</h2><pre class="codeinput"><span class="comment">%----------------</span>
+<span class="comment">% Core</span>
+m = CreateBody(<span class="string">'make'</span>,<span class="string">'name'</span>,<span class="string">'Core'</span>);
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% Solar arrays</span>
+m = CreateBody(<span class="string">'make'</span>,<span class="string">'name'</span>,<span class="string">'South Solar Array'</span>,<span class="string">'previousBody'</span>,1);
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+m = CreateBody(<span class="string">'make'</span>,<span class="string">'name'</span>,<span class="string">'North Solar Array'</span>,<span class="string">'previousBody'</span>,1);
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% This creates the connections between the bodies</span>
+<span class="comment">%------------------------------------------------</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+</pre><h2 id="5">Components</h2><pre class="codeinput"><span class="comment">%-------------</span>
+dArray.z        = 2*76.25*inToM;
+dArray.x        = 2*33*inToM;
+dArray.nZ       = 1;
+dArray.nX       = 1;
+dArray.theta    = 0;
+
+[mF, mB]        = ArrayPatch( dArray ); <span class="comment">% Only use the front of the array</span>
+
+mF.v(:,3)       = mF.v(:,3)  + dArray.z/4;
+mB.v(:,3)       = mB.v(:,3)  + dArray.z/4;
+mF.v(:,2)       = -1*inToM;
+mB.v(:,2)       =  1*inToM;
+b               = [1 0 0;0 0 1;0 -1 0];
+
+mass.mass       = 10;
+mass.inertia    = diag([10 1 10]);
+mass.cM         = [0;66;0]*inToM;
+
+optB.sigmaT  = 0;
+optB.sigmaA  = 0.5;
+optB.sigmaD  = 0.5;
+optB.sigmaS  = 0.0;
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, mF.v, <span class="string">'face'</span>, mF.f, <span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0 35 2.5]'*inToM, <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'South Array Cells'</span>,<span class="keyword">...</span>
+                     <span class="string">'body'</span>, 2, <span class="string">'mass'</span>, mass, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>, <span class="string">'inside'</span>, 0  );
+
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, mB.v, <span class="string">'face'</span>, mB.f,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0 35 2.5]'*inToM, <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'South Array Back'</span>,<span class="keyword">...</span>
+                     <span class="string">'body'</span>, 2, <span class="string">'mass'</span>, mass,<span class="string">'faceColor'</span>, [0 0 0],<span class="keyword">...</span>
+                     <span class="string">'sigmaT'</span>, optB.sigmaT, <span class="string">'sigmaA'</span>, optB.sigmaA,<span class="keyword">...</span>
+                     <span class="string">'sigmaD'</span>, optB.sigmaD, <span class="string">'sigmaS'</span>, optB.sigmaS, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+mass.cM         = [0;-66;0]*inToM;
+mF.v(:,3)       = -mF.v(:,3);
+mB.v(:,3)       = -mB.v(:,3);
+mF.f            = fliplr(mF.f);
+mB.f            = fliplr(mB.f);
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, mF.v, <span class="string">'face'</span>, mF.f,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0 -35 2.5]'*inToM, <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'North Array Cells'</span>,<span class="keyword">...</span>
+                     <span class="string">'body'</span>, 3, <span class="string">'mass'</span>, mass, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>, <span class="keyword">...</span>
+                     <span class="string">'inside'</span>, 0 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, mB.v, <span class="string">'face'</span>, mB.f,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0 -35 2.5]'*inToM, <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'North Array Back'</span>,<span class="keyword">...</span>
+                     <span class="string">'body'</span>, 3, <span class="string">'mass'</span>, mass,<span class="string">'faceColor'</span>, [0 0 0],<span class="keyword">...</span>
+                     <span class="string">'sigmaT'</span>, optB.sigmaT, <span class="string">'sigmaA'</span>, optB.sigmaA,<span class="keyword">...</span>
+                     <span class="string">'sigmaD'</span>, optB.sigmaD, <span class="string">'sigmaS'</span>, optB.sigmaS, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Core components</span>
+<span class="comment">%----------------</span>
+mass.mass     = 1000;
+mass.inertia  = diag([1000 1000 1000]);
+mass.cM       = [0;0;0];
+
+<span class="comment">% Gold is 1, radiator is 2</span>
+sigmaA      = [0.05 0.15];
+sigmaD      = [0.55 0.16];
+sigmaS      = [0.40 0.69];
+
+id           = {<span class="string">'+X'</span> <span class="string">'-X'</span> <span class="string">'+Y'</span> <span class="string">'-Y'</span> <span class="string">'+Z'</span> <span class="string">'-Z'</span>};
+optical      = {1 1 2 2 1 1};
+panelColor   = {[1 0.8 0.34] [1 0.8 0.34] [0.2 0.2 0.2] [0.2 0.2 0.2] [1 0.8 0.34] [1 0.8 0.34]};
+
+<span class="keyword">for</span> k = 1:6
+  [v, f] = Panels( xW, yW, zW, id{k} );
+  m      = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'rA'</span>,[0;0;0],<span class="keyword">...</span>
+                            <span class="string">'name'</span>, sprintf(<span class="string">'Panel %s'</span>,id{k}), <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                            <span class="string">'faceColor'</span>, panelColor{k},<span class="keyword">...</span>
+                            <span class="string">'sigmaT'</span>, 0, <span class="string">'sigmaA'</span>, sigmaA(optical{k}),<span class="keyword">...</span>
+                            <span class="string">'sigmaD'</span>, sigmaD(optical{k}), <span class="string">'sigmaS'</span>, sigmaS(optical{k}), <span class="string">'inside'</span>, 0 );
+
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+BuildCADModel( <span class="string">'update body mass properties'</span> );
+BuildCADModel( <span class="string">'create body arrays'</span> );
+</pre><img vspace="5" hspace="5" src="BuildSCModelForImaging_01.png" alt=""> <h2 id="6">Define subsystems</h2><pre class="codeinput">BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'arrays'</span>,<span class="keyword">...</span>
+              {<span class="string">'South Array Cells'</span>,<span class="string">'South Array Back'</span>,<span class="keyword">...</span>
+              <span class="string">'North Array Cells'</span>,<span class="string">'North Array Back'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'bus'</span>,<span class="keyword">...</span>
+              {<span class="string">'Panel +X'</span>,<span class="string">'Panel -X'</span>,<span class="string">'Panel +Y'</span>,<span class="string">'Panel -Y'</span>,<span class="string">'Panel +Z'</span>,<span class="string">'Panel -Z'</span>} );
+</pre><h2 id="7">Get finished model</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+s = BuildCADModel(<span class="string">'get model'</span>);
+BuildCADModel(<span class="string">'show spacecraft'</span>)
+
+p = FindDirectory(<span class="string">'SCModels'</span>);
+SaveStructure(s,fullfile(p,<span class="string">'SCForImaging'</span>))
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSCModelForImaging_02.png" alt=""> <img vspace="5" hspace="5" src="BuildSCModelForImaging_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Creates a model for the thermal demo.
+% The spacecraft has a bus and solar panels with no other components. The
+% resulting file is called SCForImaging.mat and stored in SCModels/.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BuildCADModel, CreateComponent, ArrayPatch, Panels, 
+%  SaveStructure
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998-2003, 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+inToM = 0.0254;
+
+% Spacecraft dimensions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xW = 66*inToM; 
+yW = 62*inToM;
+zW = 74*inToM;
+
+%% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+BuildCADModel( 'set name' , 'Satellite' );
+BuildCADModel( 'set units', 'm' );
+
+clear m;
+
+%%% Create Bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Core
+m = CreateBody('make','name','Core');
+BuildCADModel('add body', m );
+
+% Solar arrays
+m = CreateBody('make','name','South Solar Array','previousBody',1);
+BuildCADModel('add body', m );
+
+m = CreateBody('make','name','North Solar Array','previousBody',1);
+BuildCADModel('add body', m );
+
+% This creates the connections between the bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'compute paths' );
+
+%%% Components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dArray.z        = 2*76.25*inToM;
+dArray.x        = 2*33*inToM;
+dArray.nZ       = 1;
+dArray.nX       = 1;
+dArray.theta    = 0;
+
+[mF, mB]        = ArrayPatch( dArray ); % Only use the front of the array
+
+mF.v(:,3)       = mF.v(:,3)  + dArray.z/4;
+mB.v(:,3)       = mB.v(:,3)  + dArray.z/4;
+mF.v(:,2)       = -1*inToM;
+mB.v(:,2)       =  1*inToM;
+b               = [1 0 0;0 0 1;0 -1 0];
+
+mass.mass       = 10;
+mass.inertia    = diag([10 1 10]);
+mass.cM         = [0;66;0]*inToM;
+
+optB.sigmaT  = 0;
+optB.sigmaA  = 0.5;
+optB.sigmaD  = 0.5;
+optB.sigmaS  = 0.0;
+
+m = CreateComponent( 'make', 'generic', 'vertex', mF.v, 'face', mF.f, ...
+                     'rA', [0 35 2.5]'*inToM, 'b', b, 'name', 'South Array Cells',...
+                     'body', 2, 'mass', mass, 'faceColor', 'solar cell', 'inside', 0  );
+                 
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'generic', 'vertex', mB.v, 'face', mB.f,...
+                     'rA', [0 35 2.5]'*inToM, 'b', b, 'name', 'South Array Back',...
+                     'body', 2, 'mass', mass,'faceColor', [0 0 0],...
+                     'sigmaT', optB.sigmaT, 'sigmaA', optB.sigmaA,...
+                     'sigmaD', optB.sigmaD, 'sigmaS', optB.sigmaS, 'inside', 0);
+BuildCADModel( 'add component', m );
+
+mass.cM         = [0;-66;0]*inToM;
+mF.v(:,3)       = -mF.v(:,3);
+mB.v(:,3)       = -mB.v(:,3);
+mF.f            = fliplr(mF.f);
+mB.f            = fliplr(mB.f);
+
+m = CreateComponent( 'make', 'generic', 'vertex', mF.v, 'face', mF.f,...
+                     'rA', [0 -35 2.5]'*inToM, 'b', b, 'name', 'North Array Cells',...
+                     'body', 3, 'mass', mass, 'faceColor', 'solar cell', ...
+                     'inside', 0 );
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'generic', 'vertex', mB.v, 'face', mB.f,...
+                     'rA', [0 -35 2.5]'*inToM, 'b', b, 'name', 'North Array Back',...
+                     'body', 3, 'mass', mass,'faceColor', [0 0 0],...
+                     'sigmaT', optB.sigmaT, 'sigmaA', optB.sigmaA,...
+                     'sigmaD', optB.sigmaD, 'sigmaS', optB.sigmaS, 'inside', 0);
+BuildCADModel( 'add component', m );
+
+% Core components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mass.mass     = 1000;
+mass.inertia  = diag([1000 1000 1000]);
+mass.cM       = [0;0;0];
+
+% Gold is 1, radiator is 2
+sigmaA      = [0.05 0.15];
+sigmaD      = [0.55 0.16];
+sigmaS      = [0.40 0.69];
+
+id           = {'+X' '-X' '+Y' '-Y' '+Z' '-Z'};
+optical      = {1 1 2 2 1 1};
+panelColor   = {[1 0.8 0.34] [1 0.8 0.34] [0.2 0.2 0.2] [0.2 0.2 0.2] [1 0.8 0.34] [1 0.8 0.34]};
+
+for k = 1:6
+  [v, f] = Panels( xW, yW, zW, id{k} );
+  m      = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'rA',[0;0;0],...
+                            'name', sprintf('Panel %s',id{k}), 'body', 1, 'mass', mass, ...
+                            'faceColor', panelColor{k},...
+                            'sigmaT', 0, 'sigmaA', sigmaA(optical{k}),...
+                            'sigmaD', sigmaD(optical{k}), 'sigmaS', sigmaS(optical{k}), 'inside', 0 );
+
+  BuildCADModel( 'add component', m );
+end
+
+BuildCADModel( 'update body mass properties' );
+BuildCADModel( 'create body arrays' );
+
+%% Define subsystems
+BuildCADModel( 'add subsystem', 'arrays',...
+              {'South Array Cells','South Array Back',...
+              'North Array Cells','North Array Back'} );
+BuildCADModel( 'add subsystem', 'bus',...
+              {'Panel +X','Panel -X','Panel +Y','Panel -Y','Panel +Z','Panel -Z'} );
+
+
+%% Get finished model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+s = BuildCADModel('get model');
+BuildCADModel('show spacecraft')
+
+p = FindDirectory('SCModels');
+SaveStructure(s,fullfile(p,'SCForImaging'))
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

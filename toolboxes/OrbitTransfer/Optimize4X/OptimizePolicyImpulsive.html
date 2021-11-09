@@ -1,0 +1,453 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Policy to minimize a combo delta-V/time to a target orbit with fmincon</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="OptimizePolicyImpulsive.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Policy to minimize a combo delta-V/time to a target orbit with fmincon</h1><p>This version minimizes a combination of delta-V and transfer time. fmincon computes gradients of the cost function and allows bounds on the maximum DV per burn. No constraints are applied.</p><p>Default demo is LEO to GEO with plane change. For a low DV solution, you must start with a zero policy at one of the nodes; for a low transfer time solution, it's better to start with the same policy at both nodes.</p><p>The cost is the sum of the DV plus the transfer time, in units of 10 days, times the input factor:</p><pre class="language-matlab">cost = dV + tDur/(10*86400)*fac
+</pre><p>Examples:   5.1 km/s in 190 days</p><p>See also: PropagateBurnPolicyImpulsive</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Setup the data - default inclined LEO to GEO</span>
+data = PropagateBurnPolicyImpulsive;
+
+<span class="comment">% Analytic result for comparison</span>
+dInc = data.el1(2) - data.el0(2);
+[dVHoh,dv1,dv2,Di1,Di2] = DVHohInc(data.el0(5),data.el0(1),data.el1(5),data.el1(1),dInc);
+fprintf(<span class="string">'Case ''analytic'': \n'</span>);
+fprintf(<span class="string">'    delta-V:  %g km/s \n'</span>,dVHoh);
+
+<span class="comment">% Optimization options - must increase step size</span>
+opts = optimoptions(<span class="string">'fmincon'</span>);
+opts.Display = <span class="string">'iter'</span>;
+opts.PlotFcns = <span class="string">'optimplotx'</span>;
+opts.FiniteDifferenceStepSize = 5e-2; <span class="comment">% finally, some results with &gt;5e-2</span>
+
+<span class="comment">% low fac: minimize dV, try 0.01</span>
+<span class="comment">% high fac: minimize transfer time, try 10</span>
+<span class="comment">% To reach a specific DV, set fac = 0.</span>
+fac = 0.01;
+data.dvMax = 5;     <span class="comment">% km/s</span>
+data.dvMin = 0.005; <span class="comment">% 5 m/s is the initial max DV</span>
+
+<span class="comment">% Create an initial policy guess. The guess should be between  0 and 1, or can</span>
+<span class="comment">% also be negative if part of an array. It is multiplied by dvMin to get the</span>
+<span class="comment">% policy.</span>
+<span class="comment">%--------</span>
+<span class="comment">% Scalar, 1 pt: (works best)</span>
+guess = [0.5;0.9;0.4;0.4];
+<span class="comment">% Linear, 2 pts:</span>
+<span class="comment">%{
+</span><span class="comment">guess = [0   0.9;...
+</span><span class="comment">         0.9 0.9;...
+</span><span class="comment">         0.0 0.9;...
+</span><span class="comment">         0   0];
+</span><span class="comment">%}
+</span>
+dataInit = data;
+dataInit.ap = data.dvMin*guess(1,:);
+dataInit.per = data.dvMin*guess(2,:);
+dataInit.inc1 = data.dvMin*guess(3,:);
+dataInit.inc2 = data.dvMin*guess(4,:);
+
+[burnsInit, outInit] = PropagateBurnPolicyImpulsive(dataInit);
+guessInit = guess';
+fprintf(<span class="string">'The initial guess: \n'</span>);
+fprintf(<span class="string">'    delta-V:  %g km/s \n'</span>,SumBurnsDV(burnsInit,1));
+fprintf(<span class="string">'    Duration: %g days \n'</span>,max(outInit.absTimes)/86400);
+fprintf(<span class="string">'    Cost: %g \n'</span>,CostFunction(guessInit, dataInit, fac));
+
+<span class="comment">% Set the bounds. The guess can be negative</span>
+ub = ones(size(guess));
+lb = -0.5*ones(size(guess));
+
+guess(guess==0) = 1e-6; <span class="comment">% in bounds</span>
+
+<span class="comment">% Call the minimizer</span>
+fCost = @(x) CostFunction(x, data, fac);
+<span class="keyword">if</span> fac == 0
+  fCost = @(x) DVFunction(x, data, fac);
+<span class="keyword">end</span>
+[outGuess,~,exitFlag,optOut] = fmincon(fCost, guess', [],[],[],[],lb,ub,[],opts);
+
+dOut = data;
+policy = outGuess';
+dOut.ap = data.dvMin*policy(1,:);
+dOut.per = data.dvMin*policy(2,:);
+dOut.inc1 = data.dvMin*policy(3,:);
+dOut.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(dOut);
+
+fprintf(<span class="string">'The initial guess: \n'</span>);
+fprintf(<span class="string">'    delta-V:  %g km/s \n'</span>,SumBurnsDV(burnsInit,1));
+fprintf(<span class="string">'    Duration: %g days \n'</span>,max(outInit.absTimes)/86400);
+fprintf(<span class="string">'    Cost: %g \n'</span>,CostFunction(guessInit, dataInit, fac));
+fprintf(<span class="string">'The optimized result: \n'</span>);
+fprintf(<span class="string">'    delta-V:  %g km/s \n'</span>,SumBurnsDV(burns,1));
+fprintf(<span class="string">'    Duration: %g days \n'</span>,max(out.absTimes)/86400);
+fprintf(<span class="string">'    Cost: %g \n'</span>,CostFunction(outGuess, dOut, fac));
+
+<span class="comment">% Plot the results</span>
+PlotElementsImpulsive(data.el0,burns,[],data.el1);
+subplot(4,2,2)
+title(sprintf(<span class="string">'delta-V: %g km/s\n'</span>,SumBurnsDV(burns,1)))
+subplot(4,2,8)
+cla; hold <span class="string">off</span>;
+plot(burns(:,1))
+grid <span class="string">on</span>;
+ylabel(<span class="string">'Delta-V'</span>)
+
+disp(<span class="string">'Optimized Policy (dV):'</span>)
+disp(data.dvMin*policy)
+
+NewFig(<span class="string">'Burn Policy'</span>);
+plot(out.policy)
+grid <span class="string">on</span>
+ylabel(<span class="string">'Delta-V (km/s)'</span>)
+legend(<span class="string">'ap'</span>,<span class="string">'per'</span>,<span class="string">'n1'</span>,<span class="string">'n2'</span>)
+
+
+<span class="keyword">function</span> cost = CostFunction( guess, data, fac )
+<span class="comment">% This cost function is a combination of trip time and delta-V.</span>
+
+policy = guess';
+data.ap = data.dvMin*policy(1,:);
+data.per = data.dvMin*policy(2,:);
+data.inc1 = data.dvMin*policy(3,:);
+data.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(data);
+
+dV = SumBurnsDV(burns);
+tDur = out.absTimes(end);
+
+<span class="keyword">if</span> ~out.ok
+  dV = 1e10;
+<span class="keyword">end</span>
+
+cost = dV + tDur/(10*86400)*fac + (1-out.ok)*100;
+
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> cost = DVFunction( guess, data, fac )
+<span class="comment">% This cost function is a minimized when delta V is equal to dvMax.</span>
+
+policy = guess';
+data.ap = data.dvMin*policy(1,:);
+data.per = data.dvMin*policy(2,:);
+data.inc1 = data.dvMin*policy(3,:);
+data.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(data);
+
+dV = SumBurnsDV(burns);
+
+<span class="keyword">if</span> ~out.ok
+  dV = 1e10;
+<span class="keyword">end</span>
+
+cost = abs(dV - data.dvMax);
+
+<span class="keyword">end</span>
+
+
+<span class="keyword">function</span> [cIn,cEq] = ConstraintFun( guess )
+<span class="comment">% unused</span>
+
+cIn = [];
+cEq = [];
+
+<span class="keyword">end</span>
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Case 'analytic': 
+    delta-V:  4.12289 km/s 
+The initial guess: 
+    delta-V:  5.13628 km/s 
+    Duration: 202.861 days 
+    Cost: 5.33914 
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0       5    5.339138e+00    0.000e+00    2.077e-01
+    1      11    5.363676e+00    0.000e+00    1.437e+00    1.953e-01
+    2      16    5.316930e+00    0.000e+00    6.080e-01    1.699e-01
+    3      21    5.264778e+00    0.000e+00    1.197e+00    1.204e-01
+    4      34    5.258293e+00    0.000e+00    5.119e-01    2.229e-02
+    5      41    5.254873e+00    0.000e+00    5.373e-01    1.067e-02
+    6      53    5.252204e+00    0.000e+00    5.767e-01    2.670e-03
+    7      70    5.251847e+00    0.000e+00    5.803e-01    7.059e-05
+    8      82    5.251535e+00    0.000e+00    5.834e-01    6.177e-05
+    9      99    5.251527e+00    0.000e+00    5.835e-01    1.689e-06
+   10     113    5.251525e+00    0.000e+00    5.835e-01    3.695e-07
+   11     134    5.251525e+00    0.000e+00    5.835e-01    6.315e-10
+   12     147    5.251525e+00    0.000e+00    5.835e-01    2.763e-10
+   13     160    5.251525e+00    0.000e+00    5.835e-01    1.209e-10
+
+Local minimum possible. Constraints satisfied.
+
+fmincon stopped because the size of the current step is less than
+the value of the step size tolerance and constraints are 
+satisfied to within the value of the constraint tolerance.
+
+The initial guess: 
+    delta-V:  5.13628 km/s 
+    Duration: 202.861 days 
+    Cost: 5.33914 
+The optimized result: 
+    delta-V:  5.0974 km/s 
+    Duration: 154.123 days 
+    Cost: 5.25152 
+Optimized Policy (dV):
+   0.002959950825296
+   0.003451653543799
+   0.001705177656303
+   0.001669717876125
+</pre><img vspace="5" hspace="5" src="OptimizePolicyImpulsive_01.png" alt=""> <img vspace="5" hspace="5" src="OptimizePolicyImpulsive_02.png" alt=""> <img vspace="5" hspace="5" src="OptimizePolicyImpulsive_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Policy to minimize a combo delta-V/time to a target orbit with fmincon
+% This version minimizes a combination of delta-V and transfer time. fmincon
+% computes gradients of the cost function and allows bounds on the maximum DV
+% per burn. No constraints are applied. 
+%
+% Default demo is LEO to GEO with plane change. For a low DV solution, you must
+% start with a zero policy at one of the nodes; for a low transfer time
+% solution, it's better to start with the same policy at both nodes.
+%
+% The cost is the sum of the DV plus the transfer time, in units of 10 days,
+% times the input factor:
+%
+%   cost = dV + tDur/(10*86400)*fac
+%
+% Examples: 
+%   5.1 km/s in 190 days
+%   
+% See also: PropagateBurnPolicyImpulsive
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Setup the data - default inclined LEO to GEO
+data = PropagateBurnPolicyImpulsive;
+
+% Analytic result for comparison
+dInc = data.el1(2) - data.el0(2);
+[dVHoh,dv1,dv2,Di1,Di2] = DVHohInc(data.el0(5),data.el0(1),data.el1(5),data.el1(1),dInc);
+fprintf('Case ''analytic'': \n');
+fprintf('    delta-V:  %g km/s \n',dVHoh);
+
+% Optimization options - must increase step size
+opts = optimoptions('fmincon');
+opts.Display = 'iter';
+opts.PlotFcns = 'optimplotx';
+opts.FiniteDifferenceStepSize = 5e-2; % finally, some results with >5e-2
+
+% low fac: minimize dV, try 0.01
+% high fac: minimize transfer time, try 10
+% To reach a specific DV, set fac = 0.
+fac = 0.01;
+data.dvMax = 5;     % km/s
+data.dvMin = 0.005; % 5 m/s is the initial max DV
+
+% Create an initial policy guess. The guess should be between  0 and 1, or can
+% also be negative if part of an array. It is multiplied by dvMin to get the
+% policy.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Scalar, 1 pt: (works best)
+guess = [0.5;0.9;0.4;0.4];
+% Linear, 2 pts:
+%{
+guess = [0   0.9;...
+         0.9 0.9;...
+         0.0 0.9;...
+         0   0];
+%}
+
+dataInit = data;
+dataInit.ap = data.dvMin*guess(1,:);
+dataInit.per = data.dvMin*guess(2,:);
+dataInit.inc1 = data.dvMin*guess(3,:);
+dataInit.inc2 = data.dvMin*guess(4,:);
+
+[burnsInit, outInit] = PropagateBurnPolicyImpulsive(dataInit);
+guessInit = guess';
+fprintf('The initial guess: \n');
+fprintf('    delta-V:  %g km/s \n',SumBurnsDV(burnsInit,1));
+fprintf('    Duration: %g days \n',max(outInit.absTimes)/86400);
+fprintf('    Cost: %g \n',CostFunction(guessInit, dataInit, fac));
+
+% Set the bounds. The guess can be negative
+ub = ones(size(guess));
+lb = -0.5*ones(size(guess));
+
+guess(guess==0) = 1e-6; % in bounds
+
+% Call the minimizer
+fCost = @(x) CostFunction(x, data, fac);
+if fac == 0
+  fCost = @(x) DVFunction(x, data, fac);
+end
+[outGuess,~,exitFlag,optOut] = fmincon(fCost, guess', [],[],[],[],lb,ub,[],opts);
+
+dOut = data;
+policy = outGuess';
+dOut.ap = data.dvMin*policy(1,:);
+dOut.per = data.dvMin*policy(2,:);
+dOut.inc1 = data.dvMin*policy(3,:);
+dOut.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(dOut);
+
+fprintf('The initial guess: \n');
+fprintf('    delta-V:  %g km/s \n',SumBurnsDV(burnsInit,1));
+fprintf('    Duration: %g days \n',max(outInit.absTimes)/86400);
+fprintf('    Cost: %g \n',CostFunction(guessInit, dataInit, fac));
+fprintf('The optimized result: \n');
+fprintf('    delta-V:  %g km/s \n',SumBurnsDV(burns,1));
+fprintf('    Duration: %g days \n',max(out.absTimes)/86400);
+fprintf('    Cost: %g \n',CostFunction(outGuess, dOut, fac));
+
+% Plot the results
+PlotElementsImpulsive(data.el0,burns,[],data.el1);
+subplot(4,2,2)
+title(sprintf('delta-V: %g km/s\n',SumBurnsDV(burns,1)))
+subplot(4,2,8)
+cla; hold off; 
+plot(burns(:,1))
+grid on;
+ylabel('Delta-V')
+
+disp('Optimized Policy (dV):')
+disp(data.dvMin*policy)
+
+NewFig('Burn Policy');
+plot(out.policy)
+grid on
+ylabel('Delta-V (km/s)')
+legend('ap','per','n1','n2')
+
+
+function cost = CostFunction( guess, data, fac )
+% This cost function is a combination of trip time and delta-V.
+
+policy = guess';
+data.ap = data.dvMin*policy(1,:);
+data.per = data.dvMin*policy(2,:);
+data.inc1 = data.dvMin*policy(3,:);
+data.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(data);
+
+dV = SumBurnsDV(burns);
+tDur = out.absTimes(end);
+
+if ~out.ok
+  dV = 1e10;
+end
+
+cost = dV + tDur/(10*86400)*fac + (1-out.ok)*100;
+
+end
+
+function cost = DVFunction( guess, data, fac )
+% This cost function is a minimized when delta V is equal to dvMax.
+
+policy = guess';
+data.ap = data.dvMin*policy(1,:);
+data.per = data.dvMin*policy(2,:);
+data.inc1 = data.dvMin*policy(3,:);
+data.inc2 = data.dvMin*policy(4,:);
+
+[burns, out] = PropagateBurnPolicyImpulsive(data);
+
+dV = SumBurnsDV(burns);
+
+if ~out.ok
+  dV = 1e10;
+end
+
+cost = abs(dV - data.dvMax);
+
+end
+
+
+function [cIn,cEq] = ConstraintFun( guess )
+% unused
+
+cIn = [];
+cEq = [];
+
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-30 14:55:12 -0400 (Mon, 30 Sep 2019) $
+% $Revision: 49907 $
+
+##### SOURCE END #####
+--></body></html>

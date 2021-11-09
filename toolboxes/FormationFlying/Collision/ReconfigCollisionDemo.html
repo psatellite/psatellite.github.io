@@ -1,0 +1,414 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Collision monitoring demo for highly eccentric reconfiguration.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-01-08"><meta name="DC.source" content="ReconfigCollisionDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Collision monitoring demo for highly eccentric reconfiguration.</h1><!--introduction--><p>Used to produce a tetrahedron at apogee. Computes maneuvers and conducts collision survey.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">AC</span>, Plot2D, Plot3D, Mag, CollisionMonteCarlo, CollisionSurvey,
+VerifyCollStruct, EccGeometry_Structure, DiscreteGVE,
+FFEccTetrahedronGeometry, LPEccentricGVE, DeltaElem2Hills,
+FFEccGoals2Hills, FFEccHills2DeltaElem, AccelVector2ManeuverStruct,
+OrbRate, Nu2M, Nu2MAbs
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Reconfiguration Planning</a></li><li><a href="#3">Collision Monitoring</a></li><li><a href="#4">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright 2005 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%% INPUT DATA HERE %%%%%%%%%%%%%%%%</span>
+<span class="comment">% apogee and perigee of MMS-type orbit</span>
+Re = 6378.14;
+apg = 18*Re;
+prg = 1.2*Re;
+
+<span class="comment">% initial true anomaly</span>
+nu0 = 0;
+nuF = pi;  <span class="comment">% final true anomaly</span>
+
+<span class="comment">% Number of steps for planning</span>
+nS  = 1500;
+
+<span class="comment">% size and orientation of desired tetrahedron</span>
+dR  = 1; <span class="comment">% km</span>
+eul = [1.457142857;0;0];
+
+<span class="comment">% Monte-Carlo</span>
+doMC = 0;
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+<span class="comment">%-------------------------------</span>
+</pre><h2 id="2">Reconfiguration Planning</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+trajFlag = 1;
+
+<span class="comment">% reference orbit</span>
+clear <span class="string">d</span>
+d.eRef = (apg/prg-1)/(apg/prg+1);
+aRef   = apg/(1+d.eRef);
+d.hRef = aRef - Re;
+d.rate = OrbRate(aRef);
+d.MRef = Nu2M(d.eRef,nu0);
+MF     = Nu2MAbs(d.eRef,nuF);
+d.el0  = [aRef,pi/6,0,0,d.eRef,d.MRef];
+elF    = [d.el0(1:5),MF];
+<span class="comment">%elA    = El2Alfriend(d.el0);</span>
+d.dR   = dR;
+
+<span class="comment">% initial relative state for leader-follower</span>
+gInit = EccGeometry_Structure;
+xH0   = zeros(6,3);
+dEl0  = zeros(3,6);
+<span class="keyword">for</span> i=1:3,
+   gInit.y0  = i;
+   xH0(:,i)  = FFEccGoals2Hills( d.eRef, nu0, gInit, d.rate );
+   dEl0(i,:) = FFEccHills2DeltaElem( d.el0, xH0(:,i), 2 );
+<span class="keyword">end</span>
+
+<span class="comment">% compute geometric goals for a repeating tetrahedron at apogee</span>
+gFinal = FFEccTetrahedronGeometry( pi, dR, eul );
+
+<span class="comment">% compute the target Hills-frame states</span>
+xHF = zeros(6,3);
+<span class="keyword">for</span> i=1:3
+   xHF(:,i) = FFEccGoals2Hills( d.eRef, nuF, gFinal(i), d.rate );
+   dElF(i,:) = FFEccHills2DeltaElem( elF, xHF(:,i), 2 );
+<span class="keyword">end</span>
+
+accNom = (1e-3)/100; <span class="comment">% nominal acceleration [km/s/s] (assume 1 Newton thruster, 100 kg spacecraft)</span>
+
+<span class="comment">% plan maneuvers for each of the 3 relative spacecraft</span>
+disp(<span class="string">'Planning 3 maneuvers...'</span>);
+xHs  = cell(1,3);
+aC   = cell(1,3);
+t    = cell(1,3);
+dEls = cell(1,3);
+M    = cell(1,3);
+<span class="keyword">for</span> i=1:3
+   [aC{i},t{i},flag] = LPEccentricGVE( d.el0, dEl0(i,:)', dElF(i,:)', MF, nS );
+   mvr(i) = AccelVector2ManeuverStruct( aC{i}, t{i}, 0, accNom, 0 );
+   fprintf(<span class="string">'Maneuver %d of 3 complete...\n'</span>,i);
+   <span class="comment">%[aCT{i}] = ManeuverStruct2AccelVector( mvr(i), t{i} );</span>
+   <span class="keyword">if</span> trajFlag
+     [dEls{i},M{i}] = DiscreteGVE( d.el0, dEl0(i,:), aC{i}, t{i} );
+     <span class="comment">%xHs{i} = DeltaElem2HillsAlfriend( d.el0, dEls{i}, M{i} );</span>
+     xHs{i} = DeltaElem2Hills( d.el0, dEls{i} );
+   <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% one-sigma measurement noise</span>
+d.initBounds   = [0.1 0.1 0.1 0.0005 0.0005 0.0005]/1000; <span class="comment">% km, km/s</span>
+d.scalev       = 1;
+d.mSC          = 100;
+d.lenSC        = 7; <span class="comment">% m</span>
+d.diaSC        = 1;
+d.Cd           = 2;
+d.Cr           = 1.5;
+
+<span class="comment">%-------------------------------</span>
+</pre><pre class="codeoutput">Planning 3 maneuvers...
+Maneuver 1 of 3 complete...
+Maneuver 2 of 3 complete...
+Maneuver 3 of 3 complete...
+</pre><h2 id="3">Collision Monitoring</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+
+dColl = d;
+mvr1  = [];
+mvr2  = mvr;
+<span class="comment">% Testing:</span>
+<span class="comment">% for k = 1:length(t)</span>
+<span class="comment">%   mvr2(k).aC = aC{k};</span>
+<span class="comment">%   mvr2(k).t = t{k};</span>
+<span class="comment">% end</span>
+
+<span class="comment">% 3-sigma ellipsoids</span>
+dColl.scalev = 4;
+dColl        = VerifyCollStruct( dColl );
+disp(<span class="string">'Checking trajectories for collisions...'</span>)
+tic
+[prob, dMin, xhat, Shat, tProp] = CollisionSurvey(dColl,0,xH0,mvr1,mvr2);
+toc
+disp(<span class="string">'Finished.'</span>)
+
+<span class="comment">%----------------------</span>
+</pre><pre class="codeoutput">Checking trajectories for collisions...
+Elapsed time is 0.162806 seconds.
+Finished.
+</pre><h2 id="4">Plotting</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+<span class="comment">% Collision monitoring outputs</span>
+Plot2D([tProp-tProp(1)]/3600,[cell2mat(dMin);cell2mat(prob)],<span class="string">'Elapsed Time (hours)'</span>,<span class="keyword">...</span>
+  char({<span class="string">'Minimum Distance (km)'</span>,<span class="string">'Probability'</span>}),<span class="string">'Set Membership Results'</span>,<span class="string">'lin'</span>,<span class="keyword">...</span>
+  [<span class="string">'[1 2 3]'</span>;<span class="string">'[4 5 6]'</span>]);
+subplot(2,1,1); hold <span class="string">on</span>;
+dHPlot = [Mag(xhat{1}(1:3,:));Mag(xhat{2}(1:3,:));Mag(xhat{3}(1:3,:))];
+plot([tProp-tProp(1)]/3600,dHPlot,<span class="string">'--'</span>)
+<span class="comment">% Trajectories</span>
+Plot3D(xhat{1}(1:3,:),<span class="string">'X'</span>,<span class="string">'Y'</span>,<span class="string">'Z'</span>,<span class="string">'Ellipsoid Centers'</span>); hold <span class="string">on</span>;
+plot3(0,0,0,<span class="string">'k*'</span>);
+plot3(xhat{2}(1,:),xhat{2}(2,:),xhat{2}(3,:),<span class="string">'g'</span>,<span class="string">'linewidth'</span>,2);
+plot3(xhat{3}(1,:),xhat{3}(2,:),xhat{3}(3,:),<span class="string">'r'</span>,<span class="string">'linewidth'</span>,2);
+plot3(xHs{1}(1,:),xHs{1}(2,:),xHs{1}(3,:),<span class="string">'b--'</span>);
+plot3(xHs{2}(1,:),xHs{2}(2,:),xHs{2}(3,:),<span class="string">'g--'</span>);
+plot3(xHs{3}(1,:),xHs{3}(2,:),xHs{3}(3,:),<span class="string">'r--'</span>);
+plot3(xHs{1}(1,end),xHs{1}(2,end),xHs{1}(3,end),<span class="string">'b.'</span>,<span class="string">'markersize'</span>,20);
+plot3(xHs{2}(1,end),xHs{2}(2,end),xHs{2}(3,end),<span class="string">'g.'</span>,<span class="string">'markersize'</span>,20);
+plot3(xHs{3}(1,end),xHs{3}(2,end),xHs{3}(3,end),<span class="string">'r.'</span>,<span class="string">'markersize'</span>,20);
+axis <span class="string">equal</span>; view(3)
+<span class="comment">% Ellipsoids</span>
+<span class="comment">%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Shat,'c',...</span>
+<span class="comment">%   {[0.7;0;0];[0;0.7;0];[0;0;0.7]}),@AnimateEllipsoids,tProp/3600);</span>
+S = zeros(3,length(tProp));
+<span class="keyword">for</span> k = 1:length(tProp)
+  S(:,k) = sqrt(svd(Shat{1}(1:3,1:3,k)))*1000;
+<span class="keyword">end</span>
+Plot2D(tProp/3600,S,<span class="string">'Time (hr)'</span>,<span class="string">'S_{k} (m)'</span>,<span class="string">'Ellipsoid Axes'</span>,<span class="string">'ylog'</span>);
+
+<span class="comment">% Monte-Carlo for 3rd spacecraft (closest nominal pass)</span>
+<span class="keyword">if</span> doMC
+  disp(<span class="string">'Perform Monte-Carlo simulations.'</span>);
+  [probMC,dMinMC,tMin,drH] = CollisionMonteCarlo( dColl, xH0(:,3), aC{3}, t{3}, M{3} );
+  fprintf(<span class="string">'True probability of collision: %3.3g%%\n'</span>,probMC*100);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ReconfigCollisionDemo_01.png" alt=""> <img vspace="5" hspace="5" src="ReconfigCollisionDemo_02.png" alt=""> <img vspace="5" hspace="5" src="ReconfigCollisionDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Collision monitoring demo for highly eccentric reconfiguration.
+% Used to produce a tetrahedron at apogee. Computes maneuvers and 
+% conducts collision survey.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AC, Plot2D, Plot3D, Mag, CollisionMonteCarlo, CollisionSurvey, 
+%  VerifyCollStruct, EccGeometry_Structure, DiscreteGVE, 
+%  FFEccTetrahedronGeometry, LPEccentricGVE, DeltaElem2Hills, 
+%  FFEccGoals2Hills, FFEccHills2DeltaElem, AccelVector2ManeuverStruct, 
+%  OrbRate, Nu2M, Nu2MAbs
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright 2005 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%% INPUT DATA HERE %%%%%%%%%%%%%%%%
+% apogee and perigee of MMS-type orbit
+Re = 6378.14;
+apg = 18*Re;
+prg = 1.2*Re;
+
+% initial true anomaly
+nu0 = 0;
+nuF = pi;  % final true anomaly
+
+% Number of steps for planning
+nS  = 1500;
+
+% size and orientation of desired tetrahedron
+dR  = 1; % km
+eul = [1.457142857;0;0];
+
+% Monte-Carlo
+doMC = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%  Reconfiguration Planning
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+trajFlag = 1;
+
+% reference orbit
+clear d
+d.eRef = (apg/prg-1)/(apg/prg+1);
+aRef   = apg/(1+d.eRef);
+d.hRef = aRef - Re;
+d.rate = OrbRate(aRef);
+d.MRef = Nu2M(d.eRef,nu0);
+MF     = Nu2MAbs(d.eRef,nuF);
+d.el0  = [aRef,pi/6,0,0,d.eRef,d.MRef];
+elF    = [d.el0(1:5),MF];
+%elA    = El2Alfriend(d.el0);
+d.dR   = dR;
+
+% initial relative state for leader-follower
+gInit = EccGeometry_Structure;
+xH0   = zeros(6,3);
+dEl0  = zeros(3,6);
+for i=1:3,
+   gInit.y0  = i;
+   xH0(:,i)  = FFEccGoals2Hills( d.eRef, nu0, gInit, d.rate );
+   dEl0(i,:) = FFEccHills2DeltaElem( d.el0, xH0(:,i), 2 );
+end
+
+% compute geometric goals for a repeating tetrahedron at apogee
+gFinal = FFEccTetrahedronGeometry( pi, dR, eul );
+
+% compute the target Hills-frame states
+xHF = zeros(6,3);
+for i=1:3
+   xHF(:,i) = FFEccGoals2Hills( d.eRef, nuF, gFinal(i), d.rate );
+   dElF(i,:) = FFEccHills2DeltaElem( elF, xHF(:,i), 2 );
+end
+
+accNom = (1e-3)/100; % nominal acceleration [km/s/s] (assume 1 Newton thruster, 100 kg spacecraft)
+
+% plan maneuvers for each of the 3 relative spacecraft
+disp('Planning 3 maneuvers...');
+xHs  = cell(1,3);
+aC   = cell(1,3);
+t    = cell(1,3);
+dEls = cell(1,3);
+M    = cell(1,3);
+for i=1:3
+   [aC{i},t{i},flag] = LPEccentricGVE( d.el0, dEl0(i,:)', dElF(i,:)', MF, nS );
+   mvr(i) = AccelVector2ManeuverStruct( aC{i}, t{i}, 0, accNom, 0 );
+   fprintf('Maneuver %d of 3 complete...\n',i);
+   %[aCT{i}] = ManeuverStruct2AccelVector( mvr(i), t{i} );
+   if trajFlag
+     [dEls{i},M{i}] = DiscreteGVE( d.el0, dEl0(i,:), aC{i}, t{i} );
+     %xHs{i} = DeltaElem2HillsAlfriend( d.el0, dEls{i}, M{i} );
+     xHs{i} = DeltaElem2Hills( d.el0, dEls{i} );
+   end
+end
+
+% one-sigma measurement noise
+d.initBounds   = [0.1 0.1 0.1 0.0005 0.0005 0.0005]/1000; % km, km/s        
+d.scalev       = 1;
+d.mSC          = 100;
+d.lenSC        = 7; % m
+d.diaSC        = 1;
+d.Cd           = 2;
+d.Cr           = 1.5;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%  Collision Monitoring
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+dColl = d;
+mvr1  = [];
+mvr2  = mvr;
+% Testing:
+% for k = 1:length(t)
+%   mvr2(k).aC = aC{k};
+%   mvr2(k).t = t{k};
+% end
+
+% 3-sigma ellipsoids
+dColl.scalev = 4;
+dColl        = VerifyCollStruct( dColl );
+disp('Checking trajectories for collisions...')
+tic
+[prob, dMin, xhat, Shat, tProp] = CollisionSurvey(dColl,0,xH0,mvr1,mvr2); 
+toc
+disp('Finished.')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Collision monitoring outputs
+Plot2D([tProp-tProp(1)]/3600,[cell2mat(dMin);cell2mat(prob)],'Elapsed Time (hours)',...
+  char({'Minimum Distance (km)','Probability'}),'Set Membership Results','lin',...
+  ['[1 2 3]';'[4 5 6]']);
+subplot(2,1,1); hold on;
+dHPlot = [Mag(xhat{1}(1:3,:));Mag(xhat{2}(1:3,:));Mag(xhat{3}(1:3,:))];
+plot([tProp-tProp(1)]/3600,dHPlot,'REPLACE_WITH_DASH_DASH')
+% Trajectories
+Plot3D(xhat{1}(1:3,:),'X','Y','Z','Ellipsoid Centers'); hold on;
+plot3(0,0,0,'k*');
+plot3(xhat{2}(1,:),xhat{2}(2,:),xhat{2}(3,:),'g','linewidth',2);
+plot3(xhat{3}(1,:),xhat{3}(2,:),xhat{3}(3,:),'r','linewidth',2); 
+plot3(xHs{1}(1,:),xHs{1}(2,:),xHs{1}(3,:),'bREPLACE_WITH_DASH_DASH'); 
+plot3(xHs{2}(1,:),xHs{2}(2,:),xHs{2}(3,:),'gREPLACE_WITH_DASH_DASH'); 
+plot3(xHs{3}(1,:),xHs{3}(2,:),xHs{3}(3,:),'rREPLACE_WITH_DASH_DASH'); 
+plot3(xHs{1}(1,end),xHs{1}(2,end),xHs{1}(3,end),'b.','markersize',20); 
+plot3(xHs{2}(1,end),xHs{2}(2,end),xHs{2}(3,end),'g.','markersize',20); 
+plot3(xHs{3}(1,end),xHs{3}(2,end),xHs{3}(3,end),'r.','markersize',20); 
+axis equal; view(3)
+% Ellipsoids
+%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Shat,'c',...
+%   {[0.7;0;0];[0;0.7;0];[0;0;0.7]}),@AnimateEllipsoids,tProp/3600);
+S = zeros(3,length(tProp));
+for k = 1:length(tProp)
+  S(:,k) = sqrt(svd(Shat{1}(1:3,1:3,k)))*1000;
+end
+Plot2D(tProp/3600,S,'Time (hr)','S_{k} (m)','Ellipsoid Axes','ylog');
+
+% Monte-Carlo for 3rd spacecraft (closest nominal pass)
+if doMC
+  disp('Perform Monte-Carlo simulations.');
+  [probMC,dMinMC,tMin,drH] = CollisionMonteCarlo( dColl, xH0(:,3), aC{3}, t{3}, M{3} );
+  fprintf('True probability of collision: %3.3g%%\n',probMC*100);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

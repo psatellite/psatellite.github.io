@@ -1,0 +1,414 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>An attitude and orbit simulation with reaction wheels.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-25"><meta name="DC.source" content="NadirSunPointingDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>An attitude and orbit simulation with reaction wheels.</h1><!--introduction--><p>This simulation includes reaction wheels with Coulomb friction and damping. It is easy to specify the damping terms for each wheel. The demo also includes the PID3Axis controller. The core dynamics is for a gyrostat orbiting around a point mass.</p><p>The simulation uses the vector pointing mode of PID3Axis to point a vector in the spacecraft frame either at nadir or at the sun.</p><p>Control logic is included to point at nadir when the spacecraft is over the continental United States and at the sun otherwise.</p><pre>------------------------------------------------------------------------
+See also RHSSpacecraftWithRWA, PID3Axis, Plot2D, RK4
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initialization</a></li><li><a href="#3">Design the controller</a></li><li><a href="#4">Simulation</a></li><li><a href="#5">Plotting</a></li><li><a href="#6">3D Plot</a></li><li><a href="#7">2D plots</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2017.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Initialization</h2><p>The RHS provides the default data structure for the model. Three orthogonal wheels are assumed. The default friction is zero for each wheel.</p><pre class="codeinput"><span class="comment">% Earth's radius</span>
+rE   = 6378.165;
+
+<span class="comment">% Simulation timing</span>
+tEnd = 10000.0; <span class="comment">% sec</span>
+dT   = 1.0; <span class="comment">% sec</span>
+
+<span class="comment">% Initial Julian Date</span>
+jD0  = Date2JD([2020 4 5 0 0 0]);
+
+<span class="comment">% Spacecraft altitude</span>
+h         = 600.0; <span class="comment">% km</span>
+
+<span class="comment">% Data structure for the right hand side.</span>
+<span class="comment">% Note non-spherical inertia matrix which results in cross-axis coupling.</span>
+d         = RHSSpacecraftWithRWA;
+d.inr     = [3 0 0;0 10 0;0 0 5]; <span class="comment">% kg-m^2</span>
+<span class="comment">% Wheel inertia</span>
+d.inrRWA  = 1.5e-3*[1;1;1];  <span class="comment">% kg-m^2</span>
+
+<span class="comment">% Friction damping terms</span>
+<span class="comment">% cDamping (viscous damping) should be on the order of 1e-6 Nms</span>
+<span class="comment">% torqueCoulomb should be on the order of 1e-3 Nm</span>
+d.friction.cDampingRWA      = [5;5;5]*1e-6;      <span class="comment">% Nms</span>
+d.friction.torqueCoulombRWA = [1;1;1]*1e-3;   <span class="comment">% Nm</span>
+
+<span class="comment">% Disturbance torque, Nm; try about 1-10e-5 Nm</span>
+d.torque = [0.0;0.0;0.0];
+
+<span class="comment">% Initial body rates, rad/s; try about 0.001 rad/s</span>
+wInit = [0.0;0;0.0];
+
+<span class="comment">% Initial wheel speeds</span>
+wRWA  = [0.0;0.0;0.0];
+</pre><h2 id="3">Design the controller</h2><p>Use the PID3Axis function which handles updating the controller states.</p><pre class="codeinput">dC                  = PID3Axis; <span class="comment">% Gets the default data structure</span>
+dC.mode             = 1; <span class="comment">% Vector tracking</span>
+
+<span class="comment">% We specify a unit inertia so that the controller generates a control</span>
+<span class="comment">% angular acceleration</span>
+inr   = 1.0;   <span class="comment">% unit inertia</span>
+zeta  = 1.0;   <span class="comment">% damping ratio</span>
+omega = 0.03;  <span class="comment">% rad/sec</span>
+tauInt = 200;  <span class="comment">% sec</span>
+omegaR = 0.05; <span class="comment">% rad/sec</span>
+[dC.a, dC.b, dC.c, dC.d] = PIDMIMO(inr,zeta,omega,tauInt,omegaR,dT);
+dC.body_vector  = [0;0;1];
+</pre><h2 id="4">Simulation</h2><p>Perform a fixed step integration using RK4. The state vector includes the wheel speeds. The spacecraft is initialized in a circular orbit with zero rates.</p><pre class="codeinput"><span class="comment">% Steps</span>
+n         = ceil(tEnd/dT);
+
+<span class="comment">% State vector: [position;velocity;quaternion;body rate;rwa rate]</span>
+rInit     = (rE+h)*[cos(2);sin(2);0];
+vInit     = [0;0;sqrt(d.mu/(rE+h))];
+qInit     = [1;0;0;0];
+x         = [rInit; vInit; qInit; wInit; wRWA];
+rEF       = zeros(3,n);
+xP        = zeros(length(x)+5,n);
+t         = (0:n-1)*dT;
+jD        = jD0 + t/86400;
+
+<span class="comment">% Create the area to be checked. Roughly covers CONUS.</span>
+m         = 100;
+[lat,lon] = RAzToLatLon( 2000*ones(1,m), linspace(0,2*pi,m), pi/4, -1.1*pi/2 );
+
+lat       = fliplr(lat);
+lon       = fliplr(lon);
+overA     = zeros(1,n);
+
+<span class="keyword">for</span> k = 1:n
+  <span class="comment">% Local variables</span>
+  r           = x( 1: 3);
+  q           = x( 7:10);
+
+  <span class="comment">% ECI sun and Earth vectors</span>
+  bECIToEF    = EarthRot(JD2T(jD(k)));
+  rEF(:,k)    = bECIToEF*r;
+
+  j           = OverArea( rEF(:,k),lat,lon);
+  <span class="keyword">if</span>( j == 0 )
+    dC.eci_vector = SunV1( jD(k));
+  <span class="keyword">else</span>
+    dC.eci_vector = -Unit(r);
+    overA(k) = 1;
+	<span class="keyword">end</span>
+
+  <span class="comment">% The PID controller</span>
+  [tRHS, dC]	= PID3Axis( q, dC );
+
+  <span class="comment">% Reaction wheel torque is on the left hand side</span>
+  d.torqueRWA = -d.inr*tRHS;
+
+  <span class="comment">% Pointing error</span>
+  arg         = dC.eci_vector'*QTForm( q, dC.body_vector );
+  <span class="keyword">if</span>( abs(arg) &gt; 1 )
+    arg = sign(arg);
+  <span class="keyword">end</span>
+  pErr        = acos(arg);
+
+  <span class="comment">% Plot storage</span>
+  xP(:,k)     = [x;d.torqueRWA;j;pErr];
+
+  <span class="comment">% Right hand side</span>
+  x           = RK4(@RHSSpacecraftWithRWA,x,dT,0,d);
+<span class="keyword">end</span>
+</pre><h2 id="5">Plotting</h2><pre class="codeinput">[t,tL] = TimeLabl(t);
+</pre><h2 id="6">3D Plot</h2><pre class="codeinput">LoadEarthMap;
+hold <span class="string">on</span>
+[~,rS] = OverArea( x(1:3), lat, lon );
+plot3(rS(1,:),rS(2,:),rS(3,:),<span class="string">'color'</span>,<span class="string">'r'</span>);
+plot3(rEF(1,:),rEF(2,:),rEF(3,:),<span class="string">'color'</span>,<span class="string">'y'</span>,<span class="string">'linewidth'</span>,2);
+kOver = find(overA&gt;0);
+plot3(rEF(1,kOver),rEF(2,kOver),rEF(3,kOver),<span class="string">'c.'</span>);
+</pre><img vspace="5" hspace="5" src="NadirSunPointingDemo_01.png" alt=""> <h2 id="7">2D plots</h2><p>Position</p><pre class="codeinput">k      = [1:3 20:21];
+yL     = {<span class="string">'r_x'</span>, <span class="string">'r_y'</span>, <span class="string">'r_z'</span> <span class="string">'Region'</span> <span class="string">'Error'</span>};
+h(1) = Plot2D( t, xP(k,:),tL,yL,<span class="string">'Position'</span>);
+AddFillToPlots(t,overA,h(1),[1 1 1;0.8 0.8 0.8],0.5)
+
+<span class="comment">% Quaternion</span>
+k      = 7:10;
+yL     = {<span class="string">'q_s'</span>, <span class="string">'q_x'</span>, <span class="string">'q_y'</span>, <span class="string">'q_z'</span>};
+h(2) = Plot2D( t, xP(k,:),tL,yL,<span class="string">'Attitude'</span>);
+AddFillToPlots(t,overA,h(2),[1 1 1;0.8 0.8 0.8],0.5)
+
+<span class="comment">% Angular rate</span>
+k      = 11:13;
+yL     = {<span class="string">'\omega_x'</span>, <span class="string">'\omega_y'</span>, <span class="string">'\omega_z'</span>};
+h(3) = Plot2D( t, xP(k,:),tL,yL,<span class="string">'Body Rates'</span>);
+AddFillToPlots(t,overA,h(3),[1 1 1;0.8 0.8 0.8],0.5)
+
+<span class="comment">% Reaction wheel torque and rate</span>
+k      = 17:19;
+yL     = {<span class="string">'T_x (Nm)'</span>, <span class="string">'T_y (Nm)'</span>, <span class="string">'T_z (Nm)'</span>};
+h(4) = Plot2D( t, xP(k,:),tL,yL,<span class="string">'RWA Torque'</span>);
+AddFillToPlots(t,overA,h(4),[1 1 1;0.8 0.8 0.8],0.5)
+
+k      = 14:16;
+yL     = {<span class="string">'\omega_1'</span>, <span class="string">'\omega_2'</span>, <span class="string">'\omega_3'</span>};
+h(5) = Plot2D( t, xP(k,:),tL,yL,<span class="string">'RWA Speeds'</span>);
+AddFillToPlots(t,overA,h(5),[1 1 1;0.8 0.8 0.8],0.5)
+
+Figui;
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="NadirSunPointingDemo_02.png" alt=""> <img vspace="5" hspace="5" src="NadirSunPointingDemo_03.png" alt=""> <img vspace="5" hspace="5" src="NadirSunPointingDemo_04.png" alt=""> <img vspace="5" hspace="5" src="NadirSunPointingDemo_05.png" alt=""> <img vspace="5" hspace="5" src="NadirSunPointingDemo_06.png" alt=""> <img vspace="5" hspace="5" src="NadirSunPointingDemo_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% An attitude and orbit simulation with reaction wheels.
+% This simulation includes reaction wheels with Coulomb friction and
+% damping. It is easy to specify the damping terms for each wheel. The demo
+% also includes the PID3Axis controller. The core dynamics is for a
+% gyrostat orbiting around a point mass.
+%
+% The simulation uses the vector pointing mode of PID3Axis to point
+% a vector in the spacecraft frame either at nadir or at the sun.
+%
+% Control logic is included to point at nadir when the spacecraft is 
+% over the continental United States and at the sun otherwise.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also RHSSpacecraftWithRWA, PID3Axis, Plot2D, RK4
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2017 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2017.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Initialization
+% The RHS provides the default data structure for the model. Three
+% orthogonal wheels are assumed. The default friction is zero for each
+% wheel.
+
+% Earth's radius
+rE   = 6378.165;
+
+% Simulation timing
+tEnd = 10000.0; % sec
+dT   = 1.0; % sec
+
+% Initial Julian Date
+jD0  = Date2JD([2020 4 5 0 0 0]);
+
+% Spacecraft altitude
+h         = 600.0; % km
+
+% Data structure for the right hand side.
+% Note non-spherical inertia matrix which results in cross-axis coupling.
+d         = RHSSpacecraftWithRWA;
+d.inr     = [3 0 0;0 10 0;0 0 5]; % kg-m^2
+% Wheel inertia
+d.inrRWA  = 1.5e-3*[1;1;1];  % kg-m^2
+
+% Friction damping terms
+% cDamping (viscous damping) should be on the order of 1e-6 Nms
+% torqueCoulomb should be on the order of 1e-3 Nm 
+d.friction.cDampingRWA      = [5;5;5]*1e-6;      % Nms
+d.friction.torqueCoulombRWA = [1;1;1]*1e-3;   % Nm
+
+% Disturbance torque, Nm; try about 1-10e-5 Nm
+d.torque = [0.0;0.0;0.0];
+
+% Initial body rates, rad/s; try about 0.001 rad/s
+wInit = [0.0;0;0.0];
+
+% Initial wheel speeds
+wRWA  = [0.0;0.0;0.0];
+
+%% Design the controller
+% Use the PID3Axis function which handles updating the controller states.
+dC                  = PID3Axis; % Gets the default data structure
+dC.mode             = 1; % Vector tracking
+
+% We specify a unit inertia so that the controller generates a control
+% angular acceleration
+inr   = 1.0;   % unit inertia
+zeta  = 1.0;   % damping ratio
+omega = 0.03;  % rad/sec
+tauInt = 200;  % sec
+omegaR = 0.05; % rad/sec
+[dC.a, dC.b, dC.c, dC.d] = PIDMIMO(inr,zeta,omega,tauInt,omegaR,dT);
+dC.body_vector  = [0;0;1];
+
+%% Simulation
+% Perform a fixed step integration using RK4. The state vector includes the
+% wheel speeds. The spacecraft is initialized in a circular orbit with zero
+% rates.
+
+% Steps
+n         = ceil(tEnd/dT);
+
+% State vector: [position;velocity;quaternion;body rate;rwa rate]
+rInit     = (rE+h)*[cos(2);sin(2);0];
+vInit     = [0;0;sqrt(d.mu/(rE+h))];
+qInit     = [1;0;0;0];
+x         = [rInit; vInit; qInit; wInit; wRWA];
+rEF       = zeros(3,n);
+xP        = zeros(length(x)+5,n);
+t         = (0:n-1)*dT;
+jD        = jD0 + t/86400;
+
+% Create the area to be checked. Roughly covers CONUS.
+m         = 100;
+[lat,lon] = RAzToLatLon( 2000*ones(1,m), linspace(0,2*pi,m), pi/4, -1.1*pi/2 );
+
+lat       = fliplr(lat);
+lon       = fliplr(lon);
+overA     = zeros(1,n);
+
+for k = 1:n
+  % Local variables
+  r           = x( 1: 3);
+  q           = x( 7:10);
+ 
+  % ECI sun and Earth vectors
+  bECIToEF    = EarthRot(JD2T(jD(k)));
+  rEF(:,k)    = bECIToEF*r;
+  
+  j           = OverArea( rEF(:,k),lat,lon);
+  if( j == 0 )
+    dC.eci_vector = SunV1( jD(k));
+  else
+    dC.eci_vector = -Unit(r);
+    overA(k) = 1;
+	end
+  
+  % The PID controller
+  [tRHS, dC]	= PID3Axis( q, dC );
+  
+  % Reaction wheel torque is on the left hand side
+  d.torqueRWA = -d.inr*tRHS;
+  
+  % Pointing error
+  arg         = dC.eci_vector'*QTForm( q, dC.body_vector );
+  if( abs(arg) > 1 )
+    arg = sign(arg);
+  end
+  pErr        = acos(arg);
+   
+  % Plot storage
+  xP(:,k)     = [x;d.torqueRWA;j;pErr];
+ 
+  % Right hand side
+  x           = RK4(@RHSSpacecraftWithRWA,x,dT,0,d);
+end
+
+%% Plotting
+[t,tL] = TimeLabl(t);
+   
+%% 3D Plot
+LoadEarthMap;
+hold on
+[~,rS] = OverArea( x(1:3), lat, lon );
+plot3(rS(1,:),rS(2,:),rS(3,:),'color','r');
+plot3(rEF(1,:),rEF(2,:),rEF(3,:),'color','y','linewidth',2);
+kOver = find(overA>0);
+plot3(rEF(1,kOver),rEF(2,kOver),rEF(3,kOver),'c.');
+
+%% 2D plots
+% Position
+k      = [1:3 20:21];
+yL     = {'r_x', 'r_y', 'r_z' 'Region' 'Error'};
+h(1) = Plot2D( t, xP(k,:),tL,yL,'Position');
+AddFillToPlots(t,overA,h(1),[1 1 1;0.8 0.8 0.8],0.5)
+
+% Quaternion
+k      = 7:10;
+yL     = {'q_s', 'q_x', 'q_y', 'q_z'};
+h(2) = Plot2D( t, xP(k,:),tL,yL,'Attitude');
+AddFillToPlots(t,overA,h(2),[1 1 1;0.8 0.8 0.8],0.5)
+
+% Angular rate
+k      = 11:13;
+yL     = {'\omega_x', '\omega_y', '\omega_z'};
+h(3) = Plot2D( t, xP(k,:),tL,yL,'Body Rates');
+AddFillToPlots(t,overA,h(3),[1 1 1;0.8 0.8 0.8],0.5)
+
+% Reaction wheel torque and rate
+k      = 17:19;
+yL     = {'T_x (Nm)', 'T_y (Nm)', 'T_z (Nm)'};
+h(4) = Plot2D( t, xP(k,:),tL,yL,'RWA Torque');
+AddFillToPlots(t,overA,h(4),[1 1 1;0.8 0.8 0.8],0.5)
+
+k      = 14:16;
+yL     = {'\omega_1', '\omega_2', '\omega_3'};
+h(5) = Plot2D( t, xP(k,:),tL,yL,'RWA Speeds');
+AddFillToPlots(t,overA,h(5),[1 1 1;0.8 0.8 0.8],0.5)
+
+Figui;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-05-25 13:14:07 -0400 (Thu, 25 May 2017) $
+% $Revision: 44689 $
+
+##### SOURCE END #####
+--></body></html>

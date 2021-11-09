@@ -1,0 +1,427 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate LQG control of relative motion in an eccentric orbit</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="LQGEccDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate LQG control of relative motion in an eccentric orbit</h1><!--introduction--><p>Usage: LQGEccDemo;</p><pre>------------------------------------------------------------------------</pre><pre class="language-matlab">------
+Inputs
+------
+none
+</pre><pre class="language-matlab">-------
+Outputs
+-------
+none
+</pre><pre>------------------------------------------------------------------------
+See also C2DZOH, QHills, QTForm, Mag, RK4TI, LinOrbLQG, FFEccProp,
+ECI2Hills, FFEccGoals2Hills, Hills2ECI, Nu2TimeDomain, OrbRate,
+AnimationGUI, El2RV, M2Nu, Period, RV2El
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">how many orbits to simulate?</a></li><li><a href="#3">after how many orbits do we turn the control on?</a></li><li><a href="#4">orbit parameters</a></li><li><a href="#5">control gains</a></li><li><a href="#6">noise levels</a></li><li><a href="#7">reference orbit</a></li><li><a href="#8">simulation time step and duration</a></li><li><a href="#9">target geometry</a></li><li><a href="#10">compute target trajectory</a></li><li><a href="#11">initial relative state</a></li><li><a href="#12">second orbit</a></li><li><a href="#13">time vector</a></li><li><a href="#14">generate random noise vector</a></li><li><a href="#15">initialize matrices for plotting</a></li><li><a href="#16">plot trajectory</a></li><li><a href="#17">plot control, position error, velocity error</a></li><li><a href="#18">animate</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2004 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 7.</span>
+<span class="comment">%-------------------------------------------------------------------------</span>
+<span class="comment">%   24-Feb-2017: update output from LinOrbLQG (4 matrices)</span>
+<span class="comment">%-------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%%% BEGIN USER INPUT %%%%%%%%%%%%% BEGIN USER INPUT %%%%%%%%%%%</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2 id="2">how many orbits to simulate?</h2><pre class="codeinput">nOrbits = 2.0;
+</pre><h2 id="3">after how many orbits do we turn the control on?</h2><pre class="codeinput">tControlOn = 0.05;
+</pre><h2 id="4">orbit parameters</h2><pre class="codeinput">a   = 8000;
+e   = 3e-1;
+inc = pi/4;
+</pre><h2 id="5">control gains</h2><pre class="codeinput">QG = diag( [5e-3*ones(1,3), 1e-3*ones(1,3)] );  <span class="comment">% Scalar estimator gain (make small)</span>
+RG = 1e3;                                       <span class="comment">% Scalar regulator gain (make big)</span>
+</pre><h2 id="6">noise levels</h2><pre class="codeinput">posSTD = 5.0;  <span class="comment">% standard deviation of relative position estimate [cm]</span>
+velSTD = 1.0;  <span class="comment">% standard deviation of relative position estimate [mm/s]</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2 id="7">reference orbit</h2><pre class="codeinput">n     = OrbRate(a);
+T     = Period(a);
+W     = pi/3;
+w     = pi/4;
+M     = pi;
+el    = [a, inc, W, w, e, M];
+[r,v] = El2RV(el);
+x0    = [r;v];
+</pre><h2 id="8">simulation time step and duration</h2><pre class="codeinput">dTSim   = 10;
+</pre><h2 id="9">target geometry</h2><pre class="codeinput">gF  = struct(<span class="string">'y0'</span>,0.0,<span class="string">'xMax'</span>,0.25,<span class="string">'nu_xMax'</span>,0,<span class="string">'zMax'</span>,0,<span class="string">'nu_zMax'</span>,0);
+</pre><h2 id="10">compute target trajectory</h2><pre class="codeinput">nu0        = M2Nu(e,el(6));
+[xF0,D,dH] = FFEccGoals2Hills( e, nu0, gF, n );
+</pre><h2 id="11">initial relative state</h2><pre class="codeinput">g0  = struct(<span class="string">'y0'</span>,0.0,<span class="string">'xMax'</span>,0.1,<span class="string">'nu_xMax'</span>,0,<span class="string">'zMax'</span>,0,<span class="string">'nu_zMax'</span>,0);
+xH0 = FFEccGoals2Hills( e, nu0, g0, n );
+</pre><h2 id="12">second orbit</h2><pre class="codeinput">x1 = Hills2ECI( x0, xH0 );
+</pre><h2 id="13">time vector</h2><pre class="codeinput">t     = 0:dTSim/T:nOrbits;
+nSim  = length(t);
+</pre><h2 id="14">generate random noise vector</h2><pre class="codeinput">posSTD = posSTD*1e-5; <span class="comment">% standard deviation of relative position error (convert from cm to km)</span>
+velSTD = velSTD*1e-6; <span class="comment">% standard deviation of relative velocity error (convert from mm/s to km/s)</span>
+noise  = [randn(3,nSim)*posSTD; randn(3,nSim)*velSTD];
+</pre><h2 id="15">initialize matrices for plotting</h2><pre class="codeinput">xHEst_plot = zeros(6,nSim);
+xHDes_plot = zeros(6,nSim);
+xH_plot    = zeros(6,nSim);
+aH_plot    = zeros(3,nSim);
+nu_plot    = zeros(1,nSim);
+
+aE0 = zeros(3,1);
+xK  = xH0;
+xH  = xH0;
+
+rhs = @(x,a) [x(4:6); a - (3.98600436e5)*x(1:3)/norm(x(1:3))^3];
+
+<span class="keyword">for</span> i=1:nSim
+
+   <span class="comment">% Hills-frame state estimate</span>
+   xHEst = xH + noise(:,i);
+
+   <span class="comment">% current desired Hills-frame state</span>
+   [el,E,nu] = RV2El( x0(1:3), x0(4:6) );
+   xHDes     = FFEccProp( D, nu, el(5), dH );
+   xHDes     = Nu2TimeDomain( xHDes, n, el(5), nu );
+
+   <span class="keyword">if</span>( t(i) &gt; tControlOn )
+
+      <span class="comment">% compute new LQG controller</span>
+      [AK,BK,CK,DK] = LinOrbLQG( el, QG, RG );
+      [AK,BK] = C2DZOH(AK,BK,dTSim);   <span class="comment">% discretize with sample time of dTSim</span>
+
+      <span class="comment">% update controller</span>
+      aH = CK*xK + DK*[xHDes; xHEst];
+      xK = AK*xK + BK*[xHDes; xHEst];
+
+   <span class="keyword">else</span>
+
+      aH = zeros(3,1);
+
+   <span class="keyword">end</span>
+
+   <span class="comment">% rotate Hill's frame acceleration to ECI frame</span>
+   qEH = QHills( x0(1:3), x0(4:6) );
+   aE1 = QTForm( qEH, aH );
+
+   <span class="comment">% integrate</span>
+   x0 = RK4TI(rhs,x0,dTSim,aE0);
+   x1 = RK4TI(rhs,x1,dTSim,aE1);
+
+   <span class="comment">% store for plotting</span>
+   aH_plot(:,i)    = aH;
+   xH_plot(:,i)    = xH;
+   xHDes_plot(:,i) = xHDes;
+   xHEst_plot(:,i) = xHEst;
+   nu_plot(i)      = nu;
+
+   <span class="comment">% Hills-frame state</span>
+   xH = ECI2Hills( x0, x1 );
+
+<span class="keyword">end</span>
+
+assignin(<span class="string">'base'</span>,<span class="string">'t'</span>,t);
+assignin(<span class="string">'base'</span>,<span class="string">'nu'</span>,nu_plot);
+assignin(<span class="string">'base'</span>,<span class="string">'xH'</span>,xH_plot);
+assignin(<span class="string">'base'</span>,<span class="string">'aH'</span>,aH_plot);
+assignin(<span class="string">'base'</span>,<span class="string">'xHDes'</span>,xHDes_plot);
+assignin(<span class="string">'base'</span>,<span class="string">'xHEst'</span>,xHEst_plot);
+
+k = min( find( tControlOn &gt;= t ) );
+fprintf(<span class="string">'\n      Total Delta-V: \t %f m/s\n'</span>,sum(Mag(aH_plot*dTSim))*1e3)
+fprintf(  <span class="string">'Mean Position Error: \t %f m \n\n'</span>,mean(Mag(xHDes_plot(1:3,k:end)-xH_plot(1:3,k:end)))*1e3)
+</pre><pre class="codeoutput">
+      Total Delta-V: 	 2.534435 m/s
+Mean Position Error: 	 25.346870 m 
+
+</pre><h2 id="16">plot trajectory</h2><pre class="codeinput">figure,
+plot3(xH_plot(1,:)*1e3,    xH_plot(2,:)*1e3,    xH_plot(3,:)*1e3,          <span class="string">'linewidth'</span>,2), hold <span class="string">on</span>
+plot3(xHEst_plot(1,:)*1e3, xHEst_plot(2,:)*1e3, xHEst_plot(3,:)*1e3,<span class="string">'c'</span>,   <span class="string">'linewidth'</span>,2),
+plot3(xHDes_plot(1,:)*1e3, xHDes_plot(2,:)*1e3, xHDes_plot(3,:)*1e3,<span class="string">'r--'</span>, <span class="string">'linewidth'</span>,2)
+title(<span class="string">'Relative Motion'</span>), xlabel(<span class="string">'x [m]'</span>), ylabel(<span class="string">'y [m]'</span>), zlabel(<span class="string">'z [m]'</span>), grid <span class="string">on</span>, axis <span class="string">equal</span>, zoom <span class="string">on</span>
+legend(<span class="string">'Actual'</span>,<span class="string">'Estimated'</span>,<span class="string">'Desired'</span>);
+</pre><img vspace="5" hspace="5" src="LQGEccDemo_01.png" alt=""> <h2 id="17">plot control, position error, velocity error</h2><pre class="codeinput">figure,
+subplot(311)
+plot(t,aH_plot*1e3,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>
+ylabel(<span class="string">'Control [m/s^2]'</span>)
+err = xHDes_plot - xHEst_plot;
+subplot(312)
+plot(t,err(1:3,:)*1e3,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>
+ylabel(<span class="string">'Pos Error [m]'</span>)
+subplot(313)
+plot(t,err(4:6,:)*1e6,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>
+ylabel(<span class="string">'Vel Error [mm/s]'</span>), xlabel(<span class="string">'Time [orbits]'</span>)
+zoom <span class="string">on</span>
+</pre><img vspace="5" hspace="5" src="LQGEccDemo_02.png" alt=""> <h2 id="18">animate</h2><pre class="codeinput">sc    = struct;
+sc.r  = xH_plot(1:3,:);
+sc.t  = t;
+tgt.r = xHDes_plot(1:3,:);
+tgt.t = t;
+AnimationGUI(<span class="string">'initialize'</span>,sc,tgt);
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LQGEccDemo_03.png" alt=""> <img vspace="5" hspace="5" src="LQGEccDemo_04.png" alt=""> <img vspace="5" hspace="5" src="LQGEccDemo_05.png" alt=""> <img vspace="5" hspace="5" src="LQGEccDemo_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate LQG control of relative motion in an eccentric orbit 
+%
+% Usage: LQGEccDemo;
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%
+%   REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Inputs
+%   REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   none     
+%
+%   REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Outputs
+%   REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   none
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also C2DZOH, QHills, QTForm, Mag, RK4TI, LinOrbLQG, FFEccProp, 
+%  ECI2Hills, FFEccGoals2Hills, Hills2ECI, Nu2TimeDomain, OrbRate, 
+%  AnimationGUI, El2RV, M2Nu, Period, RV2El
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2004 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%   Since version 7.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   24-Feb-2017: update output from LinOrbLQG (4 matrices)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% BEGIN USER INPUT %%%%%%%%%%%%% BEGIN USER INPUT %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% how many orbits to simulate?
+nOrbits = 2.0;
+
+%% after how many orbits do we turn the control on?
+tControlOn = 0.05;
+
+%% orbit parameters
+a   = 8000;
+e   = 3e-1;
+inc = pi/4;
+
+%% control gains
+QG = diag( [5e-3*ones(1,3), 1e-3*ones(1,3)] );  % Scalar estimator gain (make small)
+RG = 1e3;                                       % Scalar regulator gain (make big)
+
+%% noise levels
+posSTD = 5.0;  % standard deviation of relative position estimate [cm]
+velSTD = 1.0;  % standard deviation of relative position estimate [mm/s]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%% END USER INPUT %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% reference orbit
+n     = OrbRate(a);
+T     = Period(a);
+W     = pi/3;
+w     = pi/4;
+M     = pi;
+el    = [a, inc, W, w, e, M];
+[r,v] = El2RV(el);
+x0    = [r;v];
+
+%% simulation time step and duration
+dTSim   = 10;
+
+%% target geometry
+gF  = struct('y0',0.0,'xMax',0.25,'nu_xMax',0,'zMax',0,'nu_zMax',0);
+
+%% compute target trajectory
+nu0        = M2Nu(e,el(6));
+[xF0,D,dH] = FFEccGoals2Hills( e, nu0, gF, n );
+
+%% initial relative state
+g0  = struct('y0',0.0,'xMax',0.1,'nu_xMax',0,'zMax',0,'nu_zMax',0);
+xH0 = FFEccGoals2Hills( e, nu0, g0, n );
+
+%% second orbit
+x1 = Hills2ECI( x0, xH0 );
+
+%% time vector
+t     = 0:dTSim/T:nOrbits;
+nSim  = length(t);
+
+%% generate random noise vector
+posSTD = posSTD*1e-5; % standard deviation of relative position error (convert from cm to km)
+velSTD = velSTD*1e-6; % standard deviation of relative velocity error (convert from mm/s to km/s)
+noise  = [randn(3,nSim)*posSTD; randn(3,nSim)*velSTD];
+
+%% initialize matrices for plotting
+xHEst_plot = zeros(6,nSim);
+xHDes_plot = zeros(6,nSim);
+xH_plot    = zeros(6,nSim);
+aH_plot    = zeros(3,nSim);
+nu_plot    = zeros(1,nSim);
+
+aE0 = zeros(3,1);
+xK  = xH0;
+xH  = xH0;
+
+rhs = @(x,a) [x(4:6); a - (3.98600436e5)*x(1:3)/norm(x(1:3))^3];
+
+for i=1:nSim
+   
+   % Hills-frame state estimate
+   xHEst = xH + noise(:,i);
+   
+   % current desired Hills-frame state
+   [el,E,nu] = RV2El( x0(1:3), x0(4:6) );
+   xHDes     = FFEccProp( D, nu, el(5), dH );
+   xHDes     = Nu2TimeDomain( xHDes, n, el(5), nu );
+   
+   if( t(i) > tControlOn )
+            
+      % compute new LQG controller
+      [AK,BK,CK,DK] = LinOrbLQG( el, QG, RG );
+      [AK,BK] = C2DZOH(AK,BK,dTSim);   % discretize with sample time of dTSim   
+            
+      % update controller
+      aH = CK*xK + DK*[xHDes; xHEst];
+      xK = AK*xK + BK*[xHDes; xHEst];
+      
+   else
+      
+      aH = zeros(3,1);
+      
+   end
+   
+   % rotate Hill's frame acceleration to ECI frame
+   qEH = QHills( x0(1:3), x0(4:6) );
+   aE1 = QTForm( qEH, aH );
+   
+   % integrate
+   x0 = RK4TI(rhs,x0,dTSim,aE0);
+   x1 = RK4TI(rhs,x1,dTSim,aE1);
+      
+   % store for plotting
+   aH_plot(:,i)    = aH;
+   xH_plot(:,i)    = xH;
+   xHDes_plot(:,i) = xHDes;
+   xHEst_plot(:,i) = xHEst;
+   nu_plot(i)      = nu;
+
+   % Hills-frame state
+   xH = ECI2Hills( x0, x1 );
+   
+end
+
+assignin('base','t',t);
+assignin('base','nu',nu_plot);
+assignin('base','xH',xH_plot);
+assignin('base','aH',aH_plot);
+assignin('base','xHDes',xHDes_plot);
+assignin('base','xHEst',xHEst_plot);
+
+k = min( find( tControlOn >= t ) );
+fprintf('\n      Total Delta-V: \t %f m/s\n',sum(Mag(aH_plot*dTSim))*1e3)
+fprintf(  'Mean Position Error: \t %f m \n\n',mean(Mag(xHDes_plot(1:3,k:end)-xH_plot(1:3,k:end)))*1e3)
+
+%% plot trajectory
+figure, 
+plot3(xH_plot(1,:)*1e3,    xH_plot(2,:)*1e3,    xH_plot(3,:)*1e3,          'linewidth',2), hold on
+plot3(xHEst_plot(1,:)*1e3, xHEst_plot(2,:)*1e3, xHEst_plot(3,:)*1e3,'c',   'linewidth',2),
+plot3(xHDes_plot(1,:)*1e3, xHDes_plot(2,:)*1e3, xHDes_plot(3,:)*1e3,'rREPLACE_WITH_DASH_DASH', 'linewidth',2)
+title('Relative Motion'), xlabel('x [m]'), ylabel('y [m]'), zlabel('z [m]'), grid on, axis equal, zoom on
+legend('Actual','Estimated','Desired');
+
+%% plot control, position error, velocity error
+figure,
+subplot(311)
+plot(t,aH_plot*1e3,'linewidth',2), grid on
+ylabel('Control [m/s^2]')
+err = xHDes_plot - xHEst_plot;
+subplot(312)
+plot(t,err(1:3,:)*1e3,'linewidth',2), grid on
+ylabel('Pos Error [m]')
+subplot(313)
+plot(t,err(4:6,:)*1e6,'linewidth',2), grid on
+ylabel('Vel Error [mm/s]'), xlabel('Time [orbits]')
+zoom on
+
+%% animate
+sc    = struct;
+sc.r  = xH_plot(1:3,:);
+sc.t  = t;
+tgt.r = xHDes_plot(1:3,:);
+tgt.t = t;
+AnimationGUI('initialize',sc,tgt);
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

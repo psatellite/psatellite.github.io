@@ -1,0 +1,564 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate the Trajectory optimization function for sails in 2D orbits.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="Sail2DOptimization.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate the Trajectory optimization function for sails in 2D orbits.</h1><!--introduction--><p>Choose either Simplex or genetic algorithms. Select either a Mars transfer or the planar portion of Solar Polar Imager (SPI). Choose either Simplex or GA for each run at the top of the script. Assumes a perfectly specular sail.</p><pre>Functions demonstrated:
+   TwoDOptimalSailAngle
+   RHSOpt2DOrbit
+   Plot2DTrajectory
+   CostSail2D
+   TrajectoryOptimization</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Constant</span>, Planets, heuristicXover, nonUnifMutation,
+normGeomSelect, Plot2DTrajectory, TwoDOptimalSailAngle, CostSail2D,
+TrajectoryOptimization, RHSOpt2DOrbit
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">On the next pass use the newly computed lambda as the first guess</a></li><li><a href="#3">Spacecraft properties</a></li><li><a href="#4">This assumes 100 kg mass, 160x160 m sail</a></li><li><a href="#5">Heliocentric system</a></li><li><a href="#6">Dynamics function</a></li><li><a href="#7">Cost function called by optimizer</a></li><li><a href="#8">Initial costate guess</a></li><li><a href="#9">[r;rDot;v;m]</a></li><li><a href="#10">Integration (ode113) parameters</a></li><li><a href="#11">Weights for the costates</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	  Copyright (c) 2005-2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+disp(<span class="string">'This demo takes several minutes to run.'</span>)
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% User input</span>
+method = 1;  <span class="comment">% 1, simplex  2, genetic algorithms</span>
+mission = <span class="string">'mars'</span>;  <span class="comment">% 'spi' or 'mars'</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">This demo takes several minutes to run.
+</pre><h2 id="2">On the next pass use the newly computed lambda as the first guess</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------------</span>
+d.repeat = 0;
+
+aU       = Constant(<span class="string">'au'</span>);
+c        = Constant(<span class="string">'speed of light'</span>);
+</pre><h2 id="3">Spacecraft properties</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+</pre><h2 id="4">This assumes 100 kg mass, 160x160 m sail</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+area             = 160^2;
+mass             = 350;
+<span class="comment">% acceleration is premultiplied by au^2 for scaling in RHS</span>
+d.d.accel        = area*1367*1e-6/(c*mass)*aU^2; <span class="comment">% km/sec^2</span>
+d.d.sailAngleFun = @TwoDOptimalSailAngle;
+</pre><h2 id="5">Heliocentric system</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+d.d.mu           = Constant(<span class="string">'mu sun'</span>);
+</pre><h2 id="6">Dynamics function</h2><pre class="codeinput"><span class="comment">%------------------</span>
+d.d.rhsFun       = @RHSOpt2DOrbit;
+d.d.plotFun      = @Plot2DTrajectory;
+</pre><h2 id="7">Cost function called by optimizer</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+d.d.costFun      = @CostSail2D;
+</pre><h2 id="8">Initial costate guess</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+
+<span class="comment">% Boundary conditions, initial and final state</span>
+</pre><h2 id="9">[r;rDot;v;m]</h2><pre class="codeinput"><span class="comment">%---------------------------------------------</span>
+<span class="keyword">switch</span> mission
+  <span class="keyword">case</span> <span class="string">'spi'</span>
+    rF      = 0.48*aU;
+    lambda0 = [0.151216557215921; 24176.8510939925; 803052.637561317 ];
+    nDays   = 2.5*365;
+  <span class="keyword">case</span> <span class="string">'mars'</span>
+    [name,rF] = Planets(<span class="string">'rad'</span>,4);
+    rF        = rF(1)*aU;
+    lambda0   = [-0.001047975499; 21925.68149; 201476.7856];
+    nDays     = 2.7*365;
+<span class="keyword">end</span>
+d.d.x0           = [aU;0;sqrt(d.d.mu/aU)];
+d.d.xF           = [rF;0;sqrt(d.d.mu/rF)];
+d.d.rF           = d.d.xF(1);
+
+d.d.lambda0      = lambda0;
+</pre><h2 id="10">Integration (ode113) parameters</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+d.d.data.absTol  = 1e-8;
+d.d.data.relTol  = 2.5e-6;
+d.d.data.maxStep = 0.1; <span class="comment">% ode113 will never take a step bigger than this</span>
+                        <span class="comment">% fraction of the end time</span>
+d.d.tEnd         = nDays*86400; <span class="comment">% (s)</span>
+</pre><h2 id="11">Weights for the costates</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+d.d.errorScale   = [d.d.xF(3)/d.d.xF(1); 1; 1];
+
+<span class="keyword">switch</span> method
+  <span class="keyword">case</span> 1
+    <span class="comment">%-----------------------------</span>
+    <span class="comment">% 1. Downhill simplex (fmins)</span>
+    <span class="comment">%-----------------------------</span>
+    d.method         = <span class="string">'downhill simplex'</span>;
+
+    <span class="comment">% Simplex parameters</span>
+    <span class="comment">%-------------------</span>
+    d.d.stateTol     = 1e-4;
+    d.d.funTol       = 1e-2;
+    d.d.nIts         = 600;
+
+    <span class="comment">% Optimize the trajectory. It will used Plot2DTrajectory</span>
+    <span class="comment">% to plot the results</span>
+    <span class="comment">%-------------------------------------------------------</span>
+    lambda = TrajectoryOptimization( d );
+    disp(<span class="string">'Costates for Simplex'</span>)
+    disp(lambda{1})
+
+  <span class="keyword">case</span> 2
+
+    <span class="comment">%-----------------------------</span>
+    <span class="comment">% 2. Genetic algorithm (GAOT)</span>
+    <span class="comment">%-----------------------------</span>
+    d.method     = <span class="string">'genetic algorithm'</span>;
+
+    <span class="comment">% The number of individuals</span>
+    <span class="comment">%--------------------------</span>
+    d.d.nI        = 40;
+
+    <span class="comment">% The number of generations</span>
+    <span class="comment">%--------------------------</span>
+    d.d.nG        = 35;
+
+    <span class="comment">% The bounds on the costate</span>
+    <span class="comment">%--------------------------</span>
+    d.d.bounds    = [-10 10; 1e6*[-1 1; -1 1]];
+
+    <span class="comment">% The selection function</span>
+    <span class="comment">%-----------------------</span>
+    d.d.fncSelect = @normGeomSelect;
+    d.d.optSelect = [0.01];
+
+    <span class="comment">% The crossover function</span>
+    <span class="comment">%-----------------------</span>
+    d.d.fncXOver  = @heuristicXover;
+    d.d.optXOver  =  [40 5 ];
+
+    <span class="comment">% The mutation function</span>
+    <span class="comment">%----------------------</span>
+    d.d.fncMutate = @nonUnifMutation;
+    d.d.optMutate = [10 d.d.nG 3];
+
+    <span class="comment">% Optimize</span>
+    <span class="comment">%---------</span>
+    lambda = TrajectoryOptimization( d );
+    disp(<span class="string">'Costates for Genetic Algorithm'</span>)
+    disp(lambda{1})
+
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Case 1: Method: downhill simplex
+ 
+ Iteration   Func-count     min f(x)         Procedure
+     0            1           2.7486         
+     1            4          2.74563         initial simplex
+     2            9          2.74563         shrink
+     3           10          2.74563         reflect
+     4           11          2.74563         reflect
+     5           13          2.74507         expand
+     6           15          2.74403         expand
+     7           17          2.74403         contract inside
+     8           19          2.74403         contract inside
+     9           21           2.7431         expand
+    10           22           2.7431         reflect
+    11           24          2.74106         expand
+    12           25          2.74106         reflect
+    13           27          2.73724         expand
+    14           29          2.73705         reflect
+    15           30          2.73705         reflect
+    16           32          2.72754         expand
+    17           33          2.72754         reflect
+    18           35          2.72077         expand
+    19           37          2.69752         expand
+    20           38          2.69752         reflect
+    21           40          2.65726         expand
+    22           42          2.51974         expand
+    23           43          2.51974         reflect
+    24           45          2.23779         expand
+    25           47          2.13384         contract outside
+    26           49          2.13384         contract inside
+    27           51          2.13384         contract inside
+    28           53          2.13384         contract inside
+    29           55          2.13384         contract inside
+    30           57          2.13384         contract inside
+    31           59          2.13384         contract inside
+    32           60          2.13384         reflect
+    33           62          2.13384         contract inside
+    34           64          2.13354         contract inside
+    35           66          2.13238         contract outside
+    36           68          2.11548         expand
+    37           70          2.11548         contract inside
+    38           71          2.11548         reflect
+    39           72          2.11548         reflect
+    40           74          2.10853         expand
+    41           76          2.09825         expand
+    42           78          2.05926         expand
+    43           80          2.01562         expand
+    44           82           2.0131         reflect
+    45           84          1.92541         reflect
+    46           86          1.27801         expand
+    47           87          1.27801         reflect
+    48           89          1.27801         contract inside
+    49           90          1.27801         reflect
+    50           92          1.27801         contract inside
+    51           94         0.486897         reflect
+    52           96         0.486897         contract inside
+    53           97         0.486897         reflect
+    54           99         0.486897         contract inside
+    55          100         0.486897         reflect
+    56          102         0.486897         contract inside
+    57          104         0.283709         contract inside
+    58          105         0.283709         reflect
+    59          107         0.283709         contract inside
+    60          108         0.283709         reflect
+    61          109         0.283709         reflect
+    62          111         0.223843         reflect
+    63          113         0.223843         contract inside
+    64          115         0.223843         contract inside
+    65          117         0.132836         reflect
+    66          119         0.132836         contract outside
+    67          121         0.118953         contract inside
+    68          123         0.106716         contract inside
+    69          125        0.0780875         contract inside
+    70          127        0.0637931         contract inside
+    71          129        0.0637931         contract inside
+    72          131        0.0637931         contract inside
+    73          133        0.0637931         contract inside
+    74          135        0.0354368         expand
+    75          137        0.0354368         contract inside
+    76          139        0.0260392         contract outside
+    77          141        0.0260392         contract inside
+    78          143        0.0260392         contract inside
+    79          145        0.0207826         contract inside
+    80          150        0.0207826         shrink
+    81          152        0.0207826         contract outside
+    82          157        0.0207826         shrink
+    83          158        0.0207826         reflect
+    84          160        0.0207826         contract inside
+    85          162        0.0207826         contract outside
+    86          163        0.0207826         reflect
+    87          165        0.0207826         contract outside
+    88          167        0.0207826         contract inside
+    89          169        0.0207826         contract inside
+    90          174        0.0207826         shrink
+    91          179        0.0207826         shrink
+    92          180        0.0207826         reflect
+    93          182        0.0207826         contract inside
+    94          184        0.0207826         contract inside
+    95          185        0.0207826         reflect
+    96          187        0.0205148         expand
+    97          189        0.0200609         expand
+    98          191        0.0200609         contract inside
+    99          193        0.0197296         expand
+   100          195        0.0197296         contract inside
+   101          197        0.0192068         expand
+   102          199        0.0184014         expand
+   103          201        0.0184014         contract inside
+   104          203        0.0184014         contract inside
+   105          205        0.0184014         contract inside
+   106          206        0.0184014         reflect
+   107          208        0.0184014         contract inside
+   108          210        0.0184014         contract inside
+   109          212        0.0184014         contract inside
+   110          214        0.0184014         contract inside
+   111          216        0.0184014         contract inside
+   112          218        0.0184014         contract inside
+   113          220        0.0184014         contract inside
+   114          222        0.0184014         contract inside
+   115          223        0.0184014         reflect
+   116          225        0.0184014         contract inside
+   117          227        0.0184014         contract inside
+   118          229        0.0184014         contract inside
+   119          231        0.0184014         contract inside
+   120          233        0.0184014         contract inside
+   121          235        0.0184014         contract inside
+   122          237        0.0184014         contract inside
+   123          239        0.0183908         reflect
+   124          241        0.0183908         contract inside
+   125          243        0.0183908         contract inside
+   126          245        0.0183908         contract inside
+   127          247        0.0183897         reflect
+   128          249        0.0183897         contract inside
+   129          251        0.0183897         contract inside
+   130          253        0.0183856         reflect
+   131          255        0.0183856         contract inside
+   132          257        0.0183856         contract inside
+   133          258        0.0183856         reflect
+   134          260        0.0183856         contract inside
+   135          262        0.0183856         contract inside
+   136          264        0.0183846         reflect
+   137          266        0.0183846         contract inside
+   138          268        0.0183846         contract inside
+   139          270        0.0183846         contract inside
+   140          272        0.0183845         reflect
+   141          274        0.0183845         contract inside
+   142          276        0.0183845         contract inside
+   143          278        0.0183841         reflect
+   144          280        0.0183841         contract inside
+   145          282         0.018384         reflect
+   146          284         0.018384         contract inside
+   147          286         0.018384         contract inside
+   148          288        0.0183839         reflect
+   149          290        0.0183839         contract inside
+   150          292        0.0183839         contract inside
+   151          294        0.0183838         expand
+   152          296        0.0183837         reflect
+   153          298        0.0183837         contract inside
+   154          300        0.0183837         contract inside
+   155          302        0.0183837         contract inside
+   156          304        0.0183837         expand
+   157          306        0.0183837         contract inside
+   158          308        0.0183837         contract inside
+   159          310        0.0183836         reflect
+   160          312        0.0183836         contract inside
+   161          314        0.0183836         contract inside
+   162          316        0.0183836         contract inside
+   163          318        0.0183836         reflect
+   164          320        0.0183836         contract inside
+   165          322        0.0183836         reflect
+   166          324        0.0183836         contract inside
+   167          326        0.0183836         contract inside
+   168          328        0.0183836         contract inside
+ 
+Optimization terminated:
+ the current x satisfies the termination criteria using OPTIONS.TolX of 1.000000e-04 
+ and F(X) satisfies the convergence criteria using OPTIONS.TolFun of 1.000000e-02 
+
+Radial     position error =     696.2113 (km)
+Radial     velocity error =       0.0089 (km/s)
+Tangential velocity error =      -0.0161 (km/s)
+    Time of minimum error =       2.4188 years
+Costates for Simplex
+   -0.0046295
+       -11610
+       -21033
+</pre><img vspace="5" hspace="5" src="Sail2DOptimization_01.png" alt=""> <img vspace="5" hspace="5" src="Sail2DOptimization_02.png" alt=""> <img vspace="5" hspace="5" src="Sail2DOptimization_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate the Trajectory optimization function for sails in 2D orbits.
+% Choose either Simplex or genetic algorithms. Select either a Mars
+% transfer or the planar portion of Solar Polar Imager (SPI).
+% Choose either Simplex or GA for each run at the top of the script.
+% Assumes a perfectly specular sail.
+%
+%  Functions demonstrated:
+%     TwoDOptimalSailAngle
+%     RHSOpt2DOrbit
+%     Plot2DTrajectory
+%     CostSail2D
+%     TrajectoryOptimization
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, Planets, heuristicXover, nonUnifMutation, 
+%  normGeomSelect, Plot2DTrajectory, TwoDOptimalSailAngle, CostSail2D, 
+%  TrajectoryOptimization, RHSOpt2DOrbit
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	  Copyright (c) 2005-2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+disp('This demo takes several minutes to run.')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% User input
+method = 1;  % 1, simplex  2, genetic algorithms
+mission = 'mars';  % 'spi' or 'mars'
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% On the next pass use the newly computed lambda as the first guess
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.repeat = 0; 
+
+aU       = Constant('au');
+c        = Constant('speed of light');
+
+%% Spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% This assumes 100 kg mass, 160x160 m sail
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+area             = 160^2;
+mass             = 350;
+% acceleration is premultiplied by au^2 for scaling in RHS
+d.d.accel        = area*1367*1e-6/(c*mass)*aU^2; % km/sec^2
+d.d.sailAngleFun = @TwoDOptimalSailAngle;
+
+
+%% Heliocentric system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.d.mu           = Constant('mu sun');
+
+%% Dynamics function
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.d.rhsFun       = @RHSOpt2DOrbit;
+d.d.plotFun      = @Plot2DTrajectory;
+
+%% Cost function called by optimizer
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.d.costFun      = @CostSail2D;
+
+%% Initial costate guess
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Boundary conditions, initial and final state
+%% [r;rDot;v;m]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+switch mission
+  case 'spi'
+    rF      = 0.48*aU;
+    lambda0 = [0.151216557215921; 24176.8510939925; 803052.637561317 ];
+    nDays   = 2.5*365;
+  case 'mars'
+    [name,rF] = Planets('rad',4);
+    rF        = rF(1)*aU;
+    lambda0   = [-0.001047975499; 21925.68149; 201476.7856];
+    nDays     = 2.7*365;
+end
+d.d.x0           = [aU;0;sqrt(d.d.mu/aU)];
+d.d.xF           = [rF;0;sqrt(d.d.mu/rF)];
+d.d.rF           = d.d.xF(1);
+
+d.d.lambda0      = lambda0;
+
+%% Integration (ode113) parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.d.data.absTol  = 1e-8;
+d.d.data.relTol  = 2.5e-6;
+d.d.data.maxStep = 0.1; % ode113 will never take a step bigger than this
+                        % fraction of the end time
+d.d.tEnd         = nDays*86400; % (s)
+
+%% Weights for the costates
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.d.errorScale   = [d.d.xF(3)/d.d.xF(1); 1; 1];
+
+switch method
+  case 1
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    % 1. Downhill simplex (fmins)
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    d.method         = 'downhill simplex';
+
+    % Simplex parameters
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    d.d.stateTol     = 1e-4;
+    d.d.funTol       = 1e-2;
+    d.d.nIts         = 600;
+
+    % Optimize the trajectory. It will used Plot2DTrajectory
+    % to plot the results
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    lambda = TrajectoryOptimization( d );
+    disp('Costates for Simplex')
+    disp(lambda{1})
+
+  case 2
+
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    % 2. Genetic algorithm (GAOT)
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    d.method     = 'genetic algorithm';
+
+    % The number of individuals
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    d.d.nI        = 40;
+
+    % The number of generations
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    d.d.nG        = 35;
+
+    % The bounds on the costate
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    d.d.bounds    = [-10 10; 1e6*[-1 1; -1 1]];
+
+    % The selection function
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    d.d.fncSelect = @normGeomSelect;
+    d.d.optSelect = [0.01];
+
+    % The crossover function
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    d.d.fncXOver  = @heuristicXover;
+    d.d.optXOver  =  [40 5 ];
+
+    % The mutation function
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    d.d.fncMutate = @nonUnifMutation;
+    d.d.optMutate = [10 d.d.nG 3];
+
+    % Optimize
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    lambda = TrajectoryOptimization( d );
+    disp('Costates for Genetic Algorithm')
+    disp(lambda{1})
+
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-10-30 12:43:22 -0400 (Tue, 30 Oct 2018) $
+% $Revision: 47372 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,282 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>RollYawDoublePivot</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="RollYawDoublePivot.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Design a roll/yaw controller using a double pivot</a></li><li><a href="#2">Constants</a></li><li><a href="#3">Disturbance magnitudes</a></li><li><a href="#4">Orbit rate</a></li><li><a href="#5">Momentum</a></li><li><a href="#6">Plant [roll;yaw]</a></li><li><a href="#7">Platform plant</a></li><li><a href="#8">Design the controller</a></li><li><a href="#9">Control period</a></li><li><a href="#10">Convert to discrete time</a></li><li><a href="#11">Simulate a step response</a></li><li><a href="#12">Plots</a></li></ul></div><h2 id="1">Design a roll/yaw controller using a double pivot</h2><pre>See also C2DZOH, QCR, Plot2D, TimeLabl, Geo</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1996 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 1.</span>
+<span class="comment">%   Formerly TRYDP.m</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+radToDeg = 180/pi;
+</pre><h2 id="3">Disturbance magnitudes</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+tImp     = [0;0];
+tStep    = [10e-6;10e-6];
+tOrbRate = [0;0];
+</pre><h2 id="4">Orbit rate</h2><pre class="codeinput"><span class="comment">%-----------</span>
+wo = Geo;
+</pre><h2 id="5">Momentum</h2><pre class="codeinput"><span class="comment">%---------</span>
+hW = 500;
+</pre><h2 id="6">Plant [roll;yaw]</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+a  = [0 wo;-wo 0];
+bC = -eye(2);  <span class="comment">% u = [wX;wZ] where alpha is the x-angle and beta is the z-angle</span>
+bD = [0 -1;1 0]/hW;
+</pre><h2 id="7">Platform plant</h2><pre class="codeinput"><span class="comment">%---------------</span>
+aP = [0 wo;-wo 0];
+bP = eye(2);
+</pre><h2 id="8">Design the controller</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+kC = QCR( a, bC, 1.e-7*[1 0;0 1], eye(2));
+
+DispWithTitle(kC,<span class="string">'Gains'</span>);
+
+disp(<span class="string">'Closed loop eigenvalues'</span>)
+s = eig(a - bC*kC);
+DispWithTitle(s,<span class="string">'Eigenvalues'</span>);
+</pre><pre class="codeoutput">Gains
+   1.0e-03 *
+  -0.316227766016838  -0.000000000000000
+   0.000000000000000  -0.316227766016838
+Closed loop eigenvalues
+Eigenvalues
+   1.0e-03 *
+ -0.316227766016838 + 0.072921158552912i
+ -0.316227766016838 - 0.072921158552912i
+</pre><h2 id="9">Control period</h2><pre class="codeinput"><span class="comment">%---------------</span>
+dT = 100;
+</pre><h2 id="10">Convert to discrete time</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+[aX,bD] = C2DZOH(a, bD,dT);
+[a, bC] = C2DZOH(a, bC,dT);
+[aP,bP] = C2DZOH(aP,bP,dT);
+</pre><h2 id="11">Simulate a step response</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+nSim   = 864;
+x      = zeros(2,1);
+xP     = zeros(2,1);
+xPlot  = zeros(2,nSim);
+aPlot  = zeros(2,nSim);
+uPlot  = zeros(2,nSim);
+tPlot  = zeros(1,nSim);
+t      = 0;
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Controller</span>
+  <span class="comment">%-----------</span>
+  uC = -kC*x;
+
+  <span class="comment">% Disturbance</span>
+  <span class="comment">%-----------</span>
+  c  = cos(wo*t);
+  s  = sin(wo*t);
+  uD = tImp + tStep + [c s;-s c]*tOrbRate;
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  xPlot(:,k)  = x;
+  aPlot(:,k)  = xP;
+  uPlot(:,k)  = uD;
+  tPlot(k)    = t;
+
+  <span class="comment">% Update the state</span>
+  <span class="comment">%-----------------</span>
+  x  = a*x   + bC*uC + bD*uD;
+  xP = aP*xP + bP*uC;
+  t  = t + dT;
+
+  tImp = [0;0];
+
+<span class="keyword">end</span>
+
+[tPlot,xLbl] = TimeLabl(tPlot);
+</pre><h2 id="12">Plots</h2><pre class="codeinput"><span class="comment">%------</span>
+yLbl = [<span class="string">'Attitude (deg)     '</span>;<span class="keyword">...</span>
+        <span class="string">'Pivot Angles (deg) '</span>;<span class="keyword">...</span>
+		    <span class="string">'Disturbance Torques'</span>];
+Plot2D(tPlot,[xPlot*radToDeg;aPlot*radToDeg;uPlot],xLbl,yLbl,<span class="string">'Roll/Yaw Control'</span>,<span class="string">'lin'</span>,[<span class="string">'1:2'</span>;<span class="string">'3:4'</span>;<span class="string">'5:6'</span>])
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="RollYawDoublePivot_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a roll/yaw controller using a double pivot
+%
+%  See also C2DZOH, QCR, Plot2D, TimeLabl, Geo
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1996 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 1.
+%   Formerly TRYDP.m
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+radToDeg = 180/pi;
+
+%% Disturbance magnitudes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tImp     = [0;0];
+tStep    = [10e-6;10e-6];
+tOrbRate = [0;0];
+
+%% Orbit rate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+wo = Geo;
+
+%% Momentum
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hW = 500;
+
+%% Plant [roll;yaw]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a  = [0 wo;-wo 0];
+bC = -eye(2);  % u = [wX;wZ] where alpha is the x-angle and beta is the z-angle
+bD = [0 -1;1 0]/hW;
+
+%% Platform plant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aP = [0 wo;-wo 0];
+bP = eye(2);
+
+%% Design the controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+kC = QCR( a, bC, 1.e-7*[1 0;0 1], eye(2));
+
+DispWithTitle(kC,'Gains');
+
+disp('Closed loop eigenvalues')
+s = eig(a - bC*kC);
+DispWithTitle(s,'Eigenvalues');
+
+%% Control period
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT = 100;
+
+%% Convert to discrete time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[aX,bD] = C2DZOH(a, bD,dT);
+[a, bC] = C2DZOH(a, bC,dT);
+[aP,bP] = C2DZOH(aP,bP,dT);
+
+%% Simulate a step response
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSim   = 864;
+x      = zeros(2,1);
+xP     = zeros(2,1);
+xPlot  = zeros(2,nSim);
+aPlot  = zeros(2,nSim);
+uPlot  = zeros(2,nSim);
+tPlot  = zeros(1,nSim);
+t      = 0;
+
+for k = 1:nSim
+
+  % Controller
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  uC = -kC*x;
+  
+  % Disturbance
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  c  = cos(wo*t);
+  s  = sin(wo*t);
+  uD = tImp + tStep + [c s;-s c]*tOrbRate;
+  
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xPlot(:,k)  = x;
+  aPlot(:,k)  = xP;
+  uPlot(:,k)  = uD;
+  tPlot(k)    = t;
+  
+  % Update the state
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x  = a*x   + bC*uC + bD*uD;
+  xP = aP*xP + bP*uC;
+  t  = t + dT;
+  
+  tImp = [0;0];
+  
+end
+
+[tPlot,xLbl] = TimeLabl(tPlot);
+
+%% Plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yLbl = ['Attitude (deg)     ';...
+        'Pivot Angles (deg) ';...
+		    'Disturbance Torques'];
+Plot2D(tPlot,[xPlot*radToDeg;aPlot*radToDeg;uPlot],xLbl,yLbl,'Roll/Yaw Control','lin',['1:2';'3:4';'5:6'])
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-27 15:19:39 -0400 (Wed, 27 May 2020) $
+% $Revision: 52495 $
+
+##### SOURCE END #####
+--></body></html>

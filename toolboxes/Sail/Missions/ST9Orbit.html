@@ -1,0 +1,476 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate semi-major axis change in a dawn-dusk sun-synchronous orbit.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="ST9Orbit.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate semi-major axis change in a dawn-dusk sun-synchronous orbit.</h1><!--introduction--><pre class="language-matlab">Uses <span class="string">a</span> <span class="string">simple</span> <span class="string">specular</span> <span class="string">model</span> <span class="string">for</span> <span class="string">the</span> <span class="string">solar</span> <span class="string">pressure</span> <span class="string">force.</span>
+Integration <span class="string">tolerance</span> <span class="string">must</span> <span class="string">be</span> <span class="string">tight</span> <span class="string">enough</span> <span class="string">to</span> <span class="string">produce</span> <span class="string">circular</span>
+precessing <span class="string">orbit</span> <span class="string">when</span> <span class="string">sail</span> <span class="string">is</span> <span class="string">edge-on.</span>
+Multiple <span class="string">sail</span> <span class="string">angle</span> <span class="string">laws</span> <span class="string">are</span> <span class="string">implemented</span> <span class="string">in</span> <span class="string">the</span> <span class="string">code.</span> <span class="string">Scroll</span> <span class="string">down</span> <span class="string">to</span>
+select <span class="string">a</span> <span class="string">method</span> <span class="string">or</span> <span class="string">add</span> <span class="string">your</span> <span class="string">own.</span>
+</pre><pre class="language-matlab">Default <span class="string">sail</span> <span class="string">sizes</span> <span class="string">are</span> <span class="string">from</span> <span class="string">40</span> <span class="string">to</span> <span class="string">60</span> <span class="string">m</span> <span class="string">square.</span> <span class="string">The</span> <span class="string">total</span> <span class="string">spacecraft</span>
+mass <span class="string">is</span> <span class="string">on</span> <span class="string">the</span> <span class="string">order</span> <span class="string">of</span> <span class="string">500</span> <span class="string">kg.</span>
+</pre><pre class="language-matlab">If <span class="string">one</span> <span class="string">axis</span> <span class="string">of</span> <span class="string">the</span> <span class="string">sail</span> <span class="string">is</span> <span class="string">aligned</span> <span class="string">with</span> <span class="string">LVLH</span>, which <span class="string">alleviates</span> <span class="string">gravity</span>
+gradient <span class="string">torques</span>, the <span class="string">semi-major</span> <span class="string">axis</span> <span class="string">change</span> <span class="string">is</span> <span class="string">on</span> <span class="string">the</span> <span class="string">order</span> <span class="string">of</span> <span class="string">40</span> <span class="string">km</span>
+in <span class="string">15</span> <span class="string">days.</span> <span class="string">The</span> <span class="string">sun-synch</span> <span class="string">orbit</span> <span class="string">is</span> <span class="string">closely</span> <span class="string">maintained.</span>
+The <span class="string">oscillations</span> <span class="string">in</span> <span class="string">semi-major</span> <span class="string">axis</span> <span class="string">change</span> <span class="string">are</span> <span class="string">due</span> <span class="string">to</span> <span class="string">the</span> <span class="string">inclusion</span> <span class="string">of</span>
+the <span class="string">J2</span> <span class="string">gravity</span> <span class="string">term</span>, which <span class="string">is</span> <span class="string">necessary</span> <span class="string">for</span> <span class="string">a</span> <span class="string">sun-synch</span> <span class="string">orbit.</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Inertias</span>, Cone, Eul2Q, QLVLH, QMult, QTForm, NPlot, Plot2D,
+TimeLabl, Cross, Dot, RK45, Unit, Date2JD, LoadGravityModel, El2RV,
+PltOrbit, RV2El, Eclipse, SunV1, Accel, UToConeClock, delta
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Set up the physical parameters</a></li><li><a href="#3">Constants</a></li><li><a href="#4">Epoch</a></li><li><a href="#5">Orbit geometry</a></li><li><a href="#6">Total mass</a></li><li><a href="#7">Number of sim steps and duration</a></li><li><a href="#8">Plotting array</a></li><li><a href="#9">Run the simulation(s)</a></li><li><a href="#11">First determine sail unit vector.</a></li><li><a href="#12">Method A: point to sun and check results</a></li><li><a href="#14">Method B: align towards v, semi-major axis grows</a></li><li><a href="#16">Method D: point edge-on and check results (orbit precession)</a></li><li><a href="#19">Plot the results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">d</span>
+</pre><h2 id="2">Set up the physical parameters</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+Asail         = 2000; <span class="comment">% 3600 1600]; % Sail area in m2</span>
+arealDensity  = 0.025; <span class="comment">% Sail subsystem areal density in g/m2</span>
+mSail         = Asail*arealDensity;   <span class="comment">% Sail subsystem mass in kg</span>
+Isail         = Inertias(mSail(1),[60 60],<span class="string">'plate'</span>); <span class="comment">% Inertia</span>
+mSC           = 450; <span class="comment">% mass of spacecraft, kg</span>
+</pre><h2 id="3">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+m2km          = 0.001;
+cLight        = 3e8;  <span class="comment">% speed of light, m/s</span>
+flux          = 1367; <span class="comment">% Solar flux at 1 AU, W/m2</span>
+dW            = 360/(365*86400); <span class="comment">% deg/s</span>
+rE            = 6378; <span class="comment">% km</span>
+gravityModel  = LoadGEM( 1 );
+
+nM            = 36; <span class="comment">% Tesseral harmonics</span>
+nN            = 36; <span class="comment">% Zonal harmonics</span>
+</pre><h2 id="4">Epoch</h2><pre class="codeinput"><span class="comment">%------</span>
+jD0           = Date2JD([2010 3 15, 16 0 0]);
+[uS, rS]      = SunV1( jD0 );
+</pre><h2 id="5">Orbit geometry</h2><pre class="codeinput"><span class="comment">%---------------</span>
+sma   = 7978.1;
+meanm = sqrt( gravityModel.mu/sma^3 );
+J2    = 0.001082;
+inc   = acos( -dW*pi/180/ (3*meanm*J2*rE^2/(2*sma^2)) );
+RA    = atan2(uS(1),uS(2));
+el0   = [sma;inc;RA;0;0;0];
+PltOrbit( el0, jD0, [0;0;1],<span class="string">'earth'</span> )
+
+<span class="comment">% ensure one or other is vector, not both</span>
+<span class="keyword">if</span> length(Asail) &gt; 1 &amp;&amp; length(mSC) &gt; 1
+  error(<span class="string">'Please make either Asail or mSC a vector, but not both.'</span>)
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">ans = 
+  Figure (PlotPSS) with properties:
+
+      Number: 1
+        Name: 'earth Orbit'
+       Color: [0.94 0.94 0.94]
+    Position: [560 528 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+</pre><img vspace="5" hspace="5" src="ST9Orbit_01.png" alt=""> <h2 id="6">Total mass</h2><pre class="codeinput"><span class="comment">%-----------</span>
+mass      = mSail + mSC;
+mSim      = length(mass);
+</pre><h2 id="7">Number of sim steps and duration</h2><pre class="codeinput"><span class="comment">%---------------------------------</span>
+nDays     = 2;
+dT        = 150;
+nSim      = ceil(nDays*86400/dT);
+</pre><h2 id="8">Plotting array</h2><pre class="codeinput"><span class="comment">%---------------</span>
+nPlot     = zeros(mSim,nSim);
+aPlot     = zeros(mSim,nSim);
+iPlot     = aPlot;
+WPlot     = aPlot;
+ePlot     = aPlot;
+accPlot   = aPlot;
+conePlot  = aPlot;
+clckPlot  = aPlot;
+sunAPlot  = aPlot;
+eclPlot   = zeros(mSim,nSim);
+</pre><h2 id="9">Run the simulation(s)</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+<span class="keyword">for</span> j = 1:mSim
+
+  <span class="comment">% Assume a specular sail and compute acceleration</span>
+  <span class="comment">%------------------------------------------------</span>
+  a0      = 2*Asail(j)*flux/cLight/mass(j)*m2km;
+
+  <span class="comment">% Initial conditions</span>
+  <span class="comment">%-------------------</span>
+  [r0,v0] = El2RV( el0, [], gravityModel.mu );
+  x       = [r0;v0];
+  jD      = jD0;
+
+  disp(<span class="string">'-----------------------------'</span>)
+  disp([<span class="string">'Simulation '</span> num2str(j)])
+  disp(<span class="string">'-----------------------------'</span>)
+  kS = 1;
+
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim );
+
+  <span class="keyword">for</span> k = 1:nSim
+</pre><pre class="codeinput">    [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+    <span class="comment">% Local variables</span>
+    <span class="comment">%----------------</span>
+    r = x(1:3);
+    v = x(4:6);
+
+    <span class="comment">% Control (thrust vector determination)</span>
+    <span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ST9Orbit_02.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_03.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_04.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_05.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_06.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_07.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_08.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_09.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_10.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_11.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_12.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_13.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_14.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_15.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_16.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_17.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_18.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_19.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_20.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_21.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_22.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_23.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_24.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_25.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_26.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_27.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_28.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_29.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_30.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_31.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_32.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_33.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_34.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_35.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_36.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_37.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_38.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_39.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_40.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_41.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_42.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_43.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_44.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_45.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_46.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_47.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_48.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_49.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_50.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_51.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_52.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_53.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_54.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_55.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_56.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_57.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_58.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_59.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_60.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_61.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_62.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_63.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_64.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_65.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_66.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_67.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_68.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_69.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_70.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_71.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_72.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_73.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_74.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_75.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_76.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_77.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_78.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_79.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_80.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_81.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_82.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_83.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_84.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_85.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_86.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_87.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_88.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_89.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_90.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_91.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_92.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_93.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_94.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_95.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_96.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_97.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_98.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_99.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_100.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_101.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_102.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_103.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_104.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_105.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_106.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_107.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_108.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_109.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_110.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_111.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_112.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_113.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_114.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_115.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_116.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_117.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_118.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_119.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_120.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_121.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_122.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_123.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_124.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_125.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_126.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_127.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_128.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_129.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_130.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_131.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_132.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_133.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_134.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_135.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_136.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_137.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_138.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_139.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_140.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_141.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_142.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_143.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_144.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_145.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_146.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_147.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_148.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_149.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_150.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_151.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_152.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_153.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_154.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_155.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_156.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_157.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_158.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_159.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_160.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_161.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_162.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_163.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_164.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_165.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_166.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_167.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_168.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_169.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_170.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_171.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_172.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_173.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_174.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_175.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_176.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_177.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_178.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_179.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_180.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_181.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_182.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_183.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_184.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_185.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_186.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_187.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_188.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_189.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_190.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_191.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_192.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_193.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_194.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_195.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_196.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_197.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_198.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_199.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_200.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_201.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_202.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_203.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_204.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_205.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_206.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_207.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_208.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_209.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_210.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_211.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_212.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_213.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_214.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_215.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_216.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_217.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_218.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_219.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_220.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_221.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_222.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_223.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_224.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_225.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_226.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_227.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_228.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_229.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_230.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_231.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_232.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_233.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_234.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_235.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_236.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_237.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_238.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_239.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_240.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_241.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_242.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_243.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_244.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_245.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_246.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_247.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_248.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_249.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_250.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_251.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_252.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_253.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_254.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_255.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_256.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_257.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_258.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_259.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_260.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_261.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_262.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_263.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_264.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_265.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_266.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_267.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_268.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_269.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_270.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_271.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_272.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_273.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_274.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_275.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_276.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_277.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_278.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_279.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_280.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_281.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_282.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_283.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_284.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_285.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_286.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_287.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_288.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_289.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_290.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_291.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_292.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_293.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_294.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_295.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_296.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_297.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_298.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_299.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_300.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_301.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_302.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_303.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_304.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_305.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_306.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_307.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_308.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_309.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_310.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_311.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_312.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_313.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_314.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_315.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_316.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_317.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_318.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_319.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_320.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_321.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_322.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_323.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_324.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_325.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_326.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_327.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_328.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_329.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_330.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_331.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_332.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_333.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_334.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_335.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_336.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_337.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_338.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_339.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_340.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_341.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_342.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_343.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_344.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_345.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_346.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_347.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_348.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_349.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_350.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_351.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_352.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_353.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_354.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_355.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_356.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_357.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_358.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_359.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_360.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_361.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_362.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_363.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_364.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_365.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_366.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_367.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_368.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_369.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_370.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_371.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_372.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_373.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_374.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_375.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_376.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_377.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_378.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_379.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_380.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_381.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_382.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_383.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_384.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_385.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_386.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_387.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_388.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_389.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_390.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_391.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_392.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_393.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_394.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_395.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_396.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_397.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_398.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_399.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_400.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_401.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_402.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_403.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_404.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_405.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_406.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_407.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_408.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_409.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_410.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_411.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_412.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_413.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_414.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_415.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_416.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_417.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_418.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_419.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_420.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_421.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_422.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_423.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_424.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_425.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_426.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_427.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_428.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_429.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_430.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_431.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_432.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_433.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_434.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_435.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_436.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_437.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_438.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_439.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_440.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_441.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_442.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_443.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_444.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_445.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_446.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_447.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_448.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_449.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_450.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_451.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_452.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_453.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_454.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_455.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_456.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_457.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_458.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_459.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_460.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_461.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_462.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_463.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_464.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_465.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_466.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_467.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_468.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_469.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_470.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_471.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_472.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_473.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_474.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_475.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_476.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_477.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_478.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_479.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_480.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_481.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_482.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_483.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_484.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_485.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_486.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_487.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_488.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_489.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_490.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_491.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_492.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_493.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_494.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_495.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_496.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_497.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_498.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_499.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_500.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_501.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_502.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_503.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_504.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_505.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_506.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_507.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_508.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_509.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_510.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_511.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_512.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_513.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_514.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_515.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_516.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_517.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_518.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_519.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_520.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_521.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_522.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_523.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_524.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_525.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_526.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_527.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_528.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_529.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_530.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_531.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_532.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_533.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_534.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_535.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_536.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_537.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_538.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_539.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_540.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_541.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_542.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_543.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_544.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_545.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_546.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_547.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_548.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_549.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_550.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_551.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_552.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_553.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_554.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_555.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_556.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_557.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_558.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_559.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_560.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_561.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_562.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_563.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_564.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_565.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_566.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_567.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_568.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_569.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_570.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_571.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_572.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_573.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_574.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_575.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_576.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_577.png" alt=""> <h2 id="11">First determine sail unit vector.</h2><pre class="codeinput">    [uS, rS] = SunV1( jD );
+    method = 2;
+    <span class="keyword">switch</span> method
+      <span class="keyword">case</span> 1
+</pre><h2 id="12">Method A: point to sun and check results</h2><pre class="codeinput">        u     = -uS;
+        alpha = 0;
+        delta = 0;
+</pre><pre class="codeinput">      <span class="keyword">case</span> 2
+</pre><h2 id="14">Method B: align towards v, semi-major axis grows</h2><p>Constant cone angle Clock angle rotates through 2pi each orbit The method creates an (unmodeled) gravity gradient torque</p><pre class="codeinput">        alpha           = atan(1/sqrt(2));
+        u               = cos(alpha)*-uS + sin(alpha)*Cross(uS,Cross(Unit(v),uS));
+        [cone, delta]   = UToConeClock( u, r, v, uS );
+</pre><pre class="codeinput">      <span class="keyword">case</span> 3
+        <span class="comment">% Method C: Align with LVLH and then yaw about z</span>
+        <span class="comment">% Cone and clock angles oscillate</span>
+        <span class="comment">% Orbit follows sun-synch</span>
+        qLVLH           = QLVLH( r, v );
+        <span class="comment">% Align body x axis to orbit normal</span>
+        qLVLHToBody     = Eul2Q([0;0;-pi/2]);
+        q0              = QMult( qLVLH, qLVLHToBody );
+        <span class="comment">% Rotate about z</span>
+        cone            = atan(1/sqrt(2));
+        q1              = QMult( q0, Eul2Q([0;0;cone]) );
+        u               = QTForm( q1, [1;0;0] );
+        [alpha, delta]  = UToConeClock( u, r, v, uS );
+      <span class="keyword">case</span> 4
+</pre><h2 id="16">Method D: point edge-on and check results (orbit precession)</h2><pre class="codeinput">        u               = -uS;
+        alpha           = pi/2;
+        delta           = 0;
+</pre><pre class="codeinput">    <span class="keyword">end</span>
+
+    <span class="comment">% Check for eclipses (should be permanently illuminated)</span>
+    [n,eclPlot(j,k)] = Eclipse( r, rS*uS );
+    accel          = a0*cos(alpha)^2;
+    d.a            = accel*u;
+
+    <span class="comment">% Plotting</span>
+    el             = RV2El( r, v, gravityModel.mu )';
+    aPlot(j,k)     = el(1);
+    iPlot(j,k)     = el(2)*180/pi;
+    WPlot(j,k)     = el(3)*180/pi;
+    ePlot(j,k)     = el(5);
+    accPlot(j,k)   = accel;
+    conePlot(j,k)  = alpha;
+    clckPlot(j,k)  = delta;
+    sunAPlot(j,k)  = acos(Dot(uS,Unit(Cross(r,v))));
+
+    <span class="comment">% Integrate the trajectory one step</span>
+    [x,hLast] = RK45( <span class="string">'FOrbCartH'</span>, x, dT, dT, 0.01*dT, 1e-10,<span class="keyword">...</span>
+		0, d.a, gravityModel, nN, nM, jD );
+    jD = jD + dT/86400;
+</pre><pre class="codeinput">  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+TimeGUI( <span class="string">'close'</span> );
+</pre><pre class="codeoutput">-----------------------------
+Simulation 1
+-----------------------------
+</pre><h2 id="19">Plot the results</h2><pre class="codeinput">tSec    = (0:(k-1))*dT;
+[t, tL] = TimeLabl( tSec );
+
+vec1    = 1:mSim;
+vec2    = mSim+1:2*mSim;
+vec3    = 2*mSim+1:3*mSim;
+
+Plot2D(t,[aPlot;iPlot;ePlot],tL,{<span class="string">'a'</span> <span class="string">'i (deg)'</span> <span class="string">'e'</span>},[<span class="string">'Elements'</span>],<span class="string">'lin'</span>,<span class="keyword">...</span>
+  {vec1,vec2,vec3})
+W2 = WPlot(:,1) + repmat(dW*tSec,mSim,1);
+Plot2D(t,[WPlot;W2],tL,<span class="string">'Right Ascension'</span>,<span class="string">'Orbit Progression Against Analytical'</span>);
+legend(num2str(sqrt(Asail)',3))
+Plot2D(t,sunAPlot*180/pi,tL,<span class="string">'Sun Angle (deg)'</span>,<span class="string">'Angle between orbit normal and the sun'</span>)
+Plot2D(t,accPlot*1e6,tL,<span class="string">'Acceleration (mm/s^2)'</span>)
+Plot2D(t,[conePlot;clckPlot],tL,{<span class="string">'\alpha'</span> <span class="string">'\delta'</span>},<span class="string">'Angles'</span>,<span class="string">'lin'</span>,<span class="keyword">...</span>
+  {vec1,vec2})
+Plot2D(t,eclPlot,tL,<span class="string">'Eclipse Type'</span>,<span class="string">'Eclipse Type (0 = none, 3 = total)'</span>)
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ST9Orbit_578.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_579.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_580.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_581.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_582.png" alt=""> <img vspace="5" hspace="5" src="ST9Orbit_583.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate semi-major axis change in a dawn-dusk sun-synchronous orbit.
+%   Uses a simple specular model for the solar pressure force.
+%   Integration tolerance must be tight enough to produce circular
+%   precessing orbit when sail is edge-on.
+%   Multiple sail angle laws are implemented in the code. Scroll down to
+%   select a method or add your own.
+%
+%   Default sail sizes are from 40 to 60 m square. The total spacecraft
+%   mass is on the order of 500 kg.
+%
+%   If one axis of the sail is aligned with LVLH, which alleviates gravity
+%   gradient torques, the semi-major axis change is on the order of 40 km
+%   in 15 days. The sun-synch orbit is closely maintained.
+%   The oscillations in semi-major axis change are due to the inclusion of
+%   the J2 gravity term, which is necessary for a sun-synch orbit.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Inertias, Cone, Eul2Q, QLVLH, QMult, QTForm, NPlot, Plot2D, 
+%  TimeLabl, Cross, Dot, RK45, Unit, Date2JD, LoadGravityModel, El2RV, 
+%  PltOrbit, RV2El, Eclipse, SunV1, Accel, UToConeClock, delta
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2006 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear d
+
+
+%% Set up the physical parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Asail         = 2000; % 3600 1600]; % Sail area in m2
+arealDensity  = 0.025; % Sail subsystem areal density in g/m2
+mSail         = Asail*arealDensity;   % Sail subsystem mass in kg
+Isail         = Inertias(mSail(1),[60 60],'plate'); % Inertia
+mSC           = 450; % mass of spacecraft, kg
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m2km          = 0.001;
+cLight        = 3e8;  % speed of light, m/s
+flux          = 1367; % Solar flux at 1 AU, W/m2
+dW            = 360/(365*86400); % deg/s
+rE            = 6378; % km
+gravityModel  = LoadGEM( 1 );
+
+nM            = 36; % Tesseral harmonics
+nN            = 36; % Zonal harmonics
+
+%% Epoch
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD0           = Date2JD([2010 3 15, 16 0 0]); 
+[uS, rS]      = SunV1( jD0 );
+
+%% Orbit geometry
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sma   = 7978.1;
+meanm = sqrt( gravityModel.mu/sma^3 );
+J2    = 0.001082;
+inc   = acos( -dW*pi/180/ (3*meanm*J2*rE^2/(2*sma^2)) );
+RA    = atan2(uS(1),uS(2));
+el0   = [sma;inc;RA;0;0;0];
+PltOrbit( el0, jD0, [0;0;1],'earth' )
+
+% ensure one or other is vector, not both
+if length(Asail) > 1 && length(mSC) > 1
+  error('Please make either Asail or mSC a vector, but not both.')
+end
+
+%% Total mass
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mass      = mSail + mSC;
+mSim      = length(mass);
+
+%% Number of sim steps and duration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nDays     = 2;
+dT        = 150;
+nSim      = ceil(nDays*86400/dT);
+
+%% Plotting array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nPlot     = zeros(mSim,nSim);
+aPlot     = zeros(mSim,nSim);
+iPlot     = aPlot;
+WPlot     = aPlot;
+ePlot     = aPlot;
+accPlot   = aPlot;
+conePlot  = aPlot;
+clckPlot  = aPlot;
+sunAPlot  = aPlot;
+eclPlot   = zeros(mSim,nSim);
+
+%% Run the simulation(s)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for j = 1:mSim
+  
+  % Assume a specular sail and compute acceleration
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  a0      = 2*Asail(j)*flux/cLight/mass(j)*m2km;
+
+  % Initial conditions
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [r0,v0] = El2RV( el0, [], gravityModel.mu );
+  x       = [r0;v0];
+  jD      = jD0;
+
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  disp(['Simulation ' num2str(j)])
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  kS = 1;
+  
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim );
+
+  for k = 1:nSim 
+    
+    [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+    % Local variables
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    r = x(1:3);
+    v = x(4:6);
+
+    % Control (thrust vector determination)
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    %% First determine sail unit vector.
+    [uS, rS] = SunV1( jD );
+    method = 2;
+    switch method
+      case 1
+        %% Method A: point to sun and check results
+        u     = -uS;
+        alpha = 0; 
+        delta = 0;
+      case 2
+        %% Method B: align towards v, semi-major axis grows
+        % Constant cone angle
+        % Clock angle rotates through 2pi each orbit
+        % The method creates an (unmodeled) gravity gradient torque
+        alpha           = atan(1/sqrt(2));
+        u               = cos(alpha)*-uS + sin(alpha)*Cross(uS,Cross(Unit(v),uS));
+        [cone, delta]   = UToConeClock( u, r, v, uS );
+      case 3
+        % Method C: Align with LVLH and then yaw about z
+        % Cone and clock angles oscillate
+        % Orbit follows sun-synch
+        qLVLH           = QLVLH( r, v );
+        % Align body x axis to orbit normal
+        qLVLHToBody     = Eul2Q([0;0;-pi/2]);
+        q0              = QMult( qLVLH, qLVLHToBody );
+        % Rotate about z
+        cone            = atan(1/sqrt(2));
+        q1              = QMult( q0, Eul2Q([0;0;cone]) );
+        u               = QTForm( q1, [1;0;0] );
+        [alpha, delta]  = UToConeClock( u, r, v, uS );
+      case 4
+        %% Method D: point edge-on and check results (orbit precession)
+        u               = -uS;
+        alpha           = pi/2; 
+        delta           = 0;
+
+    end
+
+    % Check for eclipses (should be permanently illuminated)
+    [n,eclPlot(j,k)] = Eclipse( r, rS*uS );
+    accel          = a0*cos(alpha)^2;
+    d.a            = accel*u;
+
+    % Plotting
+    el             = RV2El( r, v, gravityModel.mu )';
+    aPlot(j,k)     = el(1);
+    iPlot(j,k)     = el(2)*180/pi;
+    WPlot(j,k)     = el(3)*180/pi;
+    ePlot(j,k)     = el(5);
+    accPlot(j,k)   = accel;
+    conePlot(j,k)  = alpha;
+    clckPlot(j,k)  = delta;
+    sunAPlot(j,k)  = acos(Dot(uS,Unit(Cross(r,v))));
+
+    % Integrate the trajectory one step
+    [x,hLast] = RK45( 'FOrbCartH', x, dT, dT, 0.01*dT, 1e-10,...
+		0, d.a, gravityModel, nN, nM, jD );
+    jD = jD + dT/86400;
+
+  end
+end
+
+TimeGUI( 'close' );
+
+%% Plot the results
+tSec    = (0:(k-1))*dT;
+[t, tL] = TimeLabl( tSec );
+
+vec1    = 1:mSim;
+vec2    = mSim+1:2*mSim;
+vec3    = 2*mSim+1:3*mSim;
+
+Plot2D(t,[aPlot;iPlot;ePlot],tL,{'a' 'i (deg)' 'e'},['Elements'],'lin',...
+  {vec1,vec2,vec3})
+W2 = WPlot(:,1) + repmat(dW*tSec,mSim,1);
+Plot2D(t,[WPlot;W2],tL,'Right Ascension','Orbit Progression Against Analytical');
+legend(num2str(sqrt(Asail)',3))
+Plot2D(t,sunAPlot*180/pi,tL,'Sun Angle (deg)','Angle between orbit normal and the sun')
+Plot2D(t,accPlot*1e6,tL,'Acceleration (mm/s^2)')
+Plot2D(t,[conePlot;clckPlot],tL,{'\alpha' '\delta'},'Angles','lin',...
+  {vec1,vec2})
+Plot2D(t,eclPlot,tL,'Eclipse Type','Eclipse Type (0 = none, 3 = total)')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-11-12 15:26:40 -0500 (Mon, 12 Nov 2018) $
+% $Revision: 47432 $
+
+##### SOURCE END #####
+--></body></html>

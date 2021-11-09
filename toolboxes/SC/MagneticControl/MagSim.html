@@ -1,0 +1,587 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate a momentum bias spacecraft with magnetic roll/yaw control.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="MagSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate a momentum bias spacecraft with magnetic roll/yaw control.</h1><!--introduction--><p>The orbit is modeled and the spacecraft controls errors with respect to the LVLH frame. -------------------------------------------------------------------------   Specification ------------------------------------------------------------------------- The controller uses the momentum wheel to control pitch and magnetic torquer control for roll and yaw. The 3-axis controller is a 3-axis PD and torque demand is handed to the torquers. We assume that the torquers allow linear actuation. For the purposes of the simulation we compute the dipole required to meet the instantaneous torque demand. We ignore the disturbance the torquers create around pitch and also the momentum unloading system. This script is useful for sizing the control system.</p><p>The inertia in the three directions are Ix=120, Iy=120 and Iz=1.3. The satellite is in an equatorial orbit so that the field is almost normal to the orbit.</p><p>The damping ratios and natural frequencies are:</p><pre class="language-matlab">Tach <span class="string">loop:</span>
+zeta = 0.7621
+wN= 0.5
+</pre><pre class="language-matlab">Pitch <span class="string">and</span> <span class="string">Roll</span> <span class="string">loop:</span>
+zeta = 0.7621
+wN   = 0.009
+</pre><pre class="language-matlab">Yaw <span class="string">loop:</span>
+zeta = 1.0
+wN   = 0.15
+</pre><p>-------------------------------------------------------------------------  See also IC623X3, PDDesign, PIDesign, QForm, QLVLH, QMult, QPose,  Constant, NPlot, Plot2D, TimeGUI, RK4, JD2000, TOrbit, RVFromKepler,  MagField, SunV1 -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Constants</a></li><li><a href="#4">The control sampling period and the simulation integration time step</a></li><li><a href="#5">Number of sim steps</a></li><li><a href="#6">Plot every nPMax steps</a></li><li><a href="#7">spacecraft with respect to the sun projection in the orbit plane</a></li><li><a href="#8">Spacecraft Inertias</a></li><li><a href="#9">Wheel spin axis unit vector</a></li><li><a href="#10">Design the control loops</a></li><li><a href="#11">Tach loop</a></li><li><a href="#12">Attitude Loops</a></li><li><a href="#13">Initialize the control system</a></li><li><a href="#14">The sun sensors along +X and -X</a></li><li><a href="#15">Plotting arrays</a></li><li><a href="#16">Initialize the time display</a></li><li><a href="#17">Magnetic field</a></li><li><a href="#18">Generate the orbit</a></li><li><a href="#19">el = [a,i,W,w,e,M].</a></li><li><a href="#20">Initial conditions at equinox</a></li><li><a href="#21">Initial conditions</a></li><li><a href="#22">Get a step response</a></li><li><a href="#23">Run the simulation</a></li><li><a href="#24">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1999, 2007, 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 5.5 (2003)</span>
+<span class="comment">%   2016.1 Switch to newer IGRF11 model (from 1995 data) for the Earth</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad    = Constant(<span class="string">'deg to rad'</span>);
+radToDeg    = Constant(<span class="string">'rad to deg'</span>);
+</pre><h2 id="4">The control sampling period and the simulation integration time step</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------</span>
+tSamp       = 2;
+</pre><h2 id="5">Number of sim steps</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nSim        = 400;
+tEnd        = nSim*tSamp;
+</pre><h2 id="6">Plot every nPMax steps</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+nPMax       = 1;
+nPlot       = nSim/nPMax;
+
+<span class="comment">% Sun angle with respect to the orbit plane and location of the</span>
+</pre><h2 id="7">spacecraft with respect to the sun projection in the orbit plane</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------------</span>
+rOrbit      = 6700;
+mu          = 3.98600436e5;
+</pre><h2 id="8">Spacecraft Inertias</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+inr         = IC623X3( [120 120 1.3 0 0 0] );
+inrRWA      = 0.01; <span class="comment">% A guess</span>
+invInr      = inv(inr);
+</pre><h2 id="9">Wheel spin axis unit vector</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+uW          = [0;1;0];
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="10">Design the control loops</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="11">Tach loop</h2><pre class="codeinput"><span class="comment">%----------</span>
+[aTL,bTL,cTL,dTL] = PIDesign( 0.7621,  0.5, inrRWA, tSamp );
+</pre><h2 id="12">Attitude Loops</h2><pre class="codeinput"><span class="comment">%--------------</span>
+[aRoll ,bRoll, cRoll, dRoll]  = PDDesign( 0.7621, 0.009, 0.09, inr(1,1), tSamp );
+[aPitch,bPitch,cPitch,dPitch] = PDDesign( 0.7621, 0.009, 0.09, inr(2,2), tSamp );
+[aYaw,  bYaw,  cYaw,  dYaw]   = PDDesign( 1.0,    0.15,  1.5,  inr(3,3), tSamp );
+</pre><h2 id="13">Initialize the control system</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+xTL             = zeros(size(aTL,   1),1);
+xRoll           = zeros(size(aRoll, 1),1);
+xPitch          = zeros(size(aPitch,1),1);
+xYaw            = zeros(size(aYaw,  1),1);
+tC              = [0;0;0];
+wBias           = 100; <span class="comment">% Momentum wheel bias rate</span>
+xEst            = [2;2;2]*pi/180;
+rEst            = [0.1 0.1 0.1 0.1 0.1 0.1 0.1];
+fScale          = 1;
+p               = 10*eye(3);
+</pre><h2 id="14">The sun sensors along +X and -X</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+qBToS   = [cos(pi/4)  cos(pi/4);<span class="keyword">...</span>
+                   0          0;<span class="keyword">...</span>
+           sin(pi/4) -sin(pi/4);<span class="keyword">...</span>
+                   0          0];
+fOV     = [60 60;60 60]*degToRad;
+uS      = [0 0;0 0;1 1];
+</pre><h2 id="15">Plotting arrays</h2><pre class="codeinput"><span class="comment">%----------------</span>
+cPlot      = zeros( 4,nPlot);
+ePlot      = zeros( 3,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros( 8,nPlot);
+pPlot      = zeros( 3,nPlot);
+vPlot      = zeros( 3,nPlot);
+mPlot      = zeros( 3,nPlot);
+rVPlot     = zeros( 6,nPlot);
+bPlot      = zeros( 3,nPlot);
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+</pre><h2 id="16">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, <span class="string">'MagSim'</span> );
+</pre><img vspace="5" hspace="5" src="MagSim_01.png" alt=""> <h2 id="17">Magnetic field</h2><pre class="codeinput"><span class="comment">%---------------</span>
+magFieldData = load(<span class="string">'IGRF11'</span>);
+</pre><h2 id="18">Generate the orbit</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+tOrbit = (0:(nSim-1))*dTSim;
+</pre><h2 id="19">el = [a,i,W,w,e,M].</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+[rECI, vECI] = RVFromKepler( [rOrbit 0 0 0 0 0], tOrbit );
+</pre><h2 id="20">Initial conditions at equinox</h2><pre class="codeinput"><span class="comment">%------------------------------</span>
+jD     = JD2000 + tOrbit/86400 + 1000;
+</pre><h2 id="21">Initial conditions</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="comment">%                  q         w     wRWA</span>
+x      = [ QLVLH( rECI(:,1), vECI(:,1) ); [0;-sqrt(mu/rOrbit^3);0]; 100 ];
+uSun   =  SunV1( jD, rECI );
+</pre><h2 id="22">Get a step response</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+tDist   = [10;10;0]*1.e-6;
+tWF     = 0.0;
+tW      = 0;
+mDipole = zeros(3,1);
+</pre><h2 id="23">Run the simulation</h2><pre class="codeinput"><span class="comment">%------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  qECIToBody = x(1:4);
+
+  qLVLH      = QLVLH( rECI(:,k), vECI(:,k) ); <span class="comment">% The local vertical frame</span>
+
+  <span class="comment">% qLVLH  transforms from ECI to LVLH</span>
+  <span class="comment">% We want LVLH to Body</span>
+  <span class="comment">%-----------------------------------</span>
+  qLVLHToBody = QMult(  QPose( qLVLH ), qECIToBody );
+
+  <span class="keyword">if</span>( qLVLHToBody(1) &lt; 0 )
+    qLVLHToBody = - qLVLHToBody;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Small angles</span>
+  <span class="comment">%-------------</span>
+  roll  = -2*qLVLHToBody(2);
+  pitch = -2*qLVLHToBody(3);
+  yaw   = -2*qLVLHToBody(4);
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% The magnetic field</span>
+  <span class="comment">%-------------------</span>
+  b                = MagField( rECI(:,k), jD, 5, magFieldData.g, magFieldData.h );
+  bMeas            = QForm( qECIToBody, b );
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%--------</span>
+  <span class="keyword">if</span>( nP == 0 )
+    kP           = kP + 1;
+    xPlot(:,kP)  = x;
+    tPlot(1,kP)  = t;
+    cPlot(:,kP)  = [tC;tW];
+    ePlot(:,kP)  = [roll;pitch;yaw]*radToDeg;
+    rVPlot(:,kP) = [rECI(:,k);vECI(:,k)];
+    bPlot(:,kP)  = b;
+    mPlot(:,kP)  = mDipole;
+    nP           = nPMax - 1;
+  <span class="keyword">else</span>
+    nP           = nP - 1;
+  <span class="keyword">end</span>
+
+  wTach = x(8); <span class="comment">% Perfect tachometer</span>
+
+  <span class="comment">% The attitude control loops</span>
+  <span class="comment">%--------------------------</span>
+  tC(1)  = -cRoll*xRoll - dRoll*roll;
+  xRoll  =  aRoll*xRoll + bRoll*roll;
+
+  tC(2)  = -cPitch*xPitch - dPitch*pitch;
+  xPitch =  aPitch*xPitch + bPitch*pitch;
+
+  tC(3)  = -cYaw*xYaw - dYaw*yaw;
+  xYaw   =  aYaw*xYaw + bYaw*yaw;
+
+  tD     = tC; <span class="comment">% What we actually pass to the sim</span>
+
+  <span class="comment">% The torquers supply roll and yaw torques</span>
+  <span class="comment">% Our controller only uses the body y-field</span>
+  <span class="comment">% This will lead to disturbance in pitch which we are going to ignore</span>
+  <span class="comment">%--------------------------------------------------------------------</span>
+  mDipole(1) =  tC(3)/bMeas(3);
+  mDipole(3) = -tC(1)/bMeas(3);
+
+  <span class="comment">% The bias momentum is adjusted by the torque demand for pitch</span>
+  <span class="comment">%-------------------------------------------------------------</span>
+  dWBias = -tC(2)/inrRWA; <span class="comment">% Note we flip the sign</span>
+  tD(2)  = 0; <span class="comment">% Our magnetic torquer loops will not handle this now</span>
+  wBias  = wBias + dWBias;
+
+  <span class="comment">% The MWA Tach Loops</span>
+  <span class="comment">%------------------</span>
+  wError =  wTach - wBias;
+  tW     = -dTL*wError - cTL*xTL;
+  xTL    =  aTL*xTL + bTL*wError;
+
+  <span class="comment">%------------------------------------------------------------------------</span>
+  <span class="comment">% Update the equations of motion</span>
+  <span class="comment">%------------------------------------------------------------------------</span>
+  x        = RK4( <span class="string">'FMagSim'</span>, x, dTSim, t, inr, invInr, tDist + tD, inrRWA, uW, tW+tWF );
+  t        = t  + dTSim;
+  jD       = jD + dTSim/86400;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="MagSim_02.png" alt=""> <h2 id="24">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+xLbl = <span class="string">'Time (sec)'</span>;
+
+j = 1:kP;
+
+tPlot = tPlot(j);
+
+Plot2D( tPlot, xPlot(1:4,j),xLbl,[<span class="string">'Q_s'</span>;<span class="string">'Q_x'</span>;<span class="string">'Q_y'</span>;<span class="string">'Q_z'</span>],<span class="string">'Quaternion'</span>)
+Plot2D( tPlot, xPlot(5:7,j),xLbl,[<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>],<span class="string">'Body Rates'</span>)
+Plot2D( tPlot, xPlot(8,j),  xLbl,<span class="string">'Omega (rad/sec)'</span>,<span class="string">'Momentum Wheel'</span>)
+Plot2D( tPlot, cPlot(:,j),  xLbl,[<span class="string">'X'</span>;<span class="string">'Y'</span>;<span class="string">'Z'</span>;<span class="string">'W'</span>],<span class="string">'Control Torque Demand'</span>)
+Plot2D( tPlot, ePlot(:,j),  xLbl,[<span class="string">'Roll  (deg)'</span>;<span class="string">'Pitch (deg)'</span>;<span class="string">'Yaw   (deg)'</span>],<span class="string">'Measured Attitude Errors'</span>)
+Plot2D( tPlot, rVPlot(:,j), xLbl,{<span class="string">'x_{ECI}'</span>;<span class="string">'y_{ECI}'</span>;<span class="string">'z_{ECI}'</span>;<span class="string">'v_{XECI}'</span>;<span class="string">'v_{YECI}'</span>;<span class="string">'v_{XECI}'</span>},<span class="string">'Orbit'</span>)
+Plot2D( tPlot, bPlot(:,j),  xLbl,[<span class="string">'b_X '</span>;<span class="string">'b_Y '</span>;<span class="string">'b_Z '</span>],<span class="string">'Magnetic Field'</span>)
+Plot2D( tPlot, mPlot(:,j),  xLbl,[<span class="string">'m_X ATM^2'</span>;<span class="string">'m_Y ATM^2'</span>;<span class="string">'m_Z ATM^2'</span>],<span class="string">'Dipole control demand'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MagSim_03.png" alt=""> <img vspace="5" hspace="5" src="MagSim_04.png" alt=""> <img vspace="5" hspace="5" src="MagSim_05.png" alt=""> <img vspace="5" hspace="5" src="MagSim_06.png" alt=""> <img vspace="5" hspace="5" src="MagSim_07.png" alt=""> <img vspace="5" hspace="5" src="MagSim_08.png" alt=""> <img vspace="5" hspace="5" src="MagSim_09.png" alt=""> <img vspace="5" hspace="5" src="MagSim_10.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate a momentum bias spacecraft with magnetic roll/yaw control.
+% The orbit is modeled and the spacecraft controls errors with respect to 
+% the LVLH frame.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Specification
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% The controller uses the momentum wheel to control pitch and magnetic torquer
+% control for roll and yaw. The 3-axis controller is a 3-axis PD and 
+% torque demand is handed to the torquers. We assume that the torquers
+% allow linear actuation. For the purposes of the simulation we compute
+% the dipole required to meet the instantaneous torque demand. We ignore the
+% disturbance the torquers create around pitch and also the momentum unloading
+% system. This script is useful for sizing the control system.
+%
+% The inertia in the three directions are Ix=120, Iy=120 and Iz=1.3. The
+% satellite is in an equatorial orbit so that the field is almost normal to the orbit.
+% 
+% The damping ratios and natural frequencies are:
+% 
+%   Tach loop:
+%   zeta = 0.7621
+%   wN= 0.5
+% 
+%   Pitch and Roll loop:
+%   zeta = 0.7621
+%   wN   = 0.009
+% 
+%   Yaw loop:
+%   zeta = 1.0
+%   wN   = 0.15
+% 
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also IC623X3, PDDesign, PIDesign, QForm, QLVLH, QMult, QPose, 
+%  Constant, NPlot, Plot2D, TimeGUI, RK4, JD2000, TOrbit, RVFromKepler, 
+%  MagField, SunV1
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1999, 2007, 2016 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 5.5 (2003)
+%   2016.1 Switch to newer IGRF11 model (from 1995 data) for the Earth
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad    = Constant('deg to rad');
+radToDeg    = Constant('rad to deg');
+
+%% The control sampling period and the simulation integration time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSamp       = 2;
+
+%% Number of sim steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim        = 400;
+tEnd        = nSim*tSamp;
+
+%% Plot every nPMax steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nPMax       = 1;
+nPlot       = nSim/nPMax;
+
+% Sun angle with respect to the orbit plane and location of the 
+%% spacecraft with respect to the sun projection in the orbit plane
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rOrbit      = 6700; 
+mu          = 3.98600436e5;
+			     
+%% Spacecraft Inertias
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+inr         = IC623X3( [120 120 1.3 0 0 0] );
+inrRWA      = 0.01; % A guess
+invInr      = inv(inr);
+			     
+%% Wheel spin axis unit vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+uW          = [0;1;0]; 
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Design the control loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Tach loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[aTL,bTL,cTL,dTL] = PIDesign( 0.7621,  0.5, inrRWA, tSamp );
+
+%% Attitude Loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[aRoll ,bRoll, cRoll, dRoll]  = PDDesign( 0.7621, 0.009, 0.09, inr(1,1), tSamp );
+[aPitch,bPitch,cPitch,dPitch] = PDDesign( 0.7621, 0.009, 0.09, inr(2,2), tSamp );
+[aYaw,  bYaw,  cYaw,  dYaw]   = PDDesign( 1.0,    0.15,  1.5,  inr(3,3), tSamp );
+
+%% Initialize the control system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xTL             = zeros(size(aTL,   1),1);
+xRoll           = zeros(size(aRoll, 1),1);
+xPitch          = zeros(size(aPitch,1),1);
+xYaw            = zeros(size(aYaw,  1),1);
+tC              = [0;0;0];
+wBias           = 100; % Momentum wheel bias rate
+xEst            = [2;2;2]*pi/180;
+rEst            = [0.1 0.1 0.1 0.1 0.1 0.1 0.1];
+fScale          = 1;
+p               = 10*eye(3);
+
+%% The sun sensors along +X and -X
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+qBToS   = [cos(pi/4)  cos(pi/4);...
+                   0          0;...
+           sin(pi/4) -sin(pi/4);...
+                   0          0];
+fOV     = [60 60;60 60]*degToRad;
+uS      = [0 0;0 0;1 1];
+
+%% Plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cPlot      = zeros( 4,nPlot);
+ePlot      = zeros( 3,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros( 8,nPlot);
+pPlot      = zeros( 3,nPlot);
+vPlot      = zeros( 3,nPlot);
+mPlot      = zeros( 3,nPlot);
+rVPlot     = zeros( 6,nPlot);
+bPlot      = zeros( 3,nPlot);
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, 'MagSim' );
+
+%% Magnetic field
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+magFieldData = load('IGRF11');
+
+%% Generate the orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tOrbit = (0:(nSim-1))*dTSim;
+
+%% el = [a,i,W,w,e,M]. 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[rECI, vECI] = RVFromKepler( [rOrbit 0 0 0 0 0], tOrbit );
+
+%% Initial conditions at equinox
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD     = JD2000 + tOrbit/86400 + 1000;
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%                  q         w     wRWA
+x      = [ QLVLH( rECI(:,1), vECI(:,1) ); [0;-sqrt(mu/rOrbit^3);0]; 100 ];
+uSun   =  SunV1( jD, rECI );
+
+%% Get a step response
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tDist   = [10;10;0]*1.e-6;
+tWF     = 0.0;
+tW      = 0;
+mDipole = zeros(3,1);
+
+%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim 
+    
+  qECIToBody = x(1:4);
+ 
+  qLVLH      = QLVLH( rECI(:,k), vECI(:,k) ); % The local vertical frame
+  
+  % qLVLH  transforms from ECI to LVLH
+  % We want LVLH to Body
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qLVLHToBody = QMult(  QPose( qLVLH ), qECIToBody );
+  
+  if( qLVLHToBody(1) < 0 )
+    qLVLHToBody = - qLVLHToBody;
+  end
+  
+  % Small angles
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  roll  = -2*qLVLHToBody(2);
+  pitch = -2*qLVLHToBody(3);
+  yaw   = -2*qLVLHToBody(4);
+  
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+   
+  % The magnetic field
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  b                = MagField( rECI(:,k), jD, 5, magFieldData.g, magFieldData.h );
+  bMeas            = QForm( qECIToBody, b );
+   
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( nP == 0 )
+    kP           = kP + 1;
+    xPlot(:,kP)  = x;
+    tPlot(1,kP)  = t;
+    cPlot(:,kP)  = [tC;tW];
+    ePlot(:,kP)  = [roll;pitch;yaw]*radToDeg;
+    rVPlot(:,kP) = [rECI(:,k);vECI(:,k)];
+    bPlot(:,kP)  = b;
+    mPlot(:,kP)  = mDipole;
+    nP           = nPMax - 1;
+  else
+    nP           = nP - 1;
+  end
+   
+  wTach = x(8); % Perfect tachometer
+  
+  % The attitude control loops
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tC(1)  = -cRoll*xRoll - dRoll*roll;
+  xRoll  =  aRoll*xRoll + bRoll*roll;
+  
+  tC(2)  = -cPitch*xPitch - dPitch*pitch;
+  xPitch =  aPitch*xPitch + bPitch*pitch;
+  
+  tC(3)  = -cYaw*xYaw - dYaw*yaw;
+  xYaw   =  aYaw*xYaw + bYaw*yaw;
+
+  tD     = tC; % What we actually pass to the sim
+
+  % The torquers supply roll and yaw torques
+  % Our controller only uses the body y-field
+  % This will lead to disturbance in pitch which we are going to ignore
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  mDipole(1) =  tC(3)/bMeas(3);
+  mDipole(3) = -tC(1)/bMeas(3);
+
+  % The bias momentum is adjusted by the torque demand for pitch
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  dWBias = -tC(2)/inrRWA; % Note we flip the sign
+  tD(2)  = 0; % Our magnetic torquer loops will not handle this now
+  wBias  = wBias + dWBias;
+  
+  % The MWA Tach Loops
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wError =  wTach - wBias; 
+  tW     = -dTL*wError - cTL*xTL; 
+  xTL    =  aTL*xTL + bTL*wError;
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % Update the equations of motion
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x        = RK4( 'FMagSim', x, dTSim, t, inr, invInr, tDist + tD, inrRWA, uW, tW+tWF );
+  t        = t  + dTSim;
+  jD       = jD + dTSim/86400;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xLbl = 'Time (sec)';
+
+j = 1:kP;
+
+tPlot = tPlot(j);
+
+Plot2D( tPlot, xPlot(1:4,j),xLbl,['Q_s';'Q_x';'Q_y';'Q_z'],'Quaternion')
+Plot2D( tPlot, xPlot(5:7,j),xLbl,['\omega_x';'\omega_y';'\omega_z'],'Body Rates')
+Plot2D( tPlot, xPlot(8,j),  xLbl,'Omega (rad/sec)','Momentum Wheel')
+Plot2D( tPlot, cPlot(:,j),  xLbl,['X';'Y';'Z';'W'],'Control Torque Demand')
+Plot2D( tPlot, ePlot(:,j),  xLbl,['Roll  (deg)';'Pitch (deg)';'Yaw   (deg)'],'Measured Attitude Errors')
+Plot2D( tPlot, rVPlot(:,j), xLbl,{'x_{ECI}';'y_{ECI}';'z_{ECI}';'v_{XECI}';'v_{YECI}';'v_{XECI}'},'Orbit')
+Plot2D( tPlot, bPlot(:,j),  xLbl,['b_X ';'b_Y ';'b_Z '],'Magnetic Field')
+Plot2D( tPlot, mPlot(:,j),  xLbl,['m_X ATM^2';'m_Y ATM^2';'m_Z ATM^2'],'Dipole control demand')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 14:37:50 -0400 (Thu, 28 May 2020) $
+% $Revision: 52512 $
+
+##### SOURCE END #####
+--></body></html>

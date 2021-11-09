@@ -1,0 +1,300 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Collision monitoring demo: compare CollisionSurvey and coarse methods.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-02"><meta name="DC.source" content="CollisionCompareDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Collision monitoring demo: compare CollisionSurvey and coarse methods.</h1><!--introduction--><pre>------------------------------------------------------------------------
+References:
+J. Russell Carpenter, "Conservative Analytical Collision Probability for
+Design of Orbital Formations", Goddard Space Flight Center, 2004.
+Mark Campbell, "Collision Monitoring Within Satellite Clusters", IEEE
+TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY, VOL. 13, NO. 1, JANUARY 2005
+------------------------------------------------------------------------
+See also Plot2D, Plot3D, IntersectLineAndEllipsoid, Mag, Unit,
+CoarseProb, CollisionInit, CollisionMonteCarlo, CollisionSurvey,
+VerifyCollStruct, FFEccLawdensEqns, ManeuverStruct2AccelVector, M2NuAbs
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Comparison to Carpenter's 'coarse' method</a></li><li><a href="#3">Plot results of the two methods</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2005 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 7.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">% Setup plausible conditions</span>
+[dColl, y, mvr1, mvr2]  = CollisionInit(1);
+dColl.initBounds = dColl.initBounds*10; <span class="comment">% optional, adjust initial uncertainty</span>
+dColl = VerifyCollStruct( dColl );
+
+<span class="comment">% 4-sigma ellipsoids</span>
+dColl.scalev = 4;
+dColl = VerifyCollStruct( dColl );
+disp(<span class="string">'First calculate 4-sigma distances and probabilities...'</span>)
+tic
+[prob, dMin, xhat, Shat, tProp] = CollisionSurvey(dColl,0,[y(:,2)-y(:,1)],mvr1,mvr2);
+toc
+<span class="comment">% propagate Hills state of self</span>
+nu0 = M2NuAbs(dColl.eRef,dColl.MRef);
+nuF = M2NuAbs(dColl.eRef,dColl.MRef+dColl.rate*tProp);
+xH1 = FFEccLawdensEqns( y(:,1), nu0, nuF, dColl.eRef, dColl.rate );
+
+<span class="comment">% plot algorithm results</span>
+Plot2D([tProp-tProp(1)]/3600,[1000*cell2mat(dMin);cell2mat(prob)],<span class="string">'Elapsed Time (hours)'</span>,<span class="keyword">...</span>
+  char({<span class="string">'Minimum Distance (m)'</span>,<span class="string">'Probability'</span>}),<span class="string">'Set Membership Results'</span>);
+subplot(2,1,1); hold <span class="string">on</span>;
+plot([tProp-tProp(1)]/3600,1000*Mag(xhat{1}(1:3,:)),<span class="string">'--'</span>)
+xhatA{1} = xhat{1} + xH1;
+xhatA{2} = xH1;
+Plot3D(xhatA{1}(1:3,:),<span class="string">'X'</span>,<span class="string">'Y'</span>,<span class="string">'Z'</span>,<span class="string">'Ellipsoid Centers'</span>);  axis <span class="string">equal</span>; view(3)
+Shat{2} = repmat(diag([1 1 1]*(dColl.lenSC/1000)^2),[1,1,length(tProp)]);
+<span class="comment">%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Shat,'c',{[0.7;0;0] [0;0.7;0]}),@AnimateEllipsoids,tProp);</span>
+S = zeros(3,length(tProp));
+<span class="keyword">for</span> k = 1:length(tProp)
+  S(:,k) = sqrt(svd(Shat{1}(1:3,1:3,k)));
+<span class="keyword">end</span>
+Plot2D(tProp/3600,S,<span class="string">'Time (hr)'</span>,<span class="string">'S_{k} (km)'</span>,<span class="string">'Ellipsoid Axes'</span>,<span class="string">'ylog'</span>);
+
+<span class="comment">%-------------------------------------------</span>
+</pre><pre class="codeoutput">First calculate 4-sigma distances and probabilities...
+Elapsed time is 0.142613 seconds.
+</pre><img vspace="5" hspace="5" src="CollisionCompareDemo_01.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_02.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_03.png" alt=""> <h2 id="2">Comparison to Carpenter's 'coarse' method</h2><pre class="codeinput"><span class="comment">%-------------------------------------------</span>
+
+<span class="comment">% 1-sigma ellipsoids</span>
+dColl.scalev = 1;
+dColl = VerifyCollStruct( dColl );
+disp(<span class="string">'Calculate 1-sigma ellipsoids...'</span>)
+[prob1, dMin1, xhat1, Shat1, tProp1] = CollisionSurvey(dColl,0,[y(:,2)-y(:,1)],mvr1,mvr2);
+
+<span class="comment">% coarse probability</span>
+disp(<span class="string">'Coarse probability method, using ellipsoids...'</span>);
+probC  = zeros(1,length(tProp));
+rAvoid = dColl.lenSC/2/1000;
+<span class="keyword">for</span> k = 1:length(tProp)
+  [u, s]    = svd(Shat1{1}(1:3,1:3,k));
+  yI        = IntersectLineAndEllipsoid( [0;0;0], u'*Unit(-xhat1{1}(1:3,k)), sqrt(diag(s)) );
+  sigmaU    = Mag(yI);
+  probC(k)  = CoarseProb(Mag(xhat1{1}(1:3,k)),rAvoid,sigmaU+rAvoid);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Calculate 1-sigma ellipsoids...
+Coarse probability method, using ellipsoids...
+</pre><h2 id="3">Plot results of the two methods</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+tPlot = [tProp-tProp(1)]/3600;
+Plot2D(tPlot,[prob{1};probC],<span class="string">'Elapsed Time (hours)'</span>,<span class="keyword">...</span>
+  char({<span class="string">'Ellipsoid Method'</span>,<span class="string">'Coarse Method'</span>}),<span class="string">'Comparison of Probability Methods'</span>);
+dNom = Mag(xhat1{1}(1:3,:));
+Plot2D(tPlot,[dNom;dMin1{1};dMin{1}],<span class="string">'Elapsed Time (hours)'</span>,<span class="keyword">...</span>
+  char({<span class="string">'Nominal Sep (km)'</span>,<span class="string">'1\sigma Min Distance'</span>,<span class="string">'Both Metrics'</span>}),<span class="keyword">...</span>
+  <span class="string">'Distance Metrics'</span>,<span class="string">'lin'</span>,{1,2,[1 2 3]});
+legend(<span class="string">'d nom'</span>,<span class="string">'d 1\sigma'</span>,<span class="string">'d 4\sigma'</span>)
+subplot(3,1,1)
+[dNomM,iMin] = min(dNom);
+text(tPlot(iMin)-0.5,3.2,sprintf(<span class="string">'d_{min} = %5.2f'</span>,dNomM));
+subplot(3,1,2)
+[dMinM,iMin] = min(dMin1{1});
+text(tPlot(iMin)-0.5,3.2,sprintf(<span class="string">'d_{min} = %5.2f'</span>,dMinM));
+
+<span class="comment">% Monte-Carlo simulations for 'actual' probability of collision</span>
+<span class="comment">%--------------------------------------------------------------</span>
+disp(<span class="string">'Monte-Carlo simulations using CollisionMonteCarlo'</span>);
+M   = dColl.MRef+dColl.rate*tProp;
+aC2 = ManeuverStruct2AccelVector( mvr2, tProp );
+[prob,dMin,tMin,drH] = CollisionMonteCarlo( dColl, y(:,2)-y(:,1), aC2, tProp, M );
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Monte-Carlo simulations using CollisionMonteCarlo
+Generate matrices...
+Propagate...
+    50
+   100
+   150
+   200
+   250
+   300
+   350
+   400
+   450
+   500
+   550
+   600
+   650
+   700
+   750
+   800
+   850
+   900
+   950
+        1000
+Probability of collision:
+     0
+</pre><img vspace="5" hspace="5" src="CollisionCompareDemo_04.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_05.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_06.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_07.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_08.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_09.png" alt=""> <img vspace="5" hspace="5" src="CollisionCompareDemo_10.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Collision monitoring demo: compare CollisionSurvey and coarse methods.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  References: 
+%  J. Russell Carpenter, "Conservative Analytical Collision Probability for
+%  Design of Orbital Formations", Goddard Space Flight Center, 2004.
+%  Mark Campbell, "Collision Monitoring Within Satellite Clusters", IEEE 
+%  TRANSACTIONS ON CONTROL SYSTEMS TECHNOLOGY, VOL. 13, NO. 1, JANUARY 2005  
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, Plot3D, IntersectLineAndEllipsoid, Mag, Unit, 
+%  CoarseProb, CollisionInit, CollisionMonteCarlo, CollisionSurvey, 
+%  VerifyCollStruct, FFEccLawdensEqns, ManeuverStruct2AccelVector, M2NuAbs
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 2005 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Since version 7.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Setup plausible conditions
+[dColl, y, mvr1, mvr2]  = CollisionInit(1);
+dColl.initBounds = dColl.initBounds*10; % optional, adjust initial uncertainty
+dColl = VerifyCollStruct( dColl );
+
+% 4-sigma ellipsoids
+dColl.scalev = 4;
+dColl = VerifyCollStruct( dColl );
+disp('First calculate 4-sigma distances and probabilities...')
+tic
+[prob, dMin, xhat, Shat, tProp] = CollisionSurvey(dColl,0,[y(:,2)-y(:,1)],mvr1,mvr2); 
+toc
+% propagate Hills state of self
+nu0 = M2NuAbs(dColl.eRef,dColl.MRef);
+nuF = M2NuAbs(dColl.eRef,dColl.MRef+dColl.rate*tProp);
+xH1 = FFEccLawdensEqns( y(:,1), nu0, nuF, dColl.eRef, dColl.rate );
+
+% plot algorithm results
+Plot2D([tProp-tProp(1)]/3600,[1000*cell2mat(dMin);cell2mat(prob)],'Elapsed Time (hours)',...
+  char({'Minimum Distance (m)','Probability'}),'Set Membership Results');
+subplot(2,1,1); hold on;
+plot([tProp-tProp(1)]/3600,1000*Mag(xhat{1}(1:3,:)),'REPLACE_WITH_DASH_DASH')
+xhatA{1} = xhat{1} + xH1;
+xhatA{2} = xH1;
+Plot3D(xhatA{1}(1:3,:),'X','Y','Z','Ellipsoid Centers');  axis equal; view(3)
+Shat{2} = repmat(diag([1 1 1]*(dColl.lenSC/1000)^2),[1,1,length(tProp)]);
+%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Shat,'c',{[0.7;0;0] [0;0.7;0]}),@AnimateEllipsoids,tProp);
+S = zeros(3,length(tProp));
+for k = 1:length(tProp)
+  S(:,k) = sqrt(svd(Shat{1}(1:3,1:3,k)));
+end
+Plot2D(tProp/3600,S,'Time (hr)','S_{k} (km)','Ellipsoid Axes','ylog');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Comparison to Carpenter's 'coarse' method
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% 1-sigma ellipsoids
+dColl.scalev = 1;
+dColl = VerifyCollStruct( dColl );
+disp('Calculate 1-sigma ellipsoids...')
+[prob1, dMin1, xhat1, Shat1, tProp1] = CollisionSurvey(dColl,0,[y(:,2)-y(:,1)],mvr1,mvr2);
+
+% coarse probability
+disp('Coarse probability method, using ellipsoids...');
+probC  = zeros(1,length(tProp));
+rAvoid = dColl.lenSC/2/1000;
+for k = 1:length(tProp)
+  [u, s]    = svd(Shat1{1}(1:3,1:3,k));
+  yI        = IntersectLineAndEllipsoid( [0;0;0], u'*Unit(-xhat1{1}(1:3,k)), sqrt(diag(s)) );
+  sigmaU    = Mag(yI);
+  probC(k)  = CoarseProb(Mag(xhat1{1}(1:3,k)),rAvoid,sigmaU+rAvoid);
+end
+
+%% Plot results of the two methods
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH       
+tPlot = [tProp-tProp(1)]/3600;
+Plot2D(tPlot,[prob{1};probC],'Elapsed Time (hours)',...
+  char({'Ellipsoid Method','Coarse Method'}),'Comparison of Probability Methods');
+dNom = Mag(xhat1{1}(1:3,:));
+Plot2D(tPlot,[dNom;dMin1{1};dMin{1}],'Elapsed Time (hours)',...
+  char({'Nominal Sep (km)','1\sigma Min Distance','Both Metrics'}),...
+  'Distance Metrics','lin',{1,2,[1 2 3]});
+legend('d nom','d 1\sigma','d 4\sigma')
+subplot(3,1,1)
+[dNomM,iMin] = min(dNom);
+text(tPlot(iMin)-0.5,3.2,sprintf('d_{min} = %5.2f',dNomM));
+subplot(3,1,2)
+[dMinM,iMin] = min(dMin1{1});
+text(tPlot(iMin)-0.5,3.2,sprintf('d_{min} = %5.2f',dMinM));
+
+% Monte-Carlo simulations for 'actual' probability of collision
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('Monte-Carlo simulations using CollisionMonteCarlo');
+M   = dColl.MRef+dColl.rate*tProp;
+aC2 = ManeuverStruct2AccelVector( mvr2, tProp );
+[prob,dMin,tMin,drH] = CollisionMonteCarlo( dColl, y(:,2)-y(:,1), aC2, tProp, M );
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-12-09 $
+% $Revision: d1703fa1572421ea6704b02728772559c76f0beb $
+
+##### SOURCE END #####
+--></body></html>

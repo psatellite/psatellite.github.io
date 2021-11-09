@@ -1,0 +1,1071 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Generate the Spacecraft Fuel Budget.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="SCFuelBudget.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Generate the Spacecraft Fuel Budget.</h1><!--introduction--><p>Uses data from DefaultSpacecraftDataFile. Loads the TwoArraySC.mat model. -------------------------------------------------------------------------  See also DVHoh, FBudget, BDDesign, MolWt2R -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">clear variables used in this demo</a></li><li><a href="#3">Specify spacecraft variant</a></li><li><a href="#4">Load thruster parameters</a></li><li><a href="#5">Spacecraft data</a></li><li><a href="#6">Compute the delta-v for a coplanar Hohmann transfer</a></li><li><a href="#7">Events and whether thrusters are used</a></li><li><a href="#8">Create the fuel budget</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2001 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">clear variables used in this demo</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+clear <span class="string">f</span> <span class="string">x</span> <span class="string">event</span> <span class="string">d</span>
+</pre><h2 id="3">Specify spacecraft variant</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+g      = load(<span class="string">'TwoArraySC'</span>);
+inr    = g.mass.inertia;
+cM     = g.mass.cM;
+mTotal = g.mass.mass;
+</pre><h2 id="4">Load thruster parameters</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+d      = load(<span class="string">'DefaultSpacecraftDataFile'</span>);
+d      = d.thruster;
+tNom   = d.temperatureTank;
+pInit  = d.pressure;
+pFinal = 100*6895;      <span class="comment">% Pa</span>
+rhoF   = d.densityFuel;
+temp   = d.temperatureTank;
+massF  = d.massFuel;
+u      = d.u;
+r      = d.r;
+
+<span class="keyword">for</span> k = 1:8
+	f(k).iSP      = [100 110 10];
+	f(k).thrust   = d.thrustCoefficient(1);
+	f(k).riseTime = 0.016;
+	f(k).fallTime = 0.016;
+	f(k).u        = u(:,k);
+	f(k).r        = r(:,k);
+	f(k).systemID = 1;
+	f(k).type     = <span class="string">'liquid'</span>;
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> k = 9:12
+	f(k).iSP      = [100 120 10];
+	f(k).thrust   = d.thrustCoefficient(9);
+	f(k).riseTime = 0.016;
+	f(k).fallTime = 0.016;
+	f(k).u        = u(:,k);
+	f(k).r        = r(:,k);
+	f(k).systemID = 1;
+	f(k).type     = <span class="string">'liquid'</span>;
+<span class="keyword">end</span>
+
+[v, mP] = BDDesign( massF, rhoF, tNom, pInit, pFinal  );
+</pre><h2 id="5">Spacecraft data</h2><pre class="codeinput"><span class="comment">%------------------</span>
+x.regulatedPressure = pInit;
+x.systemType        = [<span class="string">'liquid'</span>];
+x.systemTemp        = temp;
+x.systemVol         = v;
+x.systemFuel        = massF;
+x.thrust            = 0;
+x.pressurantMass    = mP;
+x.pressurantR       = MolWt2R( 0.004 );
+x.dryMass           = mTotal-massF;
+x.fuelDensity       = rhoF;
+x.thrusterData      = f;
+x.controlDT         = 1;
+</pre><h2 id="6">Compute the delta-v for a coplanar Hohmann transfer</h2><p>This is a function included in the Orbit Module. A portion of the function is provided below to run this demo. r1 is initial orbit radius, r2 is target orbit radius, result is Delta-v --------------------------------------------------------------------</p><pre class="codeinput"><span class="keyword">if</span>( ~exist(<span class="string">'DVHoh'</span>,<span class="string">'file'</span>) )
+    mu = 3.98600436e5;
+    DVHoh = @(r1, r2) sqrt(2*mu/r1 - mu/((r1+r2)/2)) - sqrt(mu/r1) + sqrt(mu/r2) - sqrt(2*mu/r2 - mu/((r1+r2)/2));
+<span class="keyword">end</span>
+</pre><h2 id="7">Events and whether thrusters are used</h2><pre>-------------------------------------
+1	Shuttle separation using SHELS	No
+2	Orbit the shuttle at 500 m for 30 minutes	Yes
+3	Perform initial burn for TechSat-21 rendezvous	Yes
+4	Perform course correction for TechSat-21 rendezvous	Yes
+5	Radar acquisition of the TechSat-21 cluster at 100 km	No
+6	Maneuver to stable position wrt cluster 5 km behind cluster cm	Yes
+7	Establish ISL	No
+8	Maneuver to within 100 m of TechSat-21 spacecraft	Yes
+9	Orbit TechSat-21 at 100 m for 1 hour	Yes
+10	Close to 9 m	Yes
+11	Orbit at 9 m testing vision system	Yes
+12	Close to 1 m	Yes
+13	Separate to 6 m	Yes
+14	Orbit at 6 m for 30 minutes	Yes
+15	Separate to stable position 1 km from cm of cluster	Yes
+16-23	Repeat 8-15 with a second spaceccraft	Yes
+24	Separate from the cluster	Yes
+25	Put spacecraft into a safe orbit	Yes</pre><pre class="codeinput">k      = 1;
+event(k).type         = <span class="string">'initial'</span>;
+event(k).description  = <span class="string">'[ 1] Initial State'</span>;
+event(k).aCSThruster   = [];
+event(k).dVThruster    = [];
+event(k).dVTotal       = [];
+event(k).dHTotal       = [];
+event(k).disturbance   = [];
+event(k).pulsewidthACS =  0;
+event(k).pulsewidthDV  =  0;
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[ 2] Orbit Shuttle'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 60;
+event(k).circular.radius   = 500;
+event(k).circular.duration = 120;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[ 3] Large burn to rendezvous'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6578, 7000 ))*1000; <span class="comment">% 200 km shuttle orbit</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[ 4] Correction to rendezvous'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6878, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[ 6] Close to 5 km'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6900, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[ 8] Close to 100 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6995, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[ 9] Orbit TechSat-21 at 100 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 100;
+event(k).circular.duration = 60;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[10] Close to 9 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6999.9, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[11] Orbit TechSat-21 at 9 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 9;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[12] Close to 1 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6999.991, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[13] Separate to 6 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 7000, 6999.994 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[14] Orbit TechSat-21 at 6 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 6;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[15] Separate to  5 km'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 7000, 6995 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[16] Close to 100 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6995, 7000 ))*1000; <span class="comment">% Equivalent to small burn</span>
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[17] Orbit TechSat-21 at 100 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 100;
+event(k).circular.duration = 60;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[18] Close to 9 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0539;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[19] Orbit TechSat-21 at 9 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 9;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[20] Close to 1 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0049;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[21] Separate to 6 m'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0032;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = <span class="string">'circular'</span>;
+event(k).description      = <span class="string">'[22] Orbit TechSat-21 at 6 m'</span>;
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 6;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[23] Separate to  5 km'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 2.7;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[24] Separate from cluster'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 25.8;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[25] Maneuver to safe orbit-delta a'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 12.59;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = <span class="string">'delta-v'</span>;
+event(k).description   = <span class="string">'[25] Maneuver to safe orbit-delta i'</span>;
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 147;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+</pre><h2 id="8">Create the fuel budget</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+fprintf(<span class="string">'\n\n-----------------------------------------\n'</span>)
+<span class="keyword">if</span>( exist(<span class="string">'FBudget'</span>,<span class="string">'file'</span>) )
+  FBudget( event, x, <span class="string">'SpacecraftFuelBudget'</span>, <span class="string">'Spacecraft'</span> )
+  disp(<span class="string">'-----------------------------------------'</span>)
+  type <span class="string">'SpacecraftFuelBudget'</span>
+<span class="keyword">end</span>
+[ylab{1:k}]=deal(event.description);
+dvt = zeros(1,k);
+<span class="keyword">for</span> i=1:k
+  <span class="keyword">if</span>( ~isempty(event(i).dVTotal) )
+    dvt(i)=event(i).dVTotal;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+NewFig(<span class="string">'SCFuelBudget'</span>)
+j = find(abs(dvt)&gt;0);
+barh(dvt(j))
+set(gca,<span class="string">'ytick'</span>,1:length(j),<span class="string">'yticklabel'</span>,ylab(j)')
+xlabel(<span class="string">'Delta-V (m/s)'</span>)
+grid <span class="string">on</span>
+title(<span class="string">'Delta-V History'</span>)
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+
+-----------------------------------------
+
+Spacecraft Propellant budget 31-Dec-2019
+
+-----------------------------------------
+
+Item  Description                            Total   ACS Isp  DV Isp   Fuel Remaining  Fuel Used     Pressure 
+  1   [ 1] Initial State                      81.70     0.00    0.00            40.53      0.000      2.4e+06
+  2   [ 2] Orbit Shuttle                      81.56   100.00  230.00            40.39      0.139      2.4e+06
+  3   [ 3] Large burn to rendezvous           73.38   100.00  230.00            32.21      8.175      2.4e+06
+  4   [ 4] Correction to rendezvous           71.25   100.00  230.00            30.08      2.136      2.4e+06
+  5   [ 6] Close to 5 km                      69.55   100.00  230.00            28.38      1.700      2.4e+06
+  6   [ 8] Close to 100 m                     69.46   100.00  230.00            28.30      0.083      2.4e+06
+  7   [ 9] Orbit TechSat-21 at 100 m          69.39   100.00  230.00            28.22      0.077      2.4e+06
+  8   [10] Close to 9 m                       69.38   100.00  102.81            28.21      0.004      2.4e+06
+  9   [11] Orbit TechSat-21 at 9 m            69.37   100.00  230.00            28.20      0.014      2.4e+06
+ 10   [12] Close to 1 m                       69.37   100.00  100.25            28.20      0.000      2.4e+06
+ 11   [13] Separate to 6 m                    69.37   100.00  100.17            28.20      0.000      2.4e+06
+ 12   [14] Orbit TechSat-21 at 6 m            69.36   100.00  230.00            28.19      0.009      2.4e+06
+ 13   [15] Separate to  5 km                  69.28   100.00  230.00            28.11      0.083      2.4e+06
+ 14   [16] Close to 100 m                     69.19   100.00  230.00            28.02      0.083      2.4e+06
+ 15   [17] Orbit TechSat-21 at 100 m          69.12   100.00  230.00            27.95      0.077      2.4e+06
+ 16   [18] Close to 9 m                       69.11   100.00  102.80            27.94      0.004      2.4e+06
+ 17   [19] Orbit TechSat-21 at 9 m            69.10   100.00  230.00            27.93      0.014      2.4e+06
+ 18   [20] Close to 1 m                       69.10   100.00  100.25            27.93      0.000      2.4e+06
+ 19   [21] Separate to 6 m                    69.10   100.00  100.17            27.93      0.000      2.4e+06
+ 20   [22] Orbit TechSat-21 at 6 m            69.09   100.00  230.00            27.92      0.009      2.4e+06
+ 21   [23] Separate to  5 km                  69.01   100.00  230.00            27.84      0.083      2.4e+06
+ 22   [24] Separate from cluster              68.22   100.00  230.00            27.05      0.785      2.4e+06
+ 23   [25] Maneuver to safe orbit-delta a     67.84   100.00  230.00            26.67      0.380      2.4e+06
+ 24   [25] Maneuver to safe orbit-delta i     63.56   100.00  230.00            22.39      4.281      2.4e+06
+</pre><img vspace="5" hspace="5" src="SCFuelBudget_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Generate the Spacecraft Fuel Budget. 
+% Uses data from DefaultSpacecraftDataFile.
+% Loads the TwoArraySC.mat model.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also DVHoh, FBudget, BDDesign, MolWt2R
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  Copyright (c) 2001 Princeton Satellite Systems, Inc.
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% clear variables used in this demo
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+clear f x event d
+
+%% Specify spacecraft variant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g      = load('TwoArraySC');
+inr    = g.mass.inertia;
+cM     = g.mass.cM;
+mTotal = g.mass.mass;
+
+%% Load thruster parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d      = load('DefaultSpacecraftDataFile');
+d      = d.thruster;
+tNom   = d.temperatureTank;
+pInit  = d.pressure;
+pFinal = 100*6895;      % Pa
+rhoF   = d.densityFuel;
+temp   = d.temperatureTank;
+massF  = d.massFuel;
+u      = d.u;
+r      = d.r;
+
+for k = 1:8
+	f(k).iSP      = [100 110 10];
+	f(k).thrust   = d.thrustCoefficient(1);
+	f(k).riseTime = 0.016;
+	f(k).fallTime = 0.016;
+	f(k).u        = u(:,k);
+	f(k).r        = r(:,k);
+	f(k).systemID = 1;
+	f(k).type     = 'liquid';
+end
+
+for k = 9:12
+	f(k).iSP      = [100 120 10];
+	f(k).thrust   = d.thrustCoefficient(9);
+	f(k).riseTime = 0.016;
+	f(k).fallTime = 0.016;
+	f(k).u        = u(:,k);
+	f(k).r        = r(:,k);
+	f(k).systemID = 1;
+	f(k).type     = 'liquid';
+end
+
+[v, mP] = BDDesign( massF, rhoF, tNom, pInit, pFinal  );
+
+%%  Spacecraft data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x.regulatedPressure = pInit;
+x.systemType        = ['liquid'];
+x.systemTemp        = temp;
+x.systemVol         = v;
+x.systemFuel        = massF;
+x.thrust            = 0;
+x.pressurantMass    = mP;
+x.pressurantR       = MolWt2R( 0.004 );
+x.dryMass           = mTotal-massF;
+x.fuelDensity       = rhoF;
+x.thrusterData      = f;
+x.controlDT         = 1;
+
+%% Compute the delta-v for a coplanar Hohmann transfer
+% This is a function included in the Orbit Module. A portion of the
+% function is provided below to run this demo. 
+% r1 is initial orbit radius, r2 is target orbit radius, result is Delta-v
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( ~exist('DVHoh','file') )
+    mu = 3.98600436e5;
+    DVHoh = @(r1, r2) sqrt(2*mu/r1 - mu/((r1+r2)/2)) - sqrt(mu/r1) + sqrt(mu/r2) - sqrt(2*mu/r2 - mu/((r1+r2)/2));
+end
+
+%% Events and whether thrusters are used
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% 1	Shuttle separation using SHELS	No
+% 2	Orbit the shuttle at 500 m for 30 minutes	Yes
+% 3	Perform initial burn for TechSat-21 rendezvous	Yes
+% 4	Perform course correction for TechSat-21 rendezvous	Yes
+% 5	Radar acquisition of the TechSat-21 cluster at 100 km	No
+% 6	Maneuver to stable position wrt cluster 5 km behind cluster cm	Yes
+% 7	Establish ISL	No
+% 8	Maneuver to within 100 m of TechSat-21 spacecraft	Yes
+% 9	Orbit TechSat-21 at 100 m for 1 hour	Yes
+% 10	Close to 9 m	Yes
+% 11	Orbit at 9 m testing vision system	Yes
+% 12	Close to 1 m	Yes
+% 13	Separate to 6 m	Yes
+% 14	Orbit at 6 m for 30 minutes	Yes
+% 15	Separate to stable position 1 km from cm of cluster	Yes
+% 16-23	Repeat 8-15 with a second spaceccraft	Yes
+% 24	Separate from the cluster	Yes
+% 25	Put spacecraft into a safe orbit	Yes
+
+k      = 1;
+event(k).type         = 'initial';
+event(k).description  = '[ 1] Initial State';
+event(k).aCSThruster   = [];
+event(k).dVThruster    = [];
+event(k).dVTotal       = [];
+event(k).dHTotal       = [];
+event(k).disturbance   = [];
+event(k).pulsewidthACS =  0;
+event(k).pulsewidthDV  =  0;
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[ 2] Orbit Shuttle';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 60;
+event(k).circular.radius   = 500;
+event(k).circular.duration = 120;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[ 3] Large burn to rendezvous';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6578, 7000 ))*1000; % 200 km shuttle orbit
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[ 4] Correction to rendezvous';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6878, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[ 6] Close to 5 km';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6900, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[ 8] Close to 100 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6995, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[ 9] Orbit TechSat-21 at 100 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 100;
+event(k).circular.duration = 60;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[10] Close to 9 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6999.9, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[11] Orbit TechSat-21 at 9 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 9;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[12] Close to 1 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6999.991, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[13] Separate to 6 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 7000, 6999.994 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[14] Orbit TechSat-21 at 6 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 6;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[15] Separate to  5 km';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 7000, 6995 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[16] Close to 100 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = abs(DVHoh( 6995, 7000 ))*1000; % Equivalent to small burn
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[17] Orbit TechSat-21 at 100 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 100;
+event(k).circular.duration = 60;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[18] Close to 9 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0539;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[19] Orbit TechSat-21 at 9 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 9;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[20] Close to 1 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0049;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[21] Separate to 6 m';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 0.0032;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type             = 'circular';
+event(k).description      = '[22] Orbit TechSat-21 at 6 m';
+event(k).aCSThruster       = 1:8;
+event(k).dVThruster        = [9 10 11 12];
+event(k).circular.period   = 10;
+event(k).circular.radius   = 6;
+event(k).circular.duration = 240;
+event(k).circular.jT       = [5 7];
+event(k).dVTotal           = [];
+event(k).dHTotal           = [];
+event(k).dTControl         = 1;
+event(k).disturbance       = [];
+event(k).nPulses           = [];
+event(k).duration          = [];
+event(k).regulated         =  0;
+event(k).cM                = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[23] Separate to  5 km';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 2.7;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[24] Separate from cluster';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 25.8;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[25] Maneuver to safe orbit-delta a';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 12.59;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+k      = k + 1;
+event(k).type          = 'delta-v';
+event(k).description   = '[25] Maneuver to safe orbit-delta i';
+event(k).aCSThruster   = 1:8;
+event(k).dVThruster    = 9:12;
+event(k).dVTotal       = 147;
+event(k).dHTotal       = [];
+event(k).dTControl     = 1;
+event(k).disturbance   = [];
+event(k).nPulses       = [];
+event(k).duration      = [];
+event(k).regulated     =  0;
+event(k).cM            = [0;0;0];
+
+%% Create the fuel budget
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+fprintf('\n\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n')
+if( exist('FBudget','file') )
+  FBudget( event, x, 'SpacecraftFuelBudget', 'Spacecraft' )
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  type 'SpacecraftFuelBudget'
+end
+[ylab{1:k}]=deal(event.description);
+dvt = zeros(1,k);
+for i=1:k
+  if( ~isempty(event(i).dVTotal) )
+    dvt(i)=event(i).dVTotal;
+  end
+end
+NewFig('SCFuelBudget')
+j = find(abs(dvt)>0);
+barh(dvt(j))
+set(gca,'ytick',1:length(j),'yticklabel',ylab(j)')
+xlabel('Delta-V (m/s)')
+grid on
+title('Delta-V History')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

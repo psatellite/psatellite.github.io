@@ -1,0 +1,235 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates the Lambert targeting function DVTarget.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="TargetDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates the Lambert targeting function DVTarget.</h1><!--introduction--><p>The selected time of flight drastically affects the resulting delta-V, from 181 m/s to 23 km/sec. -------------------------------------------------------------------------  Reference: Vallado 2nd edition, p.476 and Fig. 7-20 -------------------------------------------------------------------------  See also Plot3D, TitleS, XLabelS, YLabelS, Mag, DVTarget, LambertTOF,  RV2El, RVFromKepler -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Also plot a sample trajectory pair</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	 Copyright 2003 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Initial spacecraft states at epoch</span>
+r1 = [5328.7862; 4436.1273; 101.4720];
+v1 = [-4.864779; 5.816486; .240163];
+r2 = [6697.4756; 1794.5831; 0];
+v2 = [-1.962372; 7.323674; 0];
+disp(<span class="string">'Current Elements [a i W w e M] :'</span>)
+disp(RV2El(r1,v1))
+disp(<span class="string">'Target Elements:'</span>)
+disp(RV2El(r2,v2))
+
+<span class="comment">% Transfer times and plotting parameters</span>
+tTrans = [15:1:250]*60;
+aPlot  = zeros(size(tTrans));
+bPlot  = zeros(size(tTrans));
+tMPlot = bPlot;
+
+<span class="comment">% Perform targeting</span>
+<span class="keyword">for</span> k = 1:length(tTrans)
+  [dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans(k));
+  aPlot(k)   = Mag( dV.a );
+  bPlot(k)   = aPlot(k) + Mag( dV.b );
+  tMPlot(k)  = tM;
+  <span class="keyword">if</span> ~ok
+    tMPlot(k) = 0;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Generate plot</span>
+kShort = find(tMPlot&gt;0);
+kLong  = find(tMPlot&lt;0);
+kEarth = find(tMPlot==0);
+NewFig(<span class="string">'TargetDemo'</span>);
+plot(tTrans/60,[aPlot;bPlot],<span class="string">'k'</span>);
+hold <span class="string">on</span>
+hS = plot(tTrans(kShort)/60,[aPlot(kShort);bPlot(kShort)],<span class="string">'b*'</span>);
+hL = plot(tTrans(kLong)/60,[aPlot(kLong);bPlot(kLong)],<span class="string">'go'</span>);
+hE = plot(tTrans(kEarth)/60,[aPlot(kEarth);bPlot(kEarth)],<span class="string">'rs'</span>);
+legend([hS(1) hL(1)],<span class="string">'Short'</span>,<span class="string">'Long'</span>,<span class="string">'location'</span>,<span class="string">'best'</span>);
+XLabelS(<span class="string">'Transfer TOF (min)'</span>);
+YLabelS(<span class="string">'First and Total Delta V (km/s)'</span>);
+TitleS(<span class="string">'Lambert Targeting Demo'</span>);
+grid <span class="string">on</span>;
+</pre><pre class="codeoutput">Current Elements [a i W w e M] :
+       6943.2     0.034906       0.2618       1.3963    0.0022324     -0.95994
+Target Elements:
+       6933.7            0            0       5.8152   8.5654e-08      0.72978
+</pre><img vspace="5" hspace="5" src="TargetDemo_01.png" alt=""> <h2 id="2">Also plot a sample trajectory pair</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+tTrans = 75*60;
+<span class="comment">% initial orbits</span>
+[r1p,v1p] = RVFromKepler(RV2El(r1,v1),linspace(0,tTrans));
+[r2p,v2p] = RVFromKepler(RV2El(r2,v2),linspace(0,tTrans));
+<span class="comment">% first transfer</span>
+vTrans = LambertTOF( r1, r2p(:,end), tTrans, 1 );
+rT1 = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+<span class="comment">% second transfer</span>
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, -1 );
+[rT2,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+
+[h,h1] = Plot3D( r1p, <span class="string">'x (km)'</span>,<span class="string">'y (km)'</span>,<span class="string">'z (km)'</span>, <span class="string">'Lambert Maneuver, Long and Short Path'</span>, 6378 );
+hold <span class="string">on</span>;
+h2 = plot3(   r2p(1,:),   r2p(2,:),   r2p(3,:), <span class="string">'g'</span>);
+plot3(   rT1(1,:),   rT1(2,:),   rT1(3,:), <span class="string">'r--'</span>);
+plot3(   rT2(1,:),   rT2(2,:),   rT2(3,:), <span class="string">'m--'</span>);
+text( r1(1,1),  r1(2,1),  r1(3,1), <span class="string">'x Start of Maneuver'</span>)
+text( rT2(1,end),  rT2(2,end),  rT2(3,end), <span class="string">'x Rendezvous'</span>)
+axis <span class="string">square</span>; axis <span class="string">equal</span>;
+view(0,90);
+legend( [h1 h2], <span class="string">'Current'</span>, <span class="string">'Target'</span> )
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="TargetDemo_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates the Lambert targeting function DVTarget.
+% The selected time of flight drastically affects the resulting delta-V,
+% from 181 m/s to 23 km/sec.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Reference: Vallado 2nd edition, p.476 and Fig. 7-20
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Plot3D, TitleS, XLabelS, YLabelS, Mag, DVTarget, LambertTOF, 
+%  RV2El, RVFromKepler
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	 Copyright 2003 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Initial spacecraft states at epoch
+r1 = [5328.7862; 4436.1273; 101.4720];
+v1 = [-4.864779; 5.816486; .240163];
+r2 = [6697.4756; 1794.5831; 0];
+v2 = [-1.962372; 7.323674; 0];
+disp('Current Elements [a i W w e M] :')
+disp(RV2El(r1,v1))
+disp('Target Elements:')
+disp(RV2El(r2,v2))
+
+% Transfer times and plotting parameters
+tTrans = [15:1:250]*60;
+aPlot  = zeros(size(tTrans));
+bPlot  = zeros(size(tTrans));
+tMPlot = bPlot;
+
+% Perform targeting
+for k = 1:length(tTrans)
+  [dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans(k));
+  aPlot(k)   = Mag( dV.a );
+  bPlot(k)   = aPlot(k) + Mag( dV.b );
+  tMPlot(k)  = tM;
+  if ~ok
+    tMPlot(k) = 0;
+  end
+end
+
+% Generate plot
+kShort = find(tMPlot>0);
+kLong  = find(tMPlot<0);
+kEarth = find(tMPlot==0);
+NewFig('TargetDemo');
+plot(tTrans/60,[aPlot;bPlot],'k');
+hold on
+hS = plot(tTrans(kShort)/60,[aPlot(kShort);bPlot(kShort)],'b*');
+hL = plot(tTrans(kLong)/60,[aPlot(kLong);bPlot(kLong)],'go');
+hE = plot(tTrans(kEarth)/60,[aPlot(kEarth);bPlot(kEarth)],'rs');
+legend([hS(1) hL(1)],'Short','Long','location','best');
+XLabelS('Transfer TOF (min)');
+YLabelS('First and Total Delta V (km/s)');
+TitleS('Lambert Targeting Demo');
+grid on;
+
+%% Also plot a sample trajectory pair
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tTrans = 75*60;
+% initial orbits
+[r1p,v1p] = RVFromKepler(RV2El(r1,v1),linspace(0,tTrans));
+[r2p,v2p] = RVFromKepler(RV2El(r2,v2),linspace(0,tTrans));
+% first transfer
+vTrans = LambertTOF( r1, r2p(:,end), tTrans, 1 );
+rT1 = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+% second transfer
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, -1 );
+[rT2,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+
+[h,h1] = Plot3D( r1p, 'x (km)','y (km)','z (km)', 'Lambert Maneuver, Long and Short Path', 6378 );
+hold on;
+h2 = plot3(   r2p(1,:),   r2p(2,:),   r2p(3,:), 'g');
+plot3(   rT1(1,:),   rT1(2,:),   rT1(3,:), 'rREPLACE_WITH_DASH_DASH');
+plot3(   rT2(1,:),   rT2(2,:),   rT2(3,:), 'mREPLACE_WITH_DASH_DASH');
+text( r1(1,1),  r1(2,1),  r1(3,1), 'x Start of Maneuver')
+text( rT2(1,end),  rT2(2,end),  rT2(3,end), 'x Rendezvous')
+axis square; axis equal;
+view(0,90);
+legend( [h1 h2], 'Current', 'Target' )
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-11-07 14:53:50 -0500 (Wed, 07 Nov 2018) $
+% $Revision: 47414 $
+
+##### SOURCE END #####
+--></body></html>

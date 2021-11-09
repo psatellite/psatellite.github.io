@@ -1,0 +1,678 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simple sim using a CAD model of the spacecraft to view the attitude.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="Attitude3D.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simple sim using a CAD model of the spacecraft to view the attitude.</h1><!--introduction--><p>Demonstrates control design using PIDMIMO, the Disturbances function, rigid body attitude dynamics with FRB, orbit dynamics with FOrbCart, and integration using RK4. The CAD model is viewed using DrawSCPlugIn.</p><p>Use the flags to turn on or off the disturbances and 3D viewing. If 3D viewing is off the demo concludes with a quaternion animation. ------------------------------------------------------------------------  See also DrawSCPlanPlugIn, PIDMIMO, AU2Q, AnimQ, QLVLH, QMult, QPose,  Constant, NPlot, Plot2D, Plot3D, TimeGUI, RK4, JD2000, El2RV,  Disturbances, SunV1, DrawSCPlugIn, Accel  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Flags - take values 0 or 1</a></li><li><a href="#4">Constants</a></li><li><a href="#5">Spacecraft model</a></li><li><a href="#6">The control sampling period and the simulation integration time step</a></li><li><a href="#7">Number of sim steps</a></li><li><a href="#8">Initial conditions</a></li><li><a href="#9">Initialize the 3D window</a></li><li><a href="#10">Plot every nPMax steps</a></li><li><a href="#11">Plotting arrays</a></li><li><a href="#12">Print the time to go message every nTTGo steps</a></li><li><a href="#13">Spacecraft Inertias</a></li><li><a href="#14">Design the control loops</a></li><li><a href="#15">Initialize the control system</a></li><li><a href="#16">Initialize the time display</a></li><li><a href="#17">Initialize disturbances</a></li><li><a href="#18">Run the simulation</a></li><li><a href="#19">Plot results</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright 2003, 2006 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Since version 5.5 (2003)</span>
+<span class="comment">%  2016.1: update integration to use function handles</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+clear <span class="string">e</span>;
+</pre><h2 id="3">Flags - take values 0 or 1</h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+use3DGraphics   = 1;
+useDisturbances = 1;
+</pre><h2 id="4">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad = pi/180;
+radToDeg = 180/pi;
+</pre><h2 id="5">Spacecraft model</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+g = load(<span class="string">'XYZSat'</span>);
+ShowCAD( g );
+</pre><img vspace="5" hspace="5" src="Attitude3D_01.png" alt=""> <h2 id="6">The control sampling period and the simulation integration time step</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+tSamp       = 0.5;
+</pre><h2 id="7">Number of sim steps</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nSim        = 300;
+</pre><h2 id="8">Initial conditions</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="comment">%                 q         w</span>
+x1         = [[1;0;0;0];[0;0;0]];
+el         = [Constant(<span class="string">'earth radius mean'</span>)+15000 45*pi/180 0 0 0 0];
+[r,v]      = El2RV(el);
+x2         = [r;v];
+
+dTSim      = tSamp;
+mET        = 0;
+jD         = JD2000;
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+</pre><h2 id="9">Initialize the 3D window</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+g(1).body(1).bHinge.q = x1(1:4);
+g(1).rECI             = r;
+g(1).qLVLH            = QLVLH( r, v );
+g(1).name             = <span class="string">'XYZSat'</span>;
+<span class="keyword">if</span>( use3DGraphics )
+  tag3DWindow = DrawSCPlugIn( <span class="string">'initialize'</span>, g, [], [], <span class="string">'Earth'</span>, jD );
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">                       ALim: [0 2]
+                   ALimMode: 'auto'
+                 AlphaScale: 'linear'
+                   Alphamap: [1&times;64 double]
+          AmbientLightColor: [1 1 1]
+               BeingDeleted: off
+                        Box: off
+                   BoxStyle: 'back'
+                 BusyAction: 'queue'
+              ButtonDownFcn: ''
+                       CLim: [0 255]
+                   CLimMode: 'auto'
+             CameraPosition: [5.2777e+06 2.945e+07 -3.0611e-11]
+         CameraPositionMode: 'manual'
+               CameraTarget: [3.7698e+06 2.1036e+07 1.3086e-09]
+           CameraTargetMode: 'manual'
+             CameraUpVector: [0.69602 -0.12473 0.70711]
+         CameraUpVectorMode: 'manual'
+            CameraViewAngle: 30
+        CameraViewAngleMode: 'manual'
+                   Children: [6&times;1 Graphics]
+                   Clipping: on
+              ClippingStyle: '3dbox'
+                      Color: [0 0 0]
+                 ColorOrder: [7&times;3 double]
+            ColorOrderIndex: 1
+                 ColorScale: 'linear'
+                   Colormap: [256&times;3 double]
+                ContextMenu: [0&times;0 GraphicsPlaceholder]
+                  CreateFcn: ''
+               CurrentPoint: [2&times;3 double]
+            DataAspectRatio: [1 1 1]
+        DataAspectRatioMode: 'manual'
+                  DeleteFcn: ''
+                  FontAngle: 'normal'
+                   FontName: 'Helvetica'
+                   FontSize: 10
+               FontSizeMode: 'auto'
+              FontSmoothing: on
+                  FontUnits: 'points'
+                 FontWeight: 'normal'
+                  GridAlpha: 0.15
+              GridAlphaMode: 'auto'
+                  GridColor: [0.15 0.15 0.15]
+              GridColorMode: 'auto'
+              GridLineStyle: '-'
+           HandleVisibility: 'on'
+                    HitTest: on
+              InnerPosition: [0 0 340 340]
+               Interactions: [1&times;1 matlab.graphics.interaction.interface.DefaultAxesInteractionSet]
+              Interruptible: on
+    LabelFontSizeMultiplier: 1.1
+                      Layer: 'bottom'
+                     Layout: [0&times;0 matlab.ui.layout.LayoutOptions]
+                     Legend: [0&times;0 GraphicsPlaceholder]
+             LineStyleOrder: '-'
+        LineStyleOrderIndex: 1
+                  LineWidth: 0.5
+             MinorGridAlpha: 0.25
+         MinorGridAlphaMode: 'auto'
+             MinorGridColor: [0.1 0.1 0.1]
+         MinorGridColorMode: 'auto'
+         MinorGridLineStyle: ':'
+                   NextPlot: 'replace'
+            NextSeriesIndex: 1
+              OuterPosition: [-44.2 -37.4 416.5 402.9]
+                     Parent: [1&times;1 Figure]
+              PickableParts: 'visible'
+         PlotBoxAspectRatio: [1 2.2317 1]
+     PlotBoxAspectRatioMode: 'manual'
+                   Position: [0 0 340 340]
+         PositionConstraint: 'innerposition'
+                 Projection: 'perspective'
+                   Selected: off
+         SelectionHighlight: on
+                 SortMethod: 'depth'
+                        Tag: 'Spacecraft'
+                    TickDir: 'out'
+                TickDirMode: 'auto'
+       TickLabelInterpreter: 'tex'
+                 TickLength: [0.01 0.025]
+                 TightInset: [0 0 0 0]
+                      Title: [1&times;1 Text]
+    TitleFontSizeMultiplier: 1.1
+            TitleFontWeight: 'bold'
+                    Toolbar: [1&times;1 AxesToolbar]
+                       Type: 'axes'
+                      Units: 'pixels'
+                   UserData: []
+                       View: [138.25 0]
+                    Visible: off
+                      XAxis: [1&times;1 NumericRuler]
+              XAxisLocation: 'bottom'
+                     XColor: [0.15 0.15 0.15]
+                 XColorMode: 'auto'
+                       XDir: 'normal'
+                      XGrid: on
+                     XLabel: [1&times;1 Text]
+                       XLim: [-6378100 6378100]
+                   XLimMode: 'auto'
+                 XMinorGrid: off
+                 XMinorTick: off
+                     XScale: 'linear'
+                      XTick: [1&times;7 double]
+                 XTickLabel: {7&times;1 cell}
+             XTickLabelMode: 'auto'
+         XTickLabelRotation: 0
+                  XTickMode: 'auto'
+                      YAxis: [1&times;1 NumericRuler]
+              YAxisLocation: 'left'
+                     YColor: [0.15 0.15 0.15]
+                 YColorMode: 'auto'
+                       YDir: 'normal'
+                      YGrid: on
+                     YLabel: [1&times;1 Text]
+                       YLim: [-6378100 2.2089e+07]
+                   YLimMode: 'auto'
+                 YMinorGrid: off
+                 YMinorTick: off
+                     YScale: 'linear'
+                      YTick: [-5000000 0 5000000 10000000 15000000 20000000]
+                 YTickLabel: {6&times;1 cell}
+             YTickLabelMode: 'auto'
+         YTickLabelRotation: 0
+                  YTickMode: 'auto'
+                      ZAxis: [1&times;1 NumericRuler]
+                     ZColor: [0.15 0.15 0.15]
+                 ZColorMode: 'auto'
+                       ZDir: 'normal'
+                      ZGrid: on
+                     ZLabel: [1&times;1 Text]
+                       ZLim: [-6378100 6378100]
+                   ZLimMode: 'auto'
+                 ZMinorGrid: off
+                 ZMinorTick: off
+                     ZScale: 'linear'
+                      ZTick: [1&times;7 double]
+                 ZTickLabel: {7&times;1 cell}
+             ZTickLabelMode: 'auto'
+         ZTickLabelRotation: 0
+                  ZTickMode: 'auto'
+</pre><img vspace="5" hspace="5" src="Attitude3D_02.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_03.png" alt=""> <h2 id="10">Plot every nPMax steps</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+nP          = 0;
+kP          = 0;
+nPMax       = 1;
+nPlot       = nSim/nPMax;
+</pre><h2 id="11">Plotting arrays</h2><pre class="codeinput"><span class="comment">%----------------</span>
+x1Plot      = zeros( 7,nPlot );
+x2Plot      = zeros( 6,nPlot );
+tPlot       = zeros( 1,nPlot );
+TPlot       = zeros( 3,nPlot );
+FPlot       = zeros( 3,nPlot );
+</pre><h2 id="12">Print the time to go message every nTTGo steps</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+nTTGo       = 1000;
+</pre><h2 id="13">Spacecraft Inertias</h2><p>-------------------</p><pre class="codeinput">inr         = g.mass.inertia; <span class="comment">% can change inertia here</span>
+invInr      = inv(inr);
+tDist       = [0;0;0]; <span class="comment">% can add disturbances using this variable</span>
+</pre><h2 id="14">Design the control loops</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+inr          = 1;   <span class="comment">% inertia</span>
+zeta         = 1;   <span class="comment">% damping ratio</span>
+omega        = 0.1; <span class="comment">% natural frequency</span>
+tauInt       = 100; <span class="comment">% integrator time constant</span>
+omegaR       = 1;   <span class="comment">% derivative term roll-off frequency</span>
+[a, b, c, d, k] = PIDMIMO( inr, zeta, omega, tauInt, omegaR, tSamp, <span class="string">'Delta'</span> );
+</pre><h2 id="15">Initialize the control system</h2><pre class="codeinput"><span class="comment">%------------------------------</span>
+xRoll      = [0;0];
+xPitch     = [0;0];
+xYaw       = [0;0];
+qTarget    = AU2Q( 30*pi/180, [1;0;0] ); <span class="comment">% 30 degree rotation</span>
+</pre><h2 id="16">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, tSamp, <span class="string">'XYZ Demo Sim'</span> );
+</pre><img vspace="5" hspace="5" src="Attitude3D_04.png" alt=""> <h2 id="17">Initialize disturbances</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+e           = Disturbances(<span class="string">'defaults'</span>);
+e.s         = 1367*SunV1( jD, x2(1:3) ); <span class="comment">% Watts/m^2</span>
+e.shadow    = 0;
+e.units     = <span class="string">'m'</span>;
+e.planet    = <span class="string">'Earth'</span>;
+e.mu        = 3.986014e5;
+e.computeAero = 1;
+<span class="keyword">if</span>( useDisturbances )
+    hD = Disturbances( <span class="string">'init'</span>, g, e );
+<span class="keyword">end</span>
+</pre><h2 id="18">Run the simulation</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, tSamp );
+
+  <span class="comment">% ---------------------------</span>
+  <span class="comment">% The Attitude Control System</span>
+  <span class="comment">% ---------------------------</span>
+
+  <span class="comment">% The attitude control loops</span>
+  <span class="comment">% --------------------------</span>
+  <span class="comment">% torque = AttitudeControlLaw( params );</span>
+
+  qTargetToBody = QPose( QMult( QPose(x1(1:4)), qTarget ) );
+
+  <span class="comment">% Small angle convention</span>
+  <span class="comment">%-----------------------</span>
+  angleError = -2*qTargetToBody(2:4);
+
+  <span class="comment">% Controller blocks, delta format. Each axis uses the same gains.</span>
+  <span class="comment">%----------------------------------------------------------------</span>
+  accel    = zeros(3,1);
+  accel(1) =          c*xRoll  + d*angleError(1);
+  xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+
+  accel(2) =          c*xPitch + d*angleError(2);
+  xPitch   = xPitch + a*xPitch + b*angleError(2);
+
+  accel(3) =         c*xYaw   + d*angleError(3);
+  xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+
+  torque = -g.mass.inertia*accel;
+
+  <span class="comment">% May add force here</span>
+  <span class="comment">%-------------------</span>
+  force = [0;0;0];
+
+  <span class="comment">% -------------</span>
+  <span class="comment">% Disturbances</span>
+  <span class="comment">% -------------</span>
+  g = SetCADQuaternion( g, x1(1:4) );
+  <span class="keyword">if</span>( useDisturbances )
+    <span class="comment">% Use disturbances model (uses CAD model)</span>
+    e.r         = x2(1:3);
+    e.v         = x2(4:6);
+    [f,t]       = Disturbances(<span class="string">'run'</span>,g,e,hD);
+    fDist = f.total/1000; <span class="comment">% to kN from N</span>
+    tDist = t.total;      <span class="comment">% already in Nm</span>
+  <span class="keyword">else</span>
+    <span class="comment">% Alternatively, add periodic disturbance (faster)</span>
+    tDist = [1;0;0.5]*1e-3*sin(0.0011*mET);
+    fDist = [0;0;0];
+  <span class="keyword">end</span>
+
+  <span class="comment">% -------------------------------</span>
+  <span class="comment">% Update the equations of motion</span>
+  <span class="comment">% -------------------------------</span>
+  x1       = RK4(@FRB,x1,dTSim,mET,inr,invInr,torque+tDist);
+  x2       = RK4(@FOrbCart,x2,dTSim,jD,[force+fDist]/g.mass.mass);
+  mET      = mET + dTSim;
+  jD       = jD + dTSim/86400;
+
+  <span class="comment">% --------------------</span>
+  <span class="comment">% Update the graphics</span>
+  <span class="comment">% --------------------</span>
+  <span class="keyword">if</span>( use3DGraphics )
+    g(1) = SetCADState( g(1), x2(1:3), x2(4:6) );
+    DrawSCPlugIn( <span class="string">'update spacecraft'</span>, tag3DWindow, g, jD );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">% --------</span>
+  <span class="keyword">if</span> (nP == 0)
+    kP           = kP + 1;
+    x1Plot(:,kP) = x1;
+  	x2Plot(:,kP) = x2;
+    tPlot(:,kP)  = mET;
+    TPlot(:,kP)  = torque;
+    FPlot(:,kP)  = force;
+    nP           = nPMax - 1;
+  <span class="keyword">else</span>
+    nP           = nP - 1;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="Attitude3D_05.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_06.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_07.png" alt=""> <h2 id="19">Plot results</h2><pre class="codeinput">TimeGUI(<span class="string">'close'</span>);
+
+j = 1:kP;
+
+tPlot = tPlot(j);
+
+Plot2D(tPlot,x1Plot( 1:4,j),<span class="string">'Time (sec)'</span>,[<span class="string">'Q_s'</span>;<span class="string">'Q_x'</span>;<span class="string">'Q_y'</span>;<span class="string">'Q_z'</span>],<span class="string">'Quaternion'</span>)
+Plot2D(tPlot,x1Plot( 5:7,j),<span class="string">'Time (sec)'</span>,[<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>],<span class="string">'Body Rates'</span>)
+Plot2D(tPlot,x2Plot( 1:3,j),<span class="string">'Time (sec)'</span>,[<span class="string">'X'</span>;<span class="string">'Y'</span>;<span class="string">'Z'</span>],<span class="string">'Position (km)'</span>)
+Plot2D(tPlot,x2Plot( 4:6,j),<span class="string">'Time (sec)'</span>,[<span class="string">'V_x'</span>;<span class="string">'V_y'</span>;<span class="string">'V_z'</span>],<span class="string">'Velocity (km/s)'</span>)
+Plot2D(tPlot,TPlot(:,j),<span class="string">'Time (sec)'</span>,[<span class="string">'T_x'</span>;<span class="string">'T_y'</span>;<span class="string">'T_z'</span>],<span class="string">'Applied Torque (Nm)'</span>)
+
+<span class="keyword">if</span>( ~use3DGraphics )
+    <span class="comment">% Post-animate quaternion and orbit</span>
+    <span class="comment">%----------------------------------</span>
+    Plot3D(x2Plot( 1:3,j),<span class="string">'x (km)'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'Orbit'</span>,6371)
+    AnimQ( x1Plot( 1:4,:), 2 );
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="Attitude3D_08.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_09.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_10.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_11.png" alt=""> <img vspace="5" hspace="5" src="Attitude3D_12.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simple sim using a CAD model of the spacecraft to view the attitude.
+% Demonstrates control design using PIDMIMO, the Disturbances function,
+% rigid body attitude dynamics with FRB, orbit dynamics with FOrbCart, and
+% integration using RK4. The CAD model is viewed using DrawSCPlugIn.
+%
+% Use the flags to turn on or off the disturbances and 3D viewing. If 3D 
+% viewing is off the demo concludes with a quaternion animation.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also DrawSCPlanPlugIn, PIDMIMO, AU2Q, AnimQ, QLVLH, QMult, QPose, 
+%  Constant, NPlot, Plot2D, Plot3D, TimeGUI, RK4, JD2000, El2RV, 
+%  Disturbances, SunV1, DrawSCPlugIn, Accel
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright 2003, 2006 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Since version 5.5 (2003)
+%  2016.1: update integration to use function handles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+clear e;
+
+%% Flags - take values 0 or 1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+use3DGraphics   = 1;
+useDisturbances = 1;
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad = pi/180;
+radToDeg = 180/pi;
+
+%% Spacecraft model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('XYZSat');
+ShowCAD( g );
+
+%% The control sampling period and the simulation integration time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tSamp       = 0.5;
+
+%% Number of sim steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim        = 300;
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%                 q         w    
+x1         = [[1;0;0;0];[0;0;0]];
+el         = [Constant('earth radius mean')+15000 45*pi/180 0 0 0 0];
+[r,v]      = El2RV(el);
+x2         = [r;v];
+
+dTSim      = tSamp;
+mET        = 0;
+jD         = JD2000;
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+
+%% Initialize the 3D window
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g(1).body(1).bHinge.q = x1(1:4);
+g(1).rECI             = r;
+g(1).qLVLH            = QLVLH( r, v );
+g(1).name             = 'XYZSat';
+if( use3DGraphics )
+  tag3DWindow = DrawSCPlugIn( 'initialize', g, [], [], 'Earth', jD );
+end
+
+%% Plot every nPMax steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nP          = 0;
+kP          = 0;
+nPMax       = 1;
+nPlot       = nSim/nPMax;
+
+%% Plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x1Plot      = zeros( 7,nPlot );
+x2Plot      = zeros( 6,nPlot );
+tPlot       = zeros( 1,nPlot );
+TPlot       = zeros( 3,nPlot );
+FPlot       = zeros( 3,nPlot );
+
+%% Print the time to go message every nTTGo steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nTTGo       = 1000;
+			     
+%% Spacecraft Inertias
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr         = g.mass.inertia; % can change inertia here
+invInr      = inv(inr);
+tDist       = [0;0;0]; % can add disturbances using this variable
+			     
+%% Design the control loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr          = 1;   % inertia
+zeta         = 1;   % damping ratio
+omega        = 0.1; % natural frequency
+tauInt       = 100; % integrator time constant
+omegaR       = 1;   % derivative term roll-off frequency
+[a, b, c, d, k] = PIDMIMO( inr, zeta, omega, tauInt, omegaR, tSamp, 'Delta' );                                         
+
+%% Initialize the control system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xRoll      = [0;0];
+xPitch     = [0;0];
+xYaw       = [0;0];
+qTarget    = AU2Q( 30*pi/180, [1;0;0] ); % 30 degree rotation
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, tSamp, 'XYZ Demo Sim' );
+
+%% Initialize disturbances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+e           = Disturbances('defaults');
+e.s         = 1367*SunV1( jD, x2(1:3) ); % Watts/m^2
+e.shadow    = 0;
+e.units     = 'm';
+e.planet    = 'Earth';
+e.mu        = 3.986014e5;
+e.computeAero = 1;
+if( useDisturbances )
+    hD = Disturbances( 'init', g, e );
+end
+
+%%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim 
+
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, tSamp );
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % The Attitude Control System
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  
+  % The attitude control loops
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % torque = AttitudeControlLaw( params );
+  
+  qTargetToBody = QPose( QMult( QPose(x1(1:4)), qTarget ) );
+  
+  % Small angle convention
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  angleError = -2*qTargetToBody(2:4);
+  
+  % Controller blocks, delta format. Each axis uses the same gains.
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  accel    = zeros(3,1);
+  accel(1) =          c*xRoll  + d*angleError(1);
+  xRoll    = xRoll  + a*xRoll  + b*angleError(1);
+  
+  accel(2) =          c*xPitch + d*angleError(2);
+  xPitch   = xPitch + a*xPitch + b*angleError(2);
+  
+  accel(3) =         c*xYaw   + d*angleError(3);
+  xYaw     = xYaw  + a*xYaw   + b*angleError(3);
+  
+  torque = -g.mass.inertia*accel;
+  
+  % May add force here
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  force = [0;0;0];
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Disturbances
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  g = SetCADQuaternion( g, x1(1:4) );
+  if( useDisturbances )
+    % Use disturbances model (uses CAD model)
+    e.r         = x2(1:3);
+    e.v         = x2(4:6);
+    [f,t]       = Disturbances('run',g,e,hD);
+    fDist = f.total/1000; % to kN from N
+    tDist = t.total;      % already in Nm
+  else
+    % Alternatively, add periodic disturbance (faster)
+    tDist = [1;0;0.5]*1e-3*sin(0.0011*mET);
+    fDist = [0;0;0];
+  end
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Update the equations of motion
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x1       = RK4(@FRB,x1,dTSim,mET,inr,invInr,torque+tDist);
+  x2       = RK4(@FOrbCart,x2,dTSim,jD,[force+fDist]/g.mass.mass);
+  mET      = mET + dTSim;
+  jD       = jD + dTSim/86400;
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % Update the graphics
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( use3DGraphics )
+    g(1) = SetCADState( g(1), x2(1:3), x2(4:6) );
+    DrawSCPlugIn( 'update spacecraft', tag3DWindow, g, jD );
+  end
+  
+  % Plotting
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if (nP == 0)
+    kP           = kP + 1;
+    x1Plot(:,kP) = x1;
+  	x2Plot(:,kP) = x2;
+    tPlot(:,kP)  = mET;
+    TPlot(:,kP)  = torque;
+    FPlot(:,kP)  = force;
+    nP           = nPMax - 1;
+  else
+    nP           = nP - 1;
+  end
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+%% Plot results
+TimeGUI('close');
+
+j = 1:kP;
+
+tPlot = tPlot(j);
+
+Plot2D(tPlot,x1Plot( 1:4,j),'Time (sec)',['Q_s';'Q_x';'Q_y';'Q_z'],'Quaternion')
+Plot2D(tPlot,x1Plot( 5:7,j),'Time (sec)',['\omega_x';'\omega_y';'\omega_z'],'Body Rates')
+Plot2D(tPlot,x2Plot( 1:3,j),'Time (sec)',['X';'Y';'Z'],'Position (km)')
+Plot2D(tPlot,x2Plot( 4:6,j),'Time (sec)',['V_x';'V_y';'V_z'],'Velocity (km/s)')
+Plot2D(tPlot,TPlot(:,j),'Time (sec)',['T_x';'T_y';'T_z'],'Applied Torque (Nm)')
+
+if( ~use3DGraphics )
+    % Post-animate quaternion and orbit
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    Plot3D(x2Plot( 1:3,j),'x (km)','y','z','Orbit',6371)
+    AnimQ( x1Plot( 1:4,:), 2 );
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2020-06-30 $
+% $Revision: a81ad1e849397a5a5b201557c803878e449ded80 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,404 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a simple aircraft control system consisting of a pitch rate tracking system.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="CASDesign.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a simple aircraft control system consisting of a pitch rate tracking system.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also QECI, VTToVB, AC, ACBuild, ACInit, ACEngEq,
+@acstate/acstate.m, C2DZOH, CLoopS, Altitude, Plot2D
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">The first step is to get the linearized plant model</a></li><li><a href="#3">F16 database</a></li><li><a href="#4">Load the standard atmosphere</a></li><li><a href="#5">Actuator dynamics</a></li><li><a href="#6">Control settings</a></li><li><a href="#7">Initial state vector Corresponding to Nominal in Table 3.4-3 p. 139 of the reference</a></li><li><a href="#8">Initial time and state</a></li><li><a href="#9">Generate the state space model</a></li><li><a href="#10">First design the inner loop</a></li><li><a href="#11">Test it in continuous mode</a></li><li><a href="#12">Now add the outer loop</a></li><li><a href="#13">Test it in continuous mode</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2002 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.0 (ACT)</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">The first step is to get the linearized plant model</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+</pre><h2 id="3">F16 database</h2><pre class="codeinput"><span class="comment">%-------------</span>
+d               = ACBuild(<span class="string">'F16'</span>);
+d.theta0        = 0;
+d.wPlanet       = [0;0;0];
+d.actuator.name = <span class="string">'F16Actuator'</span>;
+d.aero.name     = <span class="string">'ACAero'</span>;
+d.engine.name   = <span class="string">'ACEngine'</span>;
+d.rotor.name    = [];
+d.sensor.name   = <span class="string">'ACSensor'</span>;
+d.disturb.name  = [];
+</pre><h2 id="4">Load the standard atmosphere</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+d.atmData       = load(<span class="string">'AtmData.txt'</span>);
+d.atmUnits      = <span class="string">'eng'</span>;
+</pre><h2 id="5">Actuator dynamics</h2><pre class="codeinput"><span class="comment">%------------------</span>
+d.actuator.throttleLag = 4.9505e-02;
+d.actuator.elevatorLag = 4.9505e-02;
+d.actuator.aileronLag  = 4.9505e-02;
+d.actuator.rudderLag   = 4.9505e-02;
+</pre><h2 id="6">Control settings</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+d.control.throttle  =   0.1385;
+d.control.elevator  =  -0.7588;
+d.control.aileron   =  -1.2e-7;
+d.control.rudder    =   6.2e-7;
+</pre><h2 id="7">Initial state vector Corresponding to Nominal in Table 3.4-3 p. 139 of the reference</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------</span>
+altitude  = 100;
+alpha     = 0.03691;
+beta      = -4.0e-9;
+theta     = 0.03991;
+vT        = 502;
+v         = VTToVB( vT, alpha, beta );
+
+cG        = [0.35;0;0];
+
+r         = [2.092565616797901e+07+altitude;0;0];
+
+eulInit   = [0;theta;0.00];
+
+q         = QECI( r, eulInit );
+w         = [0;0;0];
+
+wR        = 160;
+engine    = ACEngEq( d, v, r ); <span class="comment">% Engine state</span>
+mass      = 1/1.57e-3;
+inertia   = [9497;55814;63100;0;-982;0];
+actuator  = [0;0;0;0];
+sensor    = [];
+flex      = [];
+disturb   = [];
+</pre><h2 id="8">Initial time and state</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+x         = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+</pre><h2 id="9">Generate the state space model</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+stateName.actuator = {<span class="string">'Throttle Lag'</span>, <span class="string">'Elevator Lag'</span>, <span class="string">'Aileron Lag'</span>, <span class="string">'Rudder Lag'</span>};
+d                  = ACInit( x, d, stateName );
+g                  = AC( x, 0, 0, d, <span class="string">'linalpha'</span>);
+aC                 = get( g, <span class="string">'a'</span> );
+cC                 = get( g, <span class="string">'c'</span> );
+bC                 = get( g, <span class="string">'b'</span> );
+
+kLon         = [10 11 5 8 26];
+kLonAQ       = [11 8 26];
+kAlphaSensor = 5;
+kQSensor     = 3;
+kElevator    = 2;
+
+disp(<span class="string">'The state space matrices for just alpha and q'</span>)
+a    = aC(kLonAQ,kLonAQ)
+b    = bC(kLonAQ,kElevator);
+c    = cC(kAlphaSensor,kLonAQ); <span class="comment">% alpha only</span>
+
+disp(<span class="string">'The plant eigenvalues'</span>)
+eig(a)
+</pre><pre class="codeoutput">The state space matrices for just alpha and q
+a =
+      -1.0167      0.90517   -0.0022528
+      -1.2031      -1.2647     -0.18001
+            0            0        -20.2
+The plant eigenvalues
+ans =
+      -1.1407 +     1.0362i
+      -1.1407 -     1.0362i
+        -20.2 +          0i
+</pre><h2 id="10">First design the inner loop</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+kAlpha   =  -0.08; <span class="comment">% Notice this sign!</span>
+tauAlpha =   0.1;
+aAlpha   =  -1/tauAlpha;
+bAlpha   =   1/tauAlpha;
+cAlpha   =   kAlpha;
+dAlpha   =   0;
+</pre><h2 id="11">Test it in continuous mode</h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+aCL = CLoopS( a, b, c, aAlpha, bAlpha, cAlpha, dAlpha ); <span class="comment">% This applies negative feedback</span>
+
+disp(<span class="string">'Closed loop eigenvalues for the inner loop'</span>)
+eig(aCL)
+</pre><pre class="codeoutput">Closed loop eigenvalues for the inner loop
+ans =
+       -20.17 +          0i
+       -10.16 +          0i
+      -1.0758 +     1.3902i
+      -1.0758 -     1.3902i
+</pre><h2 id="12">Now add the outer loop</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+c    = cC([kAlphaSensor kQSensor],kLonAQ);
+kI   =  1.5;
+kQ   =  -0.5;
+aCAS = [-1/tauAlpha 0;0 0];
+bCAS = [1/tauAlpha 0;0 -1];
+cCAS = [kAlpha kI];
+dCAS = [0 kQ];
+</pre><h2 id="13">Test it in continuous mode</h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+aCL = CLoopS( a, b, c, aCAS, bCAS, cCAS, dCAS ); <span class="comment">% This applies negative feedback</span>
+
+disp(<span class="string">'Closed loop eigenvalues for the inner and outer loops'</span>)
+eig(aCL)
+
+dT           = 0.1; <span class="comment">% 10 Hz controller works well</span>
+
+[a, b]       = C2DZOH( a, b,       dT );
+[aCAS, bCAS] = C2DZOH( aCAS, bCAS, dT );
+
+nSim         = 100;
+
+xPlot        = zeros(1,nSim);
+
+qC           = 1.0;
+xCAS         = [0;0];
+x            = [0;0;0];
+y            = [0;0];
+
+<span class="keyword">for</span> k = 1:nSim
+
+  xPlot(k) = y(2);
+
+  y    = c*x;
+
+  xCAS = aCAS*xCAS + bCAS*[y(1);y(2) - qC];
+  yCAS = -(cCAS*xCAS + dCAS*y);
+
+  x    = a*x + b*yCAS;
+
+<span class="keyword">end</span>
+
+t = (0:(nSim-1))*dT;
+
+Plot2D( t, xPlot, <span class="string">'Time (sec)'</span>, <span class="string">'Q'</span> );
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Closed loop eigenvalues for the inner and outer loops
+ans =
+      -13.262 +          0i
+      -10.879 +          0i
+      -3.7436 +     3.3792i
+      -3.7436 -     3.3792i
+     -0.85305 +          0i
+</pre><img vspace="5" hspace="5" src="CASDesign_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a simple aircraft control system consisting of a pitch rate tracking system. 
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also QECI, VTToVB, AC, ACBuild, ACInit, ACEngEq, 
+%  @acstate/acstate.m, C2DZOH, CLoopS, Altitude, Plot2D
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2002 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.0 (ACT)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% The first step is to get the linearized plant model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% F16 database
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d               = ACBuild('F16');
+d.theta0        = 0;
+d.wPlanet       = [0;0;0];
+d.actuator.name = 'F16Actuator';
+d.aero.name     = 'ACAero';
+d.engine.name   = 'ACEngine';
+d.rotor.name    = [];
+d.sensor.name   = 'ACSensor';
+d.disturb.name  = [];
+
+%% Load the standard atmosphere
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.atmData       = load('AtmData.txt');
+d.atmUnits      = 'eng';
+
+%% Actuator dynamics
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.actuator.throttleLag = 4.9505e-02;
+d.actuator.elevatorLag = 4.9505e-02;
+d.actuator.aileronLag  = 4.9505e-02;
+d.actuator.rudderLag   = 4.9505e-02;
+
+%% Control settings
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.control.throttle  =   0.1385;
+d.control.elevator  =  -0.7588;
+d.control.aileron   =  -1.2e-7;
+d.control.rudder    =   6.2e-7;
+
+%% Initial state vector Corresponding to Nominal in Table 3.4-3 p. 139 of the reference
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+altitude  = 100;
+alpha     = 0.03691;
+beta      = -4.0e-9;
+theta     = 0.03991;
+vT        = 502;
+v         = VTToVB( vT, alpha, beta );
+
+cG        = [0.35;0;0];
+
+r         = [2.092565616797901e+07+altitude;0;0];
+
+eulInit   = [0;theta;0.00];
+
+q         = QECI( r, eulInit );
+w         = [0;0;0];
+
+wR        = 160;
+engine    = ACEngEq( d, v, r ); % Engine state
+mass      = 1/1.57e-3;
+inertia   = [9497;55814;63100;0;-982;0];
+actuator  = [0;0;0;0];
+sensor    = [];
+flex      = [];
+disturb   = [];
+
+%% Initial time and state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x         = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+
+%% Generate the state space model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+stateName.actuator = {'Throttle Lag', 'Elevator Lag', 'Aileron Lag', 'Rudder Lag'};
+d                  = ACInit( x, d, stateName );
+g                  = AC( x, 0, 0, d, 'linalpha');
+aC                 = get( g, 'a' );
+cC                 = get( g, 'c' );
+bC                 = get( g, 'b' );
+
+kLon         = [10 11 5 8 26];
+kLonAQ       = [11 8 26];
+kAlphaSensor = 5;
+kQSensor     = 3; 
+kElevator    = 2;
+
+disp('The state space matrices for just alpha and q')
+a    = aC(kLonAQ,kLonAQ)
+b    = bC(kLonAQ,kElevator);
+c    = cC(kAlphaSensor,kLonAQ); % alpha only
+
+disp('The plant eigenvalues')
+eig(a)
+
+%% First design the inner loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kAlpha   =  -0.08; % Notice this sign!
+tauAlpha =   0.1;
+aAlpha   =  -1/tauAlpha;
+bAlpha   =   1/tauAlpha;
+cAlpha   =   kAlpha;
+dAlpha   =   0;
+
+%% Test it in continuous mode
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aCL = CLoopS( a, b, c, aAlpha, bAlpha, cAlpha, dAlpha ); % This applies negative feedback
+
+disp('Closed loop eigenvalues for the inner loop')
+eig(aCL)
+
+
+%% Now add the outer loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+c    = cC([kAlphaSensor kQSensor],kLonAQ);
+kI   =  1.5;
+kQ   =  -0.5;
+aCAS = [-1/tauAlpha 0;0 0];
+bCAS = [1/tauAlpha 0;0 -1];
+cCAS = [kAlpha kI];
+dCAS = [0 kQ];
+
+%% Test it in continuous mode
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aCL = CLoopS( a, b, c, aCAS, bCAS, cCAS, dCAS ); % This applies negative feedback
+
+disp('Closed loop eigenvalues for the inner and outer loops')
+eig(aCL)
+
+dT           = 0.1; % 10 Hz controller works well
+
+[a, b]       = C2DZOH( a, b,       dT );
+[aCAS, bCAS] = C2DZOH( aCAS, bCAS, dT );
+
+nSim         = 100;
+
+xPlot        = zeros(1,nSim);
+
+qC           = 1.0;
+xCAS         = [0;0];
+x            = [0;0;0];
+y            = [0;0];
+
+for k = 1:nSim
+	
+  xPlot(k) = y(2);
+	
+  y    = c*x;
+  
+  xCAS = aCAS*xCAS + bCAS*[y(1);y(2) - qC];
+  yCAS = -(cCAS*xCAS + dCAS*y);
+
+  x    = a*x + b*yCAS;
+  
+end
+
+t = (0:(nSim-1))*dT;
+
+Plot2D( t, xPlot, 'Time (sec)', 'Q' );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-03 15:51:45 -0400 (Tue, 03 Sep 2019) $
+% $Revision: 49687 $
+
+##### SOURCE END #####
+--></body></html>

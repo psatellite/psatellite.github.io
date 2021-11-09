@@ -1,0 +1,406 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Attitude control of a sail using ballast masses in-plane.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="BallastMass2Axis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Attitude control of a sail using ballast masses in-plane.</h1><!--introduction--><pre>Demonstrates control of a single axis using a simple PID controller.
+This uses a fixed-rate dynamics model that is suitable for masses that
+are controlled by stepper motors.</pre><pre>Demonstrates:
+   PlateWithMasses
+   PIDMIMO
+   FMovingBody and FCoreAndMoving
+   TorqueToCM
+   CMToMassPositions</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">AC</span>, PIDMIMO, QTForm, QZero, Plot2D, Cross, RK4,
+CMToMassPositions, TorqueToCM, FCoreAndMoving, FMovingBody
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">First, create suitable CAD model</a></li><li><a href="#3">Second, design controller</a></li><li><a href="#4">Control parameters - use PIDMIMO to design control loops</a></li><li><a href="#5">Third, set up an attitude maneuver to simulate</a></li><li><a href="#6">Fourth, simulate maneuver</a></li><li><a href="#7">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   This file is referenced for listings in the User's Guide.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%  User Parameters</span>
+pitchStep = 0.01;  <span class="comment">% y-axis, radians</span>
+yawStep   = 0.01;  <span class="comment">% z-axis, radians</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+clear <span class="string">SailDisturbance</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>First, create suitable CAD model<a name="2"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+g = load(<span class="string">'PlateWithMasses'</span>);
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Second, design controller<a name="3"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Control parameters - use PIDMIMO to design control loops<a name="4"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+xN           = zeros(6,1);      <span class="comment">% Controller state</span>
+iner         = diag([1 1 1]);   <span class="comment">% Unit inertia</span>
+zeta         = 2;               <span class="comment">% Damping ratio</span>
+wn           = 0.001;           <span class="comment">% Control frequency</span>
+tauInt       = 5000;            <span class="comment">% Integrator time constant</span>
+omegaR       = 5*wn;            <span class="comment">% Rate filter frequency</span>
+sType        = <span class="string">'z'</span>;             <span class="comment">% Type of equations</span>
+dT           = 30;              <span class="comment">% sec</span>
+<span class="comment">% Resulting control values will be accelerations (due to unit inertia input).</span>
+[aC, bC, cC, dC] = PIDMIMO( iner, zeta*ones(1,3), wn*ones(1,3), tauInt*ones(1,3), <span class="keyword">...</span>
+                            omegaR*ones(1,3), dT, sType );
+
+uControl = [0 1 0; 0 0 1]';
+dOffset  = zeros(3,3);
+mControl = [g.body(1).mass.mass g.body(2).mass.mass g.body(3).mass.mass];
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Third, set up an attitude maneuver to simulate<a name="5"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+
+<span class="comment">% States for each body, including attitude, are stacked</span>
+xCore = [zeros(6,1);QZero;zeros(3,1)];
+xMass = [zeros(6,1);QZero;zeros(3,1)];
+x     = [xCore; xMass; xMass];
+iR1   = 2+13;  <span class="comment">% y mass position</span>
+iR2   = 3+26;  <span class="comment">% z mass position</span>
+iV1   = 5+13;  <span class="comment">% y mass velocity</span>
+iV2   = 6+26;  <span class="comment">% z mass velocity</span>
+
+<span class="comment">% New attitude command</span>
+angCommand = [0;pitchStep;yawStep];
+
+<span class="comment">% Assume a contant sail force in the ECI frame</span>
+f        = struct;
+f.total  = [-2*1367/3e8*100^2;0;0];
+tq       = struct;
+tq.total = [0;0;0];
+
+<span class="comment">% Assume center of pressure is at origin</span>
+Cp       = [0;0;0];
+
+<span class="comment">% Additional fields for RHS</span>
+d.g      = g;
+d.nBody  = 3;
+maxRate  = 1;  <span class="comment">% m/s</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Fourth, simulate maneuver<a name="6"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+
+<span class="comment">% Number of simulation points</span>
+nSim = 60;
+
+<span class="comment">% Preallocate plotting arrays</span>
+xPlot  = zeros(size(x,1),nSim);
+tPlot  = zeros(1,nSim);
+aEPlot = zeros(3,nSim);
+TcPlot = zeros(3,nSim);
+TaPlot = zeros(3,nSim);
+
+<span class="comment">% Simulation loop</span>
+<span class="keyword">for</span> k = 1:nSim
+  <span class="comment">% Transverse angle error (small angles)</span>
+  angleError = [0;0;0];
+  u = QTForm( x(7:10), [1;0;0] );
+  angleError(3) = u(2) - angCommand(3);
+  angleError(2) = -u(3) - angCommand(2);
+
+  <span class="comment">% Control</span>
+  yN = cC*xN + dC*angleError;
+  xN = aC*xN + bC*angleError;
+  Tcommand = -g.mass.inertia*yN;
+
+  <span class="comment">% Actuation</span>
+  cM         = TorqueToCM( Tcommand, f.total, Cp );
+  rhoCommand = CMToMassPositions( cM, mControl, dOffset, uControl );
+  rhoActual  = [x(iR1); x(iR2)];
+  deltaRho   = rhoCommand - rhoActual;
+  rhoDot     = sign(deltaRho).*min( abs(deltaRho)/dT, maxRate*[1;1] );
+
+  <span class="comment">% Update rates</span>
+  xRates = x;
+  xRates(iV1) = rhoDot(1);
+  xRates(iV2) = rhoDot(2);
+  xNew = FMovingBody( <span class="string">'init'</span>, x, xRates, tq, struct(<span class="string">'g'</span>, g) );
+
+  <span class="comment">% Disturbances - simple torque model</span>
+  g.body(2).rHinge = [0;rhoActual(1);0];
+  g.body(3).rHinge = [0;0;rhoActual(2)];
+  cMActual = (mControl(2)*g.body(2).rHinge + mControl(3)*g.body(3).rHinge)/g.mass.mass;
+  tq.total = Cross( Cp - cMActual, f.total );
+  d.force  = f;
+  d.torque = tq;
+
+  <span class="comment">% Store</span>
+  xPlot(:,k)  = x;
+  tPlot(:,k)  = (k-1)*dT;
+  aEPlot(:,k) = angleError;
+  TcPlot(:,k) = Tcommand;
+  TaPlot(:,k) = tq.total;
+
+  <span class="comment">% Integrate</span>
+  x = RK4( @FCoreAndMoving, xNew, dT, 0, <span class="string">''</span>, d );
+<span class="keyword">end</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Plot<a name="7"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+h = [];
+h(1) = Plot2D( tPlot, xPlot(7:10,:), <span class="string">'Time (s)'</span>, {<span class="string">'qS'</span>,<span class="string">'qX'</span>,<span class="string">'qY'</span>,<span class="string">'qZ'</span>},<span class="string">'Inertial Quaternion'</span> );
+h(2) = Plot2D( tPlot, xPlot([iR1 iR2],:), <span class="string">'Time (s)'</span>, {<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Trim Mass Positions'</span> );
+h(3) = Plot2D( tPlot, aEPlot, <span class="string">'Time (s)'</span>, {<span class="string">'Roll'</span>,<span class="string">'Pitch'</span>,<span class="string">'Yaw'</span>},<span class="string">'Euler Angle Errors'</span> );
+Plot2D( tPlot, [TcPlot;TaPlot], <span class="string">'Time (s)'</span>, {<span class="string">'Roll'</span>,<span class="string">'Pitch'</span>,<span class="string">'Yaw'</span>},<span class="string">'Torque Demand and Actual'</span>,<span class="keyword">...</span>
+  <span class="string">'lin'</span>,{[1 4],[2 5],[3 6]});
+
+<span class="keyword">if</span> 0
+  <span class="comment">% print figures for User's Guide.</span>
+  figure(h(3));
+  print <span class="string">-depsc2</span> <span class="string">AngleErrorsM1Axis</span>
+  figure(h(2));
+  print <span class="string">-depsc2</span> <span class="string">MassPositionsM1Axis</span>
+  figure(h(1));
+  print <span class="string">-depsc2</span> <span class="string">QInertialM1Axis</span>
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BallastMass2Axis_01.png" alt=""> <img vspace="5" hspace="5" src="BallastMass2Axis_02.png" alt=""> <img vspace="5" hspace="5" src="BallastMass2Axis_03.png" alt=""> <img vspace="5" hspace="5" src="BallastMass2Axis_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Attitude control of a sail using ballast masses in-plane.
+%  Demonstrates control of a single axis using a simple PID controller.
+%  This uses a fixed-rate dynamics model that is suitable for masses that 
+%  are controlled by stepper motors. 
+%
+%  Demonstrates:
+%     PlateWithMasses
+%     PIDMIMO
+%     FMovingBody and FCoreAndMoving
+%     TorqueToCM
+%     CMToMassPositions
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AC, PIDMIMO, QTForm, QZero, Plot2D, Cross, RK4, 
+%  CMToMassPositions, TorqueToCM, FCoreAndMoving, FMovingBody
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2006 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%   This file is referenced for listings in the User's Guide.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  User Parameters
+pitchStep = 0.01;  % y-axis, radians
+yawStep   = 0.01;  % z-axis, radians
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear SailDisturbance
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% First, create suitable CAD model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('PlateWithMasses');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Second, design controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Control parameters - use PIDMIMO to design control loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xN           = zeros(6,1);      % Controller state
+iner         = diag([1 1 1]);   % Unit inertia
+zeta         = 2;               % Damping ratio
+wn           = 0.001;           % Control frequency
+tauInt       = 5000;            % Integrator time constant
+omegaR       = 5*wn;            % Rate filter frequency
+sType        = 'z';             % Type of equations
+dT           = 30;              % sec
+% Resulting control values will be accelerations (due to unit inertia input).
+[aC, bC, cC, dC] = PIDMIMO( iner, zeta*ones(1,3), wn*ones(1,3), tauInt*ones(1,3), ...
+                            omegaR*ones(1,3), dT, sType );
+
+uControl = [0 1 0; 0 0 1]';
+dOffset  = zeros(3,3);
+mControl = [g.body(1).mass.mass g.body(2).mass.mass g.body(3).mass.mass];
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Third, set up an attitude maneuver to simulate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% States for each body, including attitude, are stacked
+xCore = [zeros(6,1);QZero;zeros(3,1)];
+xMass = [zeros(6,1);QZero;zeros(3,1)];
+x     = [xCore; xMass; xMass];
+iR1   = 2+13;  % y mass position
+iR2   = 3+26;  % z mass position
+iV1   = 5+13;  % y mass velocity
+iV2   = 6+26;  % z mass velocity
+
+% New attitude command
+angCommand = [0;pitchStep;yawStep];
+
+% Assume a contant sail force in the ECI frame
+f        = struct;
+f.total  = [-2*1367/3e8*100^2;0;0];
+tq       = struct;
+tq.total = [0;0;0];
+
+% Assume center of pressure is at origin
+Cp       = [0;0;0];  
+
+% Additional fields for RHS
+d.g      = g;
+d.nBody  = 3;
+maxRate  = 1;  % m/s
+  
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Fourth, simulate maneuver
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Number of simulation points
+nSim = 60;
+
+% Preallocate plotting arrays
+xPlot  = zeros(size(x,1),nSim);
+tPlot  = zeros(1,nSim);
+aEPlot = zeros(3,nSim);
+TcPlot = zeros(3,nSim);
+TaPlot = zeros(3,nSim);
+
+% Simulation loop
+for k = 1:nSim
+  % Transverse angle error (small angles)
+  angleError = [0;0;0];
+  u = QTForm( x(7:10), [1;0;0] );
+  angleError(3) = u(2) - angCommand(3);
+  angleError(2) = -u(3) - angCommand(2);
+  
+  % Control
+  yN = cC*xN + dC*angleError;
+  xN = aC*xN + bC*angleError;
+  Tcommand = -g.mass.inertia*yN;
+  
+  % Actuation
+  cM         = TorqueToCM( Tcommand, f.total, Cp );
+  rhoCommand = CMToMassPositions( cM, mControl, dOffset, uControl );
+  rhoActual  = [x(iR1); x(iR2)];
+  deltaRho   = rhoCommand - rhoActual;
+  rhoDot     = sign(deltaRho).*min( abs(deltaRho)/dT, maxRate*[1;1] );
+
+  % Update rates
+  xRates = x;
+  xRates(iV1) = rhoDot(1);
+  xRates(iV2) = rhoDot(2);
+  xNew = FMovingBody( 'init', x, xRates, tq, struct('g', g) );
+  
+  % Disturbances - simple torque model
+  g.body(2).rHinge = [0;rhoActual(1);0];
+  g.body(3).rHinge = [0;0;rhoActual(2)];
+  cMActual = (mControl(2)*g.body(2).rHinge + mControl(3)*g.body(3).rHinge)/g.mass.mass;
+  tq.total = Cross( Cp - cMActual, f.total );
+  d.force  = f;
+  d.torque = tq;
+  
+  % Store
+  xPlot(:,k)  = x;
+  tPlot(:,k)  = (k-1)*dT;
+  aEPlot(:,k) = angleError;
+  TcPlot(:,k) = Tcommand;
+  TaPlot(:,k) = tq.total;
+
+  % Integrate
+  x = RK4( @FCoreAndMoving, xNew, dT, 0, '', d );
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h = [];
+h(1) = Plot2D( tPlot, xPlot(7:10,:), 'Time (s)', {'qS','qX','qY','qZ'},'Inertial Quaternion' );
+h(2) = Plot2D( tPlot, xPlot([iR1 iR2],:), 'Time (s)', {'y','z'},'Trim Mass Positions' );
+h(3) = Plot2D( tPlot, aEPlot, 'Time (s)', {'Roll','Pitch','Yaw'},'Euler Angle Errors' );
+Plot2D( tPlot, [TcPlot;TaPlot], 'Time (s)', {'Roll','Pitch','Yaw'},'Torque Demand and Actual',...
+  'lin',{[1 4],[2 5],[3 6]});
+
+if 0
+  % print figures for User's Guide.
+  figure(h(3));
+  print -depsc2 AngleErrorsM1Axis
+  figure(h(2));
+  print -depsc2 MassPositionsM1Axis
+  figure(h(1));
+  print -depsc2 QInertialM1Axis
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 11:56:16 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39867 $
+
+##### SOURCE END #####
+--></body></html>

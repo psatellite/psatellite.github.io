@@ -1,0 +1,583 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Build a solar sail model using BuildCADModel.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="BuildSolarSail.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Build a solar sail model using BuildCADModel.</h1><!--introduction--><p>Has two subsystems, the sail and the bus.  ------------------------------------------------------------------------  See also BuildCADModel, CreateBody, CreateComponent, MassStructure,  Eul2Mat, QLVLH  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Specify model data</a></li><li><a href="#3">Initialize CAD Model</a></li><li><a href="#4">Create bodies</a></li><li><a href="#5">Add Components to the Bodies</a></li><li><a href="#6">Create subsystems of components</a></li><li><a href="#7">Get the finished model as a struct</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2001-2002 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Specify model data</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">% State</span>
+<span class="comment">%------</span>
+r     = 42167;
+v     = sqrt(3.98600436e6/r);
+rECI  = [r;0;0];
+vECI  = [0;v;0];
+qLVLH = QLVLH( rECI, vECI );
+q     = [1;0;0;0];
+omega = [0;-v/r;0];
+inToM = 0.0254;
+
+<span class="comment">% Square Sail</span>
+<span class="comment">%------------</span>
+area        = 2000;     <span class="comment">% m2</span>
+lSail       = sqrt(area);
+lCore       = 1.5;
+arrayLength = 2;
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="3">Initialize CAD Model</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">% Add spacecraft properties</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+BuildCADModel( <span class="string">'set name'</span> ,      <span class="string">'Solar Sail'</span> );
+BuildCADModel( <span class="string">'set units'</span>,      <span class="string">'mks'</span>        );
+BuildCADModel( <span class="string">'set rECI'</span> ,      rECI         );
+BuildCADModel( <span class="string">'set vECI'</span> ,      vECI         );
+BuildCADModel( <span class="string">'set qLVLH'</span>,      qLVLH        );
+BuildCADModel( <span class="string">'set qECIToBody'</span>, q            );
+BuildCADModel( <span class="string">'set omega'</span>,      omega        );
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSolarSail_01.png" alt=""> <h2 id="4">Create bodies</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">% Core</span>
+<span class="comment">%-----</span>
+m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, <span class="string">'Core'</span> );
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% These are panels used for momentum management</span>
+<span class="comment">% 1: +X,+Y, 2:+X,-Y, 3:-X,-Y, 4:-X,+Y</span>
+<span class="comment">%----------------------------------------------</span>
+rHingePanel      = 1.03*[1 1 -1 -1;1 -1 -1 1;0 0 0 0]*lSail/2;
+rHingePanel(3,:) = -[1 1 1 1];
+bHingePanel      = { Eul2Mat([0 0 pi/4]) Eul2Mat([0 0 3*pi/4])<span class="keyword">...</span>
+                     Eul2Mat([0 0 5*pi/4]) Eul2Mat([0 0 7*pi/4]) };
+
+<span class="keyword">for</span> k = 1:4
+  m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, sprintf(<span class="string">'Panel %i'</span>,k),<span class="keyword">...</span>
+                  <span class="string">'bHinge'</span>, struct( <span class="string">'b'</span>, bHingePanel{k}, <span class="string">'axis'</span>, 2 ),<span class="keyword">...</span>
+                  <span class="string">'previousBody'</span>, 1, <span class="string">'rHinge'</span>, rHingePanel(:,k) );
+  BuildCADModel(<span class="string">'add body'</span>, m ) ;
+<span class="keyword">end</span>
+
+<span class="comment">% This creates the connections between the bodies</span>
+<span class="comment">%------------------------------------------------</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSolarSail_02.png" alt=""> <h2 id="5">Add Components to the Bodies</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+arrayStrut        = lCore/2+0.1;
+
+<span class="comment">% South Solar Array</span>
+<span class="comment">%------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'solar array front'</span>, <span class="string">'z'</span>, arrayLength, <span class="string">'x'</span>, 1,<span class="keyword">...</span>
+                     <span class="string">'nZ'</span>, 2, <span class="string">'nX'</span>, 1, <span class="string">'dirZ'</span>, 1,<span class="string">'theta'</span>, 0,<span class="keyword">...</span>
+                     <span class="string">'electricalConversionEfficiency'</span>, 0.25, <span class="string">'b'</span>, [1 0 0;0 0 1;0 -1 0],<span class="keyword">...</span>
+							       <span class="string">'rA'</span>, [0 arrayStrut 0]', <span class="string">'mass'</span>, 10/(9.806/inToM), <span class="string">'cM'</span>, [0;66;0],<span class="keyword">...</span>
+							       <span class="string">'name'</span>, <span class="string">'South Array'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% North Solar Array</span>
+<span class="comment">%------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'solar array front'</span>, <span class="string">'name'</span>, <span class="string">'North Array'</span>,<span class="keyword">...</span>
+                     <span class="string">'z'</span>, arrayLength, <span class="string">'x'</span>, 1, <span class="string">'nZ'</span>, 2, <span class="string">'nX'</span>, 1, <span class="string">'dirZ'</span>, -1,<span class="keyword">...</span>
+                     <span class="string">'theta'</span>, 0, <span class="string">'electricalConversionEfficiency'</span>, 0.25,<span class="keyword">...</span>
+                     <span class="string">'b'</span>, [1 0 0;0 0 1;0 -1 0],<span class="string">'rA'</span>, [0 -arrayStrut 0]',<span class="keyword">...</span>
+                     <span class="string">'mass'</span>, 10/(9.806/inToM), <span class="string">'cM'</span>, [0;-66;0],<span class="keyword">...</span>
+							       <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Panels</span>
+<span class="comment">%------------------</span>
+lPanel    = lSail/5;
+v         = [ 0 lPanel/2 -lPanel/2    0  lPanel/2 -lPanel/2;<span class="keyword">...</span>
+              0 lPanel/2  lPanel/2    0  lPanel/2  lPanel/2;<span class="keyword">...</span>
+			        0        0         0    0         0         0]';
+panelName = {<span class="string">'+X/+Y'</span> <span class="string">'+X/-Y'</span> <span class="string">'-X/-Y'</span> <span class="string">'-X/+Y'</span>};
+
+f         = [1 2 3;6 5 4];
+
+<span class="keyword">for</span> k = 1:4
+  m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'name'</span>, [<span class="string">'Panel '</span> panelName{k}],<span class="keyword">...</span>
+                       <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                       <span class="string">'faceColor'</span>, [1 0.9 0.5], <span class="string">'edgeColor'</span>, [1 0.8 0.34],<span class="keyword">...</span>
+                       <span class="string">'specularStrength'</span>, 1, <span class="string">'diffuseStrength'</span>, 0.3,<span class="keyword">...</span>
+ 					             <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, 2,  <span class="string">'body'</span>, k+1 );
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+<span class="comment">% Panel drive motors</span>
+<span class="comment">%-------------------</span>
+c45 = cos(pi/4);
+u   = c45*[1 1 -1 -1;1 -1 -1 1;0 0 0 0];
+<span class="keyword">for</span> k = 1:4
+  m = CreateComponent( <span class="string">'make'</span>, <span class="string">'single axis drive'</span>, <span class="string">'name'</span>, [<span class="string">'Drive '</span> panelName{k}],<span class="keyword">...</span>
+                       <span class="string">'powerStandby'</span>, 25,<span class="string">'unitVector'</span>, u(:,k),<span class="keyword">...</span>
+                       <span class="string">'faceColor'</span>, [0.6 0.6 0.6],<span class="keyword">...</span>
+ 					             <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, 0.5,  <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                       <span class="string">'drivenBody'</span>, k );
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+<span class="comment">% Sails</span>
+<span class="comment">%-------------------</span>
+dZ          = 1;
+v           = [ 0 lSail/2 -lSail/2;<span class="keyword">...</span>
+                0 lSail/2  lSail/2;<span class="keyword">...</span>
+			         dZ     dZ       dZ ]';
+sailName    = {<span class="string">'+Y'</span> <span class="string">'-Y'</span> <span class="string">'+X'</span> <span class="string">'-X'</span>};
+
+f           = [1 2 3];
+x           = 0.8;
+z           = -lCore/2-1;
+rSail       = {[0 x z]' [0 -x z]' [x 0 z]' [-x 0 z]' };
+bSail       = { eye(3) Eul2Mat([0 0 pi]) Eul2Mat([0 0 pi/2]) Eul2Mat([0 0 -pi/2]) };
+
+<span class="keyword">for</span> k = 1:4
+  m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'name'</span>, [<span class="string">'Sail '</span> sailName{k}],<span class="keyword">...</span>
+                       <span class="string">'rA'</span>, rSail{k}, <span class="string">'mass'</span>, 20,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                       <span class="string">'faceColor'</span>, [1 0.9 0.5], <span class="string">'edgeColor'</span>, [1 0.8 0.34], <span class="string">'b'</span>, bSail{k}, <span class="keyword">...</span>
+                       <span class="string">'specularStrength'</span>, 1, <span class="string">'diffuseStrength'</span>, 0.3,<span class="keyword">...</span>
+                       <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="keyword">...</span>
+ 					              <span class="string">'body'</span>, 1 );
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+<span class="comment">% Component 7: Core</span>
+<span class="comment">%------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, lCore, <span class="string">'y'</span>, lCore, <span class="string">'z'</span>, lCore,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>, <span class="string">'edgeColor'</span>, [0.7 0.7 0.7],<span class="keyword">...</span>
+ 					           <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, 10, <span class="string">'name'</span>, <span class="string">'Core'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Component 8: +Y radiator</span>
+<span class="comment">%-------------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'radiator'</span>, <span class="string">'x'</span>, lCore, <span class="string">'y'</span>, 0.1, <span class="string">'z'</span>, lCore,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>, <span class="string">'edgeColor'</span>, [0.7 0.7 0.7],<span class="keyword">...</span>
+ 					           <span class="string">'rA'</span>, [0; 1.1*lCore/2; 0], <span class="string">'mass'</span>, 2,<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Radiator +Y'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Component 9: -Y radiator</span>
+<span class="comment">%-------------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'radiator'</span>, <span class="string">'x'</span>, lCore, <span class="string">'y'</span>, 0.1, <span class="string">'z'</span>, lCore,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>, <span class="string">'edgeColor'</span>, [0.7 0.7 0.7],<span class="keyword">...</span>
+ 					           <span class="string">'rA'</span>, [0; -1.1*lCore/2; 0], <span class="string">'mass'</span>, 2,<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Radiator -Y'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Components 10 - 12: Reaction wheels</span>
+<span class="comment">%------------------------------------</span>
+spacecraftHalfWidth = lCore/2;
+panelThickness      = lCore/100;
+
+rWADiameter         = 0.108;
+rWAHeight           = 0.108;
+rWAMass             = MassStructure( 2.6, <span class="string">'cylinder'</span>,  [rWADiameter/2 rWAHeight] );
+
+<span class="comment">% X wheel</span>
+<span class="comment">%--------</span>
+rA = [spacecraftHalfWidth-rWAHeight/2-panelThickness;<span class="keyword">...</span>
+      spacecraftHalfWidth-rWAHeight/2;<span class="keyword">...</span>
+      lCore - rWADiameter/2];
+m  = CreateComponent( <span class="string">'make'</span>, <span class="string">'reaction wheel'</span>, <span class="string">'model'</span>, <span class="string">'hr60'</span>,<span class="keyword">...</span>
+                      <span class="string">'unitVector'</span>, [1;0;0],<span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, rWAMass,<span class="keyword">...</span>
+                      <span class="string">'name'</span>, <span class="string">'RWA X'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Y wheel</span>
+<span class="comment">%--------</span>
+rA = [spacecraftHalfWidth-rWADiameter/2-panelThickness;<span class="keyword">...</span>
+      spacecraftHalfWidth-rWADiameter - rWAHeight/2;<span class="keyword">...</span>
+      lCore - rWADiameter/2];
+m  = CreateComponent( <span class="string">'make'</span>, <span class="string">'reaction wheel'</span>, <span class="string">'model'</span>, <span class="string">'hr60'</span>,<span class="keyword">...</span>
+                      <span class="string">'unitVector'</span>, [0;1;0],<span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, rWAMass,<span class="keyword">...</span>
+                      <span class="string">'name'</span>, <span class="string">'RWA Y'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Z wheel</span>
+<span class="comment">%--------</span>
+rA = [spacecraftHalfWidth-rWAHeight/2-panelThickness;<span class="keyword">...</span>
+      spacecraftHalfWidth-rWAHeight/2;<span class="keyword">...</span>
+      lCore - 3*rWADiameter/2];
+m  = CreateComponent( <span class="string">'make'</span>, <span class="string">'reaction wheel'</span>, <span class="string">'name'</span>, <span class="string">'RWA Z'</span>, <span class="keyword">...</span>
+                      <span class="string">'model'</span>, <span class="string">'hr60'</span>, <span class="string">'unitVector'</span>, [0;0;1],<span class="keyword">...</span>
+ 					            <span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, rWAMass,  <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Chassis</span>
+<span class="comment">%--------</span>
+chassisThickness = 3*inToM;
+chassisWidth     = 7*inToM;
+chassisHeight    = 4*inToM;
+rA               = [-spacecraftHalfWidth+panelThickness+chassisThickness/2;<span class="keyword">...</span>
+                    0;<span class="keyword">...</span>
+                    lCore - chassisHeight/2];
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'pcu'</span>, <span class="string">'name'</span>, <span class="string">'Chassis'</span>, <span class="keyword">...</span>
+                     <span class="string">'x'</span>, chassisThickness, <span class="string">'y'</span>, chassisWidth, <span class="string">'z'</span>, chassisHeight,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>,[0 0 1], <span class="string">'edgeColor'</span>,[0 0 1],<span class="keyword">...</span>
+ 							       <span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, 3,  <span class="string">'body'</span>, 1, <span class="string">'powerStandby'</span>, 15 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Battery</span>
+<span class="comment">%--------</span>
+rA = [-spacecraftHalfWidth + panelThickness + 0.1153; spacecraftHalfWidth - 0.0971; 0.92*lCore - 0.1273];
+m  = CreateComponent( <span class="string">'make'</span>, <span class="string">'battery'</span>, <span class="string">'name'</span>, <span class="string">'Battery'</span>, <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                      <span class="string">'x'</span>, 0.3453, <span class="string">'y'</span>, 0.1942, <span class="string">'z'</span>, 0.2546,<span class="keyword">...</span>
+                      <span class="string">'faceColor'</span>,[0 0 1], <span class="string">'edgeColor'</span>,[0 0 1],<span class="keyword">...</span>
+ 							        <span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, 12,  <span class="string">'batteryCharge'</span>, 1.08e6 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSolarSail_03.png" alt=""> <h2 id="6">Create subsystems of components</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'sail'</span>,<span class="keyword">...</span>
+              {<span class="string">'panel'</span>,<span class="string">'drive'</span>,<span class="string">'sail'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'bus'</span>, {<span class="string">'rwa'</span>,<span class="string">'array'</span>,<span class="string">'Core'</span>,<span class="string">'radiator'</span>,<span class="keyword">...</span>
+               <span class="string">'chassis'</span>,<span class="string">'battery'</span>} );
+
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="7">Get the finished model as a struct</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">% When you get the model the mass properties are automatically updated.</span>
+g = BuildCADModel(<span class="string">'get model'</span>);
+BuildCADModel(<span class="string">'show spacecraft'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSolarSail_04.png" alt=""> <img vspace="5" hspace="5" src="BuildSolarSail_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Build a solar sail model using BuildCADModel.
+% Has two subsystems, the sail and the bus.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BuildCADModel, CreateBody, CreateComponent, MassStructure, 
+%  Eul2Mat, QLVLH
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright (c) 2001-2002 Princeton Satellite Systems, Inc.
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Specify model data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% State
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r     = 42167;
+v     = sqrt(3.98600436e6/r);
+rECI  = [r;0;0];
+vECI  = [0;v;0];
+qLVLH = QLVLH( rECI, vECI );
+q     = [1;0;0;0];
+omega = [0;-v/r;0];
+inToM = 0.0254;
+
+% Square Sail
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+area        = 2000;     % m2
+lSail       = sqrt(area);
+lCore       = 1.5;
+arrayLength = 2;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Initialize CAD Model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Add spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'set name' ,      'Solar Sail' );
+BuildCADModel( 'set units',      'mks'        );
+BuildCADModel( 'set rECI' ,      rECI         );
+BuildCADModel( 'set vECI' ,      vECI         );
+BuildCADModel( 'set qLVLH',      qLVLH        );
+BuildCADModel( 'set qECIToBody', q            );
+BuildCADModel( 'set omega',      omega        );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Create bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateBody( 'make', 'name', 'Core' );
+BuildCADModel('add body', m );
+
+% These are panels used for momentum management
+% 1: +X,+Y, 2:+X,-Y, 3:-X,-Y, 4:-X,+Y
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rHingePanel      = 1.03*[1 1 -1 -1;1 -1 -1 1;0 0 0 0]*lSail/2;
+rHingePanel(3,:) = -[1 1 1 1];
+bHingePanel      = { Eul2Mat([0 0 pi/4]) Eul2Mat([0 0 3*pi/4])...
+                     Eul2Mat([0 0 5*pi/4]) Eul2Mat([0 0 7*pi/4]) };
+
+for k = 1:4
+  m = CreateBody( 'make', 'name', sprintf('Panel %i',k),...
+                  'bHinge', struct( 'b', bHingePanel{k}, 'axis', 2 ),...
+                  'previousBody', 1, 'rHinge', rHingePanel(:,k) );
+  BuildCADModel('add body', m ) ;
+end
+
+% This creates the connections between the bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'compute paths' );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Add Components to the Bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+arrayStrut        = lCore/2+0.1;
+
+% South Solar Array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateComponent( 'make', 'solar array front', 'z', arrayLength, 'x', 1,...
+                     'nZ', 2, 'nX', 1, 'dirZ', 1,'theta', 0,...
+                     'electricalConversionEfficiency', 0.25, 'b', [1 0 0;0 0 1;0 -1 0],...
+							       'rA', [0 arrayStrut 0]', 'mass', 10/(9.806/inToM), 'cM', [0;66;0],...
+							       'name', 'South Array', 'body', 1, 'faceColor', 'solar cell' );
+BuildCADModel( 'add component', m );
+
+% North Solar Array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateComponent( 'make', 'solar array front', 'name', 'North Array',...
+                     'z', arrayLength, 'x', 1, 'nZ', 2, 'nX', 1, 'dirZ', -1,...
+                     'theta', 0, 'electricalConversionEfficiency', 0.25,...
+                     'b', [1 0 0;0 0 1;0 -1 0],'rA', [0 -arrayStrut 0]',...
+                     'mass', 10/(9.806/inToM), 'cM', [0;-66;0],...
+							       'body', 1, 'faceColor', 'solar cell' );
+BuildCADModel( 'add component', m );
+
+% Panels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+lPanel    = lSail/5;
+v         = [ 0 lPanel/2 -lPanel/2    0  lPanel/2 -lPanel/2;...
+              0 lPanel/2  lPanel/2    0  lPanel/2  lPanel/2;...
+			        0        0         0    0         0         0]';
+panelName = {'+X/+Y' '+X/-Y' '-X/-Y' '-X/+Y'};
+			   
+f         = [1 2 3;6 5 4];
+
+for k = 1:4
+  m = CreateComponent( 'make', 'generic','name', ['Panel ' panelName{k}],...
+                       'vertex', v, 'face', f,'inside',0,...
+                       'faceColor', [1 0.9 0.5], 'edgeColor', [1 0.8 0.34],...
+                       'specularStrength', 1, 'diffuseStrength', 0.3,...
+ 					             'rA', [0;0;0], 'mass', 2,  'body', k+1 );
+  BuildCADModel( 'add component', m );
+end
+
+% Panel drive motors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+c45 = cos(pi/4);
+u   = c45*[1 1 -1 -1;1 -1 -1 1;0 0 0 0];
+for k = 1:4
+  m = CreateComponent( 'make', 'single axis drive', 'name', ['Drive ' panelName{k}],...
+                       'powerStandby', 25,'unitVector', u(:,k),...
+                       'faceColor', [0.6 0.6 0.6],...
+ 					             'rA', [0;0;0], 'mass', 0.5,  'body', 1,...
+                       'drivenBody', k );
+  BuildCADModel( 'add component', m );
+end
+
+% Sails
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dZ          = 1;
+v           = [ 0 lSail/2 -lSail/2;...
+                0 lSail/2  lSail/2;...
+			         dZ     dZ       dZ ]';
+sailName    = {'+Y' '-Y' '+X' '-X'};
+			   
+f           = [1 2 3];
+x           = 0.8;
+z           = -lCore/2-1;
+rSail       = {[0 x z]' [0 -x z]' [x 0 z]' [-x 0 z]' };
+bSail       = { eye(3) Eul2Mat([0 0 pi]) Eul2Mat([0 0 pi/2]) Eul2Mat([0 0 -pi/2]) };
+
+for k = 1:4
+  m = CreateComponent( 'make', 'generic', 'name', ['Sail ' sailName{k}],...
+                       'rA', rSail{k}, 'mass', 20,'inside',0,...
+                       'faceColor', [1 0.9 0.5], 'edgeColor', [1 0.8 0.34], 'b', bSail{k}, ...
+                       'specularStrength', 1, 'diffuseStrength', 0.3,...
+                       'vertex', v, 'face', f, ...
+ 					              'body', 1 );
+  BuildCADModel( 'add component', m );
+end
+
+% Component 7: Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateComponent( 'make', 'box', 'x', lCore, 'y', lCore, 'z', lCore,...
+                     'faceColor', 'aluminum', 'edgeColor', [0.7 0.7 0.7],...
+ 					           'rA', [0;0;0], 'mass', 10, 'name', 'Core', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Component 8: +Y radiator 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateComponent( 'make', 'radiator', 'x', lCore, 'y', 0.1, 'z', lCore,...
+                     'faceColor', 'aluminum', 'edgeColor', [0.7 0.7 0.7],...
+ 					           'rA', [0; 1.1*lCore/2; 0], 'mass', 2,...
+                     'name', 'Radiator +Y', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Component 9: -Y radiator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateComponent( 'make', 'radiator', 'x', lCore, 'y', 0.1, 'z', lCore,...
+                     'faceColor', 'aluminum', 'edgeColor', [0.7 0.7 0.7],...
+ 					           'rA', [0; -1.1*lCore/2; 0], 'mass', 2,...
+                     'name', 'Radiator -Y', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Components 10 - 12: Reaction wheels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+spacecraftHalfWidth = lCore/2;
+panelThickness      = lCore/100;
+
+rWADiameter         = 0.108;
+rWAHeight           = 0.108;
+rWAMass             = MassStructure( 2.6, 'cylinder',  [rWADiameter/2 rWAHeight] );
+
+% X wheel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rA = [spacecraftHalfWidth-rWAHeight/2-panelThickness;...
+      spacecraftHalfWidth-rWAHeight/2;...
+      lCore - rWADiameter/2];
+m  = CreateComponent( 'make', 'reaction wheel', 'model', 'hr60',...
+                      'unitVector', [1;0;0],'rA', rA, 'mass', rWAMass,...
+                      'name', 'RWA X', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Y wheel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rA = [spacecraftHalfWidth-rWADiameter/2-panelThickness;...
+      spacecraftHalfWidth-rWADiameter - rWAHeight/2;...
+      lCore - rWADiameter/2];
+m  = CreateComponent( 'make', 'reaction wheel', 'model', 'hr60',...
+                      'unitVector', [0;1;0],'rA', rA, 'mass', rWAMass,...
+                      'name', 'RWA Y', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Z wheel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rA = [spacecraftHalfWidth-rWAHeight/2-panelThickness;...
+      spacecraftHalfWidth-rWAHeight/2;...
+      lCore - 3*rWADiameter/2];
+m  = CreateComponent( 'make', 'reaction wheel', 'name', 'RWA Z', ...
+                      'model', 'hr60', 'unitVector', [0;0;1],...
+ 					            'rA', rA, 'mass', rWAMass,  'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Chassis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+chassisThickness = 3*inToM;
+chassisWidth     = 7*inToM;
+chassisHeight    = 4*inToM;
+rA               = [-spacecraftHalfWidth+panelThickness+chassisThickness/2;...
+                    0;...
+                    lCore - chassisHeight/2];
+m = CreateComponent( 'make', 'pcu', 'name', 'Chassis', ...
+                     'x', chassisThickness, 'y', chassisWidth, 'z', chassisHeight,...
+                     'faceColor',[0 0 1], 'edgeColor',[0 0 1],...
+ 							       'rA', rA, 'mass', 3,  'body', 1, 'powerStandby', 15 );
+BuildCADModel( 'add component', m );
+
+% Battery
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rA = [-spacecraftHalfWidth + panelThickness + 0.1153; spacecraftHalfWidth - 0.0971; 0.92*lCore - 0.1273];
+m  = CreateComponent( 'make', 'battery', 'name', 'Battery', 'body', 1,...
+                      'x', 0.3453, 'y', 0.1942, 'z', 0.2546,...
+                      'faceColor',[0 0 1], 'edgeColor',[0 0 1],...
+ 							        'rA', rA, 'mass', 12,  'batteryCharge', 1.08e6 );
+BuildCADModel( 'add component', m );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Create subsystems of components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'add subsystem', 'sail',...
+              {'panel','drive','sail'} );
+BuildCADModel( 'add subsystem', 'bus', {'rwa','array','Core','radiator',...
+               'chassis','battery'} );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Get the finished model as a struct
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% When you get the model the mass properties are automatically updated.
+g = BuildCADModel('get model');
+BuildCADModel('show spacecraft');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+
+##### SOURCE END #####
+--></body></html>

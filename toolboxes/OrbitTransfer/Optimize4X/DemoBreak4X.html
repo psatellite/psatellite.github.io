@@ -1,0 +1,266 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>DemoBreak4X</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="DemoBreak4X.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Impulsive 4X optimization with interpolated inner laps</a></li><li><a href="#2">run</a></li><li><a href="#3">Now with arc loss!</a></li></ul></div><h2 id="1">Impulsive 4X optimization with interpolated inner laps</h2><p>LEO to GEO. Also compute losses from finite burns.</p><p>See also: OptimizeImpulsive4X, ArcLossConstEls, PlotImpulsiveTrajectory, PlotElementsImpulsive</p><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+
+frame = 1;
+elInitial = [6700 28*pi/180 0 0 0.05 0];
+elFinal   = [42000 0 0 0 0.001 0];
+
+data = OptimizeImpulsive4X;
+<span class="comment">% key,tween = 2,100: Takes 2 minutes. You'll need 1e-5 km/s^2 of accel.</span>
+<span class="comment">% key,tween = 3,200: Takes 15 minutes. You'll need 2e-6 km/s^2 of accel.</span>
+data.keyLaps = 2;
+data.tweenLaps = 100; <span class="comment">% Total laps are (key - 1)*tween + 1</span>
+totalLaps = (data.keyLaps-1)*data.tweenLaps + 1;
+
+<span class="comment">% linear mass cost function</span>
+costFun = @MassCostLinearFun;
+costData = MassCostLinearFun;
+costData.sigma = 350;
+
+restart = false;
+
+data.costFun = costFun;
+data.costData = costData;
+</pre><h2 id="2">run</h2><pre class="codeinput"><span class="keyword">if</span> restart
+  data.dvsPrev = out.keydVsF;
+<span class="keyword">end</span>
+
+tic
+[burns, elOutput, out]=OptimizeImpulsive4X(elInitial,elFinal,[],data);
+toc
+
+OptimizerReport(out)
+
+PlotImpulsiveTrajectory(elInitial, burns, elFinal);
+title(<span class="string">'Optimized burns'</span>);
+PlotElementsImpulsive(elInitial, burns);
+dVs = reshape(out.tweendVsF,4,[])';
+[time,tlabl] = TimeLabl(out.absTimes');
+Plot2D(time,out.burns(:,1)',tlabl,<span class="string">'DV'</span>,<span class="string">'Delta-V Magnitude'</span>)
+</pre><pre class="codeoutput">  Calculating initial feasible solution.
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0       9    4.526510e+02    2.235e+01    2.004e+01
+    1      24    5.248941e+02    2.233e+00    3.982e+01    7.071e-01
+
+Converged to an infeasible point.
+
+fmincon stopped because the size of the current step is less than
+the value of the step size tolerance but constraints are not
+satisfied to within the value of the constraint tolerance.
+
+Elapsed time is 9.108236 seconds.
+Total Delta-V (km/s):
+   5.171793296599902
+Number of burns:
+   202
+Initial elements, target, achieved:
+   1.0e+04 *
+  Columns 1 through 3
+   0.670000000000000   0.000048869219056                   0
+   4.200000000000000                   0                   0
+   3.639731075462559   0.000010093167045   0.000628318530718
+  Columns 4 through 6
+                   0   0.000005000000000                   0
+                   0   0.000000100000000                   0
+                   0   0.000015471908522   0.000314159265359
+Mission duration:
+	22.2027 Time (days)
+Cost value:
+     5.248941440617245e+02
+Iterations:
+     2
+Constraint value:
+   2.233294609352976
+Elapsed Time:
+	9.01457 sec
+System mass:
+	524.894 kg
+Masses:
+   1.0e+02 *
+   4.098692196874151   0.327895375749932   0.822353867993161
+</pre><img vspace="5" hspace="5" src="DemoBreak4X_01.png" alt=""> <img vspace="5" hspace="5" src="DemoBreak4X_02.png" alt=""> <img vspace="5" hspace="5" src="DemoBreak4X_03.png" alt=""> <img vspace="5" hspace="5" src="DemoBreak4X_04.png" alt=""> <h2 id="3">Now with arc loss!</h2><pre class="codeinput">accel = 2e-6;
+dVsArc = [];tDurations = [];
+[~,~,elT] = BurnTimesImpulsive(elInitial,burns);
+elAtBurn = [elInitial;elT(1:(end-1),:)];
+periods = Period(elAtBurn(:,1))';
+<span class="keyword">for</span> i = 1:size(burns,1)
+  [dV,tDuration] = ArcLossConstEls(elAtBurn(i,:),burns(i,:),accel,frame);
+  dVsArc = [dVsArc;dV];
+  tDurations = [tDurations;tDuration];
+<span class="keyword">end</span>
+fprintf(<span class="string">'With impulsive burns, delta-V was %.4g km/s. \n'</span>,sum(abs(burns(:,1))));
+fprintf(<span class="string">'With an acceleration of %.4g km/s^2, delta-V was %.4g km/s. \n'</span>,accel,sum(abs(dVsArc)));
+fprintf(<span class="string">'The maximum burn duration was %.4g seconds. \n'</span>,max(tDurations));
+fprintf(<span class="string">'The maximum proportion of orbit burning was %.4g. \n'</span>,max(tDurations./periods));
+figure()
+plot(time,burns(:,1),time,dVsArc);
+xlabel(<span class="string">'time (s)'</span>);ylabel(<span class="string">'Burn mag (km/s)'</span>);
+legend(<span class="string">'Impulsive'</span>,<span class="string">'Finite acceleration'</span>);
+figure()
+plot(time,tDurations./periods,time,elAtBurn(:,5));
+xlabel(<span class="string">'time(s)'</span>);
+legend(<span class="string">'Orbit fraction'</span>,<span class="string">'eccentricity'</span>);
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">With impulsive burns, delta-V was 5.172 km/s. 
+With an acceleration of 2e-06 km/s^2, delta-V was 24.64 km/s. 
+The maximum burn duration was 1.283e+06 seconds. 
+The maximum proportion of orbit burning was 179.8. 
+</pre><img vspace="5" hspace="5" src="DemoBreak4X_05.png" alt=""> <img vspace="5" hspace="5" src="DemoBreak4X_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Impulsive 4X optimization with interpolated inner laps
+% LEO to GEO. Also compute losses from finite burns.
+%
+% See also: OptimizeImpulsive4X, ArcLossConstEls, PlotImpulsiveTrajectory,
+% PlotElementsImpulsive
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+frame = 1;
+elInitial = [6700 28*pi/180 0 0 0.05 0];
+elFinal   = [42000 0 0 0 0.001 0];
+
+data = OptimizeImpulsive4X;
+% key,tween = 2,100: Takes 2 minutes. You'll need 1e-5 km/s^2 of accel.
+% key,tween = 3,200: Takes 15 minutes. You'll need 2e-6 km/s^2 of accel.
+data.keyLaps = 2;
+data.tweenLaps = 100; % Total laps are (key - 1)*tween + 1
+totalLaps = (data.keyLaps-1)*data.tweenLaps + 1;
+
+% linear mass cost function
+costFun = @MassCostLinearFun;
+costData = MassCostLinearFun;
+costData.sigma = 350;
+
+restart = false;
+
+data.costFun = costFun;
+data.costData = costData;
+
+%% run
+if restart
+  data.dvsPrev = out.keydVsF;
+end
+
+tic
+[burns, elOutput, out]=OptimizeImpulsive4X(elInitial,elFinal,[],data);
+toc
+
+OptimizerReport(out)
+
+PlotImpulsiveTrajectory(elInitial, burns, elFinal);
+title('Optimized burns');
+PlotElementsImpulsive(elInitial, burns);
+dVs = reshape(out.tweendVsF,4,[])';
+[time,tlabl] = TimeLabl(out.absTimes');
+Plot2D(time,out.burns(:,1)',tlabl,'DV','Delta-V Magnitude')
+
+%% Now with arc loss!
+
+accel = 2e-6;
+dVsArc = [];tDurations = [];
+[~,~,elT] = BurnTimesImpulsive(elInitial,burns);
+elAtBurn = [elInitial;elT(1:(end-1),:)];
+periods = Period(elAtBurn(:,1))';
+for i = 1:size(burns,1)
+  [dV,tDuration] = ArcLossConstEls(elAtBurn(i,:),burns(i,:),accel,frame);
+  dVsArc = [dVsArc;dV];
+  tDurations = [tDurations;tDuration];
+end
+fprintf('With impulsive burns, delta-V was %.4g km/s. \n',sum(abs(burns(:,1))));
+fprintf('With an acceleration of %.4g km/s^2, delta-V was %.4g km/s. \n',accel,sum(abs(dVsArc)));
+fprintf('The maximum burn duration was %.4g seconds. \n',max(tDurations));
+fprintf('The maximum proportion of orbit burning was %.4g. \n',max(tDurations./periods));
+figure()
+plot(time,burns(:,1),time,dVsArc);
+xlabel('time (s)');ylabel('Burn mag (km/s)');
+legend('Impulsive','Finite acceleration');
+figure()
+plot(time,tDurations./periods,time,elAtBurn(:,5));
+xlabel('time(s)');
+legend('Orbit fraction','eccentricity');
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-10-01 15:52:33 -0400 (Tue, 01 Oct 2019) $
+% $Revision: 49921 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,376 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>This script explores different roll/yaw controllers.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="RollYawControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>This script explores different roll/yaw controllers.</h1><!--introduction--><pre class="language-matlab">The <span class="string">plant</span> <span class="string">model</span> <span class="string">is</span> <span class="string">obtained</span> <span class="string">from</span> <span class="string">RYDyn.</span>
+The <span class="string">controllers</span> <span class="string">are</span> <span class="string">SISO</span>, linear <span class="string">quadratic</span> <span class="string">regulator</span> <span class="string">and</span> <span class="string">estimator</span>, and
+quadratic <span class="string">controller.</span> <span class="string">The</span> <span class="string">open</span> <span class="string">and</span> <span class="string">closed</span> <span class="string">loop</span> <span class="string">response</span> <span class="string">to</span> <span class="string">a</span> <span class="string">periodic</span>
+disturbance <span class="string">are</span> <span class="string">plotted.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">@statespace/statespace.m</span>, C2DZOH, DQCE, DQCR, LQC, Constant,
+Plot2D, RYDyn, Geo
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Plant models</a></li><li><a href="#4">For simulations</a></li><li><a href="#5">Body fixed torque and inertially fixed torque</a></li><li><a href="#6">Open loop plant</a></li><li><a href="#7">SISO controller</a></li><li><a href="#8">Closed loop simulation</a></li><li><a href="#9">Linear quadratic regulator and estimator</a></li><li><a href="#10">Output feedback</a></li><li><a href="#11">Control Weights</a></li><li><a href="#12">State Weighting</a></li><li><a href="#13">Generate the output feedback controller</a></li><li><a href="#14">The output feedback system is much higher gain and needs a smaller dT</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1999 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+clear <span class="string">w</span>;
+degToRad   = Constant(<span class="string">'deg to rad'</span>);
+radToDeg   = Constant(<span class="string">'rad to deg'</span>);
+secInDay   = 86400;
+wo         = Geo;
+hW         = 60;
+iAxis      = [1 3];
+inr        = diag([1000 200 1000]);
+hMWA       = [0;-1;0]*hW;
+wO         = [0;-1;0]*wo;
+</pre><h2 id="3">Plant models</h2><pre class="codeinput"><span class="comment">%-------------</span>
+[aP, bP, cP, dP, aL, bL, cL, dL, wP] = RYDyn( inr, hMWA, wO, iAxis);
+
+a = aL;
+b = bL;
+c = [1 0];
+d = [0 0];
+</pre><h2 id="4">For simulations</h2><pre class="codeinput"><span class="comment">%----------------</span>
+t     = linspace(0,4*secInDay,1000);
+dT    = t(2);
+days  = t/secInDay;
+</pre><h2 id="5">Body fixed torque and inertially fixed torque</h2><pre class="codeinput"><span class="comment">%----------------------------------------------</span>
+uD    = 1e-6*[1 + 50*cos(t*2*pi/secInDay);1 - 50*sin(t*2*pi/secInDay)];
+Plot2D(days,1e6*uD ,<span class="string">'Time (days)'</span>,<span class="string">'Torque (microNm)'</span>, <span class="string">'Disturbance Torque'</span>)
+legend(<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+</pre><img vspace="5" hspace="5" src="RollYawControl_01.png" alt=""> <h2 id="6">Open loop plant</h2><pre class="codeinput"><span class="comment">%----------------</span>
+[aD, bD] = C2DZOH( a, b, dT );
+
+x = zeros(2,length(t));
+
+<span class="keyword">for</span> k = 2:length(t)
+  x(:,k) = aD*x(:,k-1) + bD*uD(:,k-1);
+<span class="keyword">end</span>
+
+Plot2D(days,x*radToDeg ,<span class="string">'Time (days)'</span>,<span class="string">'Attitude (deg)'</span>,<span class="string">'Open Loop Response'</span>)
+legend(<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+</pre><img vspace="5" hspace="5" src="RollYawControl_02.png" alt=""> <h2 id="7">SISO controller</h2><pre class="codeinput"><span class="comment">%----------------</span>
+wN   = 5*wo;
+zeta = 0.7071;
+disp(<span class="string">'Classical Gain Matrix'</span>)
+kRY  = -[(wo^2-wN^2)/wo;2*zeta*wN]*hW
+</pre><pre class="codeoutput">Classical Gain Matrix
+kRY =
+   0.105006468316193
+  -0.030937530727658
+</pre><h2 id="8">Closed loop simulation</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+x    = zeros(2,length(t));
+u    = zeros(2,length(t));
+<span class="keyword">for</span> k = 2:length(t)
+  y      = x(1,k-1);
+  u(:,k) = -kRY*y;
+  x(:,k) = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+<span class="keyword">end</span>
+
+Plot2D(days,[x*radToDeg;u/1e-6] ,<span class="string">'Time (days)'</span>,[<span class="string">'Attitude (deg)   '</span>;<span class="string">'Control (microNm)'</span>],<span class="keyword">...</span>
+       <span class="string">'Closed Loop Response-Classical'</span>,[],[<span class="string">'[1,2]'</span>;<span class="string">'[3,4]'</span>])
+legend(<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+</pre><img vspace="5" hspace="5" src="RollYawControl_03.png" alt=""> <h2 id="9">Linear quadratic regulator and estimator</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+h  = [1 0];
+qE = 100*eye(2);
+rE = 1;
+qC = eye(2);
+rC = eye(2);
+kE = DQCE( aD, bD, h, qE, rE );
+disp(<span class="string">'QCR/QCE Gain Matrix'</span>)
+kC = DQCR( aD, bD, eye(2), eye(2) )
+
+x  = zeros(2,length(t));
+xE = zeros(2,length(t));
+u  = zeros(2,length(t));
+
+<span class="keyword">for</span> k = 2:length(t)
+  y       = h*x(:,k-1);
+  u(:,k)  = -kC*xE(:,k-1);
+  xE(:,k) = aD*xE(:,k-1) + bD*u(:,k) + kE*(y - [1 0]*xE(:,k-1));
+  x(:,k)  = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+<span class="keyword">end</span>
+[h, hA] = Plot2D(days,[x*radToDeg;xE*radToDeg;u/1e-6] ,<span class="string">'Time (days)'</span>,[<span class="string">'Roll (deg)       '</span>;<span class="keyword">...</span>
+    <span class="string">'Yaw  (deg)       '</span>;<span class="string">'Control (microNm)'</span>], <span class="string">'Closed Loop Response-QCE/QCR'</span>,[],[<span class="string">'[1,3]'</span>;<span class="string">'[2,4]'</span>;<span class="string">'[5,6]'</span>]);
+legend(hA(1).h,<span class="string">'True'</span>,<span class="string">'Estimate'</span>)
+legend(hA(2).h,<span class="string">'True'</span>,<span class="string">'Estimate'</span>)
+legend(hA(3).h,<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+</pre><pre class="codeoutput">QCR/QCE Gain Matrix
+kC =
+  -0.002125510563329   0.168503305647950
+  -0.168503305647952  -0.002125510563328
+</pre><img vspace="5" hspace="5" src="RollYawControl_04.png" alt=""> <h2 id="10">Output feedback</h2><pre class="codeinput"><span class="comment">%----------------</span>
+g = statespace( a, b, c, d, <span class="string">'Roll/Yaw'</span>,[<span class="string">'Roll'</span>,<span class="string">'Yaw '</span>],[<span class="string">'Roll'</span>,<span class="string">'Yaw '</span>],<span class="string">'Roll'</span>);
+</pre><h2 id="11">Control Weights</h2><pre class="codeinput"><span class="comment">%----------------</span>
+w.r = rC;
+</pre><h2 id="12">State Weighting</h2><pre class="codeinput"><span class="comment">%----------------</span>
+w.q  = qC;
+
+w.k  = kRY;
+</pre><h2 id="13">Generate the output feedback controller</h2><pre class="codeinput"><span class="comment">%----------------------------------------</span>
+[gC, j] = LQC( g, w, <span class="string">'lqof'</span> );
+
+fprintf(<span class="string">'Output Feedback cost reduction from %12.4e to %12.4e\n\n'</span>,j.initial,j.final)
+
+disp(<span class="string">'Output Feedback Gain Matrix'</span>)
+kC  = get( gC, <span class="string">'d'</span> )
+</pre><pre class="codeoutput">Output Feedback cost reduction from   1.4086e+04 to   6.9167e+03
+
+Output Feedback Gain Matrix
+kC =
+   0.995634244861754
+  -1.004346662639282
+</pre><h2 id="14">The output feedback system is much higher gain and needs a smaller dT</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------------------</span>
+t       = linspace(0,4*secInDay,4000);
+uD      = 1e-6*[1 + 50*cos(t*2*pi/secInDay);1 - 50*sin(t*2*pi/secInDay)];
+
+dT      = t(2);
+[aD,bD] = C2DZOH(a,b,dT);
+
+x   = zeros(2,length(t));
+u   = zeros(2,length(t));
+
+<span class="keyword">for</span> k = 2:length(t)
+  y       = x(1,k-1);
+  u(:,k)  = -kC*y;
+  x(:,k)  = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+<span class="keyword">end</span>
+
+[h, hA] = Plot2D(t/secInDay,[x*radToDeg;u/1e-6] ,<span class="string">'Time (days)'</span>,[<span class="string">'Atttude  (deg)       '</span>;<span class="string">'Control (microNm)    '</span>],<span class="keyword">...</span>
+                 <span class="string">'Closed Loop Response-LOOF'</span>,[],[<span class="string">'[1,2]'</span>;<span class="string">'[3,4]'</span>]);
+legend(hA(1).h,<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+legend(hA(2).h,<span class="string">'Roll'</span>,<span class="string">'Yaw'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="RollYawControl_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% This script explores different roll/yaw controllers.
+%   The plant model is obtained from RYDyn.
+%   The controllers are SISO, linear quadratic regulator and estimator, and
+%   quadratic controller. The open and closed loop response to a periodic
+%   disturbance are plotted.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also @statespace/statespace.m, C2DZOH, DQCE, DQCR, LQC, Constant, 
+%  Plot2D, RYDyn, Geo
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1999 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear w;
+degToRad   = Constant('deg to rad');
+radToDeg   = Constant('rad to deg');
+secInDay   = 86400;
+wo         = Geo;
+hW         = 60;
+iAxis      = [1 3];
+inr        = diag([1000 200 1000]);
+hMWA       = [0;-1;0]*hW;
+wO         = [0;-1;0]*wo; 
+
+%% Plant models
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[aP, bP, cP, dP, aL, bL, cL, dL, wP] = RYDyn( inr, hMWA, wO, iAxis);
+
+a = aL;
+b = bL;
+c = [1 0];
+d = [0 0];
+
+%% For simulations
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t     = linspace(0,4*secInDay,1000);
+dT    = t(2);
+days  = t/secInDay;
+
+%% Body fixed torque and inertially fixed torque
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+uD    = 1e-6*[1 + 50*cos(t*2*pi/secInDay);1 - 50*sin(t*2*pi/secInDay)];
+Plot2D(days,1e6*uD ,'Time (days)','Torque (microNm)', 'Disturbance Torque')
+legend('Roll','Yaw')
+
+%% Open loop plant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[aD, bD] = C2DZOH( a, b, dT );
+
+x = zeros(2,length(t));
+
+for k = 2:length(t)
+  x(:,k) = aD*x(:,k-1) + bD*uD(:,k-1);
+end
+
+Plot2D(days,x*radToDeg ,'Time (days)','Attitude (deg)','Open Loop Response')
+legend('Roll','Yaw')
+
+%% SISO controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+wN   = 5*wo;
+zeta = 0.7071;
+disp('Classical Gain Matrix')
+kRY  = -[(wo^2-wN^2)/wo;2*zeta*wN]*hW
+
+%% Closed loop simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x    = zeros(2,length(t));
+u    = zeros(2,length(t));
+for k = 2:length(t)
+  y      = x(1,k-1);
+  u(:,k) = -kRY*y;
+  x(:,k) = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+end
+
+Plot2D(days,[x*radToDeg;u/1e-6] ,'Time (days)',['Attitude (deg)   ';'Control (microNm)'],...
+       'Closed Loop Response-Classical',[],['[1,2]';'[3,4]'])
+legend('Roll','Yaw')
+
+%% Linear quadratic regulator and estimator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h  = [1 0];
+qE = 100*eye(2);
+rE = 1;
+qC = eye(2);
+rC = eye(2);
+kE = DQCE( aD, bD, h, qE, rE );
+disp('QCR/QCE Gain Matrix')
+kC = DQCR( aD, bD, eye(2), eye(2) )
+
+x  = zeros(2,length(t));
+xE = zeros(2,length(t));
+u  = zeros(2,length(t));
+
+for k = 2:length(t)
+  y       = h*x(:,k-1);
+  u(:,k)  = -kC*xE(:,k-1);
+  xE(:,k) = aD*xE(:,k-1) + bD*u(:,k) + kE*(y - [1 0]*xE(:,k-1));
+  x(:,k)  = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+end
+[h, hA] = Plot2D(days,[x*radToDeg;xE*radToDeg;u/1e-6] ,'Time (days)',['Roll (deg)       ';...
+    'Yaw  (deg)       ';'Control (microNm)'], 'Closed Loop Response-QCE/QCR',[],['[1,3]';'[2,4]';'[5,6]']);
+legend(hA(1).h,'True','Estimate')
+legend(hA(2).h,'True','Estimate')
+legend(hA(3).h,'Roll','Yaw')
+
+
+%% Output feedback
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g = statespace( a, b, c, d, 'Roll/Yaw',['Roll','Yaw '],['Roll','Yaw '],'Roll');
+
+%% Control Weights
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH	  
+w.r = rC;
+
+%% State Weighting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.q  = qC;
+
+w.k  = kRY;
+
+%% Generate the output feedback controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[gC, j] = LQC( g, w, 'lqof' );
+
+fprintf('Output Feedback cost reduction from %12.4e to %12.4e\n\n',j.initial,j.final)
+			
+disp('Output Feedback Gain Matrix')
+kC  = get( gC, 'd' )
+
+%% The output feedback system is much higher gain and needs a smaller dT
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t       = linspace(0,4*secInDay,4000);
+uD      = 1e-6*[1 + 50*cos(t*2*pi/secInDay);1 - 50*sin(t*2*pi/secInDay)];
+
+dT      = t(2);
+[aD,bD] = C2DZOH(a,b,dT);
+
+x   = zeros(2,length(t));
+u   = zeros(2,length(t));
+
+for k = 2:length(t)
+  y       = x(1,k-1);
+  u(:,k)  = -kC*y;
+  x(:,k)  = aD*x(:,k-1) + bD*(uD(:,k-1) + u(:,k));
+end
+
+[h, hA] = Plot2D(t/secInDay,[x*radToDeg;u/1e-6] ,'Time (days)',['Atttude  (deg)       ';'Control (microNm)    '],...
+                 'Closed Loop Response-LOOF',[],['[1,2]';'[3,4]']);
+legend(hA(1).h,'Roll','Yaw')
+legend(hA(2).h,'Roll','Yaw')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

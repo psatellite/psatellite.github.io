@@ -1,0 +1,743 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Implements and simulates Sun nadir pointing control.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="SunNadirPointingSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Implements and simulates Sun nadir pointing control.</h1><!--introduction--><p>The control system is a three axis PID controller for the spacecraft attitude driving a four reaction wheel tach loop system. The solar arrays use stepping motors and are controlled by a separate controller.</p><p>Saves an STK attitude file. -------------------------------------------------------------------------  See also CDist, I2B, ICSN, SSAD, RHSSNP, SSOutput, CToD, PIDMIMO, PIDesign,  NPlot, Plot2D, TimeGUI, STKAtt, RK4, JD2Date, SunNadir, CW2Roll, ESACS -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">STK Information</a></li><li><a href="#4">Constants</a></li><li><a href="#5">The control sampling period and the simulation integration time step</a></li><li><a href="#6">Number of sim steps</a></li><li><a href="#7">Plot every nPMax steps</a></li><li><a href="#8">Print the time to go message every nTTGo steps</a></li><li><a href="#9">The disturbance model</a></li><li><a href="#10">Spacecraft Inertias</a></li><li><a href="#11">Wheel spin axis unit vectors</a></li><li><a href="#12">Design the control loops</a></li><li><a href="#13">Sensor hardware parameters</a></li><li><a href="#14">Initialize the control system</a></li><li><a href="#15">Plotting arrays</a></li><li><a href="#16">Initial conditions</a></li><li><a href="#17">Initialize the time display</a></li><li><a href="#18">Run the simulation</a></li><li><a href="#19">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">% Copyright (c) 1995-2001, 2015, 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">% All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">% Since version 1. Formerly TSNPSim.</span>
+<span class="comment">% 2016.1 - Update RHS to be a function handle. Save STK attitude file in the</span>
+<span class="comment">% same directory as this file.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">STK Information</h2><pre class="codeinput"><span class="comment">%----------------</span>
+sTKVersion = <span class="string">'3.0'</span>;
+</pre><h2 id="4">Constants</h2><p>---------</p><pre class="codeinput">degToRad    = pi/180;
+radToDeg    = 180/pi;
+c45         = cos(45*degToRad);
+</pre><h2 id="5">The control sampling period and the simulation integration time step</h2><p>--------------------------------------------------------------------</p><pre class="codeinput">tSamp       = 1;
+</pre><h2 id="6">Number of sim steps</h2><p>-------------------</p><pre class="codeinput">nSim        = 10000;
+tEnd        = nSim*tSamp;
+</pre><h2 id="7">Plot every nPMax steps</h2><p>----------------------</p><pre class="codeinput">nPMax       = 10;
+nPlot       = nSim/nPMax;
+</pre><h2 id="8">Print the time to go message every nTTGo steps</h2><p>-----------------------------------------------</p><pre class="codeinput">nTTGo       = 100;
+
+<span class="comment">% Sun angle with respect to the orbit plane and location of the</span>
+<span class="comment">% spacecraft with respect to the sun projection in the orbit plane</span>
+<span class="comment">% ----------------------------------------------------------------</span>
+beta        = 40*degToRad;
+alpha       = 90*degToRad;
+rOrbit      = 26560;
+rCO2Earth   = 6418;
+xNoSun      = -1; <span class="comment">% No sun on the -x face</span>
+
+cBeta       = cos(beta);
+sBeta       = sin(beta);
+angEarth    = asin(rCO2Earth/rOrbit);
+wo          = sqrt(3.986012e5/rOrbit)/rOrbit;
+</pre><h2 id="9">The disturbance model</h2><p>---------------------</p><pre class="codeinput">tDist       = [0.0;0.0;0.0];
+</pre><h2 id="10">Spacecraft Inertias</h2><p>-------------------</p><pre class="codeinput">inr         = [2000,0,0;0,2000,0;0,0,2000];
+inrRWA      = 1;
+inrSA       = 10;
+inrW        = [inrSA,inrSA,inrRWA,inrRWA,inrRWA,inrRWA];
+invInr      = inv(inr);
+</pre><h2 id="11">Wheel spin axis unit vectors</h2><p>----------------------------</p><pre class="codeinput">uW          = [ 0  0 c45 -c45   0    0;<span class="keyword">...</span>
+                1  1   0    0 c45 -c45;<span class="keyword">...</span>
+                0  0 c45  c45 c45  c45];
+
+sAStepSize  = 2*pi/18000; <span class="comment">% 18000 solar array steps per revolution</span>
+iRWA        = 3:6;
+
+<span class="comment">% ------------------------------------------------------------------------------</span>
+</pre><h2 id="12">Design the control loops</h2><p>------------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">% Momentum Management gain</span>
+<span class="comment">% ------------------------</span>
+kMM         = 0.001;
+
+<span class="comment">% RWA Tach loops</span>
+<span class="comment">% --------------</span>
+zeta        = 0.7071;   <span class="comment">% Damping ratio</span>
+wN          = 0.2;      <span class="comment">% Closed loop undamped natural frequency</span>
+
+[aTL,bTL,cTL,dTL] = PIDesign( zeta, wN, inrW(3), tSamp, <span class="string">'Delta'</span> );
+
+<span class="comment">% Attitude Loops</span>
+<span class="comment">% --------------</span>
+zeta        = 0.7071;   <span class="comment">% Damping ratio</span>
+wN          = 0.02;     <span class="comment">% Closed loop undamped natural frequency</span>
+wR          = 1.0;      <span class="comment">% Rate filter break frequency</span>
+tau         = 200;      <span class="comment">% Integrator time constant</span>
+
+[aRoll ,bRoll, cRoll, dRoll]  = PIDMIMO( inr(1,1), zeta, wN, tau, wR, tSamp, <span class="string">'Delta'</span>);
+[aPitch,bPitch,cPitch,dPitch] = PIDMIMO( inr(2,2), zeta, wN, tau, wR, tSamp, <span class="string">'Delta'</span>);
+[aYaw,  bYaw,  cYaw,  dYaw]   = PIDMIMO( inr(3,3), zeta, wN, tau, wR, tSamp, <span class="string">'Delta'</span>);
+</pre><h2 id="13">Sensor hardware parameters</h2><p>--------------------------</p><pre class="codeinput">cantESA     = 36*degToRad;
+uESA        = [0;cos(cantESA);sin(cantESA)];
+cantESAScan = 45*degToRad;
+cS45        = cos(45*degToRad);
+uSSInSAF    = [    0, cS45,    0,-cS45;<span class="keyword">...</span>
+                cS45,    0,-cS45,    0;<span class="keyword">...</span>
+                cS45, cS45, cS45, cS45];
+eyeSSCoeff  = [1 0.01]';
+maxSS       = sum(eyeSSCoeff);
+nSA         = [1 1 2 2];
+quantSSA    = 2^32-1;
+pitchAxis   = 2;
+uPitch      = [0;1;0];
+</pre><h2 id="14">Initialize the control system</h2><p>-----------------------------</p><pre class="codeinput">xTL             = zeros(4,1);
+xRoll           = [0;0];
+xPitch          = [0;0];
+xYaw            = [0;0];
+tC              = [0;0;0];
+cToD            = sum(eyeSSCoeff)/quantSSA;
+kSAPitch        = 0.95;
+sAPitch         = 0.0;
+filteredSAPitch = 0.0;
+[yawModel,sAAngleModel,yawRateModel] = SunNadir( xNoSun, wo, beta, alpha );
+
+<span class="comment">% The control distribution matrix converts</span>
+<span class="comment">% torque demand to angular acceleration demand</span>
+<span class="comment">% --------------------------------------------</span>
+aRWA       = CDist( uW(:,3:6) )/inrW(3);
+wRWAC      = [0;0;0;0];
+</pre><h2 id="15">Plotting arrays</h2><p>---------------</p><pre class="codeinput">cPlot      = zeros( 3,nPlot);
+ePlot      = zeros( 3,nPlot);
+fPlot      = zeros( 2,nPlot);
+hPlot      = zeros( 3,nPlot);
+mPlot      = zeros( 4,nPlot);
+sPlot      = zeros( 1,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(15,nPlot);
+yPlot      = zeros( 3,nPlot);
+zPlot      = zeros( 3,nPlot);
+</pre><h2 id="16">Initial conditions</h2><p>------------------</p><pre class="codeinput">[q,angleSA,w]  = ICSN( xNoSun, wo, beta, alpha );
+angleSAC       = [angleSA;angleSA];
+
+<span class="comment">%             q    eSA    w  wSA    wRWA</span>
+x          = [q;angleSAC;w;[0;0];[0;0;0;0]];
+
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+tW         = zeros(6,1);
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+uSunI      = [ cBeta; 0; sBeta ];
+mSS        = SSOutput( angleSAC, nSA, uSSInSAF, I2B(q,uSunI), eyeSSCoeff, quantSSA );
+</pre><h2 id="17">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, <span class="string">'SunNadirPointingSim'</span> );
+</pre><img vspace="5" hspace="5" src="SunNadirPointingSim_01.png" alt=""> <h2 id="18">Run the simulation</h2><p>------------------</p><pre class="codeinput"><span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% Attitude quaternion</span>
+  <span class="comment">% -------------------</span>
+  qIToB  = x(1:4);
+
+  <span class="comment">% Ephemeris</span>
+  <span class="comment">% ---------</span>
+  rNadir = rOrbit*[-sin(alpha);0;cos(alpha)];
+  uSunB  = I2B( qIToB, uSunI );
+
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+  <span class="comment">% Sensor Hardware</span>
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+
+  <span class="comment">% RWA Tachometer</span>
+  <span class="comment">% --------------</span>
+  wTach  = x(12:15);
+
+  <span class="comment">% Solar array mounted sun sensors</span>
+  <span class="comment">% -------------------------------</span>
+  mSS    = SSOutput( x(5:6), nSA, uSSInSAF, uSunB, eyeSSCoeff, quantSSA );
+
+  <span class="comment">% Conical Scanning ESA</span>
+  <span class="comment">% --------------------</span>
+  [chordwidth, scanAngle] = ESACS( qIToB, rNadir, uESA, cantESAScan, pitchAxis );
+
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+  <span class="comment">% The Attitude Control System</span>
+  <span class="comment">% ------------------------------------------------------------------------------</span>
+
+  <span class="comment">% Ephemeris Processing</span>
+  <span class="comment">% --------------------</span>
+  [yawModel,sAAngleModel,yawRateModel,saRateModel] = SunNadir( xNoSun, wo, beta, alpha );
+
+  <span class="comment">% Sensor Processing</span>
+  <span class="comment">% -----------------</span>
+
+  <span class="comment">% Conical Scanning ESA</span>
+  <span class="comment">% --------------------</span>
+  rollX         = CW2Roll( scanAngle, cantESAScan, uESA, uPitch, angEarth, chordwidth );
+  [dontCare,j]  = min(abs(rollX));
+  roll          = rollX(j);
+  pitch         = scanAngle;
+
+  <span class="comment">% Solar array mounted sun sensors</span>
+  <span class="comment">% -------------------------------</span>
+  uSunL         = [ -sin(alpha)*cBeta;-sBeta;-cos(alpha)*cBeta ];
+  [yaw,sAPitch] = SSAD( cToD*mSS, eyeSSCoeff, uSunL, roll );
+
+  <span class="comment">% Momentum Management</span>
+  <span class="comment">% -------------------</span>
+
+  <span class="comment">% Neglect the rate errors in the body component-assume exact tracking</span>
+  <span class="comment">% -------------------------------------------------------------------</span>
+  hTotal = inr*[0;wo;yawRateModel] + inrRWA*uW(:,iRWA)*wTach;
+
+  <span class="comment">% Proportional controller for momentum</span>
+  <span class="comment">% We could feedforward this to the controller</span>
+  <span class="comment">% -------------------------------------------</span>
+  tMM    = -kMM*hTotal;
+
+  <span class="comment">% The attitude control loops</span>
+  <span class="comment">% --------------------------</span>
+  tC(1)  = -cRoll*xRoll - dRoll*roll;
+  xRoll  =  xRoll + aRoll*xRoll + bRoll*roll;
+
+  tC(2)  = -cPitch*xPitch - dPitch*pitch;
+  xPitch =  xPitch + aPitch*xPitch + bPitch*pitch;
+
+  tC(3)  = -cYaw*xYaw - dYaw*yaw;
+  xYaw   =  xYaw + aYaw*xYaw + bYaw*yaw;
+
+  <span class="comment">% Solar Array Control</span>
+  <span class="comment">% -------------------</span>
+  filteredSAPitch = kSAPitch*filteredSAPitch + (1-kSAPitch)*sAPitch;
+  deltaAngle      = sAStepSize*fix(filteredSAPitch/sAStepSize);
+  angleSAC        = angleSAC + [1;1]*deltaAngle;
+
+  <span class="comment">% Convert torque demand to RWA angular acceleration demand</span>
+  <span class="comment">% --------------------------------------------------------</span>
+  wDRWA  = -aRWA*tC;
+
+  <span class="comment">% Integrate to get wheel speed demand</span>
+  <span class="comment">% -----------------------------------</span>
+  wRWAC  = wRWAC + tSamp*wDRWA;
+
+  <span class="comment">% The RWA Tach Loops</span>
+  <span class="comment">% ------------------</span>
+  wError =  wTach - wRWAC;
+  tRWA   = -dTL*wError - cTL*xTL;
+  xTL    =  xTL + aTL*xTL + bTL*wError;
+
+  <span class="comment">% -------------------------------------------------------------------------------</span>
+  <span class="comment">% Update the equations of motion</span>
+  <span class="comment">% -------------------------------------------------------------------------------</span>
+  tW(iRWA) = tRWA;
+  x        = RK4(@RHSSNP,x,dTSim,t,inr,invInr,tDist+tMM,inrW,uW,tW,angleSAC);
+  t        = t + dTSim;
+
+  <span class="comment">% Update the orbit</span>
+  <span class="comment">% ----------------</span>
+  alpha  = alpha + wo*dTSim;
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">% --------</span>
+  <span class="keyword">if</span>( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = x;
+    tPlot(1,kP) = alpha*radToDeg;
+    cPlot(:,kP) = tC;
+    ePlot(:,kP) = [roll;pitch;yaw]*radToDeg;
+    fPlot(:,kP) = [sAPitch;yaw]*radToDeg;
+    mPlot(:,kP) = mSS';
+    yPlot(:,kP) = [yawModel;sAAngleModel;yawRateModel]*radToDeg;
+    sPlot(1,kP) = angleSAC(1);
+    hPlot(:,kP) = hTotal;
+    zPlot(:,kP) = tMM;
+    nP          = nPMax - 1;
+  <span class="keyword">else</span>
+    nP          = nP - 1;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% ------------------------------------------------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SunNadirPointingSim_02.png" alt=""> <h2 id="19">Plotting</h2><p>------------------------------------------------------------------------------</p><pre class="codeinput">j = 1:kP;
+tPlot = tPlot(j);
+
+epoch = JD2Date;
+
+filePath = fileparts(mfilename(<span class="string">'fullpath'</span>));
+[err, message] = STKAtt( fullfile(filePath,<span class="string">'STKAttitudeFile.txt'</span>),sTKVersion,epoch,kP,tPlot,xPlot( 1: 4,j),<span class="string">'quaternion'</span>);
+
+tL = <span class="string">'\alpha (deg)'</span>;
+Plot2D(tPlot,xPlot( 1: 4,j),tL,{<span class="string">'Q_s'</span>;<span class="string">'Q_x'</span>;<span class="string">'Q_y'</span>;<span class="string">'Q_z'</span>},<span class="string">'Quaternion'</span>)
+Plot2D(tPlot,xPlot( 7: 9,j),tL,{<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>},<span class="string">'Body Rates'</span>)
+Plot2D(tPlot,xPlot(12:15,j),tL,{<span class="string">'\omega_1'</span>;<span class="string">'\omega_2'</span>;<span class="string">'\omega_3'</span>;<span class="string">'\omega_4'</span>},<span class="string">'Reaction Wheels'</span>)
+Plot2D(tPlot,[xPlot([5 6 10 11],j);sPlot(j)]*radToDeg, tL,<span class="keyword">...</span>
+      {<span class="string">'Angle (deg)'</span>,<span class="string">'Rate (deg/sec)'</span> <span class="string">'Commanded Angle (deg)'</span>}, <span class="string">'Solar Array'</span>,<span class="string">'lin'</span>, {<span class="string">'1:2'</span>,<span class="string">'3:4'</span>,<span class="string">'5'</span>} )
+Plot2D(tPlot,cPlot(:,j),tL,{<span class="string">'T_x'</span>;<span class="string">'T_y'</span>;<span class="string">'T_z'</span>},<span class="string">'Control Torque Demand'</span>)
+Plot2D(tPlot,ePlot(:,j),tL,{<span class="string">'Roll  (deg)'</span>;<span class="string">'Pitch (deg)'</span>;<span class="string">'Yaw   (deg)'</span>},<span class="string">'Measured Attitude Errors'</span>)
+Plot2D(tPlot,fPlot(:,j),tL,{<span class="string">'SA Pitch Error (deg)'</span>;<span class="string">'Yaw Error (deg)'</span>},<span class="string">'Sun Sensor Measured Attitude'</span>)
+Plot2D(tPlot,mPlot(:,j),tL,{ <span class="string">'[+y +z] (Counts)'</span>;<span class="keyword">...</span>
+                                        <span class="string">'[+x +z] (Counts)'</span>;<span class="keyword">...</span>
+                                        <span class="string">'[-y +z] (Counts)'</span>;<span class="keyword">...</span>
+                                        <span class="string">'[-x +z] (Counts)'</span>},<span class="string">'Sun Sensor Eyes'</span>)
+Plot2D(tPlot,yPlot(:,j),tL,<span class="keyword">...</span>
+      {<span class="string">'Yaw (deg)'</span> <span class="string">'Solar Array Angle (deg)'</span> <span class="string">'Yaw Rate (deg/sec)'</span>}, <span class="string">'Model Sun Nadir Trajectory'</span>)
+Plot2D(tPlot,hPlot(:,j),tL,{<span class="string">'h_x'</span>;<span class="string">'h_y'</span>;<span class="string">'h_z'</span>},<span class="string">'Body Momentum'</span>)
+Plot2D(tPlot,zPlot(:,j),tL,{<span class="string">'T_x'</span>;<span class="string">'T_y'</span>;<span class="string">'T_z'</span>},<span class="string">'Momentum Management torque'</span>)
+
+TimeGUI(<span class="string">'close'</span>);
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SunNadirPointingSim_03.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_04.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_05.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_06.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_07.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_08.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_09.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_10.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_11.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_12.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_13.png" alt=""> <img vspace="5" hspace="5" src="SunNadirPointingSim_14.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Implements and simulates Sun nadir pointing control.
+% The control system is a three axis PID controller for the
+% spacecraft attitude driving a four reaction wheel tach loop
+% system. The solar arrays use stepping motors and are 
+% controlled by a separate controller.
+%
+% Saves an STK attitude file.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also CDist, I2B, ICSN, SSAD, RHSSNP, SSOutput, CToD, PIDMIMO, PIDesign, 
+%  NPlot, Plot2D, TimeGUI, STKAtt, RK4, JD2Date, SunNadir, CW2Roll, ESACS
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Copyright (c) 1995-2001, 2015, 2016 Princeton Satellite Systems, Inc. 
+% All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Since version 1. Formerly TSNPSim.
+% 2016.1 - Update RHS to be a function handle. Save STK attitude file in the
+% same directory as this file.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% STK Information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sTKVersion = '3.0';
+
+%% Constants
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+degToRad    = pi/180;
+radToDeg    = 180/pi;
+c45         = cos(45*degToRad);
+
+%% The control sampling period and the simulation integration time step
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSamp       = 1;
+
+%% Number of sim steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSim        = 10000;
+tEnd        = nSim*tSamp;
+
+%% Plot every nPMax steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nPMax       = 10;
+nPlot       = nSim/nPMax;
+
+%% Print the time to go message every nTTGo steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nTTGo       = 100;
+
+% Sun angle with respect to the orbit plane and location of the 
+% spacecraft with respect to the sun projection in the orbit plane
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+beta        = 40*degToRad;
+alpha       = 90*degToRad;
+rOrbit      = 26560;
+rCO2Earth   = 6418;
+xNoSun      = -1; % No sun on the -x face
+
+cBeta       = cos(beta);
+sBeta       = sin(beta);
+angEarth    = asin(rCO2Earth/rOrbit);
+wo          = sqrt(3.986012e5/rOrbit)/rOrbit; 
+
+%% The disturbance model
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tDist       = [0.0;0.0;0.0];
+			     
+%% Spacecraft Inertias
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr         = [2000,0,0;0,2000,0;0,0,2000];
+inrRWA      = 1;
+inrSA       = 10;
+inrW        = [inrSA,inrSA,inrRWA,inrRWA,inrRWA,inrRWA]; 
+invInr      = inv(inr);
+			     
+%% Wheel spin axis unit vectors
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+uW          = [ 0  0 c45 -c45   0    0;...
+                1  1   0    0 c45 -c45;...
+                0  0 c45  c45 c45  c45]; 
+				
+sAStepSize  = 2*pi/18000; % 18000 solar array steps per revolution
+iRWA        = 3:6;
+
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Design the control loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Momentum Management gain
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kMM         = 0.001;
+
+% RWA Tach loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+zeta        = 0.7071;   % Damping ratio
+wN          = 0.2;      % Closed loop undamped natural frequency
+
+[aTL,bTL,cTL,dTL] = PIDesign( zeta, wN, inrW(3), tSamp, 'Delta' );
+
+% Attitude Loops
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+zeta        = 0.7071;   % Damping ratio
+wN          = 0.02;     % Closed loop undamped natural frequency
+wR          = 1.0;      % Rate filter break frequency
+tau         = 200;      % Integrator time constant
+
+[aRoll ,bRoll, cRoll, dRoll]  = PIDMIMO( inr(1,1), zeta, wN, tau, wR, tSamp, 'Delta');
+[aPitch,bPitch,cPitch,dPitch] = PIDMIMO( inr(2,2), zeta, wN, tau, wR, tSamp, 'Delta');
+[aYaw,  bYaw,  cYaw,  dYaw]   = PIDMIMO( inr(3,3), zeta, wN, tau, wR, tSamp, 'Delta');
+
+%% Sensor hardware parameters
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cantESA     = 36*degToRad;
+uESA        = [0;cos(cantESA);sin(cantESA)];
+cantESAScan = 45*degToRad;
+cS45        = cos(45*degToRad);
+uSSInSAF    = [    0, cS45,    0,-cS45;...
+                cS45,    0,-cS45,    0;...
+                cS45, cS45, cS45, cS45];
+eyeSSCoeff  = [1 0.01]';
+maxSS       = sum(eyeSSCoeff);
+nSA         = [1 1 2 2];
+quantSSA    = 2^32-1;
+pitchAxis   = 2;
+uPitch      = [0;1;0];
+
+%% Initialize the control system
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xTL             = zeros(4,1);
+xRoll           = [0;0];
+xPitch          = [0;0];
+xYaw            = [0;0];
+tC              = [0;0;0];
+cToD            = sum(eyeSSCoeff)/quantSSA;
+kSAPitch        = 0.95;
+sAPitch         = 0.0;
+filteredSAPitch = 0.0;
+[yawModel,sAAngleModel,yawRateModel] = SunNadir( xNoSun, wo, beta, alpha );
+
+% The control distribution matrix converts
+% torque demand to angular acceleration demand
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aRWA       = CDist( uW(:,3:6) )/inrW(3);
+wRWAC      = [0;0;0;0];
+
+%% Plotting arrays
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cPlot      = zeros( 3,nPlot);
+ePlot      = zeros( 3,nPlot);
+fPlot      = zeros( 2,nPlot);
+hPlot      = zeros( 3,nPlot);
+mPlot      = zeros( 4,nPlot);
+sPlot      = zeros( 1,nPlot);
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(15,nPlot);
+yPlot      = zeros( 3,nPlot);
+zPlot      = zeros( 3,nPlot);
+
+%% Initial conditions
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[q,angleSA,w]  = ICSN( xNoSun, wo, beta, alpha );
+angleSAC       = [angleSA;angleSA];
+
+%             q    eSA    w  wSA    wRWA
+x          = [q;angleSAC;w;[0;0];[0;0;0;0]];
+
+dTSim      = tSamp;
+t          = 0;
+nP         = 0;
+kP         = 0;
+tW         = zeros(6,1);
+roll       = 0;
+pitch      = 0;
+yaw        = 0;
+uSunI      = [ cBeta; 0; sBeta ];
+mSS        = SSOutput( angleSAC, nSA, uSSInSAF, I2B(q,uSunI), eyeSSCoeff, quantSSA );  
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, 'SunNadirPointingSim' );
+
+%% Run the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim 
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+    
+  % Attitude quaternion
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qIToB  = x(1:4);
+    
+  % Ephemeris
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  rNadir = rOrbit*[-sin(alpha);0;cos(alpha)]; 
+  uSunB  = I2B( qIToB, uSunI );   
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % Sensor Hardware
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  
+  % RWA Tachometer
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wTach  = x(12:15);
+  
+  % Solar array mounted sun sensors
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  mSS    = SSOutput( x(5:6), nSA, uSSInSAF, uSunB, eyeSSCoeff, quantSSA );      
+  
+  % Conical Scanning ESA
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [chordwidth, scanAngle] = ESACS( qIToB, rNadir, uESA, cantESAScan, pitchAxis ); 
+
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % The Attitude Control System
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  
+  % Ephemeris Processing
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [yawModel,sAAngleModel,yawRateModel,saRateModel] = SunNadir( xNoSun, wo, beta, alpha );
+  
+  % Sensor Processing
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  
+  % Conical Scanning ESA
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  rollX         = CW2Roll( scanAngle, cantESAScan, uESA, uPitch, angEarth, chordwidth );
+  [dontCare,j]  = min(abs(rollX));
+  roll          = rollX(j);
+  pitch         = scanAngle; 
+  
+  % Solar array mounted sun sensors
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  uSunL         = [ -sin(alpha)*cBeta;-sBeta;-cos(alpha)*cBeta ];
+  [yaw,sAPitch] = SSAD( cToD*mSS, eyeSSCoeff, uSunL, roll );
+  
+  % Momentum Management
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+  % Neglect the rate errors in the body component-assume exact tracking
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  hTotal = inr*[0;wo;yawRateModel] + inrRWA*uW(:,iRWA)*wTach;
+
+  % Proportional controller for momentum
+  % We could feedforward this to the controller
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  tMM    = -kMM*hTotal; 
+  
+  % The attitude control loops
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tC(1)  = -cRoll*xRoll - dRoll*roll;
+  xRoll  =  xRoll + aRoll*xRoll + bRoll*roll;
+  
+  tC(2)  = -cPitch*xPitch - dPitch*pitch;
+  xPitch =  xPitch + aPitch*xPitch + bPitch*pitch;
+  
+  tC(3)  = -cYaw*xYaw - dYaw*yaw;
+  xYaw   =  xYaw + aYaw*xYaw + bYaw*yaw;
+    
+  % Solar Array Control
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  filteredSAPitch = kSAPitch*filteredSAPitch + (1-kSAPitch)*sAPitch;
+  deltaAngle      = sAStepSize*fix(filteredSAPitch/sAStepSize); 
+  angleSAC        = angleSAC + [1;1]*deltaAngle;
+  
+  % Convert torque demand to RWA angular acceleration demand
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wDRWA  = -aRWA*tC;
+  
+  % Integrate to get wheel speed demand
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  wRWAC  = wRWAC + tSamp*wDRWA;
+  
+  % The RWA Tach Loops
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  wError =  wTach - wRWAC; 
+  tRWA   = -dTL*wError - cTL*xTL; 
+  xTL    =  xTL + aTL*xTL + bTL*wError;
+  
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Update the equations of motion
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  tW(iRWA) = tRWA;
+  x        = RK4(@RHSSNP,x,dTSim,t,inr,invInr,tDist+tMM,inrW,uW,tW,angleSAC);
+  t        = t + dTSim;
+  
+  % Update the orbit
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  alpha  = alpha + wo*dTSim;
+  
+  % Plotting
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = x;
+    tPlot(1,kP) = alpha*radToDeg;
+    cPlot(:,kP) = tC;
+    ePlot(:,kP) = [roll;pitch;yaw]*radToDeg;
+    fPlot(:,kP) = [sAPitch;yaw]*radToDeg;
+    mPlot(:,kP) = mSS';
+    yPlot(:,kP) = [yawModel;sAAngleModel;yawRateModel]*radToDeg;
+    sPlot(1,kP) = angleSAC(1);
+    hPlot(:,kP) = hTotal;
+    zPlot(:,kP) = tMM;
+    nP          = nPMax - 1;
+  else
+    nP          = nP - 1;
+  end
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Plotting
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+j = 1:kP;
+tPlot = tPlot(j);
+
+epoch = JD2Date;
+
+filePath = fileparts(mfilename('fullpath'));
+[err, message] = STKAtt( fullfile(filePath,'STKAttitudeFile.txt'),sTKVersion,epoch,kP,tPlot,xPlot( 1: 4,j),'quaternion');
+
+tL = '\alpha (deg)';
+Plot2D(tPlot,xPlot( 1: 4,j),tL,{'Q_s';'Q_x';'Q_y';'Q_z'},'Quaternion')
+Plot2D(tPlot,xPlot( 7: 9,j),tL,{'\omega_x';'\omega_y';'\omega_z'},'Body Rates')
+Plot2D(tPlot,xPlot(12:15,j),tL,{'\omega_1';'\omega_2';'\omega_3';'\omega_4'},'Reaction Wheels')
+Plot2D(tPlot,[xPlot([5 6 10 11],j);sPlot(j)]*radToDeg, tL,...
+      {'Angle (deg)','Rate (deg/sec)' 'Commanded Angle (deg)'}, 'Solar Array','lin', {'1:2','3:4','5'} )
+Plot2D(tPlot,cPlot(:,j),tL,{'T_x';'T_y';'T_z'},'Control Torque Demand')
+Plot2D(tPlot,ePlot(:,j),tL,{'Roll  (deg)';'Pitch (deg)';'Yaw   (deg)'},'Measured Attitude Errors')
+Plot2D(tPlot,fPlot(:,j),tL,{'SA Pitch Error (deg)';'Yaw Error (deg)'},'Sun Sensor Measured Attitude')
+Plot2D(tPlot,mPlot(:,j),tL,{ '[+y +z] (Counts)';...
+                                        '[+x +z] (Counts)';...
+                                        '[-y +z] (Counts)';...
+                                        '[-x +z] (Counts)'},'Sun Sensor Eyes')
+Plot2D(tPlot,yPlot(:,j),tL,...
+      {'Yaw (deg)' 'Solar Array Angle (deg)' 'Yaw Rate (deg/sec)'}, 'Model Sun Nadir Trajectory')
+Plot2D(tPlot,hPlot(:,j),tL,{'h_x';'h_y';'h_z'},'Body Momentum')
+Plot2D(tPlot,zPlot(:,j),tL,{'T_x';'T_y';'T_z'},'Momentum Management torque')
+
+TimeGUI('close');
+Figui;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-26 16:42:36 -0400 (Thu, 26 Sep 2019) $
+% $Revision: 49890 $
+
+##### SOURCE END #####
+--></body></html>

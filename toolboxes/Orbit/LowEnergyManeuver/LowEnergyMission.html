@@ -1,0 +1,626 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>LowEnergyMission</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-09"><meta name="DC.source" content="LowEnergyMission.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Low Energy Mission</a></li><li><a href="#2">Problem definition and setup</a></li><li><a href="#3">Determine orientation</a></li><li><a href="#4">Get LET in CRTBP</a></li><li><a href="#5">Phasing</a></li><li><a href="#6">Transfer to 3BP</a></li><li><a href="#7">Transfer to 4BP</a></li><li><a href="#8">Minimize energy wrt the moon in 4bp</a></li><li><a href="#9">Store the results</a></li></ul></div><h2 id="1">Low Energy Mission</h2><p>Earth to moon transfer  ------------------------------------------------------------------------  See also:  LagrangePointsL1ToL5, PlanetPositionEMBarycenter, LowEnergyTransferInCRTBP,  PlotLET3BP, Targeting3BP2, Targeting4BP, PlotLET, PlotLET3BP, MinE4BP  ------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2018.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Problem definition and setup</h2><pre class="codeinput">jDate     = JD2000+1;
+r0        = 7500; <span class="comment">% km</span>
+planet    = <span class="string">'Earth'</span>;
+moon      = <span class="string">'Moon'</span>;
+saveFiles = false;
+tRun   = tic;
+
+<span class="comment">% Get body parameters</span>
+<span class="comment">%--------------------</span>
+muPlanet = Constant([<span class="string">'mu '</span>,planet]);
+muMoon   = Constant([<span class="string">'mu '</span>,moon  ]);
+muSun    = Constant( <span class="string">'mu Sun'</span> );
+
+muCRTBP = (muMoon + muPlanet) / (muMoon + muPlanet + muSun);
+p    = LagrangePointsL1ToL5( muMoon/(muPlanet + muMoon) );
+p    = [-p(:,1) + [muMoon/(muPlanet + muMoon)-1 ;0];0];
+</pre><h2 id="3">Determine orientation</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+PlanetPositionEMBarycenter(<span class="string">'initialize'</span>,[0,3,10])
+[r,v] = PlanetPositionEMBarycenter(<span class="string">'update'</span>,jDate);
+sunState = [r(:,1);v(:,1)];
+planetState = [r(:,2);v(:,2)];
+moonState = [r(:,3);v(:,3)] + planetState-sunState;
+elements = RV2El(sunState(1:3),sunState(4:6),muSun);
+moonStateRotated = J20002RotPuls(moonState,sunState,muSun);
+distanceUnit = elements(1);
+relStatePM = moonState - planetState;
+elementsPM = RV2El(relStatePM(1:3),relStatePM(4:6),muPlanet+muMoon);
+p = Mag(p * elementsPM(1));
+
+<span class="keyword">if</span> moonStateRotated(1) &lt; 0
+    orientation = <span class="string">''</span>;
+<span class="keyword">else</span>
+    orientation = <span class="string">'p'</span>;
+<span class="keyword">end</span>
+</pre><h2 id="4">Get LET in CRTBP</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+tic
+h = waitbar(0,<span class="string">'LET Status: Solving for Low Energy Transfer in CRTBP \newline Step 1/5 : Approximately 6 min remaining'</span>);
+scaleFactor = muPlanet/(muMoon+muPlanet);
+LET = LowEnergyTransferInCRTBP(r0/scaleFactor/distanceUnit,(Mag(moonState(1:3)-planetState(1:3)))/distanceUnit,muCRTBP,orientation);
+family = LET.family;
+fprintf(<span class="string">'Using family %s\n'</span>,family);
+toc
+</pre><pre class="codeoutput">Beginning optimization in PeriodicOrbitFromGuess
+
+                                Max     Line search  Directional  First-order 
+ Iter F-count        f(x)   constraint   steplength   derivative   optimality Procedure 
+    0      3            0    5.373e-07                                         Infeasible start point
+    1      6            0     1.76e-09            1            0      0.00348   
+
+Local minimum found that satisfies the constraints.
+
+Optimization completed because the objective function is non-decreasing in 
+feasible directions, to within the value of the optimality tolerance,
+and constraints are satisfied to within the  value of the constraint tolerance.
+
+Iteration 0 of LowEnergyTransferInCRTBP
+  Iteration 1 of get_c
+  Iteration 2 of get_c
+  Iteration 3 of get_c
+  Iteration 4 of get_c
+  Iteration 5 of get_c
+Iteration 1 of LowEnergyTransferInCRTBP
+  Iteration 1 of get_c
+  Iteration 2 of get_c
+  Iteration 3 of get_c
+  Iteration 4 of get_c
+  Iteration 5 of get_c
+Iteration 2 of LowEnergyTransferInCRTBP
+  Iteration 1 of get_c
+  Iteration 2 of get_c
+  Iteration 3 of get_c
+  Iteration 4 of get_c
+  Iteration 5 of get_c
+Iteration 3 of LowEnergyTransferInCRTBP
+  Iteration 1 of get_c
+  Iteration 2 of get_c
+  Iteration 3 of get_c
+  Iteration 4 of get_c
+  Iteration 5 of get_c
+Using family f16
+Elapsed time is 3.129895 seconds.
+</pre><img vspace="5" hspace="5" src="LowEnergyMission_01.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_02.png" alt=""> <h2 id="5">Phasing</h2><pre class="codeinput"><span class="comment">%--------</span>
+waitbar(.2,h,<span class="string">'LET Status: Estimating Transfer Time \newline Step 2/5 : Approximately 5.5 min remaining'</span>)
+desiredPhasing = LET.theta2 - pi/15;
+[initialStateEph,sec2tu] = CRTBP2kms(LET.initialState,distanceUnit,muSun,muMoon+muPlanet);
+x0 = LET.tF/sec2tu;
+debugData.x0 = x0;
+[x,orbits] = LETPhasing(x0,desiredPhasing,moon,planet,0,jDate);
+dtTarg = x ;
+debugData.dtTarg = dtTarg;
+fprintf(<span class="string">'Phasing requires %f lunar orbits\n'</span>,orbits);
+</pre><pre class="codeoutput">Phasing requires 3.573600 lunar orbits
+</pre><img vspace="5" hspace="5" src="LowEnergyMission_03.png" alt=""> <h2 id="6">Transfer to 3BP</h2><pre class="codeinput"><span class="comment">%----------------</span>
+waitbar(.4,h,<span class="string">'LET Status: Transferring to MKS Sun/Earth System \newline Step 3/5 : Approximately 4.5 min remaining'</span>)
+
+<span class="comment">%[initialStateEph] = CRTBP2kms(LET.initialState,distanceUnit,muSun,muMoon+muPlanet);</span>
+[r,v] = PlanetPositionEMBarycenter(<span class="string">'update'</span>,jDate);
+sunState = [r(:,1);v(:,1)];
+[initialStateEph] = RotPuls2J2000(initialStateEph,sunState,muSun);
+dV1Eph = CRTBP2kms([LET.initialState(1:3);LET.dV1],distanceUnit,muSun,muMoon+muPlanet);
+dV1Eph = RotPuls2J2000(dV1Eph,sunState,muSun);
+dV1Eph = Mag(dV1Eph(4:6));<span class="comment">%*.9995; % TEMP</span>
+
+fprintf(<span class="string">'Performing targeting for the 3 body problem...\n'</span>);
+tic
+elements0 = RV2El(initialStateEph(1:3),initialStateEph(4:6),muMoon+muPlanet);
+figH1 = PlotLET3BP(elements0,dV1Eph,dtTarg,jDate);
+set(figH1(1),<span class="string">'name'</span>,strcat(get(figH1(1),<span class="string">'name'</span>),<span class="string">' BEFORE'</span>))
+set(figH1(2),<span class="string">'name'</span>,strcat(get(figH1(2),<span class="string">'name'</span>),<span class="string">' BEFORE'</span>))
+debugData.pre3BP.elements = elements0;
+debugData.pre3BP.dV1Eph = dV1Eph;
+[elements,dV1New] = Targeting3BP2(elements0,dV1Eph,dtTarg,0,muMoon,jDate);
+toc
+debugData.post3BP.elements = elements;
+debugData.post3BP.dV1Eph = dV1New;
+figH2 = PlotLET3BP(elements,dV1New,dtTarg,jDate);  <span class="comment">% remove handle</span>
+set(figH2(1),<span class="string">'name'</span>,strcat(get(figH2(1),<span class="string">'name'</span>),<span class="string">' AFTER'</span>))
+set(figH2(2),<span class="string">'name'</span>,strcat(get(figH2(2),<span class="string">'name'</span>),<span class="string">' AFTER'</span>))
+</pre><pre class="codeoutput">Performing targeting for the 3 body problem...
+ 
+ Iteration   Func-count     min f(x)         Procedure
+     0            1          36.6853         
+     1            5          36.6853         initial simplex
+     2            7          36.6236         expand
+     3            8          36.6236         reflect
+     4           10          36.5274         expand
+     5           11          36.5274         reflect
+     6           13          36.3825         expand
+     7           14          36.3825         reflect
+     8           16          36.1532         expand
+     9           17          36.1532         reflect
+    10           19           35.789         expand
+    11           20           35.789         reflect
+    12           22          35.2162         expand
+    13           23          35.2162         reflect
+    14           25          34.3214         expand
+    15           26          34.3214         reflect
+    16           28          32.9217         expand
+    17           29          32.9217         reflect
+    18           31          30.7082         expand
+    19           32          30.7082         reflect
+    20           34          27.2513         expand
+    21           35          27.2513         reflect
+    22           37          21.7936         expand
+    23           38          21.7936         reflect
+    24           40          13.4289         expand
+    25           41          13.4289         reflect
+    26           43          1.88548         expand
+    27           44          1.88548         reflect
+    28           46         0.464504         reflect
+    29           47         0.464504         reflect
+    30           49         0.464504         contract outside
+    31           51         0.464504         contract inside
+    32           53         0.464504         contract inside
+    33           55         0.464504         contract inside
+    34           57         0.464504         contract inside
+    35           59         0.388341         contract inside
+    36           61         0.308347         contract inside
+    37           63         0.308347         contract outside
+    38           65         0.279416         contract inside
+    39           67         0.257911         contract inside
+    40           69         0.235606         contract inside
+    41           70         0.235606         reflect
+    42           72         0.234989         contract inside
+    43           74         0.226729         contract inside
+    44           75         0.226729         reflect
+    45           77          0.22655         contract inside
+    46           79         0.226203         contract outside
+    47           81         0.224262         contract inside
+    48           83         0.223457         contract inside
+    49           85         0.221835         contract inside
+    50           86         0.221835         reflect
+    51           88         0.221835         contract inside
+    52           90         0.221711         contract inside
+    53           92         0.221521         contract outside
+    54           94         0.221324         contract inside
+    55           96         0.221324         contract outside
+    56           97         0.221324         reflect
+    57           99         0.221003         reflect
+    58          101         0.221003         contract inside
+    59          103         0.221003         contract inside
+    60          105         0.220959         reflect
+    61          107         0.220959         contract outside
+    62          109         0.220566         expand
+    63          111         0.220342         expand
+    64          112         0.220342         reflect
+    65          114         0.219944         expand
+    66          116           0.2194         expand
+    67          117           0.2194         reflect
+    68          119         0.217881         expand
+    69          121         0.216395         expand
+    70          122         0.216395         reflect
+    71          123         0.216395         reflect
+    72          125         0.211532         expand
+    73          126         0.211532         reflect
+    74          128         0.208828         expand
+    75          129         0.208828         reflect
+    76          131          0.19887         expand
+    77          132          0.19887         reflect
+    78          133          0.19887         reflect
+    79          135         0.189003         expand
+    80          136         0.189003         reflect
+    81          138         0.178489         expand
+    82          140          0.16605         expand
+    83          141          0.16605         reflect
+    84          143          0.15383         expand
+    85          144          0.15383         reflect
+    86          145          0.15383         reflect
+    87          147         0.150792         reflect
+    88          149         0.147207         reflect
+    89          150         0.147207         reflect
+    90          152         0.137475         reflect
+    91          154         0.137475         contract inside
+    92          156          0.12488         expand
+    93          157          0.12488         reflect
+    94          159         0.116413         expand
+    95          161         0.116413         contract inside
+    96          163         0.115507         reflect
+    97          165         0.106716         expand
+    98          166         0.106716         reflect
+    99          167         0.106716         reflect
+   100          169          0.09519         reflect
+   101          171        0.0854526         reflect
+   102          173        0.0790944         reflect
+   103          174        0.0790944         reflect
+   104          176        0.0790944         contract inside
+   105          178        0.0790944         contract inside
+   106          180        0.0790944         contract inside
+   107          181        0.0790944         reflect
+   108          182        0.0790944         reflect
+   109          184        0.0776202         reflect
+   110          186        0.0750532         contract inside
+   111          188        0.0715768         expand
+   112          190        0.0700266         reflect
+   113          192        0.0685122         reflect
+   114          194        0.0685122         contract inside
+   115          196        0.0620417         expand
+   116          197        0.0620417         reflect
+   117          199        0.0620417         contract inside
+   118          201        0.0558235         expand
+   119          203        0.0504828         expand
+   120          204        0.0504828         reflect
+   121          205        0.0504828         reflect
+   122          207         0.046764         reflect
+   123          208         0.046764         reflect
+   124          210        0.0371051         expand
+   125          211        0.0371051         reflect
+   126          213        0.0371051         contract inside
+   127          214        0.0371051         reflect
+   128          216        0.0371051         contract inside
+   129          218        0.0371051         contract inside
+   130          220        0.0304964         expand
+   131          221        0.0304964         reflect
+   132          223         0.028718         expand
+   133          225        0.0256455         reflect
+   134          227        0.0240967         reflect
+   135          229        0.0240967         contract inside
+   136          230        0.0240967         reflect
+   137          232        0.0240967         contract inside
+   138          234         0.019162         expand
+   139          236         0.019162         contract outside
+   140          237         0.019162         reflect
+   141          239        0.0162945         expand
+   142          240        0.0162945         reflect
+   143          241        0.0162945         reflect
+   144          243        0.0105958         expand
+   145          245        0.0105958         contract outside
+   146          247        0.0105958         contract inside
+   147          248        0.0105958         reflect
+   148          250       0.00667979         expand
+   149          251       0.00667979         reflect
+   150          253       0.00640752         expand
+   151          255       0.00640752         contract inside
+   152          257       0.00640752         contract inside
+   153          259       0.00588532         expand
+   154          261       0.00244329         reflect
+   155          263       0.00244329         contract inside
+   156          265       0.00179966         reflect
+   157          266       0.00179966         reflect
+   158          267       0.00179966         reflect
+   159          269       0.00179966         contract inside
+   160          271       0.00179966         contract inside
+   161          272       0.00179966         reflect
+   162          274      0.000761606         expand
+   163          276      0.000761606         contract inside
+   164          277      0.000761606         reflect
+   165          279      0.000411646         expand
+   166          281      0.000411646         contract inside
+   167          283      0.000191935         expand
+   168          285      0.000191935         contract inside
+   169          287      0.000191935         contract outside
+   170          289      0.000191935         contract outside
+   171          290      0.000191935         reflect
+   172          292      0.000191935         contract inside
+   173          294      0.000191935         contract inside
+   174          295      0.000191935         reflect
+   175          297      0.000191935         contract inside
+   176          299      0.000191935         contract inside
+   177          301      0.000191935         contract inside
+   178          303      0.000191935         contract inside
+   179          305      0.000191935         contract inside
+   180          307      0.000191935         contract inside
+   181          309      0.000191935         contract inside
+   182          311      0.000191621         contract inside
+   183          313      0.000191621         contract inside
+   184          315      0.000191372         contract inside
+   185          316      0.000191372         reflect
+   186          318      0.000191366         contract inside
+   187          320      0.000191334         contract inside
+   188          322      0.000191301         contract inside
+   189          324      0.000191301         contract outside
+   190          326      0.000191251         contract inside
+   191          327      0.000191251         reflect
+   192          329      0.000191248         contract inside
+   193          331      0.000191248         contract outside
+   194          333      0.000191248         contract outside
+   195          335      0.000191248         contract inside
+ 
+Optimization terminated:
+ the current x satisfies the termination criteria using OPTIONS.TolX of 1.000000e-04 
+ and F(X) satisfies the convergence criteria using OPTIONS.TolFun of 1.000000e-03 
+
+Elapsed time is 66.540194 seconds.
+</pre><img vspace="5" hspace="5" src="LowEnergyMission_04.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_05.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_06.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_07.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_08.png" alt=""> <h2 id="7">Transfer to 4BP</h2><pre class="codeinput"><span class="comment">%----------------</span>
+waitbar(.6,h,<span class="string">'LET Status: Transferring to Sun/Earth/Moon System \newline Step 4/5 : Approximately 3 min remaining'</span>)
+
+fprintf(<span class="string">'Performing targeting for the 4 body problem...\n'</span>);
+elements(1) = r0; <span class="comment">% question: is this the right way to shift from barycenter to planet-centered</span>
+dV1EphNew = dV1New;
+debugData.pre4BP.elements = elements;
+debugData.pre4BP.dV1Eph = dV1EphNew;
+figH3 = PlotLET(elements,dV1EphNew,dtTarg,jDate);
+set(figH3(1),<span class="string">'name'</span>,strcat(get(figH3(1),<span class="string">'name'</span>),<span class="string">' BEFORE'</span>))
+set(figH3(2),<span class="string">'name'</span>,strcat(get(figH3(2),<span class="string">'name'</span>),<span class="string">' BEFORE'</span>))
+moonSteps=6; <span class="comment">% A Posteriori, at this time. 6 runs in 471 seconds.  5 doesn't converge.</span>
+elements4BP=elements;
+dV14=dV1EphNew;
+<span class="keyword">for</span> moonStepFraction=0:1/(moonSteps-1):1
+    PlotLET(elements4BP,dV14,dtTarg,jDate,moonStepFraction);
+    [elements4BP,dV14] = Targeting4BP(elements4BP,dV14,dtTarg,0,p,jDate,moonStepFraction);<span class="comment">% Ease from 4BP without Moon into 4BP</span>
+<span class="keyword">end</span>
+figH4 = PlotLET(elements4BP,dV14,dtTarg,jDate); <span class="comment">% remove handle</span>
+set(figH4(1),<span class="string">'name'</span>,strcat(get(figH4(1),<span class="string">'name'</span>),<span class="string">' AFTER'</span>))
+set(figH4(2),<span class="string">'name'</span>,strcat(get(figH4(2),<span class="string">'name'</span>),<span class="string">' AFTER'</span>))
+debugData.post4BP.elements = elements4BP;
+debugData.post4BP.dV1Eph = dV14;
+</pre><pre class="codeoutput">Performing targeting for the 4 body problem...
+</pre><img vspace="5" hspace="5" src="LowEnergyMission_09.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_10.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_11.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_12.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_13.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_14.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_15.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_16.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_17.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_18.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_19.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_20.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_21.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_22.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_23.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_24.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_25.png" alt=""> <h2 id="8">Minimize energy wrt the moon in 4bp</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+waitbar(.8,h,<span class="string">'LET Status: Minimizing Energy \newline Step 5/5 : Approximately 1.5 min remaining'</span>)
+debugData.preMin.elements = elements4BP;
+debugData.preMin.dV1Eph = dV14;
+[elements,dV1Eph,det,f,jTraj,jL2] = MinE4BP(elements4BP,dV14,dtTarg,0,muMoon,p,jDate);
+waitbar(1,h,<span class="string">'LET Status: Complete'</span>)
+debugData.postMin.elements = elements;
+debugData.postMin.dV1Eph = dV1Eph;
+debugData.postMin.dt = det;
+PlotLET(elements,dV1Eph,det+5*86400,jDate);
+</pre><pre class="codeoutput"> 
+Exiting: Maximum number of iterations has been exceeded
+         - increase MaxIter option.
+         Current function value: -0.069953 
+
+</pre><img vspace="5" hspace="5" src="LowEnergyMission_26.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_27.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_28.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_29.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_30.png" alt=""> <img vspace="5" hspace="5" src="LowEnergyMission_31.png" alt=""> <h2 id="9">Store the results</h2><pre class="codeinput">LETTrans = struct;
+LETTrans.elements = elements;
+LETTrans.initialStateJ2000 = El2RV(elements,1e-14,muPlanet);
+LETTrans.maneuver = dV1Eph;
+LETTrans.timeOfFlight = det;
+LETTrans.finalEnergy = f;
+LETTrans.family = family;
+LETTrans.muMoon = muMoon;
+LETTrans.muPlanet = muPlanet;
+LETTrans.cTraj = jTraj;
+LETTrans.cL2 = jL2;
+LETTrans.burns = 1;
+close(h)
+
+toc(tRun)
+<span class="keyword">if</span>( saveFiles )
+  save([mfilename,<span class="string">'_'</span>,datestr(now,<span class="string">'yyyy-mm-dd--HH-MM-SS'</span>)])
+<span class="keyword">end</span>
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Elapsed time is 416.770904 seconds.
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Low Energy Mission
+% Earth to moon transfer
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also:
+%  LagrangePointsL1ToL5, PlanetPositionEMBarycenter, LowEnergyTransferInCRTBP,
+%  PlotLET3BP, Targeting3BP2, Targeting4BP, PlotLET, PlotLET3BP, MinE4BP
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2018.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Problem definition and setup
+jDate     = JD2000+1;
+r0        = 7500; % km
+planet    = 'Earth';
+moon      = 'Moon';
+saveFiles = false;
+tRun   = tic;
+
+% Get body parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+muPlanet = Constant(['mu ',planet]);
+muMoon   = Constant(['mu ',moon  ]);
+muSun    = Constant( 'mu Sun' );
+
+muCRTBP = (muMoon + muPlanet) / (muMoon + muPlanet + muSun);
+p    = LagrangePointsL1ToL5( muMoon/(muPlanet + muMoon) );
+p    = [-p(:,1) + [muMoon/(muPlanet + muMoon)-1 ;0];0];
+
+%% Determine orientation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+PlanetPositionEMBarycenter('initialize',[0,3,10])
+[r,v] = PlanetPositionEMBarycenter('update',jDate);
+sunState = [r(:,1);v(:,1)];
+planetState = [r(:,2);v(:,2)];
+moonState = [r(:,3);v(:,3)] + planetState-sunState;
+elements = RV2El(sunState(1:3),sunState(4:6),muSun);
+moonStateRotated = J20002RotPuls(moonState,sunState,muSun);
+distanceUnit = elements(1); 
+relStatePM = moonState - planetState;
+elementsPM = RV2El(relStatePM(1:3),relStatePM(4:6),muPlanet+muMoon);
+p = Mag(p * elementsPM(1));
+
+if moonStateRotated(1) < 0
+    orientation = '';
+else
+    orientation = 'p';
+end
+
+%% Get LET in CRTBP
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tic
+h = waitbar(0,'LET Status: Solving for Low Energy Transfer in CRTBP \newline Step 1/5 : Approximately 6 min remaining');
+scaleFactor = muPlanet/(muMoon+muPlanet);
+LET = LowEnergyTransferInCRTBP(r0/scaleFactor/distanceUnit,(Mag(moonState(1:3)-planetState(1:3)))/distanceUnit,muCRTBP,orientation);
+family = LET.family;
+fprintf('Using family %s\n',family);
+toc
+
+
+%% Phasing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+waitbar(.2,h,'LET Status: Estimating Transfer Time \newline Step 2/5 : Approximately 5.5 min remaining')
+desiredPhasing = LET.theta2 - pi/15;
+[initialStateEph,sec2tu] = CRTBP2kms(LET.initialState,distanceUnit,muSun,muMoon+muPlanet);
+x0 = LET.tF/sec2tu;
+debugData.x0 = x0;
+[x,orbits] = LETPhasing(x0,desiredPhasing,moon,planet,0,jDate);
+dtTarg = x ;
+debugData.dtTarg = dtTarg;
+fprintf('Phasing requires %f lunar orbits\n',orbits);
+
+%% Transfer to 3BP
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+waitbar(.4,h,'LET Status: Transferring to MKS Sun/Earth System \newline Step 3/5 : Approximately 4.5 min remaining')
+
+%[initialStateEph] = CRTBP2kms(LET.initialState,distanceUnit,muSun,muMoon+muPlanet);
+[r,v] = PlanetPositionEMBarycenter('update',jDate);
+sunState = [r(:,1);v(:,1)];
+[initialStateEph] = RotPuls2J2000(initialStateEph,sunState,muSun);
+dV1Eph = CRTBP2kms([LET.initialState(1:3);LET.dV1],distanceUnit,muSun,muMoon+muPlanet);
+dV1Eph = RotPuls2J2000(dV1Eph,sunState,muSun);
+dV1Eph = Mag(dV1Eph(4:6));%*.9995; % TEMP
+
+fprintf('Performing targeting for the 3 body problem...\n');
+tic
+elements0 = RV2El(initialStateEph(1:3),initialStateEph(4:6),muMoon+muPlanet);
+figH1 = PlotLET3BP(elements0,dV1Eph,dtTarg,jDate);
+set(figH1(1),'name',strcat(get(figH1(1),'name'),' BEFORE'))
+set(figH1(2),'name',strcat(get(figH1(2),'name'),' BEFORE'))
+debugData.pre3BP.elements = elements0;
+debugData.pre3BP.dV1Eph = dV1Eph;
+[elements,dV1New] = Targeting3BP2(elements0,dV1Eph,dtTarg,0,muMoon,jDate);
+toc
+debugData.post3BP.elements = elements;
+debugData.post3BP.dV1Eph = dV1New;
+figH2 = PlotLET3BP(elements,dV1New,dtTarg,jDate);  % remove handle
+set(figH2(1),'name',strcat(get(figH2(1),'name'),' AFTER'))
+set(figH2(2),'name',strcat(get(figH2(2),'name'),' AFTER'))
+
+%% Transfer to 4BP
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+waitbar(.6,h,'LET Status: Transferring to Sun/Earth/Moon System \newline Step 4/5 : Approximately 3 min remaining')
+
+fprintf('Performing targeting for the 4 body problem...\n');
+elements(1) = r0; % question: is this the right way to shift from barycenter to planet-centered
+dV1EphNew = dV1New;
+debugData.pre4BP.elements = elements;
+debugData.pre4BP.dV1Eph = dV1EphNew;
+figH3 = PlotLET(elements,dV1EphNew,dtTarg,jDate);
+set(figH3(1),'name',strcat(get(figH3(1),'name'),' BEFORE'))
+set(figH3(2),'name',strcat(get(figH3(2),'name'),' BEFORE'))
+moonSteps=6; % A Posteriori, at this time. 6 runs in 471 seconds.  5 doesn't converge.
+elements4BP=elements;
+dV14=dV1EphNew;
+for moonStepFraction=0:1/(moonSteps-1):1
+    PlotLET(elements4BP,dV14,dtTarg,jDate,moonStepFraction);
+    [elements4BP,dV14] = Targeting4BP(elements4BP,dV14,dtTarg,0,p,jDate,moonStepFraction);% Ease from 4BP without Moon into 4BP
+end
+figH4 = PlotLET(elements4BP,dV14,dtTarg,jDate); % remove handle
+set(figH4(1),'name',strcat(get(figH4(1),'name'),' AFTER'))
+set(figH4(2),'name',strcat(get(figH4(2),'name'),' AFTER'))
+debugData.post4BP.elements = elements4BP;
+debugData.post4BP.dV1Eph = dV14;
+
+%% Minimize energy wrt the moon in 4bp
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+waitbar(.8,h,'LET Status: Minimizing Energy \newline Step 5/5 : Approximately 1.5 min remaining')
+debugData.preMin.elements = elements4BP;
+debugData.preMin.dV1Eph = dV14;
+[elements,dV1Eph,det,f,jTraj,jL2] = MinE4BP(elements4BP,dV14,dtTarg,0,muMoon,p,jDate);
+waitbar(1,h,'LET Status: Complete')
+debugData.postMin.elements = elements;
+debugData.postMin.dV1Eph = dV1Eph;
+debugData.postMin.dt = det;
+PlotLET(elements,dV1Eph,det+5*86400,jDate);
+
+%% Store the results
+LETTrans = struct;
+LETTrans.elements = elements;
+LETTrans.initialStateJ2000 = El2RV(elements,1e-14,muPlanet);
+LETTrans.maneuver = dV1Eph;
+LETTrans.timeOfFlight = det;
+LETTrans.finalEnergy = f;
+LETTrans.family = family;
+LETTrans.muMoon = muMoon;
+LETTrans.muPlanet = muPlanet;
+LETTrans.cTraj = jTraj;
+LETTrans.cL2 = jL2;
+LETTrans.burns = 1;
+close(h)
+
+toc(tRun)
+if( saveFiles )
+  save([mfilename,'_',datestr(now,'yyyy-mm-ddREPLACE_WITH_DASH_DASHHH-MM-SS')])
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2020-07-28 $
+% $Revision: 1cb0ee453b0e90a7ec6686b68cdd2d678a16cde9 $
+##### SOURCE END #####
+--></body></html>

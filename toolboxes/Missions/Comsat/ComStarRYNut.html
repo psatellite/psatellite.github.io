@@ -1,0 +1,283 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design and test the nutation compensator.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-05-12"><meta name="DC.source" content="ComStarRYNut.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design and test the nutation compensator.</h1><!--introduction--><p>Requires the output of ComStarRYLF.m.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">2.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Gen2nd</span>, ComStarRYLF, Series, C2DZOH, C2DelZOH, FResp, Plot2D,
+Rename, WriteCM
+-------------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Simulation parameters</a></li><li><a href="#3">Which supplies a, b, c, d and rYGain.</a></li><li><a href="#4">Connect the skew dipole and earth sensor</a></li><li><a href="#5">The nutation compensator</a></li><li><a href="#6">Simulate the nutation compensator</a></li><li><a href="#7">If requested save and dump the controller matrices</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 1996 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Simulation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+cMatrices = <span class="string">'yes'</span>; <span class="comment">% If yes will dump matrices to a file (RYNut) and display them</span>
+
+<span class="comment">% Load in the data generated by TRYLF.m</span>
+</pre><h2 id="3">Which supplies a, b, c, d and rYGain.</h2><pre class="codeinput"><span class="comment">%--------------------------------------</span>
+load <span class="string">RYC</span>
+</pre><h2 id="4">Connect the skew dipole and earth sensor</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+a      = aP;
+b      = bP*rYGain;
+c      = [1 0 0 0]; <span class="comment">% Only roll is available</span>
+d      = 0;
+
+w      = logspace(-6,0,400);
+FResp(a,b,c,d,1,1,w);
+Rename(<span class="string">'Open Loop'</span>);
+
+wz     = 0.008; <span class="comment">% Adjust these parameters to change the nutation damping</span>
+zz     = 0.1;
+zp     = 1;
+wp     = 0.08; <span class="comment">%</span>
+</pre><img vspace="5" hspace="5" src="ComStarRYNut_01.png" alt=""> <h2 id="5">The nutation compensator</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+[aN,bN,cN,dN]     = Gen2nd ( zz, wz, zp, wp );
+w                 = logspace(-3,0,400);
+FResp(aN,bN,cN,dN,1,1,w);
+Rename(<span class="string">'Nutation Compensator'</span>);
+
+[aT,bT,cT,dT]     = Series( a, b, c, d, aN, bN, cN, dN );
+FResp(aT,bT,cT,dT,1,1,w);
+Rename(<span class="string">'Open Loop with Compensator'</span>);
+
+aCL = aT + bT*cT;
+
+s = eig(aCL);
+
+DispWithTitle(s,<span class="string">'Eigenvalues'</span>);
+</pre><pre class="codeoutput">Eigenvalues
+    -0.064909 +   0.072632i
+    -0.064909 -   0.072632i
+    -0.014196 +   0.023776i
+    -0.014196 -   0.023776i
+   -0.0017143 +          0i
+  -7.6505e-05 +          0i
+</pre><img vspace="5" hspace="5" src="ComStarRYNut_02.png" alt=""> <img vspace="5" hspace="5" src="ComStarRYNut_03.png" alt=""> <h2 id="6">Simulate the nutation compensator</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+dT          = 0.25;
+nSim        = 1000;
+[aZCL,bZCL] = C2DZOH(aCL,bT,dT);
+[aZOL,bZOL] = C2DZOH(a,b,dT);
+
+xCL = [0;0;0.001;0;0;0]; <span class="comment">% Some roll rate</span>
+xOL = xCL(1:4);
+
+xCLPlot = zeros(2,nSim);
+xOLPlot = zeros(2,nSim);
+
+<span class="keyword">for</span> k = 1:nSim
+  xCLPlot(:,k) = xCL(1:2);
+  xOLPlot(:,k) = xOL(1:2);
+  xCL          = aZCL*xCL;
+  xOL          = aZOL*xOL;
+<span class="keyword">end</span>
+
+t = (0:(nSim-1))*dT;
+
+Plot2D(t,[xCLPlot;xOLPlot],<span class="string">'Time (sec)'</span>,[<span class="string">'Roll'</span>;<span class="string">'Yaw '</span>],<span class="string">'Nutation Damping'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 3]'</span>;<span class="string">'[1 4]'</span>])
+</pre><img vspace="5" hspace="5" src="ComStarRYNut_04.png" alt=""> <h2 id="7">If requested save and dump the controller matrices</h2><pre class="codeinput"><span class="keyword">if</span>( strcmp(cMatrices,<span class="string">'yes'</span>) )
+  pData         = fileparts(mfilename(<span class="string">'fullpath'</span>));
+  fID           = fopen(fullfile(pData,<span class="string">'RYNut.txt'</span>),<span class="string">'w'</span>);
+  [aD,bD]       = C2DelZOH(aN,bN,dT);
+  cD = cN;
+  dD = dN;
+  WriteCM(fID,<span class="string">'A Matrix'</span>,<span class="string">'fRYAMatrix'</span>,reshape(aD',1,length(aD)^2),12,20,3)
+  WriteCM(fID,<span class="string">'B Matrix'</span>,<span class="string">'fRYBMatrix'</span>,bD,12,20,3)
+  WriteCM(fID,<span class="string">'C Matrix'</span>,<span class="string">'fRYCMatrix'</span>,cD,12,20,3)
+  WriteCM(fID,<span class="string">'D Matrix'</span>,<span class="string">'fRYDMatrix'</span>,dD,12,20,3)
+  WriteCM(fID,<span class="string">'K Matrix'</span>,<span class="string">'fRYKMatrix'</span>,rYGain,12,20,3)
+  fclose(fID);
+  disp(<span class="string">'Roll/yaw Matrices and Low Frequency Gain'</span>)
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+  disp(rYGain);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Roll/yaw Matrices and Low Frequency Gain
+    -0.039405   -0.0015683
+      0.24505  -0.00019735
+      0.24505
+     0.030836
+       -15.84      -0.6336
+   100
+     -0.10996
+      0.11454
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design and test the nutation compensator. 
+% Requires the output of ComStarRYLF.m.
+%
+%   Since version 2.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Gen2nd, ComStarRYLF, Series, C2DZOH, C2DelZOH, FResp, Plot2D, 
+%  Rename, WriteCM
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 1996 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cMatrices = 'yes'; % If yes will dump matrices to a file (RYNut) and display them
+
+% Load in the data generated by TRYLF.m
+%% Which supplies a, b, c, d and rYGain.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+load RYC
+
+%% Connect the skew dipole and earth sensor
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a      = aP;
+b      = bP*rYGain; 
+c      = [1 0 0 0]; % Only roll is available
+d      = 0; 
+
+w      = logspace(-6,0,400);     
+FResp(a,b,c,d,1,1,w);
+Rename('Open Loop');
+
+wz     = 0.008; % Adjust these parameters to change the nutation damping 
+zz     = 0.1;
+zp     = 1;
+wp     = 0.08; %
+
+%% The nutation compensator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[aN,bN,cN,dN]     = Gen2nd ( zz, wz, zp, wp );
+w                 = logspace(-3,0,400);     
+FResp(aN,bN,cN,dN,1,1,w); 
+Rename('Nutation Compensator');
+
+[aT,bT,cT,dT]     = Series( a, b, c, d, aN, bN, cN, dN );
+FResp(aT,bT,cT,dT,1,1,w);
+Rename('Open Loop with Compensator');
+
+aCL = aT + bT*cT;
+
+s = eig(aCL);
+
+DispWithTitle(s,'Eigenvalues');
+
+%% Simulate the nutation compensator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT          = 0.25;
+nSim        = 1000;
+[aZCL,bZCL] = C2DZOH(aCL,bT,dT);
+[aZOL,bZOL] = C2DZOH(a,b,dT);
+
+xCL = [0;0;0.001;0;0;0]; % Some roll rate
+xOL = xCL(1:4);
+
+xCLPlot = zeros(2,nSim);
+xOLPlot = zeros(2,nSim);
+
+for k = 1:nSim
+  xCLPlot(:,k) = xCL(1:2);
+  xOLPlot(:,k) = xOL(1:2);
+  xCL          = aZCL*xCL;
+  xOL          = aZOL*xOL;
+end
+
+t = (0:(nSim-1))*dT;
+
+Plot2D(t,[xCLPlot;xOLPlot],'Time (sec)',['Roll';'Yaw '],'Nutation Damping','lin',['[1 3]';'[1 4]'])
+
+
+%% If requested save and dump the controller matrices
+if( strcmp(cMatrices,'yes') )
+  pData         = fileparts(mfilename('fullpath'));
+  fID           = fopen(fullfile(pData,'RYNut.txt'),'w');
+  [aD,bD]       = C2DelZOH(aN,bN,dT);
+  cD = cN;
+  dD = dN;   
+  WriteCM(fID,'A Matrix','fRYAMatrix',reshape(aD',1,length(aD)^2),12,20,3)
+  WriteCM(fID,'B Matrix','fRYBMatrix',bD,12,20,3)
+  WriteCM(fID,'C Matrix','fRYCMatrix',cD,12,20,3)
+  WriteCM(fID,'D Matrix','fRYDMatrix',dD,12,20,3)
+  WriteCM(fID,'K Matrix','fRYKMatrix',rYGain,12,20,3)
+  fclose(fID);
+  disp('Roll/yaw Matrices and Low Frequency Gain')
+  disp(aD);
+  disp(bD);
+  disp(cD);
+  disp(dD);
+  disp(rYGain);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-02-17 16:09:20 -0500 (Mon, 17 Feb 2020) $
+% $Revision: 51289 $
+
+##### SOURCE END #####
+--></body></html>

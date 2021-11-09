@@ -1,0 +1,349 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate a solar sail in orbit near the earth and moon.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-25"><meta name="DC.source" content="LunarHaloDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate a solar sail in orbit near the earth and moon.</h1><!--introduction--><pre>Uses two stored gravity files:
+*EarthGravityModel.mat
+*LunarGravityModel.mat.</pre><p>Currently two options for ephemeris. True inertial ephemeris uses MoonV1 for the moon location and SunV1 for the sun. The simplified version assumes a circular moon orbit and neglects the inclination of the sun line with respect to the Earth-Moon system plane.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">FSailEarthMoon</span>, FEarthMoonSun, LunarHalo. , InformDlg, Plot2D,
+Plot3D, PlotPlanet, TimeLabl, TitleS, Cross, Mag, Unit, Date2JD,
+EarthMoonRotFrame, El2RV, RVFromKepler, MoonEl, MoonV1
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Main simulation parameters</a></li><li><a href="#3">Gravity model parameters</a></li><li><a href="#4">Epoch and orbit</a></li><li><a href="#5">Create initial conditions in inertial frame</a></li><li><a href="#6">The number of steps</a></li><li><a href="#7">Create the time array</a></li><li><a href="#8">Specify the ode113 accuracy</a></li><li><a href="#9">Integrate</a></li><li><a href="#10">Plot the orbit</a></li><li><a href="#11">Plot the earth, moon and trajectory in 3D</a></li><li><a href="#12">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2004, 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Main simulation parameters<a name="2"></a></h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+d = struct(<span class="string">'mass'</span>,500);
+<span class="comment">% 0.3 mm/s at L1 (inside moon)</span>
+<span class="comment">% 0.2 mm/s at L2 (outside moon)</span>
+d.accel = 3e-7;
+<span class="comment">% Select Lagrange point (1 is inside moon orbit, 2 is outside)</span>
+kLP     = 1;
+<span class="comment">% Ephemeris selection</span>
+inertial = false;
+</pre><h2>Gravity model parameters<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+d.earth = load(<span class="string">'EarthGravityModel.mat'</span>);
+d.moon  = load(<span class="string">'LunarGravityModel.mat'</span>);
+<span class="comment">% Specify zero harmonics for point-mass models</span>
+d.earth.nZ = 0;
+d.earth.nT = 0;
+d.moon.nZ  = 0;
+d.moon.nT  = 0;
+</pre><h2>Epoch and orbit<a name="4"></a></h2><pre class="codeinput"><span class="comment">%----------------</span>
+d.jDStart       = Date2JD; <span class="comment">% Today</span>
+d.muSun         = 1.327124e+11;
+theta           = 0;
+[r0,xL,wS,O,rM] = LunarHalo( d.accel, kLP, theta, d.moon.mu, d.earth.mu );
+vy              = r0(2)*wS;
+mu              = d.moon.mu/(d.moon.mu + d.earth.mu);
+
+<span class="keyword">if</span> inertial
+  <span class="comment">% True inertial coordinates using MoonV1</span>
+  d.el            = [];
+  [u1, rho1]      = MoonV1( d.jDStart );
+  dT              = 28/4;
+  [u2, rho2]      = MoonV1( d.jDStart + dT );
+  rMoon           = u1*rho1;
+  hMoon           = Unit(Cross(u1,u2));
+  yMoon           = Cross(hMoon,u1);
+  mRotToECI       = [u1 yMoon hMoon];
+<span class="keyword">else</span>
+  <span class="comment">% Simple circular coordinates using MoonEl</span>
+  d.el = MoonEl( d.jDStart );
+  d.el(5) = 0;
+  d.el(1) = rM;
+  [rMoon,vMoon] = El2RV( d.el );
+  hMoon = Unit(Cross(rMoon,vMoon));
+  u1    = Unit(rMoon);
+  yMoon = Cross(hMoon,u1);
+  mRotToECI = [u1 yMoon hMoon];
+<span class="keyword">end</span>
+</pre><h2>Create initial conditions in inertial frame<a name="5"></a></h2><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+rSail = (xL + mu)*rMoon + mRotToECI*[r0(1);0;r0(3)];
+<span class="comment">% v inertial = v rotating + w x r</span>
+vSail = vy*yMoon + Cross(O*hMoon,rSail);
+x0    = [rSail;vSail];
+</pre><h2>The number of steps<a name="6"></a></h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nSim = 800;
+</pre><h2>Create the time array<a name="7"></a></h2><pre class="codeinput"><span class="comment">%----------------------</span>
+nDays         = 7;
+tDuration     = nDays*86400;
+t             = linspace(0,tDuration,nSim);
+</pre><h2>Specify the ode113 accuracy<a name="8"></a></h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+xODEOptions   = odeset( <span class="string">'AbsTol'</span>, 1e-16, <span class="string">'RelTol'</span>, 1e-13 );
+
+d.force = 0;
+</pre><h2>Integrate<a name="9"></a></h2><pre class="codeinput"><span class="comment">%----------</span>
+hDlg = InformDlg( <span class="string">'Integrating...'</span>, <span class="string">'LunarHaloDemo'</span> );
+[tOut, yOut] = ode113( <span class="string">'FSailEarthMoon'</span>, t, x0, xODEOptions, d );
+close(hDlg);
+
+xPlot = yOut';
+[tPlot,tLabl] = TimeLabl( tOut' );
+</pre><h2>Plot the orbit<a name="10"></a></h2><pre class="codeinput"><span class="comment">%---------------</span>
+Plot2D( tPlot, xPlot(1:3,:), tLabl, {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span>}, <span class="string">'ECI Trajectory'</span> );
+</pre><img vspace="5" hspace="5" src="LunarHaloDemo_01.png" alt=""> <h2>Plot the earth, moon and trajectory in 3D<a name="11"></a></h2><pre class="codeinput"><span class="comment">%------------------------------------------</span>
+jDPlot = d.jDStart + tOut'/86400;
+
+<span class="keyword">if</span> inertial
+  <span class="comment">% Full inertia sim also using MoonV1</span>
+  EarthMoon( xPlot(1:3,:), jDPlot, [3 10] );
+  TitleS(sprintf(<span class="string">'Inertial Trajectory Near L%i'</span>,kLP))
+
+  EarthMoonRotFrame( xPlot(1:3,:), jDPlot, [3 5] )
+
+  [uMP, rMP] = MoonV1( jDPlot );
+
+<span class="keyword">else</span>
+  <span class="comment">% Simplified sim</span>
+  [rM,vM] = RVFromKepler( d.el, tOut' );
+  uMP = Unit( rM );
+  rMP = Mag( rM );
+
+<span class="keyword">end</span>
+
+<span class="comment">% Devolve back into relative frame</span>
+yMoon = Cross(hMoon,uMP);
+xRot  = zeros(3,nSim);
+<span class="keyword">for</span> k = 1:nSim
+  mRotToECI = [uMP(:,k) yMoon(:,k) hMoon];
+  xRot(:,k) = mRotToECI'*(xPlot(1:3,k) - uMP(:,k)*rMP(k));
+<span class="keyword">end</span>
+</pre><h2>Plot<a name="12"></a></h2><pre class="codeinput">xLPlot = [(xL+mu-1)*rMP;zeros(2,nSim)];
+Plot3D( xRot(1:3,:) )
+PlotPlanet([0;0;0],d.moon.a);
+hold <span class="string">on</span>
+plot3(xLPlot(1,:),xLPlot(2,:),xLPlot(3,:),<span class="string">'g'</span>,<span class="string">'linewidth'</span>,2)
+plot3(xLPlot(1,1),xLPlot(2,1),xLPlot(3,1),<span class="string">'go'</span>,<span class="string">'linewidth'</span>,2)
+plot3(xRot(1,1),xRot(2,1),xRot(3,1),<span class="string">'bo'</span>,<span class="string">'linewidth'</span>,2)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LunarHaloDemo_02.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate a solar sail in orbit near the earth and moon.
+%  Uses two stored gravity files:
+%  *EarthGravityModel.mat 
+%  *LunarGravityModel.mat.
+%
+% Currently two options for ephemeris. True inertial ephemeris uses MoonV1
+% for the moon location and SunV1 for the sun. The simplified version
+% assumes a circular moon orbit and neglects the inclination of the sun
+% line with respect to the Earth-Moon system plane.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also FSailEarthMoon, FEarthMoonSun, LunarHalo. , InformDlg, Plot2D, 
+%  Plot3D, PlotPlanet, TimeLabl, TitleS, Cross, Mag, Unit, Date2JD, 
+%  EarthMoonRotFrame, El2RV, RVFromKepler, MoonEl, MoonV1
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  Copyright (c) 2004, 2007 Princeton Satellite Systems, Inc. 
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Main simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = struct('mass',500);
+% 0.3 mm/s at L1 (inside moon)
+% 0.2 mm/s at L2 (outside moon)
+d.accel = 3e-7;  
+% Select Lagrange point (1 is inside moon orbit, 2 is outside)
+kLP     = 1;
+% Ephemeris selection
+inertial = false;
+
+
+%% Gravity model parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.earth = load('EarthGravityModel.mat');
+d.moon  = load('LunarGravityModel.mat');
+% Specify zero harmonics for point-mass models
+d.earth.nZ = 0;
+d.earth.nT = 0;
+d.moon.nZ  = 0;
+d.moon.nT  = 0;
+
+%% Epoch and orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.jDStart       = Date2JD; % Today
+d.muSun         = 1.327124e+11;
+theta           = 0;
+[r0,xL,wS,O,rM] = LunarHalo( d.accel, kLP, theta, d.moon.mu, d.earth.mu );
+vy              = r0(2)*wS;
+mu              = d.moon.mu/(d.moon.mu + d.earth.mu);
+
+if inertial
+  % True inertial coordinates using MoonV1
+  d.el            = [];
+  [u1, rho1]      = MoonV1( d.jDStart );
+  dT              = 28/4;
+  [u2, rho2]      = MoonV1( d.jDStart + dT );
+  rMoon           = u1*rho1;
+  hMoon           = Unit(Cross(u1,u2));
+  yMoon           = Cross(hMoon,u1);
+  mRotToECI       = [u1 yMoon hMoon];
+else
+  % Simple circular coordinates using MoonEl
+  d.el = MoonEl( d.jDStart );
+  d.el(5) = 0;
+  d.el(1) = rM;
+  [rMoon,vMoon] = El2RV( d.el );
+  hMoon = Unit(Cross(rMoon,vMoon));
+  u1    = Unit(rMoon);
+  yMoon = Cross(hMoon,u1);
+  mRotToECI = [u1 yMoon hMoon];
+end
+
+%% Create initial conditions in inertial frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rSail = (xL + mu)*rMoon + mRotToECI*[r0(1);0;r0(3)];
+% v inertial = v rotating + w x r
+vSail = vy*yMoon + Cross(O*hMoon,rSail);
+x0    = [rSail;vSail];
+
+%% The number of steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim = 800;
+
+%% Create the time array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nDays         = 7;
+tDuration     = nDays*86400;
+t             = linspace(0,tDuration,nSim);
+
+%% Specify the ode113 accuracy
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xODEOptions   = odeset( 'AbsTol', 1e-16, 'RelTol', 1e-13 );
+
+d.force = 0;
+
+%% Integrate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+hDlg = InformDlg( 'Integrating...', 'LunarHaloDemo' );
+[tOut, yOut] = ode113( 'FSailEarthMoon', t, x0, xODEOptions, d );
+close(hDlg);
+
+xPlot = yOut';
+[tPlot,tLabl] = TimeLabl( tOut' );
+
+%% Plot the orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D( tPlot, xPlot(1:3,:), tLabl, {'x (km)' 'y (km)' 'z (km)'}, 'ECI Trajectory' );
+
+%% Plot the earth, moon and trajectory in 3D
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jDPlot = d.jDStart + tOut'/86400;
+
+if inertial
+  % Full inertia sim also using MoonV1
+  EarthMoon( xPlot(1:3,:), jDPlot, [3 10] );
+  TitleS(sprintf('Inertial Trajectory Near L%i',kLP))
+
+  EarthMoonRotFrame( xPlot(1:3,:), jDPlot, [3 5] )
+  
+  [uMP, rMP] = MoonV1( jDPlot );
+
+else
+  % Simplified sim
+  [rM,vM] = RVFromKepler( d.el, tOut' );
+  uMP = Unit( rM );
+  rMP = Mag( rM );
+
+end
+
+% Devolve back into relative frame
+yMoon = Cross(hMoon,uMP);
+xRot  = zeros(3,nSim);
+for k = 1:nSim
+  mRotToECI = [uMP(:,k) yMoon(:,k) hMoon];
+  xRot(:,k) = mRotToECI'*(xPlot(1:3,k) - uMP(:,k)*rMP(k));
+end
+
+%% Plot
+xLPlot = [(xL+mu-1)*rMP;zeros(2,nSim)];
+Plot3D( xRot(1:3,:) )
+PlotPlanet([0;0;0],d.moon.a);
+hold on
+plot3(xLPlot(1,:),xLPlot(2,:),xLPlot(3,:),'g','linewidth',2)
+plot3(xLPlot(1,1),xLPlot(2,1),xLPlot(3,1),'go','linewidth',2)
+plot3(xRot(1,1),xRot(2,1),xRot(3,1),'bo','linewidth',2)
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2016-03-25 11:17:37 -0400 (Fri, 25 Mar 2016) $
+% $Revision: 42065 $
+
+##### SOURCE END #####
+--></body></html>

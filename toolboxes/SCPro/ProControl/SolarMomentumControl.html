@@ -1,0 +1,325 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Controls the momentum in a spacecraft using solar pressure.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-03-09"><meta name="DC.source" content="SolarMomentumControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Controls the momentum in a spacecraft using solar pressure.</h1><!--introduction--><p>Uses a PI controller and a two degree of freedom gimbal at the end of the solar array. The solar pressure flap is a perfect mirror. The available torque is first mapped over a range of angles. Then a controller is designed and simulated. Note that the array can only provide torques in X and Z.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">1.</span>
+--------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">SolarF.</span>, SunBeta, Mesh2, Normal, Plot2D, TimeLabl, Cross, SumV
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">The solar panel parameters in the inertial frame</a></li><li><a href="#4">The nominal sun direction is +z</a></li><li><a href="#5">Map out the control torques for +/- 10 degree rotations</a></li><li><a href="#6">Compute the forward gains in torque/rad</a></li><li><a href="#7">Simulate the control system</a></li><li><a href="#8">Design the controller</a></li><li><a href="#9">Create the plotting arrays</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 1996 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Constants<a name="2"></a></h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad      = pi/180;
+radToDeg      = 180/pi;
+solarPressure = 1350/3e8;
+</pre><h2>The solar panel parameters in the inertial frame<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-------------------------------------------------</span>
+rCP   = [ 0.0  0.0;<span class="keyword">...</span>
+          5.0 -5.0;<span class="keyword">...</span>
+	        0.0  0.0 ];
+
+area   = [0.5 0.5];
+rho    = [0 0;1 1;0 0;0 0]; <span class="comment">% All specular reflection (perfect mirrors)</span>
+normal = [0 0;0.7071 0.7071;0.7071 0.7071]; <span class="comment">% This orientation gives us decoupled x and z torques</span>
+</pre><h2>The nominal sun direction is +z<a name="4"></a></h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+sunBeta = 0*degToRad;
+uSun    = [0;-sin(sunBeta);cos(sunBeta)];
+
+tX      = zeros(20,20);
+tY      = zeros(20,20);
+tZ      = zeros(20,20);
+
+alpha   = (1:20) - 11;
+beta    = (1:20) - 11;
+</pre><h2>Map out the control torques for +/- 10 degree rotations<a name="5"></a></h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------</span>
+<span class="keyword">for</span> i = 1:20
+  <span class="keyword">for</span> j = 1:20
+
+    cA      = cos(alpha(i)*degToRad);
+    sA      = sin(alpha(i)*degToRad);
+    cB      = cos( beta(j)*degToRad);
+    sB      = sin( beta(j)*degToRad);
+
+    c1      = [cA 0  sA;0 1 0;-sA 0 cA]*[1 0 0;0 cB -sB;0  sB cB];
+    c2      = [cA 0 -sA;0 1 0; sA 0 cA]*[1 0 0;0 cB  sB;0 -sB cB];
+
+    normalI = [c1*normal(:,1),c2*normal(:,2)];
+    f       = SolarF( solarPressure, rho, normalI, uSun, area );
+    t       = SumV( Cross( rCP, f ) );
+    tX(i,j) = t(1);
+    tY(i,j) = t(2);
+    tZ(i,j) = t(3);
+
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+Mesh2(beta,alpha,tX,<span class="string">'Beta (deg)'</span>,<span class="string">'Alpha (deg)'</span>,<span class="string">'X Torque'</span>);
+Mesh2(beta,alpha,tY,<span class="string">'Beta (deg)'</span>,<span class="string">'Alpha (deg)'</span>,<span class="string">'Y Torque'</span>);
+Mesh2(beta,alpha,tZ,<span class="string">'Beta (deg)'</span>,<span class="string">'Alpha (deg)'</span>,<span class="string">'Z Torque'</span>);
+</pre><img vspace="5" hspace="5" src="SolarMomentumControl_01.png" alt=""> <img vspace="5" hspace="5" src="SolarMomentumControl_02.png" alt=""> <img vspace="5" hspace="5" src="SolarMomentumControl_03.png" alt=""> <h2>Compute the forward gains in torque/rad<a name="6"></a></h2><pre class="codeinput"><span class="comment">%----------------------------------------</span>
+kFX = (max(max(tX)) - min(min(tX)))/(( max(beta)- min(beta))*degToRad)
+kFZ = (max(max(tZ)) - min(min(tZ)))/((max(alpha)-min(alpha))*degToRad)
+</pre><pre class="codeoutput">
+kFX =
+
+   4.6638e-05
+
+
+kFZ =
+
+   1.6082e-05
+
+</pre><h2>Simulate the control system<a name="7"></a></h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+nSim   = 2000;
+dT     = 100;
+tD     = [1.e-6;0;-1.5e-6];   <span class="comment">% disturbance torque</span>
+h      = [0.0001;0;-0.00015]; <span class="comment">% initial angular momentum</span>
+hI     = [0;0;0];             <span class="comment">% integral of momentum</span>
+</pre><h2>Design the controller<a name="8"></a></h2><pre class="codeinput"><span class="comment">%----------------------</span>
+w      = 0.001;
+zeta   = 0.7071;
+kM     = 2*zeta*w*[1/kFX;1/kFZ];
+kI     = w^2*[1/kFX;1/kFZ];
+</pre><h2>Create the plotting arrays<a name="9"></a></h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+hPlot  = zeros(3,nSim);
+tCPlot = zeros(3,nSim);
+tDPlot = zeros(3,nSim);
+aPlot  = zeros(2,nSim);
+
+<span class="keyword">for</span> k = 1:nSim
+  hI          =  hI + h;
+  alpha       = -(kM(1)*h(3) + kI(1)*hI(3));
+  beta        =  (kM(2)*h(1) + kI(2)*hI(1));
+  cA          =  cos(alpha);
+  sA          =  sin(alpha);
+  cB          =  cos( beta);
+  sB          =  sin( beta);
+
+  c1          =  [cA 0  sA;0 1 0;-sA 0 cA]*[1 0 0;0 cB -sB;0  sB cB];
+  c2          =  [cA 0 -sA;0 1 0; sA 0 cA]*[1 0 0;0 cB  sB;0 -sB cB];
+
+  normalI     =  [c1*normal(:,1),c2*normal(:,2)];
+  f           =  SolarF( solarPressure, rho, normalI, uSun, area );
+  t           =  SumV( Cross( rCP, f ) );
+  hPlot(:,k)  =  h;
+  tCPlot(:,k) =  t;
+  tDPlot(:,k) =  tD;
+  aPlot(:,k)  =  [alpha;beta]*radToDeg;
+  h           =  h + dT*(tD + t);
+<span class="keyword">end</span>
+
+time = dT*(0:(nSim-1));
+[tPlot, tLbl] = TimeLabl( time );
+Plot2D(tPlot, hPlot,tLbl,<span class="string">'Momentum'</span>,<span class="string">'Angular Momentum'</span>);
+Plot2D(tPlot, aPlot,tLbl,<span class="string">'Control Angles (Deg)'</span>,<span class="string">'Control Angles'</span>);
+yL = [<span class="string">'X Torques'</span>;<span class="string">'Y Torques'</span>;<span class="string">'Z Torques'</span>];
+Plot2D(tPlot,[tCPlot;tDPlot],tLbl,yL,<span class="string">'Control and Disturbance Torques'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>]);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SolarMomentumControl_04.png" alt=""> <img vspace="5" hspace="5" src="SolarMomentumControl_05.png" alt=""> <img vspace="5" hspace="5" src="SolarMomentumControl_06.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Controls the momentum in a spacecraft using solar pressure. 
+% Uses a PI controller and a two degree of freedom gimbal at the end of the 
+% solar array. The solar pressure flap is a perfect mirror.
+% The available torque is first mapped over a range of angles. Then a
+% controller is designed and simulated. Note that the array can only provide
+% torques in X and Z.
+%
+%   Since version 1.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also SolarF., SunBeta, Mesh2, Normal, Plot2D, TimeLabl, Cross, SumV
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 1996 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad      = pi/180;
+radToDeg      = 180/pi;
+solarPressure = 1350/3e8;
+
+%% The solar panel parameters in the inertial frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rCP   = [ 0.0  0.0;...
+          5.0 -5.0;...
+	        0.0  0.0 ];
+	 
+area   = [0.5 0.5];
+rho    = [0 0;1 1;0 0;0 0]; % All specular reflection (perfect mirrors)
+normal = [0 0;0.7071 0.7071;0.7071 0.7071]; % This orientation gives us decoupled x and z torques
+ 
+%% The nominal sun direction is +z
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sunBeta = 0*degToRad;
+uSun    = [0;-sin(sunBeta);cos(sunBeta)];
+
+tX      = zeros(20,20);
+tY      = zeros(20,20);
+tZ      = zeros(20,20);
+
+alpha   = (1:20) - 11;
+beta    = (1:20) - 11;
+
+%% Map out the control torques for +/- 10 degree rotations
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for i = 1:20
+  for j = 1:20
+  
+    cA      = cos(alpha(i)*degToRad);
+    sA      = sin(alpha(i)*degToRad);
+    cB      = cos( beta(j)*degToRad);
+    sB      = sin( beta(j)*degToRad);
+
+    c1      = [cA 0  sA;0 1 0;-sA 0 cA]*[1 0 0;0 cB -sB;0  sB cB];
+    c2      = [cA 0 -sA;0 1 0; sA 0 cA]*[1 0 0;0 cB  sB;0 -sB cB];
+
+    normalI = [c1*normal(:,1),c2*normal(:,2)];
+    f       = SolarF( solarPressure, rho, normalI, uSun, area );
+    t       = SumV( Cross( rCP, f ) );
+    tX(i,j) = t(1);
+    tY(i,j) = t(2);
+    tZ(i,j) = t(3);
+	
+  end
+end
+
+Mesh2(beta,alpha,tX,'Beta (deg)','Alpha (deg)','X Torque');
+Mesh2(beta,alpha,tY,'Beta (deg)','Alpha (deg)','Y Torque');
+Mesh2(beta,alpha,tZ,'Beta (deg)','Alpha (deg)','Z Torque');
+
+%% Compute the forward gains in torque/rad
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+kFX = (max(max(tX)) - min(min(tX)))/(( max(beta)- min(beta))*degToRad)
+kFZ = (max(max(tZ)) - min(min(tZ)))/((max(alpha)-min(alpha))*degToRad)
+
+%% Simulate the control system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim   = 2000;
+dT     = 100;
+tD     = [1.e-6;0;-1.5e-6];   % disturbance torque
+h      = [0.0001;0;-0.00015]; % initial angular momentum
+hI     = [0;0;0];             % integral of momentum
+
+%% Design the controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w      = 0.001;
+zeta   = 0.7071;
+kM     = 2*zeta*w*[1/kFX;1/kFZ];
+kI     = w^2*[1/kFX;1/kFZ];
+
+%% Create the plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hPlot  = zeros(3,nSim);
+tCPlot = zeros(3,nSim);
+tDPlot = zeros(3,nSim);
+aPlot  = zeros(2,nSim);
+
+for k = 1:nSim
+  hI          =  hI + h;
+  alpha       = -(kM(1)*h(3) + kI(1)*hI(3));
+  beta        =  (kM(2)*h(1) + kI(2)*hI(1));
+  cA          =  cos(alpha);
+  sA          =  sin(alpha);
+  cB          =  cos( beta);
+  sB          =  sin( beta);
+	
+  c1          =  [cA 0  sA;0 1 0;-sA 0 cA]*[1 0 0;0 cB -sB;0  sB cB];
+  c2          =  [cA 0 -sA;0 1 0; sA 0 cA]*[1 0 0;0 cB  sB;0 -sB cB];
+	
+  normalI     =  [c1*normal(:,1),c2*normal(:,2)];
+  f           =  SolarF( solarPressure, rho, normalI, uSun, area );
+  t           =  SumV( Cross( rCP, f ) );
+  hPlot(:,k)  =  h;
+  tCPlot(:,k) =  t;
+  tDPlot(:,k) =  tD;
+  aPlot(:,k)  =  [alpha;beta]*radToDeg;
+  h           =  h + dT*(tD + t);
+end
+
+time = dT*(0:(nSim-1));
+[tPlot, tLbl] = TimeLabl( time );
+Plot2D(tPlot, hPlot,tLbl,'Momentum','Angular Momentum');
+Plot2D(tPlot, aPlot,tLbl,'Control Angles (Deg)','Control Angles');
+yL = ['X Torques';'Y Torques';'Z Torques'];
+Plot2D(tPlot,[tCPlot;tDPlot],tLbl,yL,'Control and Disturbance Torques','lin',['[1 4]';'[2 5]';'[3 6]']);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-02-03 12:55:10 -0500 (Tue, 03 Feb 2015) $
+% $Revision: 39532 $
+
+
+
+##### SOURCE END #####
+--></body></html>

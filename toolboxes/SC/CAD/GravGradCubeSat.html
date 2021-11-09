@@ -1,0 +1,395 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Generates a CubeSat model that is gravity gradient stabilized.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="GravGradCubeSat.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Generates a CubeSat model that is gravity gradient stabilized.</h1><p>Creates a mass report.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  See also BuildCADModel, CreateReport, AddCubesatComponent</span>
+<span class="comment">% -------------------------------------------------------------------------</span>
+</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2011 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 10.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Properties</span>
+<span class="comment">%-----------</span>
+rhoAl               = 2700/1e9; <span class="comment">% kg/mm^3</span>
+rhoArealSolarPanels	= 84e-6*1e-2;<span class="comment">% kg/mm^2 84 mg/cm^2</span>
+rhoMagneticSteel    = 8120/1e9; <span class="comment">% kg/mm^2</span>
+panelThickness      = 4; <span class="comment">% mm</span>
+massFrame           = 8.5*8.5*100*12*rhoAl;
+
+<span class="comment">% Initialize</span>
+<span class="comment">%------------</span>
+AddCubesatComponent( <span class="string">'CubeSatGG'</span> );
+AddCubesatComponent( <span class="string">'device'</span>, <span class="string">'frame'</span>, <span class="string">'name'</span>, <span class="string">'Frame'</span>, <span class="string">'subtype'</span>, <span class="string">'1U'</span>, <span class="string">'mass'</span>, massFrame )
+
+<span class="comment">% Magnetic torquers</span>
+<span class="comment">%------------------</span>
+torqueRodDipole     = 10; <span class="comment">% ATM^2 (Amp-turns-m^2)</span>
+torquerPower        = 0.5;
+torquerPosition     = [-30;0;0]; <span class="comment">% mm</span>
+torquerDim          = [5  5  80];  <span class="comment">% mm (torquer long axis is z)</span>
+mass                = Product(torquerDim)*rhoMagneticSteel;
+
+cPUBoardPower       = 1;  <span class="comment">% W</span>
+cPUBoardPosition    = -20; <span class="comment">% z dimension, mm</span>
+batteryPower             = 20.1;	<span class="comment">% W</span>
+batteryMass              = 0.1;  <span class="comment">% kg</span>
+batteryBoxDim            = [ 20 20 40];   <span class="comment">% mm</span>
+batteryBoxPosition       = [-10; 15;-40]; <span class="comment">% mm</span>
+cameraPosition     = [ -50; 5;   0]; <span class="comment">% mm</span>
+cameraPower             = 0.1;	<span class="comment">% W</span>
+cameraMass              = 0.1;  <span class="comment">% kg</span>
+
+<span class="comment">% Add Components to the CubeSat</span>
+<span class="comment">%-------------------------------</span>
+AddCubesatComponent( <span class="string">'device'</span>, <span class="string">'board'</span>, <span class="string">'name'</span>, <span class="string">'CPU'</span>, <span class="string">'position'</span>, cPUBoardPosition,<span class="keyword">...</span>
+<span class="string">'power'</span>, cPUBoardPower, <span class="string">'mass'</span>, 0.1 );
+
+AddCubesatComponent( <span class="string">'device'</span>, <span class="string">'camera'</span>, <span class="string">'name'</span>, <span class="string">'Camera X'</span>, <span class="string">'position'</span>, cameraPosition,<span class="keyword">...</span>
+<span class="string">'power'</span>, cameraPower, <span class="string">'boresight'</span>,  [1;0;0], <span class="string">'mass'</span>, cameraMass	);
+
+AddCubesatComponent( <span class="string">'device'</span>, <span class="string">'torquer'</span>, <span class="string">'name'</span>, <span class="string">'Torquer'</span>, <span class="string">'position'</span>,<span class="keyword">...</span>
+   torquerPosition, <span class="string">'power'</span>,  torquerPower, <span class="string">'unit vector'</span>,  [0;0;1],<span class="keyword">...</span>
+   <span class="string">'dipole'</span>,torqueRodDipole, <span class="string">'dimensions'</span>, torquerDim, <span class="string">'mass'</span>, mass  );
+
+AddCubesatComponent( <span class="string">'device'</span>, <span class="string">'box'</span>, <span class="string">'name'</span>, <span class="string">'Battery'</span>, <span class="string">'position'</span>, batteryBoxPosition,<span class="keyword">...</span>
+<span class="string">'power'</span>,  batteryPower ,  <span class="string">'mass'</span>, batteryMass, <span class="string">'dimensions'</span>, batteryBoxDim )
+
+<span class="comment">% Gravity gradient boom</span>
+<span class="comment">%----------------------</span>
+position = [0;0;300]; <span class="comment">% of center of mass</span>
+boomDim = [5 5 500];
+mass = Product(boomDim)*rhoAl;
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'box'</span>, 	<span class="string">'name'</span>, <span class="string">'Boom'</span>, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+<span class="string">'position'</span>, position, <span class="string">'dimensions'</span>, boomDim )
+
+position = [0; -100; 0];
+antennaDim = [2 100 2];
+mass = Product(antennaDim)*rhoAl;
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'box'</span>, 	<span class="string">'name'</span>, <span class="string">'Antenna'</span>, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+<span class="string">'position'</span>, position, <span class="string">'dimensions'</span>, antennaDim )
+
+position = [0;0;560];
+tipMassDim = [15 15 30];
+
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'box'</span>, <span class="string">'name'</span>, <span class="string">'Tip mass'</span>, <span class="string">'position'</span>, position, <span class="keyword">...</span>
+<span class="string">'dimensions'</span>, tipMassDim, <span class="string">'mass'</span>, 0.1 );
+
+<span class="comment">% Panel dimension</span>
+<span class="comment">%----------------</span>
+lP = 45; <span class="comment">% mm</span>
+
+<span class="comment">% Put the positions and unit vectors for the solar foil</span>
+<span class="comment">%------------------------------------------------------</span>
+position = lP*[ 1.0  0.0 -1.0  0.0  0.0  0.0;<span class="keyword">...</span>
+                0.0  1.0  0.0 -1.0 -1.0  0.0;<span class="keyword">...</span>
+                0.0  0.0  0.0 -0.6  0.6  1.0]; <span class="comment">% mm</span>
+
+u           = [ 1    0   -1    0    0    0;<span class="keyword">...</span>
+                0    1    0   -1   -1    0;<span class="keyword">...</span>
+                0    0    0    0    0    1];
+
+d        = 2*lP*[ 1.0  1.0;<span class="keyword">...</span><span class="comment"> %1</span>
+                  1.0  1.0;<span class="keyword">...</span><span class="comment"> %2</span>
+                  1.0  1.0;<span class="keyword">...</span><span class="comment"> %3</span>
+                  1.0  0.4;<span class="keyword">...</span><span class="comment"> %4</span>
+                  1.0  0.4;<span class="keyword">...</span><span class="comment"> %5</span>
+                  1.0  1.0];   <span class="comment">%6&aring;</span>
+
+<span class="keyword">for</span> k = 1:size(u,2)
+    name = sprintf(<span class="string">'Solar Panel %d'</span>,k);
+    mass = rhoArealSolarPanels*d(k,1)*d(k,2);
+    AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'solar panel'</span>, 	<span class="string">'name'</span>, name, <span class="string">'mass'</span>, mass, <span class="string">'position'</span>, position(:,k), <span class="string">'outward normal'</span>, u(:,k), <span class="string">'dimensions'</span>, d(k,:) )
+<span class="keyword">end</span>
+
+<span class="comment">% Put the positions and unit vectors for the radiator</span>
+<span class="comment">%----------------------------------------------------</span>
+dim = 2*[lP lP];
+mass = rhoAl*dim(1)*dim(2)*panelThickness;
+
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'radiator'</span>, <span class="string">'name'</span>, <span class="string">'Radiator'</span>, <span class="string">'mass'</span>, mass, <span class="string">'position'</span>, [0;0;-lP], <span class="string">'outward normal'</span>, [0;0;-1], <span class="string">'dimensions'</span>, dim )
+
+<span class="comment">% Put the positions and unit vectors for the gold foil</span>
+<span class="comment">%-----------------------------------------------------</span>
+dim = lP*[2 0.5];
+mass = rhoAl*dim(1)*dim(2)*panelThickness;
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'gold foil'</span>, <span class="string">'name'</span>, <span class="string">'Antenna Panel'</span>, <span class="string">'mass'</span>, mass, <span class="string">'position'</span>, [0;-lP;0], <span class="string">'outward normal'</span>, [0;-1;0], <span class="string">'dimensions'</span>, dim )
+
+<span class="comment">% Put the positions and unit vectors for the gold foil</span>
+<span class="comment">%-----------------------------------------------------</span>
+dim = 5*[1 1 1];
+mass = dim(1)*dim(2)*dim(3)*rhoAl;
+AddCubesatComponent( <span class="string">'device'</span>,	<span class="string">'magnetometer'</span>, <span class="string">'name'</span>, <span class="string">'Magnetometer'</span>, <span class="string">'mass'</span>, mass, <span class="string">'position'</span>, [0;lP;0], <span class="string">'outward normal'</span>, [0;-1;0], <span class="string">'dimensions'</span>, 5*[1 1 1] )
+
+<span class="comment">% Add subsystems</span>
+<span class="comment">%---------------</span>
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'structure'</span>, {<span class="string">'frame'</span> <span class="string">'boom'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'control'</span>, {<span class="string">'magnetometer'</span> <span class="string">'torquer'</span> <span class="string">'tip mass'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'communications'</span>,	{<span class="string">'antenna'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'power'</span>, {<span class="string">'solar panel'</span>,<span class="string">'battery'</span>} );
+
+<span class="comment">% Update</span>
+<span class="comment">%-------</span>
+BuildCADModel( <span class="string">'update body mass properties'</span> );
+BuildCADModel(<span class="string">'show spacecraft'</span>);
+
+h = BuildCADModel(<span class="string">'get model'</span>);
+
+c0 = cd;
+p = mfilename(<span class="string">'fullpath'</span>);
+cd(fileparts(p))
+CreateReport( h, <span class="string">'txt'</span>, [], <span class="string">'mass'</span>, 1 )
+cd(c0);
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">                       Component           Mass          Units 
+             Structure subsystem     
+                           Frame         0.2341            kg 
+                            Boom        0.03375            kg 
+       Structure Subsystem Total         0.2678            kg 
+               Control subsystem     
+                    Magnetometer      0.0003375            kg 
+                         Torquer        0.01624            kg 
+                        Tip mass            0.1            kg 
+         Control Subsystem Total         0.1166            kg 
+        Communications subsystem     
+                         Antenna        0.00108            kg 
+                   Antenna Panel        0.02187            kg 
+  Communications Subsystem Total        0.02295            kg 
+                 Power subsystem     
+                   Solar Panel 1       0.006804            kg 
+                   Solar Panel 2       0.006804            kg 
+                   Solar Panel 3       0.006804            kg 
+                   Solar Panel 4       0.002722            kg 
+                   Solar Panel 5       0.002722            kg 
+                   Solar Panel 6       0.006804            kg 
+                         Battery            0.1            kg 
+           Power Subsystem Total         0.1327            kg 
+         Miscellaneous subsystem     
+                             CPU            0.1            kg 
+                        Camera X            0.1            kg 
+                        Radiator        0.08748            kg 
+   Miscellaneous Subsystem Total         0.2875            kg 
+                           Total         0.8275            kg 
+</pre><img vspace="5" hspace="5" src="GravGradCubeSat_01.png" alt=""> <img vspace="5" hspace="5" src="GravGradCubeSat_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Generates a CubeSat model that is gravity gradient stabilized.
+% Creates a mass report.
+%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BuildCADModel, CreateReport, AddCubesatComponent
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2011 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 10.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rhoAl               = 2700/1e9; % kg/mm^3
+rhoArealSolarPanels	= 84e-6*1e-2;% kg/mm^2 84 mg/cm^2
+rhoMagneticSteel    = 8120/1e9; % kg/mm^2
+panelThickness      = 4; % mm
+massFrame           = 8.5*8.5*100*12*rhoAl;
+
+% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+AddCubesatComponent( 'CubeSatGG' );
+AddCubesatComponent( 'device', 'frame', 'name', 'Frame', 'subtype', '1U', 'mass', massFrame )
+
+% Magnetic torquers
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+torqueRodDipole     = 10; % ATM^2 (Amp-turns-m^2)
+torquerPower        = 0.5;
+torquerPosition     = [-30;0;0]; % mm
+torquerDim          = [5  5  80];  % mm (torquer long axis is z)
+mass                = Product(torquerDim)*rhoMagneticSteel;
+
+cPUBoardPower       = 1;  % W
+cPUBoardPosition    = -20; % z dimension, mm
+batteryPower             = 20.1;	% W
+batteryMass              = 0.1;  % kg
+batteryBoxDim            = [ 20 20 40];   % mm
+batteryBoxPosition       = [-10; 15;-40]; % mm
+cameraPosition     = [ -50; 5;   0]; % mm
+cameraPower             = 0.1;	% W
+cameraMass              = 0.1;  % kg
+
+% Add Components to the CubeSat
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+AddCubesatComponent( 'device', 'board', 'name', 'CPU', 'position', cPUBoardPosition,...   
+'power', cPUBoardPower, 'mass', 0.1 );
+
+AddCubesatComponent( 'device', 'camera', 'name', 'Camera X', 'position', cameraPosition,...
+'power', cameraPower, 'boresight',  [1;0;0], 'mass', cameraMass	);
+
+AddCubesatComponent( 'device', 'torquer', 'name', 'Torquer', 'position',...
+   torquerPosition, 'power',  torquerPower, 'unit vector',  [0;0;1],...
+   'dipole',torqueRodDipole, 'dimensions', torquerDim, 'mass', mass  );
+
+AddCubesatComponent( 'device', 'box', 'name', 'Battery', 'position', batteryBoxPosition,...
+'power',  batteryPower ,  'mass', batteryMass, 'dimensions', batteryBoxDim )
+
+% Gravity gradient boom
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+position = [0;0;300]; % of center of mass
+boomDim = [5 5 500];
+mass = Product(boomDim)*rhoAl;
+AddCubesatComponent( 'device',	'box', 	'name', 'Boom', 'mass', mass, ...
+'position', position, 'dimensions', boomDim )
+
+position = [0; -100; 0];
+antennaDim = [2 100 2];
+mass = Product(antennaDim)*rhoAl;
+AddCubesatComponent( 'device',	'box', 	'name', 'Antenna', 'mass', mass, ...
+'position', position, 'dimensions', antennaDim )
+
+position = [0;0;560];
+tipMassDim = [15 15 30];
+
+AddCubesatComponent( 'device',	'box', 'name', 'Tip mass', 'position', position, ...
+'dimensions', tipMassDim, 'mass', 0.1 );
+
+% Panel dimension
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+lP = 45; % mm
+
+% Put the positions and unit vectors for the solar foil
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+position = lP*[ 1.0  0.0 -1.0  0.0  0.0  0.0;...
+                0.0  1.0  0.0 -1.0 -1.0  0.0;...
+                0.0  0.0  0.0 -0.6  0.6  1.0]; % mm
+        
+u           = [ 1    0   -1    0    0    0;...
+                0    1    0   -1   -1    0;...
+                0    0    0    0    0    1];
+            
+d        = 2*lP*[ 1.0  1.0;... %1
+                  1.0  1.0;... %2
+                  1.0  1.0;... %3
+                  1.0  0.4;... %4
+                  1.0  0.4;... %5
+                  1.0  1.0];   %6å
+            
+for k = 1:size(u,2)
+    name = sprintf('Solar Panel %d',k);
+    mass = rhoArealSolarPanels*d(k,1)*d(k,2);
+    AddCubesatComponent( 'device',	'solar panel', 	'name', name, 'mass', mass, 'position', position(:,k), 'outward normal', u(:,k), 'dimensions', d(k,:) )
+end
+
+% Put the positions and unit vectors for the radiator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dim = 2*[lP lP];
+mass = rhoAl*dim(1)*dim(2)*panelThickness;
+
+AddCubesatComponent( 'device',	'radiator', 'name', 'Radiator', 'mass', mass, 'position', [0;0;-lP], 'outward normal', [0;0;-1], 'dimensions', dim )
+
+% Put the positions and unit vectors for the gold foil
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dim = lP*[2 0.5];
+mass = rhoAl*dim(1)*dim(2)*panelThickness;
+AddCubesatComponent( 'device',	'gold foil', 'name', 'Antenna Panel', 'mass', mass, 'position', [0;-lP;0], 'outward normal', [0;-1;0], 'dimensions', dim )
+
+% Put the positions and unit vectors for the gold foil
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dim = 5*[1 1 1];
+mass = dim(1)*dim(2)*dim(3)*rhoAl;
+AddCubesatComponent( 'device',	'magnetometer', 'name', 'Magnetometer', 'mass', mass, 'position', [0;lP;0], 'outward normal', [0;-1;0], 'dimensions', 5*[1 1 1] )
+
+% Add subsystems
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'add subsystem', 'structure', {'frame' 'boom'} );
+BuildCADModel( 'add subsystem', 'control', {'magnetometer' 'torquer' 'tip mass'} );
+BuildCADModel( 'add subsystem', 'communications',	{'antenna'} );
+BuildCADModel( 'add subsystem', 'power', {'solar panel','battery'} );
+
+% Update 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'update body mass properties' );
+BuildCADModel('show spacecraft');
+
+h = BuildCADModel('get model');
+
+c0 = cd;
+p = mfilename('fullpath');
+cd(fileparts(p))
+CreateReport( h, 'txt', [], 'mass', 1 )
+cd(c0);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

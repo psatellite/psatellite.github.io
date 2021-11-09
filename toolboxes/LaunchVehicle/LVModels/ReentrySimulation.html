@@ -1,0 +1,244 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>A reentry simulation. Uses RHSReentry.m.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-21"><meta name="DC.source" content="ReentrySimulation.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>A reentry simulation. Uses RHSReentry.m.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also ReentryPlot, RHSReentry, Plot2D, Figui
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Simulation parameters</a></li><li><a href="#3">Initial states</a></li><li><a href="#4">Simulation</a></li><li><a href="#5">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Simulation parameters</h2><pre class="codeinput">nSim  = 50000;
+dT    = 0.0001;
+h     = 80000;
+
+<span class="comment">% Constants</span>
+mu  = Constant(<span class="string">'mu earth'</span>)*1e9; <span class="comment">% Convert to m</span>
+
+<span class="comment">% Use the default data in the right-hand-side function</span>
+d  = RHSReentry;
+</pre><h2 id="3">Initial states</h2><pre class="codeinput">vC  = sqrt(d.rPlanet*d.g);
+
+<span class="keyword">if</span>( h &gt; 80000 )
+  error(<span class="string">'The altitude is too high for StdAtm.'</span>);
+<span class="keyword">end</span>
+
+r = d.rPlanet + h; <span class="comment">% Add 70 km</span>
+v = sqrt(mu/r)/vC; <span class="comment">% Circular orbit</span>
+r = r/d.rPlanet;
+x = [r;0;0;v;0;0;0];
+
+<span class="comment">% Plotting arrays</span>
+x = [x  zeros(7,nSim)];
+u = zeros(2,nSim+1);
+t = linspace(1,nSim+1,nSim+1)*dT;
+
+<span class="comment">% This displays a GUI to show you how much time is left in the sim</span>
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Reentry Simulation'</span>, nSim )
+</pre><img vspace="5" hspace="5" src="ReentrySimulation_01.png" alt=""> <h2 id="4">Simulation</h2><pre class="codeinput"><span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Update the display</span>
+  TimeDisplay( <span class="string">'update'</span> )
+
+  <span class="comment">% Propagate one step</span>
+  x(:,k+1) = RK4( <span class="string">'RHSReentry'</span>, x(:,k), dT, 0, d );
+
+  <span class="comment">% Save the control for plotting</span>
+  u(:,k+1) = [d.sigma;d.alpha];
+
+  <span class="comment">% Compute the altitude to prevent going through the surface</span>
+  h = x(1,k+1)*d.rPlanet - d.rPlanet;
+
+  <span class="keyword">if</span>( h &lt; 1 )
+    <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% Close the display</span>
+TimeDisplay( <span class="string">'close'</span> )
+</pre><h2 id="5">Plotting</h2><pre class="codeinput"><span class="comment">% Shrink the arrays to the length of the simulation</span>
+x    = x(:,1:(k+1));
+u    = u(:,1:(k+1));
+
+<span class="comment">% Dimensionalize the time</span>
+t    = t(1:(k+1))*sqrt(d.rPlanet/d.g);
+
+<span class="comment">% Convert the sim variables to dimensional variables and plot</span>
+ReentryPlot( x, t, d, u );
+
+<span class="comment">% Create the time array and label</span>
+[t, tL] = TimeLabl(t);
+yL = {<span class="string">'H (m)'</span> <span class="string">'\theta (rad)'</span> <span class="string">'\phi (rad)'</span> <span class="string">'v (m/s)'</span> <span class="string">'\gamma (rad)'</span> <span class="string">'\psi (rad)'</span>};
+
+<span class="comment">% Restore the dimensions and plot</span>
+x(1,:) = x(1,:)*d.rPlanet - d.rPlanet;
+x(4,:) = x(4,:)*vC;
+Plot2D( t, x(1:6,:), tL, yL, <span class="string">'Reentry States'</span>);
+
+Figui
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ReentrySimulation_02.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_03.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_04.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_05.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_06.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_07.png" alt=""> <img vspace="5" hspace="5" src="ReentrySimulation_08.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A reentry simulation. Uses RHSReentry.m.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also ReentryPlot, RHSReentry, Plot2D, Figui
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright (c) 2007 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Simulation parameters
+nSim  = 50000;
+dT    = 0.0001;
+h     = 80000;
+
+% Constants
+mu  = Constant('mu earth')*1e9; % Convert to m
+
+% Use the default data in the right-hand-side function
+d  = RHSReentry;
+
+%% Initial states
+vC  = sqrt(d.rPlanet*d.g);
+
+if( h > 80000 )
+  error('The altitude is too high for StdAtm.');
+end
+
+r = d.rPlanet + h; % Add 70 km
+v = sqrt(mu/r)/vC; % Circular orbit
+r = r/d.rPlanet;
+x = [r;0;0;v;0;0;0];
+
+% Plotting arrays
+x = [x  zeros(7,nSim)];
+u = zeros(2,nSim+1);
+t = linspace(1,nSim+1,nSim+1)*dT;
+
+% This displays a GUI to show you how much time is left in the sim
+TimeDisplay( 'initialize', 'Reentry Simulation', nSim )
+
+%% Simulation
+for k = 1:nSim
+  
+  % Update the display
+  TimeDisplay( 'update' )
+
+  % Propagate one step
+  x(:,k+1) = RK4( 'RHSReentry', x(:,k), dT, 0, d );
+
+  % Save the control for plotting
+  u(:,k+1) = [d.sigma;d.alpha];
+
+  % Compute the altitude to prevent going through the surface
+  h = x(1,k+1)*d.rPlanet - d.rPlanet;
+
+  if( h < 1 ) 
+    break; 
+  end
+
+end
+
+% Close the display
+TimeDisplay( 'close' )
+
+%% Plotting
+
+% Shrink the arrays to the length of the simulation
+x    = x(:,1:(k+1));
+u    = u(:,1:(k+1));
+
+% Dimensionalize the time
+t    = t(1:(k+1))*sqrt(d.rPlanet/d.g);
+ 
+% Convert the sim variables to dimensional variables and plot
+ReentryPlot( x, t, d, u );
+
+% Create the time array and label
+[t, tL] = TimeLabl(t);
+yL = {'H (m)' '\theta (rad)' '\phi (rad)' 'v (m/s)' '\gamma (rad)' '\psi (rad)'};
+
+% Restore the dimensions and plot
+x(1,:) = x(1,:)*d.rPlanet - d.rPlanet;
+x(4,:) = x(4,:)*vC;
+Plot2D( t, x(1:6,:), tL, yL, 'Reentry States');
+
+Figui
+ 
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-21 $
+% $Revision: 04a7eb57a25b86193541fb1693a1eb75716cf511 $
+
+##### SOURCE END #####
+--></body></html>

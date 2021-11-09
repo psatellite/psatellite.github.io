@@ -1,0 +1,634 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Compensate the flexible solar array on the ComStar Spacecraft.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="ComStarSK.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Compensate the flexible solar array on the ComStar Spacecraft.</h1><!--introduction--><p>Only one axis is tested at a time. Consequently, the nutation mode will appear unstable but should not appear in the response due to the high gain of the loops.</p><p>=------------------------------------------------------------------------  See also FlexMod, ComStar, PIDMIMO, AC, C2DZOH, FResp, Series, Plot2D,  Rename, WriteCM, RBModel -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Select a rigid body model</a></li><li><a href="#3">Constants</a></li><li><a href="#4">Database</a></li><li><a href="#5">The state is [qX;qY;qZ;wX;wY;wZ;modes]</a></li><li><a href="#6">Load the flex model</a></li><li><a href="#7">Open loop eigenvalues</a></li><li><a href="#8">Design the PID</a></li><li><a href="#9">Append the plant model and the controller model</a></li><li><a href="#10">Dump the matrices if requested</a></li><li><a href="#11">Display the eigenvalues</a></li><li><a href="#12">Simulate the loop</a></li><li><a href="#13">Design the PID</a></li><li><a href="#14">Dump the matrices if requested</a></li><li><a href="#15">Append the plant model and the controller model</a></li><li><a href="#16">Close the loop</a></li><li><a href="#17">Display the eigenvalues</a></li><li><a href="#18">Simulate the loop</a></li><li><a href="#19">Load the flex model</a></li><li><a href="#20">Open loop eigenvalues</a></li><li><a href="#21">Design the PID</a></li><li><a href="#22">Append the plant model and the controller model</a></li><li><a href="#23">Dump the matrices if requested</a></li><li><a href="#24">Display the eigenvalues</a></li><li><a href="#25">Simulate the loop</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright 1995-1996 Princeton Satellite Systems, Inc.</span>
+<span class="comment">% All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Select a rigid body model</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+rBModel   = <span class="string">'no'</span>;
+cMatrices = <span class="string">'no'</span>; <span class="comment">% If yes will dump matrices to a file and display them</span>
+
+<span class="keyword">if</span>( strcmp(cMatrices, <span class="string">'yes'</span>) )
+  fID = fopen(<span class="string">'SK'</span>,<span class="string">'w'</span>);
+<span class="keyword">end</span>
+</pre><h2 id="3">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad = pi/180;
+radToDeg = 180/pi;
+dT       = 0.25;
+nSim     = 800;
+uStep    = 0.02;
+</pre><h2 id="4">Database</h2><pre class="codeinput"><span class="comment">%---------</span>
+inr = ComStar(<span class="string">'MO Inertia'</span>);
+</pre><h2 id="5">The state is [qX;qY;qZ;wX;wY;wZ;modes]</h2><pre class="codeinput"><span class="comment">%---------------------------------------</span>
+w = logspace(-5,1,400);
+
+<span class="comment">%-------------------------------------------------------------------------</span>
+disp(<span class="string">'Roll'</span>)
+<span class="comment">%-------------------------------------------------------------------------</span>
+</pre><pre class="codeoutput">Roll
+</pre><h2 id="6">Load the flex model</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+load <span class="string">FlexM00</span>
+</pre><h2 id="7">Open loop eigenvalues</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+disp(<span class="string">'Open loop eigenvalues w ith the array at 0 deg'</span>);
+disp(eig(a));
+
+d     = 0;
+n     = size(b,1);
+b     = b(:,1); <span class="comment">% Tx</span>
+c     = [1 zeros(1,n-1)];
+
+FResp(a,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Roll Open Loop'</span>);
+</pre><pre class="codeoutput">Open loop eigenvalues w ith the array at 0 deg
+  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000072921158553i
+  0.000000000000000 - 0.000072921158553i
+ -0.094708992131515 + 6.277675975513410i
+ -0.094708992131515 - 6.277675975513410i
+ -0.000000000010592 + 0.033505063031180i
+ -0.000000000010592 - 0.033505063031180i
+ -0.046529080815352 + 3.078742045893069i
+ -0.046529080815352 - 3.078742045893069i
+ -0.093645867653168 + 6.242349503207747i
+ -0.093645867653168 - 6.242349503207747i
+ -0.045846170833089 + 3.056067523247763i
+ -0.045846170833089 - 3.056067523247763i
+</pre><img vspace="5" hspace="5" src="ComStarSK_01.png" alt=""> <h2 id="8">Design the PID</h2><pre class="codeinput"><span class="comment">%---------------</span>
+zeta   = 4;
+omega  = 0.3;
+tauInt = 200; <span class="comment">% Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.</span>
+omegaR = 10*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(1,1), zeta, omega, tauInt, omegaR );
+
+<span class="keyword">if</span>( strcmp( rBModel, <span class="string">'yes'</span> ) )
+  a = [0 1;0 0];
+  b = [0; 1/inr(1,1)];
+  c = [1 0];
+  d = 0;
+<span class="keyword">end</span>
+</pre><h2 id="9">Append the plant model and the controller model</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+[a,b,c,d]        = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Roll Open Loop with Compensator'</span>);
+</pre><img vspace="5" hspace="5" src="ComStarSK_02.png" alt=""> <h2 id="10">Dump the matrices if requested</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">if</span>( strcmp(cMatrices,<span class="string">'yes'</span>) )
+  [aX,bX,cX,dX] = PIDMIMO(inr(1,1),zeta,omega,tauInt,omegaR,dT,<span class="string">'Delta'</span>);
+  WriteCM(fID,<span class="string">'A Matrix X'</span>,<span class="string">'fSKXAMatrix'</span>,reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,<span class="string">'B Matrix X'</span>,<span class="string">'fSKXBMatrix'</span>,bX,12,20,3)
+  WriteCM(fID,<span class="string">'C Matrix X'</span>,<span class="string">'fSKXCMatrix'</span>,cX,12,20,3)
+  WriteCM(fID,<span class="string">'D Matrix X'</span>,<span class="string">'fSKXDMatrix'</span>,dX,12,20,3)
+<span class="keyword">end</span>
+
+aCL = a - b*c;
+FResp(aCL,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Roll Closed Loop with Compensator'</span>);
+</pre><img vspace="5" hspace="5" src="ComStarSK_03.png" alt=""> <h2 id="11">Display the eigenvalues</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+s = eig(a - b*c);
+DispWithTitle(s,<span class="string">'Eigenvalues'</span>);
+</pre><pre class="codeoutput">Eigenvalues
+  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000000000000000i
+ -0.094709112482872 + 6.277676096424284i
+ -0.094709112482872 - 6.277676096424284i
+ -2.903765845506218 + 0.000000000000000i
+ -2.436509974910919 + 0.000000000000000i
+ -0.056891323946467 + 3.080091914628575i
+ -0.056891323946467 - 3.080091914628575i
+  0.000000760251406 + 0.001461736879842i
+  0.000000760251406 - 0.001461736879842i
+ -0.041674697983157 + 0.000000000000000i
+ -0.028742201694649 + 0.000000000000000i
+ -0.093645867653168 + 6.242349503207742i
+ -0.093645867653168 - 6.242349503207742i
+ -0.045846170833088 + 3.056067523247763i
+ -0.045846170833088 - 3.056067523247763i
+</pre><h2 id="12">Simulate the loop</h2><pre class="codeinput"><span class="comment">%------------------</span>
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); <span class="comment">% Rest conditions at the start</span>
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+<span class="keyword">for</span> k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+<span class="keyword">end</span>
+
+titleStr = sprintf(<span class="string">'Roll response to a %6.2f Nm step'</span>,uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Roll (deg)'</span>,titleStr);
+
+<span class="comment">%-------------------------------------------------------------------------</span>
+disp(<span class="string">'Pitch'</span>)
+<span class="comment">%-------------------------------------------------------------------------</span>
+</pre><pre class="codeoutput">Pitch
+</pre><img vspace="5" hspace="5" src="ComStarSK_04.png" alt=""> <h2 id="13">Design the PID</h2><pre class="codeinput"><span class="comment">%---------------</span>
+zeta   = 0.7071;
+omega  = 0.1;
+tauInt = 100; <span class="comment">% Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.</span>
+omegaR = 5*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(2,2), zeta, omega, tauInt, omegaR );
+</pre><h2 id="14">Dump the matrices if requested</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">if</span>( strcmp( cMatrices, <span class="string">'yes'</span> ) )
+  [aX,bX,cX,dX] = PIDMIMO(inr(1,1),zeta,omega,tauInt,omegaR,dT,<span class="string">'Delta'</span>);
+  WriteCM(fID,<span class="string">'A Matrix Y'</span>,<span class="string">'fSKTAMatrix'</span>,reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,<span class="string">'B Matrix Y'</span>,<span class="string">'fSKYBMatrix'</span>,bX,12,20,3)
+  WriteCM(fID,<span class="string">'C Matrix Y'</span>,<span class="string">'fSKYCMatrix'</span>,cX,12,20,3)
+  WriteCM(fID,<span class="string">'D Matrix Y'</span>,<span class="string">'fSKYDMatrix'</span>,dX,12,20,3)
+<span class="keyword">end</span>
+
+a = [0 1;0 0];
+b = [0; 1/inr(2,2)];
+c = [1 0];
+d = 0;
+</pre><h2 id="15">Append the plant model and the controller model</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+[a,b,c,d] = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Pitch Open Loop with Compensator'</span>);
+</pre><img vspace="5" hspace="5" src="ComStarSK_05.png" alt=""> <h2 id="16">Close the loop</h2><pre class="codeinput"><span class="comment">%---------------</span>
+aCL = a - b*c;
+</pre><h2 id="17">Display the eigenvalues</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+s = eig(aCL);
+DispWithTitle(s,<span class="string">'Eigenvalues'</span>);
+</pre><pre class="codeoutput">Eigenvalues
+ -0.500000000000000 + 0.000000000000000i
+ -0.070710000000000 + 0.070711356230806i
+ -0.070710000000000 - 0.070711356230806i
+ -0.062831853071795 + 0.000000000000000i
+</pre><h2 id="18">Simulate the loop</h2><pre class="codeinput"><span class="comment">%------------------</span>
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); <span class="comment">% Rest conditions at the start</span>
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+<span class="keyword">for</span> k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+<span class="keyword">end</span>
+
+titlestr = sprintf(<span class="string">'Pitch response to a %6.2f Nm step'</span>,uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Pitch (deg)'</span>,titlestr);
+
+
+<span class="comment">%-------------------------------------------------------------------------</span>
+disp(<span class="string">'Yaw'</span>)
+<span class="comment">%-------------------------------------------------------------------------</span>
+</pre><pre class="codeoutput">Yaw
+</pre><img vspace="5" hspace="5" src="ComStarSK_06.png" alt=""> <h2 id="19">Load the flex model</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+load <span class="string">FlexM90</span>
+</pre><h2 id="20">Open loop eigenvalues</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+disp(<span class="string">'Open loop eigenvalues with the array at 90 deg'</span>)
+s = eig(a);
+DispWithTitle(s,<span class="string">'Eigenvalues'</span>);
+
+d     = 0;
+[n,m] = size(b);
+b     = b(:,1); <span class="comment">% Tx</span>
+c     = [1 zeros(1,n-1)];
+
+FResp(a,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Yaw Open Loop'</span>);
+</pre><pre class="codeoutput">Open loop eigenvalues with the array at 90 deg
+Eigenvalues
+  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000072921158553i
+  0.000000000000000 - 0.000072921158553i
+ -0.000000000008575 + 0.033505068312684i
+ -0.000000000008575 - 0.033505068312684i
+ -0.095040605993570 + 6.288654499226070i
+ -0.095040605993570 - 6.288654499226070i
+ -0.046366732440016 + 3.073366795926412i
+ -0.046366732440016 - 3.073366795926412i
+ -0.045846258311683 + 3.056070438215323i
+ -0.045846258311683 - 3.056070438215323i
+ -0.093645688968816 + 6.242343549075901i
+ -0.093645688968816 - 6.242343549075901i
+</pre><img vspace="5" hspace="5" src="ComStarSK_07.png" alt=""> <h2 id="21">Design the PID</h2><pre class="codeinput"><span class="comment">%---------------</span>
+zeta   = 0.7071;
+omega  = 0.4;
+tauInt = 100; <span class="comment">% Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.</span>
+omegaR = 5*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(3,3), zeta, omega, tauInt, omegaR );
+
+<span class="keyword">if</span>( strcmp( rBModel, <span class="string">'yes'</span> ) )
+  a = [0 1;0 0];
+  b = [0; 1/inr(3,3)];
+  c = [1 0];
+  d = 0;
+<span class="keyword">end</span>
+</pre><h2 id="22">Append the plant model and the controller model</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+[a,b,c,d]        = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,<span class="string">'unwrap'</span>);
+Rename(<span class="string">'Yaw Open Loop with Compensator'</span>);
+</pre><img vspace="5" hspace="5" src="ComStarSK_08.png" alt=""> <h2 id="23">Dump the matrices if requested</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">if</span>( strcmp( cMatrices, <span class="string">'yes'</span> ) )
+  [aX,bX,cX,dX] = PIDMIMO(inr(3,3),zeta,omega,tauInt,omegaR,dT,<span class="string">'Delta'</span>);
+  WriteCM(fID,<span class="string">'A Matrix Z'</span>,<span class="string">'fSKZAMatrix'</span>,reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,<span class="string">'B Matrix Z'</span>,<span class="string">'fSKZBMatrix'</span>,bX,12,20,3)
+  WriteCM(fID,<span class="string">'C Matrix Z'</span>,<span class="string">'fSKZCMatrix'</span>,cX,12,20,3)
+  WriteCM(fID,<span class="string">'D Matrix Z'</span>,<span class="string">'fSKZDMatrix'</span>,dX,12,20,3)
+<span class="keyword">end</span>
+
+aCL = a - b*c;
+</pre><h2 id="24">Display the eigenvalues</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+disp(eig(a - b*c));
+</pre><pre class="codeoutput">  0.000000000000000 + 0.000000000000000i
+  0.000000000000000 + 0.000000000000000i
+ -0.095825700833759 + 6.290685869355785i
+ -0.095825700833759 - 6.290685869355785i
+ -1.676070768804950 + 0.000000000000000i
+ -0.443995811900262 + 0.228278913414416i
+ -0.443995811900262 - 0.228278913414416i
+ -0.062879049815816 + 0.000000000000000i
+  0.000000119334348 + 0.001461799729664i
+  0.000000119334348 - 0.001461799729664i
+ -0.046366962268003 + 3.073367073441809i
+ -0.046366962268003 - 3.073367073441809i
+ -0.093645688968816 + 6.242343549075902i
+ -0.093645688968816 - 6.242343549075902i
+ -0.045846258311684 + 3.056070438215322i
+ -0.045846258311684 - 3.056070438215322i
+</pre><h2 id="25">Simulate the loop</h2><pre class="codeinput"><span class="comment">%------------------</span>
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); <span class="comment">% Rest conditions at the start</span>
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+<span class="keyword">for</span> k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+<span class="keyword">end</span>
+
+titleStr = sprintf(<span class="string">'Yaw response to a %6.2f Nm step'</span>,uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Yaw (deg)'</span>,titleStr);
+
+<span class="keyword">if</span>( strcmp(cMatrices, <span class="string">'yes'</span>) )
+  fclose(fID);
+<span class="keyword">end</span>
+
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ComStarSK_09.png" alt=""> <img vspace="5" hspace="5" src="ComStarSK_10.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Compensate the flexible solar array on the ComStar Spacecraft.
+% Only one axis is tested at a time. Consequently, the nutation mode will 
+% appear unstable but should not appear in the response due to the high 
+% gain of the loops.
+%
+% =REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also FlexMod, ComStar, PIDMIMO, AC, C2DZOH, FResp, Series, Plot2D, 
+%  Rename, WriteCM, RBModel
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright 1995-1996 Princeton Satellite Systems, Inc.
+% All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Select a rigid body model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rBModel   = 'no';
+cMatrices = 'no'; % If yes will dump matrices to a file and display them
+
+if( strcmp(cMatrices, 'yes') )
+  fID = fopen('SK','w');
+end
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad = pi/180;
+radToDeg = 180/pi;
+dT       = 0.25;
+nSim     = 800;
+uStep    = 0.02;
+
+%% Database
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+inr = ComStar('MO Inertia');
+
+%% The state is [qX;qY;qZ;wX;wY;wZ;modes]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+w = logspace(-5,1,400);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Roll')
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Load the flex model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+load FlexM00
+
+%% Open loop eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('Open loop eigenvalues w ith the array at 0 deg');
+disp(eig(a));
+
+d     = 0;
+n     = size(b,1);
+b     = b(:,1); % Tx
+c     = [1 zeros(1,n-1)];
+
+FResp(a,b,c,d,1,1,w,'unwrap');
+Rename('Roll Open Loop');
+
+%% Design the PID
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zeta   = 4;
+omega  = 0.3;
+tauInt = 200; % Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.
+omegaR = 10*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(1,1), zeta, omega, tauInt, omegaR );
+
+if( strcmp( rBModel, 'yes' ) )
+  a = [0 1;0 0];
+  b = [0; 1/inr(1,1)];
+  c = [1 0];
+  d = 0;
+end
+
+%% Append the plant model and the controller model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a,b,c,d]        = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,'unwrap');
+Rename('Roll Open Loop with Compensator');
+								   
+%% Dump the matrices if requested
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-									  
+if( strcmp(cMatrices,'yes') )
+  [aX,bX,cX,dX] = PIDMIMO(inr(1,1),zeta,omega,tauInt,omegaR,dT,'Delta');
+  WriteCM(fID,'A Matrix X','fSKXAMatrix',reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,'B Matrix X','fSKXBMatrix',bX,12,20,3)
+  WriteCM(fID,'C Matrix X','fSKXCMatrix',cX,12,20,3)
+  WriteCM(fID,'D Matrix X','fSKXDMatrix',dX,12,20,3)
+end
+
+aCL = a - b*c;
+FResp(aCL,b,c,d,1,1,w,'unwrap');
+Rename('Roll Closed Loop with Compensator');
+
+%% Display the eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+s = eig(a - b*c);
+DispWithTitle(s,'Eigenvalues');
+
+%% Simulate the loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); % Rest conditions at the start
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+for k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+end
+
+titleStr = sprintf('Roll response to a %6.2f Nm step',uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,'Time (sec)','Roll (deg)',titleStr);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Pitch')
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Design the PID
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zeta   = 0.7071;
+omega  = 0.1;
+tauInt = 100; % Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.
+omegaR = 5*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(2,2), zeta, omega, tauInt, omegaR );
+
+%% Dump the matrices if requested
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-									  
+if( strcmp( cMatrices, 'yes' ) )
+  [aX,bX,cX,dX] = PIDMIMO(inr(1,1),zeta,omega,tauInt,omegaR,dT,'Delta');
+  WriteCM(fID,'A Matrix Y','fSKTAMatrix',reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,'B Matrix Y','fSKYBMatrix',bX,12,20,3)
+  WriteCM(fID,'C Matrix Y','fSKYCMatrix',cX,12,20,3)
+  WriteCM(fID,'D Matrix Y','fSKYDMatrix',dX,12,20,3)
+end
+
+a = [0 1;0 0];
+b = [0; 1/inr(2,2)];
+c = [1 0];
+d = 0;
+
+%% Append the plant model and the controller model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a,b,c,d] = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,'unwrap');
+Rename('Pitch Open Loop with Compensator');
+
+%% Close the loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aCL = a - b*c;
+
+%% Display the eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+s = eig(aCL);
+DispWithTitle(s,'Eigenvalues');
+
+%% Simulate the loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); % Rest conditions at the start
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+for k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+end
+
+titlestr = sprintf('Pitch response to a %6.2f Nm step',uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,'Time (sec)','Pitch (deg)',titlestr);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('Yaw')
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Load the flex model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+load FlexM90
+
+%% Open loop eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('Open loop eigenvalues with the array at 90 deg')
+s = eig(a);
+DispWithTitle(s,'Eigenvalues');
+
+d     = 0;
+[n,m] = size(b);
+b     = b(:,1); % Tx
+c     = [1 zeros(1,n-1)];
+
+FResp(a,b,c,d,1,1,w,'unwrap');
+Rename('Yaw Open Loop');
+
+
+%% Design the PID
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zeta   = 0.7071;
+omega  = 0.4;
+tauInt = 100; % Will determine the peak of the overshoot. Smaller tauInt means smaller overshoot.
+omegaR = 5*omega;
+
+[aC, bC, cC, dC] = PIDMIMO( inr(3,3), zeta, omega, tauInt, omegaR );
+
+if( strcmp( rBModel, 'yes' ) )
+  a = [0 1;0 0];
+  b = [0; 1/inr(3,3)];
+  c = [1 0];
+  d = 0;
+end
+
+%% Append the plant model and the controller model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a,b,c,d]        = Series(a,b,c,d,aC,bC,cC,dC);
+
+FResp(a,b,c,d,1,1,w,'unwrap');
+Rename('Yaw Open Loop with Compensator');
+
+%% Dump the matrices if requested
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-									  
+if( strcmp( cMatrices, 'yes' ) )
+  [aX,bX,cX,dX] = PIDMIMO(inr(3,3),zeta,omega,tauInt,omegaR,dT,'Delta');
+  WriteCM(fID,'A Matrix Z','fSKZAMatrix',reshape(aX',1,length(aX)^2),12,20,3)
+  WriteCM(fID,'B Matrix Z','fSKZBMatrix',bX,12,20,3)
+  WriteCM(fID,'C Matrix Z','fSKZCMatrix',cX,12,20,3)
+  WriteCM(fID,'D Matrix Z','fSKZDMatrix',dX,12,20,3)
+end
+
+aCL = a - b*c;
+
+%% Display the eigenvalues
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp(eig(a - b*c));
+
+%% Simulate the loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yPlot   = zeros(1,nSim);
+n       = length(aCL);
+x       = zeros(n,1); % Rest conditions at the start
+c       = [1 zeros(1,n-1)];
+
+[aCL, b] = C2DZOH( aCL, b, dT );
+
+for k = 1:nSim
+   yPlot(k) = c*x;
+   x        = aCL*x + b*uStep;
+end
+
+titleStr = sprintf('Yaw response to a %6.2f Nm step',uStep);
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,'Time (sec)','Yaw (deg)',titleStr);
+
+if( strcmp(cMatrices, 'yes') )
+  fclose(fID);
+end
+
+Figui;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-27 15:19:39 -0400 (Wed, 27 May 2020) $
+% $Revision: 52495 $
+
+##### SOURCE END #####
+--></body></html>

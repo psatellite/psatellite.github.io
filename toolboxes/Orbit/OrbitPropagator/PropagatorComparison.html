@@ -1,0 +1,246 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Integration accuracy study comparing RK4, RK45, and ode113.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-28"><meta name="DC.source" content="PropagatorComparison.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Integration accuracy study comparing RK4, RK45, and ode113.</h1><!--introduction--><p>Propagate a circular 7000 km orbit with each function and compare the results against a perfect circular orbit.</p><pre>------------------------------------------------------------------------
+See also Plot2D, Mag, RK4, RK45, JD2000, OrbRate, El2RV, Period, FOrb, FOrbHFOP
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Choose number of orbits to run:</a></li><li><a href="#3">Set up orbit and sim:</a></li><li><a href="#4">Info for ode113 propagation</a></li><li><a href="#5">Run!</a></li><li><a href="#6">Prepare plots and printouts</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Choose number of orbits to run:</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+nOrbits = 2;
+</pre><h2 id="3">Set up orbit and sim:</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+[r,v]   = El2RV([7000 0.1 0 0 0 0]);
+p       = Period(7000);
+dT      = p/100;
+t       = linspace(0,nOrbits*p,100*nOrbits+1);
+kPlot   = linspace(1,length(t),2001);
+
+w       = OrbRate(7000);
+rCirc   = 7000*[cos(w*t); cos(0.1)*sin(w*t); sin(0.1)*sin(w*t)];
+
+xRK4    = zeros(6,length(t));
+xRK45   = zeros(6,length(t));
+xODE    = zeros(7,length(t));
+xRK4(:,1)   = [r;v];
+xRK45(:,1)  = [r;v];
+xODE(1:6,1) = [r;v];
+
+tRK4  = 0;
+tRK45 = 0;
+tODE  = 0;
+</pre><h2 id="4">Info for ode113 propagation</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+options = odeset(<span class="string">'RelTol'</span>,1e-4);
+d       = [];
+d.gravityModel.mu = 398600.44;
+d.gravityModel.s = [];
+d.gravityModel.j = [];
+d.jD = JD2000;
+d.nTess = 0;
+d.nZonal = 0;
+d.propagateEF = 0;
+d.planet = <span class="string">'Earth'</span>;
+d.thrustModelOn = 0;
+d.aeroModelOn = 0;
+d.solarModelOn = 0;
+d.planetaryDisturbancesOn = 0;
+</pre><h2 id="5">Run!</h2><pre class="codeinput"><span class="comment">%------</span>
+hWait = waitbar(0,sprintf(<span class="string">'PropagatorComparison: %d orbits'</span>,nOrbits));
+<span class="keyword">for</span> k = 1:length(t)-1
+  waitbar(k/(100*nOrbits));
+  tC           = cputime;
+  xRK4(:,k+1)  = RK4(<span class="string">'FOrb'</span>,xRK4(:,k),dT,t(k),<span class="string">'car'</span>);
+  tRK4         = tRK4 + cputime-tC; tC=cputime;
+  xRK45(:,k+1) = RK45(<span class="string">'FOrb'</span>,xRK45(:,k),dT,dT,0,1e-6,t(k),<span class="string">'car'</span>);
+  tRK45        = tRK45 + cputime-tC; tC=cputime;
+  [tTemp,y]    = ode113(<span class="string">'FOrbHFOP'</span>,[0 dT],xODE(:,k),options,d);
+  xODE(:,k+1)  = y(end,:)';
+  tODE         = tODE + cputime-tC;
+<span class="keyword">end</span>
+close(hWait);
+</pre><h2 id="6">Prepare plots and printouts</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+dRK4  = Mag( xRK4(1:3,:)  - rCirc );
+dRK45 = Mag( xRK45(1:3,:) - rCirc );
+dODE  = Mag( xODE(1:3,:)  - rCirc );
+rRK4  = Mag( xRK4(1:3,:) )  - 7000;
+rRK45 = Mag( xRK45(1:3,:) ) - 7000;
+rODE  = Mag( xODE(1:3,:) )  - 7000;
+
+Plot2D( t/p, [rRK4; rRK45; rODE], <span class="string">'Number of Orbits'</span>,char({<span class="string">'RK4'</span>,<span class="string">'RK45'</span>,<span class="string">'ode113'</span>,<span class="string">'All'</span>}),<span class="keyword">...</span>
+        <span class="string">'Comparison of Radius Change (km)'</span>,<span class="string">'lin'</span>,char({<span class="string">'[1]'</span>,<span class="string">'[2]'</span>,<span class="string">'[3]'</span>,<span class="string">'[1 2 3]'</span>}) );
+
+fprintf(<span class="string">'\nTime for RK4 propagation: %5.2g sec\n'</span>,tRK4);
+fprintf(<span class="string">'Time for RK45 propagation: %5.2g sec\n'</span>,tRK45);
+fprintf(<span class="string">'Time for ode113 propagation: %5.2g sec\n\n'</span>,tODE);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+Time for RK4 propagation:  0.06 sec
+Time for RK45 propagation:  0.08 sec
+Time for ode113 propagation:   4.5 sec
+
+</pre><img vspace="5" hspace="5" src="PropagatorComparison_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Integration accuracy study comparing RK4, RK45, and ode113. 
+% Propagate a circular 7000 km orbit with each function and compare the 
+% results against a perfect circular orbit.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, Mag, RK4, RK45, JD2000, OrbRate, El2RV, Period, FOrb, FOrbHFOP
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2003 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Choose number of orbits to run:
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nOrbits = 2;
+
+%% Set up orbit and sim:
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[r,v]   = El2RV([7000 0.1 0 0 0 0]);
+p       = Period(7000);
+dT      = p/100;
+t       = linspace(0,nOrbits*p,100*nOrbits+1);
+kPlot   = linspace(1,length(t),2001);
+
+w       = OrbRate(7000);
+rCirc   = 7000*[cos(w*t); cos(0.1)*sin(w*t); sin(0.1)*sin(w*t)];
+
+xRK4    = zeros(6,length(t));
+xRK45   = zeros(6,length(t));
+xODE    = zeros(7,length(t));
+xRK4(:,1)   = [r;v];
+xRK45(:,1)  = [r;v];
+xODE(1:6,1) = [r;v];
+
+tRK4  = 0;
+tRK45 = 0;
+tODE  = 0;
+
+%% Info for ode113 propagation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+options = odeset('RelTol',1e-4);
+d       = [];
+d.gravityModel.mu = 398600.44;
+d.gravityModel.s = [];
+d.gravityModel.j = [];
+d.jD = JD2000;
+d.nTess = 0;
+d.nZonal = 0;
+d.propagateEF = 0;
+d.planet = 'Earth';
+d.thrustModelOn = 0;
+d.aeroModelOn = 0;
+d.solarModelOn = 0;
+d.planetaryDisturbancesOn = 0;
+
+%% Run!
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+hWait = waitbar(0,sprintf('PropagatorComparison: %d orbits',nOrbits));
+for k = 1:length(t)-1
+  waitbar(k/(100*nOrbits));
+  tC           = cputime;
+  xRK4(:,k+1)  = RK4('FOrb',xRK4(:,k),dT,t(k),'car');
+  tRK4         = tRK4 + cputime-tC; tC=cputime;  
+  xRK45(:,k+1) = RK45('FOrb',xRK45(:,k),dT,dT,0,1e-6,t(k),'car');
+  tRK45        = tRK45 + cputime-tC; tC=cputime;  
+  [tTemp,y]    = ode113('FOrbHFOP',[0 dT],xODE(:,k),options,d);
+  xODE(:,k+1)  = y(end,:)';
+  tODE         = tODE + cputime-tC;
+end
+close(hWait);
+
+%% Prepare plots and printouts
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dRK4  = Mag( xRK4(1:3,:)  - rCirc );
+dRK45 = Mag( xRK45(1:3,:) - rCirc );
+dODE  = Mag( xODE(1:3,:)  - rCirc );
+rRK4  = Mag( xRK4(1:3,:) )  - 7000;
+rRK45 = Mag( xRK45(1:3,:) ) - 7000;
+rODE  = Mag( xODE(1:3,:) )  - 7000;
+
+Plot2D( t/p, [rRK4; rRK45; rODE], 'Number of Orbits',char({'RK4','RK45','ode113','All'}),...
+        'Comparison of Radius Change (km)','lin',char({'[1]','[2]','[3]','[1 2 3]'}) );
+
+fprintf('\nTime for RK4 propagation: %5.2g sec\n',tRK4);
+fprintf('Time for RK45 propagation: %5.2g sec\n',tRK45);
+fprintf('Time for ode113 propagation: %5.2g sec\n\n',tODE);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-24 $
+% $Revision: 4491413e4cf2b68e986140b356c53509507786c4 $
+
+
+##### SOURCE END #####
+--></body></html>

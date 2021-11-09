@@ -1,0 +1,649 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design the starship</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="StarshipDesign.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design the starship</h1><!--introduction--><p>-------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">See also: BuildCADModel</a></li></ul></div><h2 id="1">See also: BuildCADModel</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2011 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+massFuel    = 34854.8; <span class="comment">% kg</span>
+densityD	= 162.4; <span class="comment">% kg/m^3</span>
+densityHe	= 147.0; <span class="comment">% kg/m^3</span>
+tempRad     = 1000; <span class="comment">% degK</span>
+epsRad      = 1;
+heat        = 4.2e6*0.8;
+sig         = 5.6697e-08;
+areaRad     = 9*heat/(sig*epsRad*tempRad^4);
+wRad        = 8;
+lRad        = 0.25*areaRad/wRad;
+
+vD          = 0.5*massFuel/densityD;
+vHe         = 0.5*massFuel/densityHe;
+
+mE          = 1.44e+04;
+rE          = 2*0.61;
+lE          = 8*0.61;
+mR          = 1500;
+
+rT          = rE;
+lD          = vD/4/(pi*rT^2);
+lHe         = vHe/4/(pi*rT^2);
+mGimbal     = 7.5;
+
+lTruss      = 2*(lE + lD + lHe);
+rTruss      = rE;
+
+rAntenna    = 8;
+
+rTel        = 0.3;
+lTel        = 1;
+
+rhoTruss    = 409.7/4.55^2;
+
+massPayload = 1000;
+
+<span class="comment">% Example mesh antenna</span>
+<span class="comment">%---------------------</span>
+area        = 203*144/39.37^2;
+mass        = 53.5/2.205;
+rhoAreal    = mass/area;
+massAntenna = rhoAreal*pi*rAntenna^2;
+
+k           = 1;
+
+g           = {};
+g{k,1}      = <span class="string">'Mass Fuel'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg)'</span>,massFuel); k = k + 1;
+g{k,1}      = <span class="string">'Density D'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg/m$^3$)'</span>,densityD); k = k + 1;
+g{k,1}      = <span class="string">'Density He'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg/m$^3$)'</span>,densityHe); k = k + 1;
+g{k,1}      = <span class="string">'Volume D'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m$^3$)'</span>,vD); k = k + 1;
+g{k,1}      = <span class="string">'Volume He'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m$^3$)'</span>,vHe); k = k + 1;
+g{k,1}      = <span class="string">'Fuel Tank Radius'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,rT); k = k + 1;
+g{k,1}      = <span class="string">'Length D Tank'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,lD); k = k + 1;
+g{k,1}      = <span class="string">'Length He Tank'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,lHe); k = k + 1;
+g{k,1}      = <span class="string">'Length Truss'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,lTruss); k = k + 1;
+g{k,1}      = <span class="string">'Radius Truss'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,rTruss); k = k + 1;
+g{k,1}      = <span class="string">'Radius Antenna'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,rAntenna); k = k + 1;
+g{k,1}      = <span class="string">'Radiator Temperature'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (deg-K)'</span>,tempRad); k = k + 1;
+g{k,1}      = <span class="string">'Waste Heat'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (MW)'</span>,heat/1e6); k = k + 1;
+g{k,1}      = <span class="string">'Radiator area'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m$^2$)'</span>,areaRad); k = k + 1;
+g{k,1}      = <span class="string">'Radiator width'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,wRad); k = k + 1;
+g{k,1}      = <span class="string">'Radiator length'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,lRad); k = k + 1;
+g{k,1}      = <span class="string">'Radiator mass'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg)'</span>,mR); k = k + 1;
+g{k,1}      = <span class="string">'Telescope radius'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,rTel); k = k + 1;
+g{k,1}      = <span class="string">'Telescope length'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (m)'</span>,lTel); k = k + 1;
+g{k,1}      = <span class="string">'Gimbal Mass (Moog Type 55)'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg)'</span>,mGimbal); k = k + 1;
+g{k,1}      = <span class="string">'Truss Mass Density'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg/m$^3$)'</span>,rhoTruss); k = k + 1;
+g{k,1}      = <span class="string">'Mass Payload Box'</span>;
+g{k,2}      = sprintf(<span class="string">'%8.2f (kg)'</span>,massPayload); k = k + 1;
+
+DisplayLatexTable( g );
+
+<span class="comment">% Initialize</span>
+<span class="comment">%-----------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+BuildCADModel( <span class="string">'set name'</span> , <span class="string">'Starship'</span> );
+BuildCADModel( <span class="string">'set units'</span>, <span class="string">'mks'</span>         );
+
+<span class="comment">% Core</span>
+<span class="comment">%-----</span>
+m              = [];
+m.name         = <span class="string">'Core'</span>;
+m.rHinge       = [0;0;0];
+m.bHinge.b     = eye(3);
+m.previousBody = [];
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% This creates the connections between the bodies</span>
+<span class="comment">%------------------------------------------------</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+
+<span class="comment">% Engines</span>
+<span class="comment">%---------</span>
+x = 0;
+<span class="keyword">for</span> k = 1:3
+    z = 2*rE*(k-2);
+    <span class="keyword">for</span> j = 1:3
+        y = 2*rE*(j-2);
+        s = sprintf(<span class="string">'Engine%d%d'</span>,k,j);
+        m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rE, <span class="string">'rLower'</span>,rE, <span class="string">'h'</span>, lE, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [x;y;z],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, s, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mE, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0], <span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, [0.4 0.4 0.4], <span class="string">'inside'</span>, 0);
+        BuildCADModel( <span class="string">'add component'</span>, m );
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+v = [vD vD vD vD vHe vHe vHe vHe]/4;
+
+mass  = massFuel/8;
+ang = 0;
+
+xD  = 1.25*lE;
+xHe = 1.25*lE + 1.25*lD;
+rF  = 0.9*rT;
+
+<span class="keyword">for</span> k = 1:4
+    sD      = sprintf(<span class="string">'Deuterium Tank %d'</span>,k);
+    sHe     = sprintf(<span class="string">'Helium Tank %d'</span>,k);
+    sDF     = sprintf(<span class="string">'Deuterium Tank %d Fuel'</span>,k);
+    sHeF	= sprintf(<span class="string">'Helium Tank %d Fuel'</span>,k);
+	z       = 2*rT*cos(ang);
+    y       = 2*rT*sin(ang);
+    ang     = ang + pi/2;
+
+	m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rT, <span class="string">'rLower'</span>,rT, <span class="string">'h'</span>, lD, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [xD;y;z],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, sD, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, 0.02*mass, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0], <span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+	BuildCADModel( <span class="string">'add component'</span>, m );
+
+	m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rT, <span class="string">'rLower'</span>,rT, <span class="string">'h'</span>, lHe, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [xHe;y;z],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, sHe, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, 0.02*mass, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0], <span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+	BuildCADModel( <span class="string">'add component'</span>, m );
+
+	m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rF, <span class="string">'rLower'</span>,rF, <span class="string">'h'</span>, lD, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [xD;y;z],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, sDF, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, 0.98*mass, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0], <span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 1);
+	BuildCADModel( <span class="string">'add component'</span>, m );
+
+	m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rF, <span class="string">'rLower'</span>,rF, <span class="string">'h'</span>, lHe, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [xHe;y;z],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, sHeF, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, 0.98*mass, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0], <span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 1);
+	BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="keyword">end</span>
+
+<span class="comment">% Central square truss</span>
+<span class="comment">%---------------------</span>
+[v, f, l] = Truss( [0;0;0], [lTruss;0;0], 2*rTruss, 10 );
+massTruss = rhoTruss*lTruss*(2*rTruss)^2;
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'edgeColor'</span>,<span class="string">'truss'</span>,<span class="string">'rA'</span>,[lE;0;0],<span class="keyword">...</span>
+	                         <span class="string">'name'</span>, <span class="string">'Truss'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, [0.9;0.9;0.9],<span class="string">'inside'</span>, 1, <span class="string">'mass'</span>,massTruss);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Payload</span>
+<span class="comment">%--------</span>
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, 3*rE, <span class="string">'y'</span>, 3*rE, <span class="string">'z'</span>, 3*rE, <span class="string">'rA'</span>,[lTruss+3*rE;0;0],<span class="keyword">...</span>
+	                         <span class="string">'name'</span>, <span class="string">'Payload'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>, 1, <span class="string">'mass'</span>,massPayload );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+massRadar = rhoTruss*1.6*rE^2;
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, rE, <span class="string">'y'</span>, 8*rE, <span class="string">'z'</span>, 0.2*rE, <span class="string">'rA'</span>,[lTruss+3*rE;0;-1.5*rE],<span class="keyword">...</span>
+	                         <span class="string">'name'</span>, <span class="string">'Radar'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'steel'</span>,<span class="string">'inside'</span>, 1, <span class="string">'mass'</span>, massRadar );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Antenna Assembly</span>
+<span class="comment">%-----------------</span>
+bA   = [0 0 1;0 1 0;-1 0 0];
+[v, f, l] = Truss( [0;0;0], [4.5*rE;0;0], 0.5*rE, 10 );
+massTruss = rhoTruss*4.5*rE*rE*(0.5*rE)^2;
+
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'edgeColor'</span>,<span class="string">'truss'</span>, <span class="string">'rA'</span>, [lTruss+3*rE;0;6.0*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Antenna Truss'</span>, <span class="string">'body'</span>, 1, <span class="string">'b'</span>,bA, <span class="string">'mass'</span>,massTruss,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, 0.25*rE, <span class="string">'rLower'</span>,0.25*rE, <span class="string">'h'</span>, 0.4*rE, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [lTruss+3*rE;0;6*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Antenna Azimuth Gimbal'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mGimbal/2, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, 0.25*rE, <span class="string">'rLower'</span>,0.25*rE, <span class="string">'h'</span>, rE, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [lTruss+3*rE;-0.5*rE;6.7*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Antenna Elevation Gimbal'</span>, <span class="string">'body'</span>, 1, <span class="string">'b'</span>,[1 0 0;0 0 1;0 -1 0], <span class="string">'mass'</span>, mGimbal/2, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+
+[v, f] = AntennaPatch( rAntenna, rAntenna, 0.5, 0.2,[-1;0;0], [0;0;1], 20 );
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'edgeColor'</span>,<span class="string">'truss'</span>,<span class="keyword">...</span>
+	                 <span class="string">'name'</span>, <span class="string">'Antenna'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>,<span class="string">'inside'</span>, 0,<span class="string">'mass'</span>,massAntenna,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>,[lTruss+2.7*rE;0;6.7*rE] );
+
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+s    = sin(pi/4);
+c    = cos(pi/4);
+
+bA   = [0 0 1;0 1 0;-1 0 0];
+lTelBase = 3*rE;
+
+[v, f, l] = Truss( [0;0;0], [lTelBase;0;0], 2*rTel, 10 );
+massTruss = rhoTruss*lTelBase*(2*rTel)^2;
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'edgeColor'</span>,<span class="string">'truss'</span>, <span class="string">'rA'</span>, [lTruss+4*rE;0;-1.5*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Telescope Truss'</span>, <span class="string">'body'</span>, 1,  <span class="string">'b'</span>, bA, <span class="string">'mass'</span>,massTruss, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, 0.25*rE, <span class="string">'rLower'</span>,0.25*rE, <span class="string">'h'</span>, 0.4*rE, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [lTruss+4*rE;0;-4.75*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Telescope Gimbal'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mGimbal, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rTel, <span class="string">'rLower'</span>,rTel, <span class="string">'h'</span>, lTel, <span class="string">'n'</span>,12, <span class="string">'rA'</span>, [lTruss+4*rE-lTel;0;-4.9*rE],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Telescope'</span>, <span class="string">'body'</span>, 1, <span class="string">'b'</span>, [0 0 1;0 1 0;-1 0 0],<span class="string">'mass'</span>,166.82/2.205, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, wRad, <span class="string">'y'</span>, lRad, <span class="string">'z'</span>, 0.25, <span class="string">'rA'</span>, [lTruss-2*rE;rE+lRad/2;0],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Radiator +Y'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>,mR, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'radiator'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, wRad, <span class="string">'y'</span>, lRad, <span class="string">'z'</span>, 0.25, <span class="string">'rA'</span>, [lTruss-2*rE;-rE-lRad/2;0],<span class="keyword">...</span>
+                     <span class="string">'name'</span>, <span class="string">'Radiator -Y'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>,mR,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'radiator'</span>, <span class="string">'inside'</span>, 0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Add subsystems</span>
+<span class="comment">%---------------</span>
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'communications'</span>,	{<span class="string">'antenna'</span> } );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'propulsion'</span>,       {<span class="string">'engine'</span>, <span class="string">'helium tank'</span> <span class="string">'deuterium tank'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'structure'</span>,        {<span class="string">'truss'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'payload'</span>,          {<span class="string">'telescope'</span>,<span class="string">'radar'</span>, <span class="string">'payload'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'thermal'</span>,          {<span class="string">'radiator'</span>} );
+
+<span class="comment">% Update</span>
+<span class="comment">%-------</span>
+BuildCADModel( <span class="string">'update body mass properties'</span> );
+
+h = BuildCADModel( <span class="string">'get model'</span>);
+BuildCADModel(<span class="string">'show vehicle'</span>);
+
+CreateReport( h, <span class="string">'tex'</span>, FileFullpath(<span class="string">'StarshipReport'</span>), <span class="string">'mass'</span>, 1 )
+ExportOBJ(h,FileFullpath(<span class="string">'Starship'</span>))
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">                 Mass Fuel       34854.80 (kg) 
+                 Density D   162.40 (kg/m$^3$) 
+                Density He   147.00 (kg/m$^3$) 
+                  Volume D      107.31 (m$^3$) 
+                 Volume He      118.55 (m$^3$) 
+          Fuel Tank Radius            1.22 (m) 
+             Length D Tank            5.74 (m) 
+            Length He Tank            6.34 (m) 
+              Length Truss           33.91 (m) 
+              Radius Truss            1.22 (m) 
+            Radius Antenna            8.00 (m) 
+      Radiator Temperature     1000.00 (deg-K) 
+                Waste Heat           3.36 (MW) 
+             Radiator area      533.36 (m$^2$) 
+            Radiator width            8.00 (m) 
+           Radiator length           16.67 (m) 
+             Radiator mass        1500.00 (kg) 
+          Telescope radius            0.30 (m) 
+          Telescope length            1.00 (m) 
+Gimbal Mass (Moog Type 55)           7.50 (kg) 
+        Truss Mass Density    19.79 (kg/m$^3$) 
+          Mass Payload Box        1000.00 (kg) 
+</pre><img vspace="5" hspace="5" src="StarshipDesign_01.png" alt=""> <img vspace="5" hspace="5" src="StarshipDesign_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design the starship
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% See also: BuildCADModel
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2011 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+massFuel    = 34854.8; % kg
+densityD	= 162.4; % kg/m^3
+densityHe	= 147.0; % kg/m^3
+tempRad     = 1000; % degK
+epsRad      = 1;
+heat        = 4.2e6*0.8;
+sig         = 5.6697e-08;
+areaRad     = 9*heat/(sig*epsRad*tempRad^4);
+wRad        = 8;
+lRad        = 0.25*areaRad/wRad;
+
+vD          = 0.5*massFuel/densityD;
+vHe         = 0.5*massFuel/densityHe;
+
+mE          = 1.44e+04;
+rE          = 2*0.61;
+lE          = 8*0.61;
+mR          = 1500;
+
+rT          = rE;
+lD          = vD/4/(pi*rT^2);
+lHe         = vHe/4/(pi*rT^2);
+mGimbal     = 7.5;
+
+lTruss      = 2*(lE + lD + lHe);
+rTruss      = rE;
+
+rAntenna    = 8;
+
+rTel        = 0.3;
+lTel        = 1;
+
+rhoTruss    = 409.7/4.55^2;
+
+massPayload = 1000;
+
+% Example mesh antenna
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+area        = 203*144/39.37^2;
+mass        = 53.5/2.205;
+rhoAreal    = mass/area;
+massAntenna = rhoAreal*pi*rAntenna^2;
+
+k           = 1;
+
+g           = {};
+g{k,1}      = 'Mass Fuel';
+g{k,2}      = sprintf('%8.2f (kg)',massFuel); k = k + 1;
+g{k,1}      = 'Density D';
+g{k,2}      = sprintf('%8.2f (kg/m$^3$)',densityD); k = k + 1;
+g{k,1}      = 'Density He';
+g{k,2}      = sprintf('%8.2f (kg/m$^3$)',densityHe); k = k + 1;
+g{k,1}      = 'Volume D';
+g{k,2}      = sprintf('%8.2f (m$^3$)',vD); k = k + 1;
+g{k,1}      = 'Volume He';
+g{k,2}      = sprintf('%8.2f (m$^3$)',vHe); k = k + 1;
+g{k,1}      = 'Fuel Tank Radius';
+g{k,2}      = sprintf('%8.2f (m)',rT); k = k + 1;
+g{k,1}      = 'Length D Tank';
+g{k,2}      = sprintf('%8.2f (m)',lD); k = k + 1;
+g{k,1}      = 'Length He Tank';
+g{k,2}      = sprintf('%8.2f (m)',lHe); k = k + 1;
+g{k,1}      = 'Length Truss';
+g{k,2}      = sprintf('%8.2f (m)',lTruss); k = k + 1;
+g{k,1}      = 'Radius Truss';
+g{k,2}      = sprintf('%8.2f (m)',rTruss); k = k + 1;
+g{k,1}      = 'Radius Antenna';
+g{k,2}      = sprintf('%8.2f (m)',rAntenna); k = k + 1;
+g{k,1}      = 'Radiator Temperature';
+g{k,2}      = sprintf('%8.2f (deg-K)',tempRad); k = k + 1;
+g{k,1}      = 'Waste Heat';
+g{k,2}      = sprintf('%8.2f (MW)',heat/1e6); k = k + 1;
+g{k,1}      = 'Radiator area';
+g{k,2}      = sprintf('%8.2f (m$^2$)',areaRad); k = k + 1;
+g{k,1}      = 'Radiator width';
+g{k,2}      = sprintf('%8.2f (m)',wRad); k = k + 1;
+g{k,1}      = 'Radiator length';
+g{k,2}      = sprintf('%8.2f (m)',lRad); k = k + 1;
+g{k,1}      = 'Radiator mass';
+g{k,2}      = sprintf('%8.2f (kg)',mR); k = k + 1;
+g{k,1}      = 'Telescope radius';
+g{k,2}      = sprintf('%8.2f (m)',rTel); k = k + 1;
+g{k,1}      = 'Telescope length';
+g{k,2}      = sprintf('%8.2f (m)',lTel); k = k + 1;
+g{k,1}      = 'Gimbal Mass (Moog Type 55)';
+g{k,2}      = sprintf('%8.2f (kg)',mGimbal); k = k + 1;
+g{k,1}      = 'Truss Mass Density';
+g{k,2}      = sprintf('%8.2f (kg/m$^3$)',rhoTruss); k = k + 1;
+g{k,1}      = 'Mass Payload Box';
+g{k,2}      = sprintf('%8.2f (kg)',massPayload); k = k + 1;
+
+DisplayLatexTable( g );
+
+% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+BuildCADModel( 'set name' , 'Starship' );
+BuildCADModel( 'set units', 'mks'         );
+
+% Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m              = [];
+m.name         = 'Core';
+m.rHinge       = [0;0;0];
+m.bHinge.b     = eye(3);
+m.previousBody = [];
+BuildCADModel('add body', m );
+
+% This creates the connections between the bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'compute paths' );
+
+% Engines
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x = 0;
+for k = 1:3
+    z = 2*rE*(k-2);
+    for j = 1:3
+        y = 2*rE*(j-2);
+        s = sprintf('Engine%d%d',k,j);
+        m = CreateComponent( 'make', 'cylinder', 'rUpper', rE, 'rLower',rE, 'h', lE, 'n',12, 'rA', [x;y;z],...
+                             'name', s, 'body', 1, 'mass', mE, 'b', [0 0 1;0 1 0;-1 0 0], ...
+                             'faceColor', [0.4 0.4 0.4], 'inside', 0);
+        BuildCADModel( 'add component', m );
+    end
+end
+
+v = [vD vD vD vD vHe vHe vHe vHe]/4;
+
+mass  = massFuel/8;
+ang = 0;
+
+xD  = 1.25*lE;
+xHe = 1.25*lE + 1.25*lD;
+rF  = 0.9*rT;
+
+for k = 1:4
+    sD      = sprintf('Deuterium Tank %d',k);
+    sHe     = sprintf('Helium Tank %d',k);
+    sDF     = sprintf('Deuterium Tank %d Fuel',k);
+    sHeF	= sprintf('Helium Tank %d Fuel',k);
+	z       = 2*rT*cos(ang);
+    y       = 2*rT*sin(ang);
+    ang     = ang + pi/2;
+ 
+	m = CreateComponent( 'make', 'cylinder', 'rUpper', rT, 'rLower',rT, 'h', lD, 'n',12, 'rA', [xD;y;z],...
+                             'name', sD, 'body', 1, 'mass', 0.02*mass, 'b', [0 0 1;0 1 0;-1 0 0], ...
+                             'faceColor', 'gold foil', 'inside', 0);
+	BuildCADModel( 'add component', m );
+    
+	m = CreateComponent( 'make', 'cylinder', 'rUpper', rT, 'rLower',rT, 'h', lHe, 'n',12, 'rA', [xHe;y;z],...
+                             'name', sHe, 'body', 1, 'mass', 0.02*mass, 'b', [0 0 1;0 1 0;-1 0 0], ...
+                             'faceColor', 'gold foil', 'inside', 0);
+	BuildCADModel( 'add component', m );
+    
+	m = CreateComponent( 'make', 'cylinder', 'rUpper', rF, 'rLower',rF, 'h', lD, 'n',12, 'rA', [xD;y;z],...
+                             'name', sDF, 'body', 1, 'mass', 0.98*mass, 'b', [0 0 1;0 1 0;-1 0 0], ...
+                             'faceColor', 'gold foil', 'inside', 1);
+	BuildCADModel( 'add component', m );
+    
+	m = CreateComponent( 'make', 'cylinder', 'rUpper', rF, 'rLower',rF, 'h', lHe, 'n',12, 'rA', [xHe;y;z],...
+                             'name', sHeF, 'body', 1, 'mass', 0.98*mass, 'b', [0 0 1;0 1 0;-1 0 0], ...
+                             'faceColor', 'gold foil', 'inside', 1);
+	BuildCADModel( 'add component', m );
+
+end
+
+% Central square truss
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[v, f, l] = Truss( [0;0;0], [lTruss;0;0], 2*rTruss, 10 );
+massTruss = rhoTruss*lTruss*(2*rTruss)^2;
+m         = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'edgeColor','truss','rA',[lE;0;0],...
+	                         'name', 'Truss', 'body', 1, 'faceColor', [0.9;0.9;0.9],'inside', 1, 'mass',massTruss);
+BuildCADModel( 'add component', m );
+
+% Payload
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m         = CreateComponent( 'make', 'box', 'x', 3*rE, 'y', 3*rE, 'z', 3*rE, 'rA',[lTruss+3*rE;0;0],...
+	                         'name', 'Payload', 'body', 1, 'faceColor', 'gold foil','inside', 1, 'mass',massPayload );
+BuildCADModel( 'add component', m );
+
+massRadar = rhoTruss*1.6*rE^2;
+m         = CreateComponent( 'make', 'box', 'x', rE, 'y', 8*rE, 'z', 0.2*rE, 'rA',[lTruss+3*rE;0;-1.5*rE],...
+	                         'name', 'Radar', 'body', 1, 'faceColor', 'steel','inside', 1, 'mass', massRadar );
+BuildCADModel( 'add component', m );
+
+% Antenna Assembly
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+bA   = [0 0 1;0 1 0;-1 0 0];
+[v, f, l] = Truss( [0;0;0], [4.5*rE;0;0], 0.5*rE, 10 );
+massTruss = rhoTruss*4.5*rE*rE*(0.5*rE)^2;
+
+
+m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'edgeColor','truss', 'rA', [lTruss+3*rE;0;6.0*rE],...
+                     'name', 'Antenna Truss', 'body', 1, 'b',bA, 'mass',massTruss,...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'cylinder', 'rUpper', 0.25*rE, 'rLower',0.25*rE, 'h', 0.4*rE, 'n',12, 'rA', [lTruss+3*rE;0;6*rE],...
+                     'name', 'Antenna Azimuth Gimbal', 'body', 1, 'mass', mGimbal/2, ...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'cylinder', 'rUpper', 0.25*rE, 'rLower',0.25*rE, 'h', rE, 'n',12, 'rA', [lTruss+3*rE;-0.5*rE;6.7*rE],...
+                     'name', 'Antenna Elevation Gimbal', 'body', 1, 'b',[1 0 0;0 0 1;0 -1 0], 'mass', mGimbal/2, ...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+
+[v, f] = AntennaPatch( rAntenna, rAntenna, 0.5, 0.2,[-1;0;0], [0;0;1], 20 );
+m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'edgeColor','truss',...
+	                 'name', 'Antenna', 'body', 1, 'faceColor', 'aluminum','inside', 0,'mass',massAntenna,...
+                     'rA',[lTruss+2.7*rE;0;6.7*rE] );
+
+BuildCADModel( 'add component', m );
+
+s    = sin(pi/4);
+c    = cos(pi/4);
+
+bA   = [0 0 1;0 1 0;-1 0 0];
+lTelBase = 3*rE;
+
+[v, f, l] = Truss( [0;0;0], [lTelBase;0;0], 2*rTel, 10 );
+massTruss = rhoTruss*lTelBase*(2*rTel)^2;
+
+m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'edgeColor','truss', 'rA', [lTruss+4*rE;0;-1.5*rE],...
+                     'name', 'Telescope Truss', 'body', 1,  'b', bA, 'mass',massTruss, ...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'cylinder', 'rUpper', 0.25*rE, 'rLower',0.25*rE, 'h', 0.4*rE, 'n',12, 'rA', [lTruss+4*rE;0;-4.75*rE],...
+                     'name', 'Telescope Gimbal', 'body', 1, 'mass', mGimbal, ...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'cylinder', 'rUpper', rTel, 'rLower',rTel, 'h', lTel, 'n',12, 'rA', [lTruss+4*rE-lTel;0;-4.9*rE],...
+                     'name', 'Telescope', 'body', 1, 'b', [0 0 1;0 1 0;-1 0 0],'mass',166.82/2.205, ...
+                     'faceColor', 'gold foil', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'box', 'x', wRad, 'y', lRad, 'z', 0.25, 'rA', [lTruss-2*rE;rE+lRad/2;0],...
+                     'name', 'Radiator +Y', 'body', 1, 'mass',mR, ...
+                     'faceColor', 'radiator', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'box', 'x', wRad, 'y', lRad, 'z', 0.25, 'rA', [lTruss-2*rE;-rE-lRad/2;0],...
+                     'name', 'Radiator -Y', 'body', 1, 'mass',mR,...
+                     'faceColor', 'radiator', 'inside', 0);
+BuildCADModel( 'add component', m );
+
+% Add subsystems
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'add subsystem', 'communications',	{'antenna' } );
+BuildCADModel( 'add subsystem', 'propulsion',       {'engine', 'helium tank' 'deuterium tank'} );
+BuildCADModel( 'add subsystem', 'structure',        {'truss'} );
+BuildCADModel( 'add subsystem', 'payload',          {'telescope','radar', 'payload'} );
+BuildCADModel( 'add subsystem', 'thermal',          {'radiator'} );
+
+% Update 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'update body mass properties' );
+
+h = BuildCADModel( 'get model');
+BuildCADModel('show vehicle');
+
+CreateReport( h, 'tex', FileFullpath('StarshipReport'), 'mass', 1 )
+ExportOBJ(h,FileFullpath('Starship'))
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-27 15:19:39 -0400 (Wed, 27 May 2020) $
+% $Revision: 52495 $
+
+##### SOURCE END #####
+--></body></html>

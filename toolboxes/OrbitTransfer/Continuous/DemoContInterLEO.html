@@ -1,0 +1,235 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>DemoContInterLEO</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="DemoContInterLEO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">An inter-LEO non-impulsive burn demo</a></li><li><a href="#2">Compare to perigee-preserving pointing of apse burns</a></li></ul></div><h2 id="1">An inter-LEO non-impulsive burn demo</h2><p>Demonstrates a continuous transfer between to LEO orbits using IntegrateBurnPolicyContinuous. For a GEO transfer, see DemoContinuousThrust.</p><p>Output is then compared to a burn policy with keepPer = true, which results in a slightly longer, slightly less DV solution.</p><pre class="codeinput"><span class="comment">% See also: IntegrateBurnPolicyContinuous, AccelFromPolicyContinuous,</span>
+<span class="comment">% PlotTrajectoryContinuous, PlotDiagnosticContinuous</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+dSim = IntegrateBurnPolicyContinuous; <span class="comment">% Simulation data struct</span>
+dAccel = AccelFromPolicyContinuous; <span class="comment">% Acceleration data struct</span>
+
+<span class="comment">% Do not report diagnostic quantities</span>
+boolDiagnostic = false;
+
+<span class="comment">% Initial and final orbits; nodes are aligned</span>
+dSim.el0 = [7000 28*pi/180 0 0 0.001 0];
+dSim.el1 = [7500 30*pi/180 0 0 0 0];
+dAccel.el1 = dSim.el1;
+
+<span class="comment">% Simulation time</span>
+dSim.tMax = 3.5e6; <span class="comment">% Seconds</span>
+dAccel.tMax = dSim.tMax;
+
+<span class="comment">% Spacecraft parameters. If Isp is empty then accel is constant.</span>
+dAccel.aMag = 1e-6; <span class="comment">% Accel. km/s/s</span>
+dAccel.Isp = []; <span class="comment">% Isp, seconds</span>
+
+<span class="comment">% Discretized burn power angles, linear in time</span>
+dAccel.ap = [30*pi/180]; <span class="comment">% apoapsis correction, at periapsis.</span>
+dAccel.per = [30*pi/180]; <span class="comment">% Periapsis correction, at apoapsis.</span>
+dAccel.inc1 = [30*pi/180]; <span class="comment">% Plane correction at node 1.</span>
+dAccel.inc2 = [30*pi/180]; <span class="comment">% Plane correction at node 2.</span>
+
+<span class="comment">% tighten tolerances</span>
+dAccel.tolAp = 0.001;
+dAccel.tolInc = 0.001;
+dAccel.tolEcc = 0.001;
+
+a = @AccelFromPolicyContinuous;
+[x,t,out] = IntegrateBurnPolicyContinuous(dSim,a,dAccel,[],boolDiagnostic);
+PlotTrajectoryContinuous(x,t,dSim.el1);
+PlotElementsContinuous(x,t,dSim.el1);
+[tNum,~,tUnit] = TimeLabl(t(end));
+fprintf(<span class="string">'Time to reach elements is %.3g %ss. \n'</span>,tNum,tUnit);
+fprintf(<span class="string">'Delta-V via the integrator is %.3g km/s. \n'</span>,max(x(7,:)));
+
+<span class="keyword">if</span> boolDiagnostic
+PlotDiagnosticContinuous(x,t,out.asVec,dAccel);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">ODE int percentage: 0. 10. 20. 30. 40. 50. 60. 100. 25.1519 sec
+The ode solver picked 62392 points. 
+All elements agree! 
+Time to reach elements is 27.7 days. 
+Delta-V via the integrator is 0.368 km/s. 
+</pre><img vspace="5" hspace="5" src="DemoContInterLEO_01.png" alt=""> <img vspace="5" hspace="5" src="DemoContInterLEO_02.png" alt=""> <h2 id="2">Compare to perigee-preserving pointing of apse burns</h2><p>This maintains a higher eccentricity for longer during the transfer. This takes a little bit less DV and a little more time.</p><pre class="codeinput">dAccel.keepPer = true;
+[x2,t2,out2] = IntegrateBurnPolicyContinuous(dSim,a,dAccel);
+[tNum2,~,tUnit2] = TimeLabl(t2(end));
+fprintf(<span class="string">'Time to reach elements is %.3g %ss. \n'</span>,tNum2,tUnit2);
+fprintf(<span class="string">'Delta-V via the integrator is %.3g km/s. \n'</span>,max(x2(7,:)));
+
+<span class="comment">% Compare the elements directly</span>
+elA = RVSet2El(x(1:3,:),x(4:6,:));
+elB = RVSet2El(x2(1:3,:),x2(4:6,:));
+Plot2D(t/86400,elA(:,[1 2 5])',<span class="string">'Time (days)'</span>,{<span class="string">'SMA'</span>,<span class="string">'inc'</span>,<span class="string">'ecc'</span>},<span class="string">'Policy Comparison'</span>)
+subplot(3,1,1);
+hold <span class="string">on</span>; plot(t2/86400,elB(:,1)');
+subplot(3,1,2);
+hold <span class="string">on</span>; plot(t2/86400,elB(:,2)');
+subplot(3,1,3);
+hold <span class="string">on</span>; plot(t2/86400,elB(:,5)');
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ODE int percentage: 0. 10. 20. 30. 40. 50. 60. 100. 25.9971 sec
+The ode solver picked 64004 points. 
+All elements agree! 
+Time to reach elements is 28.2 days. 
+Delta-V via the integrator is 0.361 km/s. 
+</pre><img vspace="5" hspace="5" src="DemoContInterLEO_03.png" alt=""> <img vspace="5" hspace="5" src="DemoContInterLEO_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% An inter-LEO non-impulsive burn demo
+% Demonstrates a continuous transfer between to LEO orbits using
+% IntegrateBurnPolicyContinuous. For a GEO transfer, see
+% DemoContinuousThrust.
+%
+% Output is then compared to a burn policy with keepPer = true, which
+% results in a slightly longer, slightly less DV solution. 
+
+% See also: IntegrateBurnPolicyContinuous, AccelFromPolicyContinuous,
+% PlotTrajectoryContinuous, PlotDiagnosticContinuous
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+dSim = IntegrateBurnPolicyContinuous; % Simulation data struct
+dAccel = AccelFromPolicyContinuous; % Acceleration data struct
+
+% Do not report diagnostic quantities
+boolDiagnostic = false;
+
+% Initial and final orbits; nodes are aligned
+dSim.el0 = [7000 28*pi/180 0 0 0.001 0]; 
+dSim.el1 = [7500 30*pi/180 0 0 0 0]; 
+dAccel.el1 = dSim.el1;
+
+% Simulation time
+dSim.tMax = 3.5e6; % Seconds
+dAccel.tMax = dSim.tMax;
+
+% Spacecraft parameters. If Isp is empty then accel is constant.
+dAccel.aMag = 1e-6; % Accel. km/s/s
+dAccel.Isp = []; % Isp, seconds
+
+% Discretized burn power angles, linear in time
+dAccel.ap = [30*pi/180]; % apoapsis correction, at periapsis. 
+dAccel.per = [30*pi/180]; % Periapsis correction, at apoapsis. 
+dAccel.inc1 = [30*pi/180]; % Plane correction at node 1. 
+dAccel.inc2 = [30*pi/180]; % Plane correction at node 2. 
+
+% tighten tolerances
+dAccel.tolAp = 0.001;
+dAccel.tolInc = 0.001;
+dAccel.tolEcc = 0.001;
+
+a = @AccelFromPolicyContinuous;
+[x,t,out] = IntegrateBurnPolicyContinuous(dSim,a,dAccel,[],boolDiagnostic);
+PlotTrajectoryContinuous(x,t,dSim.el1);
+PlotElementsContinuous(x,t,dSim.el1);
+[tNum,~,tUnit] = TimeLabl(t(end));
+fprintf('Time to reach elements is %.3g %ss. \n',tNum,tUnit);
+fprintf('Delta-V via the integrator is %.3g km/s. \n',max(x(7,:)));
+
+if boolDiagnostic
+PlotDiagnosticContinuous(x,t,out.asVec,dAccel);
+end
+
+%% Compare to perigee-preserving pointing of apse burns
+% This maintains a higher eccentricity for longer during the transfer. This
+% takes a little bit less DV and a little more time.
+
+dAccel.keepPer = true;
+[x2,t2,out2] = IntegrateBurnPolicyContinuous(dSim,a,dAccel);
+[tNum2,~,tUnit2] = TimeLabl(t2(end));
+fprintf('Time to reach elements is %.3g %ss. \n',tNum2,tUnit2);
+fprintf('Delta-V via the integrator is %.3g km/s. \n',max(x2(7,:)));
+
+% Compare the elements directly
+elA = RVSet2El(x(1:3,:),x(4:6,:));
+elB = RVSet2El(x2(1:3,:),x2(4:6,:));
+Plot2D(t/86400,elA(:,[1 2 5])','Time (days)',{'SMA','inc','ecc'},'Policy Comparison')
+subplot(3,1,1);
+hold on; plot(t2/86400,elB(:,1)');
+subplot(3,1,2);
+hold on; plot(t2/86400,elB(:,2)');
+subplot(3,1,3);
+hold on; plot(t2/86400,elB(:,5)');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-27 16:44:12 -0400 (Fri, 27 Sep 2019) $
+% $Revision: 49894 $
+
+
+##### SOURCE END #####
+--></body></html>

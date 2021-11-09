@@ -1,0 +1,220 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>DemoSimpleSSO</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="DemoSimpleSSO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">A Sun-Synchronous orbit Demo</a></li><li><a href="#2">Create a sun-synchronous orbit. WDot should be (2*pi/365.2421897)/86400</a></li><li><a href="#3">Evaluate the elements' changes with an analytical model</a></li><li><a href="#4">Compare evaluated elements to a full integrator result</a></li><li><a href="#5">Plot</a></li></ul></div><h2 id="1">A Sun-Synchronous orbit Demo</h2><p>The reduced J2 effects model of Wiesel (J2OrbitEffects) is used to determine the state of an initial orbit after some time. A full numerical integral (J2Prop) is used to confirm the reduced model. The semi-major axis, inclination, and eccentricity will oscillate, while the node will precess.</p><p>See also: SunSyncInclination, J2OrbitEffects, LoadGravityModel, J2Prop, RVFromKepler</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Start in a circular, sun-synchronous orbit at this radius:</span>
+rInitial = 7000; <span class="comment">% km</span>
+<span class="comment">% Initial eccentricity</span>
+eInitial = 0.01;
+<span class="comment">% Consider this duration of orbit:</span>
+duration = 10*24*60*60; <span class="comment">% seconds</span>
+
+fprintf(<span class="string">'Initial radius is %.3g km. \n'</span>,rInitial);
+[tNumR,~,tUnitR] = TimeLabl(duration);
+fprintf(<span class="string">'Duration is %.3g %ss: \n'</span>,tNumR,tUnitR);
+</pre><pre class="codeoutput">Initial radius is 7e+03 km. 
+Duration is 10 days: 
+</pre><h2 id="2">Create a sun-synchronous orbit. WDot should be (2*pi/365.2421897)/86400</h2><pre class="codeinput">gM = LoadGravityModel( <span class="string">'load file'</span>, <span class="string">'GEMT1.geo'</span> ,false);
+
+iSync = SunSyncInclination(rInitial,eInitial, abs(gM.j(2)), gM.mu, gM.a);
+el0 = [rInitial iSync 0 0 eInitial 0];
+</pre><h2 id="3">Evaluate the elements' changes with an analytical model</h2><pre class="codeinput">[wDot, WDot, thDot] = J2OrbitEffects( el0(1), el0(5), el0(2), abs(gM.j(2)), gM.mu, gM.a );
+dWDot = WDot - (2*pi/365.2421897)/86400;
+fprintf(<span class="string">'WDot is %.3g rad/s, relative drift of %.3g rad/s. \n'</span>,WDot,dWDot);
+fprintf(<span class="string">'wDot (periapsis) is %.3g rad/s. \n'</span>,wDot);
+
+el1 = el0 + [0 0 duration*WDot duration*wDot 0 0];
+</pre><pre class="codeoutput">WDot is 1.99e-07 rad/s, relative drift of -1.85e-22 rad/s. 
+wDot (periapsis) is -6.59e-07 rad/s. 
+</pre><h2 id="4">Compare evaluated elements to a full integrator result</h2><pre class="codeinput">fprintf(<span class="string">'Performing an integration for comparison... (~5 minutes) \n'</span>)
+<span class="comment">% Elements of SSO after duration</span>
+[R0,V0]         = El2RV(el0);
+t0              = rand*365; <span class="comment">% should be independent of start time</span>
+jD0             = JD2000+t0;
+tVec            = 0:60:duration;
+tic
+x0              = J2Prop([R0;V0],jD0,tVec,gM,[2 0]);
+toc
+el1Num          = RV2El(x0(1:3,end),x0(4:6,end),gM.mu);
+[R1Num,V1Num]   = RVFromKepler(el1Num,[],gM.mu);
+[R1,V1]         = RVFromKepler(el1,[],gM.mu);
+elSet           = RVSet2El(x0(1:3,:),x0(4:6,:),gM.mu);
+</pre><pre class="codeoutput">Performing an integration for comparison... (~5 minutes) 
+Elapsed time is 2.945495 seconds.
+</pre><h2 id="5">Plot</h2><pre class="codeinput">NewFig(<span class="string">'Sun Synchronous Orbit'</span>)
+hold <span class="string">on</span>;
+[R0,V0] = RVFromKepler(el0);
+plot3(R0(1,:),R0(2,:),R0(3,:),<span class="string">'LineWidth'</span>,2)
+plot3(R1(1,:),R1(2,:),R1(3,:),<span class="string">'LineWidth'</span>,2)
+plot3(R1Num(1,:),R1Num(2,:),R1Num(3,:),<span class="string">'--'</span>,<span class="string">'LineWidth'</span>,2)
+plot3(x0(1,:),x0(2,:),x0(3,:));
+axis <span class="string">equal</span>
+grid <span class="string">on</span>
+rotate3d <span class="string">on</span>
+legend(<span class="string">'Initial'</span>,<span class="string">'Final (simp)'</span>,<span class="string">'Final (num)'</span>,<span class="string">'History (num)'</span>)
+
+Plot2D(tVec/86400,elSet(:,1:5)',<span class="string">'Time (days)'</span>,{<span class="string">'SMA'</span>,<span class="string">'inc'</span>,<span class="string">'RAAN'</span>,<span class="string">'argP'</span>,<span class="string">'ecc'</span>},<span class="string">'SSO Elements'</span>)
+
+
+disp([el0;el1;el1Num])
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">  Columns 1 through 3
+                      7000          1.70819501126498                         0
+                      7000          1.70819501126498         0.172027916937537
+           6988.1632573094           1.7083214792377         0.172905019563252
+  Columns 4 through 6
+                         0                      0.01                         0
+         -0.56908610887515                      0.01                         0
+          5.71839689980482        0.0105303035792106          2.77566436826508
+</pre><img vspace="5" hspace="5" src="DemoSimpleSSO_01.png" alt=""> <img vspace="5" hspace="5" src="DemoSimpleSSO_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A Sun-Synchronous orbit Demo 
+% The reduced J2 effects model of Wiesel (J2OrbitEffects) is used to determine
+% the state of an initial orbit after some time. A full numerical integral
+% (J2Prop) is used to confirm the reduced model. The semi-major axis,
+% inclination, and eccentricity will oscillate, while the node will precess.
+% 
+% See also: SunSyncInclination, J2OrbitEffects,
+% LoadGravityModel, J2Prop, RVFromKepler
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Start in a circular, sun-synchronous orbit at this radius:
+rInitial = 7000; % km
+% Initial eccentricity
+eInitial = 0.01;
+% Consider this duration of orbit:
+duration = 10*24*60*60; % seconds
+
+fprintf('Initial radius is %.3g km. \n',rInitial);
+[tNumR,~,tUnitR] = TimeLabl(duration);
+fprintf('Duration is %.3g %ss: \n',tNumR,tUnitR);
+
+%% Create a sun-synchronous orbit. WDot should be (2*pi/365.2421897)/86400
+
+gM = LoadGravityModel( 'load file', 'GEMT1.geo' ,false);
+
+iSync = SunSyncInclination(rInitial,eInitial, abs(gM.j(2)), gM.mu, gM.a);
+el0 = [rInitial iSync 0 0 eInitial 0];
+
+%% Evaluate the elements' changes with an analytical model
+
+[wDot, WDot, thDot] = J2OrbitEffects( el0(1), el0(5), el0(2), abs(gM.j(2)), gM.mu, gM.a );
+dWDot = WDot - (2*pi/365.2421897)/86400;
+fprintf('WDot is %.3g rad/s, relative drift of %.3g rad/s. \n',WDot,dWDot);
+fprintf('wDot (periapsis) is %.3g rad/s. \n',wDot);
+
+el1 = el0 + [0 0 duration*WDot duration*wDot 0 0];
+
+%% Compare evaluated elements to a full integrator result
+
+fprintf('Performing an integration for comparison... (~5 minutes) \n')
+% Elements of SSO after duration
+[R0,V0]         = El2RV(el0);
+t0              = rand*365; % should be independent of start time
+jD0             = JD2000+t0;
+tVec            = 0:60:duration;
+tic
+x0              = J2Prop([R0;V0],jD0,tVec,gM,[2 0]);
+toc
+el1Num          = RV2El(x0(1:3,end),x0(4:6,end),gM.mu);
+[R1Num,V1Num]   = RVFromKepler(el1Num,[],gM.mu);
+[R1,V1]         = RVFromKepler(el1,[],gM.mu);
+elSet           = RVSet2El(x0(1:3,:),x0(4:6,:),gM.mu);
+
+%% Plot
+NewFig('Sun Synchronous Orbit')
+hold on;
+[R0,V0] = RVFromKepler(el0);
+plot3(R0(1,:),R0(2,:),R0(3,:),'LineWidth',2)
+plot3(R1(1,:),R1(2,:),R1(3,:),'LineWidth',2)
+plot3(R1Num(1,:),R1Num(2,:),R1Num(3,:),'REPLACE_WITH_DASH_DASH','LineWidth',2)
+plot3(x0(1,:),x0(2,:),x0(3,:));
+axis equal
+grid on
+rotate3d on
+legend('Initial','Final (simp)','Final (num)','History (num)')
+
+Plot2D(tVec/86400,elSet(:,1:5)','Time (days)',{'SMA','inc','RAAN','argP','ecc'},'SSO Elements')
+
+
+disp([el0;el1;el1Num])
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-03-29 15:45:00 -0400 (Fri, 29 Mar 2019) $
+% $Revision: 48364 $
+##### SOURCE END #####
+--></body></html>

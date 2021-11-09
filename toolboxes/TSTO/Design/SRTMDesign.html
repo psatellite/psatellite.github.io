@@ -1,0 +1,422 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SRTMDesign</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="SRTMDesign.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">SRT Orbiter and Ferry</a></li><li><a href="#2">Constants</a></li><li><a href="#3">Design the Orbiter</a></li><li><a href="#4">Design the Ferry</a></li></ul></div><h2 id="1">SRT Orbiter and Ferry</h2><p>SRT is Space Rapid Transit a two stage to orbit launch vehicle. Its first stage engine has a rotating detonation engine (RDE) combustor. The second stage is LH2/LO2 engine with perforamnce similar to the RL10B</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">fuelingTime           = 20; <span class="comment">% Hours</span>
+galToLiter            = 3.78541178;
+truck                 = 17000*galToLiter;
+massPayload         	= 500; <span class="comment">% kg</span>
+
+<span class="comment">% RL10 engines</span>
+nH2Engine            	= 1;
+thrustH2Engine       	= 110000;
+massH2Engine         	= 277;
+iSpH2Engine           = 465; <span class="comment">% CPS added because orbiter was using Isp from RDE rather than RL10</span>
+
+<span class="comment">% RDE Engines</span>
+dRDE                	= RDE;
+mRDE                	= linspace(0,8);
+hRDE                	= linspace(0,50000,length(mRDE));
+pRDE                 	= StdAtm(hRDE);
+[thrust, iSp, tS]   	= RDE( mRDE, dRDE, pRDE );
+mT                    = find(mRDE&gt;dRDE.machTransition);
+mT                  	= mT(1);
+dF.iSp               	= [iSp(mT) iSp(end)];
+dO.iSp              	= iSpH2Engine; <span class="comment">% CPS added because orbiter was using Isp from RDE rather than RL10</span>
+thrustRDEEngine       = thrust;
+
+<span class="comment">% Composite tanks</span>
+fTank                 = 0.0252;
+hSeparation           = 50;
+p                     = StdAtm( hSeparation*1000 );
+mSeparation           = 8.0;
+mRamjet               = dRDE.machTransition;
+rE                    = 6378.165;
+hISS                  = 370; <span class="comment">% 330 km (205 mi) and 435 km</span>
+r2                    = rE + hISS;
+r1                    = rE + hSeparation;
+v1                    = mSeparation*p.speedOfSound/1000;
+[dV, dV1]             = DVHoh( r1, r2, v1 );
+</pre><h2 id="3">Design the Orbiter</h2><pre class="codeinput">rhoH2                 = 70.85; <span class="comment">% kg/m^3</span>
+rhoO2                 = 1141; <span class="comment">% kg/m^3</span>
+dVMargin              = 0.0;
+fH2Engine             = 5.88;
+dO.massPayload        = massPayload; <span class="comment">% NASA Requirement</span>
+dO.dFuselage          = 4;
+dO.lFuselage          = 25;
+dO.wingLoading        = 585;  <span class="comment">% Space Shuttle</span>
+dO.structuralLF       = 1.5; <span class="comment">% 2</span>
+dO.thicknessRatio     = 0.1;
+dO.sweepAngle         = 45*pi/180;
+dO.tipRootChordRatio	= 0.3;
+dO.aspectRatio        = 1.7;
+dO.massEngine         = nH2Engine*massH2Engine;
+dO.fuelStructuralFraction    = fTank;
+dO.dV                 = dV + dVMargin;
+dO.fMaterial          = 0.3; <span class="comment">% Weight savings for composites</span>
+tol                   = 1e-3;
+
+disp(<span class="string">'Orbiter'</span>)
+[g, h]                = HSVMassEstimation( dO, tol, <span class="string">'Orbiter'</span> );
+                        HSVMassEstimation( dO, tol, <span class="string">'Orbiter'</span> );
+
+mAve                  = g.gM - g.fuel/2;
+thrust                = nH2Engine*thrustRDEEngine;
+aAve                  = thrust./mAve;
+tBurn                 = dV1*1000./aAve/60;
+mH2Orbiter            = g.fuel/(1+fH2Engine);
+mO2Orbiter            = g.fuel*fH2Engine/(1+fH2Engine);
+
+clear <span class="string">s</span>
+
+s.wingArea            = h.wingArea;
+s.length              = dO.lFuselage;
+s.radiusF             = dO.dFuselage/2;
+s.massFuel            = g.fuel;
+s.massDry             = g.gM - g.fuel;
+s.massH2              = mH2Orbiter;
+s.massO2              = mO2Orbiter;
+s.massCost            = g.wing + g.emp + g.fuselage;
+s.aspectRatio         = dO.aspectRatio;
+s.g                   = g;
+s.h                   = h;
+s.d                   = dO;
+
+<span class="comment">% SaveStructure(s,'SRTOrbiterData') % PSS version, since 1999, apparently doesn't handle structs with struct fields</span>
+save(<span class="string">'SRTOrbiterData'</span>,<span class="string">'s'</span>); <span class="comment">% MATLAB built in</span>
+</pre><pre class="codeoutput">Orbiter
+
+                           Group    Mass (kg)            %
+ 1.                         Wing         79.0         1.07
+ 2.                     Fuselage        669.5         9.07
+ 3.                       Engine        277.0         3.75
+ 4.                    Empennage        184.4         2.50
+ 5.                         Fuel       5225.5        70.80
+ 6.                  Fixed Equip        334.9         4.54
+ 7.                 Landing Gear        110.6         1.50
+ 8.                      Payload        500.0         6.77
+                ---------------- ------------ ------------
+                           Total       7380.8       100.00
+</pre><h2 id="4">Design the Ferry</h2><pre class="codeinput">v0                   	= mRamjet*p.speedOfSound/1000; <span class="comment">% Turbojet</span>
+v1                    = mSeparation*p.speedOfSound/1000; <span class="comment">% Ramjet</span>
+dF.dV                 = [v0 v1]; <span class="comment">% CPS added because ferry delta-V was not specified before</span>
+dF.massPayload      	= g.gM;
+dF.dFuselage          = 4;
+dF.lFuselage        	= 35;
+dF.wingLoading        = 311;
+dF.structuralLF      	= 2;
+dF.thicknessRatio    	= 0.1;
+dF.sweepAngle         = 30*pi/180;
+dF.tipRootChordRatio 	= 0.3;
+dF.aspectRatio       	= 1;
+dF.massEngine       	= 1701; <span class="comment">%  2 F135 engines</span>
+dF.iSp              	= [iSp(mT) iSp(end)];
+dF.fMaterial         	= 0.8; <span class="comment">% Weight savings for composites</span>
+dF.fuelStructuralFraction    = fTank;
+[g, h]                = HSVMassEstimation( dF, tol, <span class="string">'Ferry'</span> );
+                        HSVMassEstimation( dF, tol, <span class="string">'Ferry'</span> );
+
+clear <span class="string">s</span>
+
+s.wingArea            = h.wingArea;
+s.aspectRatio         = dF.aspectRatio;
+s.massFuel            = g.fuel;
+s.massDry             = g.gM - g.fuel;
+s.massH2              = h.mF(2);
+s.massJP              = h.mF(1);
+s.length              = dF.lFuselage;
+s.radiusF             = dF.dFuselage/2;
+s.massCost            = g.wing + g.emp + g.fuselage;
+s.g                   = g;
+s.h                   = h;
+s.d                   = dF;
+
+<span class="comment">% SaveStructure(s,'SRTFerryData') % PSS version, since 1999, apparently doesn't handle structs with struct fields</span>
+save(<span class="string">'SRTFerryData'</span>,<span class="string">'s'</span>);
+
+mH2Ground             = s.massH2 + mH2Orbiter;
+mO2Ground             = mO2Orbiter;
+
+k = 1;
+s = {};
+s{k,1} = <span class="string">'Total launch site H2 mass'</span>;     s{k,2} = sprintf(<span class="string">'%8.1f (kg)'</span>,mH2Ground ); k = k + 1;
+s{k,1} = <span class="string">'Total launch site O2 mass'</span>;     s{k,2} = sprintf(<span class="string">'%8.1f (kg)'</span>,mO2Ground );k = k + 1;
+s{k,1} = <span class="string">'Total launch site H2 volume'</span>;   s{k,2} = sprintf(<span class="string">'%8.1f (l)'</span>,mH2Ground*1000/rhoH2 );k = k + 1;
+s{k,1} = <span class="string">'Total launch site O2 volume'</span>;   s{k,2} = sprintf(<span class="string">'%8.1f (l)'</span>,mO2Ground*1000/rhoO2 );k = k + 1;
+s{k,1} = <span class="string">'Total H2 truck deliveries'</span>;     s{k,2} = sprintf(<span class="string">'%8.1f'</span>,ceil(mH2Ground*1000/rhoH2/truck) );k = k + 1;
+s{k,1} = <span class="string">'Total O2 truck deliveries'</span>;     s{k,2} = sprintf(<span class="string">'%8.1f'</span>,ceil(mO2Ground*1000/rhoO2/truck) );k = k + 1;
+
+
+s{k,1} = <span class="string">'H2 Fueling rate'</span>;               s{k,2} = sprintf(<span class="string">'%8.1f (kg/hr)'</span>,mH2Ground/fuelingTime);k = k + 1;
+s{k,1} = <span class="string">'O2 Fueling rate'</span>;               s{k,2} = sprintf(<span class="string">'%8.1f (kg/hr)'</span>,mO2Ground/fuelingTime);k = k + 1;
+s{k,1} = <span class="string">'Fueling time '</span>;                 s{k,2} = sprintf(<span class="string">'%8.1f (hr)'</span>,fuelingTime);
+
+CreateLatexTable( s, <span class="string">'SRTFueling'</span> )
+
+fprintf(<span class="string">'\n\nSRT Fueling\n'</span>);
+DisplayLatexTable(s)
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+                           Group    Mass (kg)            %
+ 1.                         Wing        491.1         3.35
+ 2.                     Fuselage       3423.4        23.32
+ 3.                       Engine       1701.0        11.59
+ 4.                    Empennage        366.9         2.50
+ 5.                         Fuel        653.2         4.45
+ 6.                  Fixed Equip        444.4         3.03
+ 7.                 Landing Gear        220.1         1.50
+ 8.                      Payload       7380.8        50.27
+                ---------------- ------------ ------------
+                           Total      14681.0       100.00
+
+
+SRT Fueling
+  Total launch site H2 mass      1279.8 (kg) 
+  Total launch site O2 mass      4466.0 (kg) 
+Total launch site H2 volume      18062.8 (l) 
+Total launch site O2 volume       3914.1 (l) 
+  Total H2 truck deliveries              1.0 
+  Total O2 truck deliveries              1.0 
+            H2 Fueling rate     64.0 (kg/hr) 
+            O2 Fueling rate    223.3 (kg/hr) 
+              Fueling time         20.0 (hr) 
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% SRT Orbiter and Ferry
+% SRT is Space Rapid Transit a two stage to orbit launch vehicle. Its
+% first stage engine has a rotating detonation engine (RDE) combustor.
+% The second stage is LH2/LO2 engine with perforamnce similar to the 
+% RL10B
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+fuelingTime           = 20; % Hours
+galToLiter            = 3.78541178;
+truck                 = 17000*galToLiter;
+massPayload         	= 500; % kg
+
+% RL10 engines
+nH2Engine            	= 1;
+thrustH2Engine       	= 110000;
+massH2Engine         	= 277;
+iSpH2Engine           = 465; % CPS added because orbiter was using Isp from RDE rather than RL10
+
+% RDE Engines
+dRDE                	= RDE;
+mRDE                	= linspace(0,8);
+hRDE                	= linspace(0,50000,length(mRDE));
+pRDE                 	= StdAtm(hRDE);
+[thrust, iSp, tS]   	= RDE( mRDE, dRDE, pRDE );
+mT                    = find(mRDE>dRDE.machTransition);
+mT                  	= mT(1);
+dF.iSp               	= [iSp(mT) iSp(end)]; 
+dO.iSp              	= iSpH2Engine; % CPS added because orbiter was using Isp from RDE rather than RL10
+thrustRDEEngine       = thrust; 
+
+% Composite tanks
+fTank                 = 0.0252;
+hSeparation           = 50; 
+p                     = StdAtm( hSeparation*1000 );
+mSeparation           = 8.0;
+mRamjet               = dRDE.machTransition;
+rE                    = 6378.165;
+hISS                  = 370; % 330 km (205 mi) and 435 km 
+r2                    = rE + hISS;
+r1                    = rE + hSeparation;
+v1                    = mSeparation*p.speedOfSound/1000;
+[dV, dV1]             = DVHoh( r1, r2, v1 );
+
+%% Design the Orbiter
+rhoH2                 = 70.85; % kg/m^3
+rhoO2                 = 1141; % kg/m^3
+dVMargin              = 0.0;
+fH2Engine             = 5.88;  
+dO.massPayload        = massPayload; % NASA Requirement
+dO.dFuselage          = 4;
+dO.lFuselage          = 25;
+dO.wingLoading        = 585;  % Space Shuttle         
+dO.structuralLF       = 1.5; % 2
+dO.thicknessRatio     = 0.1;
+dO.sweepAngle         = 45*pi/180;
+dO.tipRootChordRatio	= 0.3;
+dO.aspectRatio        = 1.7;
+dO.massEngine         = nH2Engine*massH2Engine;
+dO.fuelStructuralFraction    = fTank;
+dO.dV                 = dV + dVMargin;
+dO.fMaterial          = 0.3; % Weight savings for composites                    
+tol                   = 1e-3;
+
+disp('Orbiter')
+[g, h]                = HSVMassEstimation( dO, tol, 'Orbiter' );
+                        HSVMassEstimation( dO, tol, 'Orbiter' );
+
+mAve                  = g.gM - g.fuel/2;
+thrust                = nH2Engine*thrustRDEEngine;
+aAve                  = thrust./mAve;
+tBurn                 = dV1*1000./aAve/60;
+mH2Orbiter            = g.fuel/(1+fH2Engine);
+mO2Orbiter            = g.fuel*fH2Engine/(1+fH2Engine);
+
+clear s
+
+s.wingArea            = h.wingArea;
+s.length              = dO.lFuselage;
+s.radiusF             = dO.dFuselage/2;
+s.massFuel            = g.fuel;
+s.massDry             = g.gM - g.fuel;
+s.massH2              = mH2Orbiter;
+s.massO2              = mO2Orbiter;
+s.massCost            = g.wing + g.emp + g.fuselage;
+s.aspectRatio         = dO.aspectRatio;
+s.g                   = g;
+s.h                   = h;
+s.d                   = dO;
+
+% SaveStructure(s,'SRTOrbiterData') % PSS version, since 1999, apparently doesn't handle structs with struct fields
+save('SRTOrbiterData','s'); % MATLAB built in
+
+
+%% Design the Ferry 
+
+v0                   	= mRamjet*p.speedOfSound/1000; % Turbojet
+v1                    = mSeparation*p.speedOfSound/1000; % Ramjet
+dF.dV                 = [v0 v1]; % CPS added because ferry delta-V was not specified before
+dF.massPayload      	= g.gM;
+dF.dFuselage          = 4;
+dF.lFuselage        	= 35;
+dF.wingLoading        = 311;          
+dF.structuralLF      	= 2;
+dF.thicknessRatio    	= 0.1;
+dF.sweepAngle         = 30*pi/180;
+dF.tipRootChordRatio 	= 0.3;
+dF.aspectRatio       	= 1;
+dF.massEngine       	= 1701; %  2 F135 engines
+dF.iSp              	= [iSp(mT) iSp(end)]; 
+dF.fMaterial         	= 0.8; % Weight savings for composites                    
+dF.fuelStructuralFraction    = fTank;
+[g, h]                = HSVMassEstimation( dF, tol, 'Ferry' );
+                        HSVMassEstimation( dF, tol, 'Ferry' );
+
+clear s
+
+s.wingArea            = h.wingArea;
+s.aspectRatio         = dF.aspectRatio;
+s.massFuel            = g.fuel;
+s.massDry             = g.gM - g.fuel;
+s.massH2              = h.mF(2);
+s.massJP              = h.mF(1);
+s.length              = dF.lFuselage;
+s.radiusF             = dF.dFuselage/2;
+s.massCost            = g.wing + g.emp + g.fuselage;
+s.g                   = g;
+s.h                   = h;
+s.d                   = dF;
+  
+% SaveStructure(s,'SRTFerryData') % PSS version, since 1999, apparently doesn't handle structs with struct fields
+save('SRTFerryData','s');
+
+mH2Ground             = s.massH2 + mH2Orbiter;
+mO2Ground             = mO2Orbiter;
+
+k = 1;
+s = {};
+s{k,1} = 'Total launch site H2 mass';     s{k,2} = sprintf('%8.1f (kg)',mH2Ground ); k = k + 1;
+s{k,1} = 'Total launch site O2 mass';     s{k,2} = sprintf('%8.1f (kg)',mO2Ground );k = k + 1;
+s{k,1} = 'Total launch site H2 volume';   s{k,2} = sprintf('%8.1f (l)',mH2Ground*1000/rhoH2 );k = k + 1;
+s{k,1} = 'Total launch site O2 volume';   s{k,2} = sprintf('%8.1f (l)',mO2Ground*1000/rhoO2 );k = k + 1;
+s{k,1} = 'Total H2 truck deliveries';     s{k,2} = sprintf('%8.1f',ceil(mH2Ground*1000/rhoH2/truck) );k = k + 1;
+s{k,1} = 'Total O2 truck deliveries';     s{k,2} = sprintf('%8.1f',ceil(mO2Ground*1000/rhoO2/truck) );k = k + 1;
+
+
+s{k,1} = 'H2 Fueling rate';               s{k,2} = sprintf('%8.1f (kg/hr)',mH2Ground/fuelingTime);k = k + 1;
+s{k,1} = 'O2 Fueling rate';               s{k,2} = sprintf('%8.1f (kg/hr)',mO2Ground/fuelingTime);k = k + 1;
+s{k,1} = 'Fueling time ';                 s{k,2} = sprintf('%8.1f (hr)',fuelingTime);
+
+CreateLatexTable( s, 'SRTFueling' )
+
+fprintf('\n\nSRT Fueling\n');
+DisplayLatexTable(s)
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-16 16:55:03 -0400 (Mon, 16 Sep 2019) $
+% $Revision: 49812 $
+
+
+##### SOURCE END #####
+--></body></html>

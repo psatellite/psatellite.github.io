@@ -1,0 +1,318 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Create a flat plate vehicle with two flaps</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="BuildFlatPlateAircraft.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Create a flat plate vehicle with two flaps</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also BuildCADModel, CreateBody, CreateComponent, PlateTwoSided,
+SaveStructure.
+------------------------------------------------------------------------</pre><!--/introduction--><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2011 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+
+<span class="comment">% Initialize the CAD GUI</span>
+<span class="comment">%-----------------------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+
+m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, <span class="string">'Core'</span> );
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% Add spacecraft properties</span>
+<span class="comment">%--------------------------</span>
+BuildCADModel( <span class="string">'set name'</span> ,  <span class="string">'FlatPlateAircraft'</span> );
+BuildCADModel( <span class="string">'compute paths'</span> );
+
+<span class="comment">% Wing</span>
+<span class="comment">%-----</span>
+b  = 12.8*2;
+x  = [27.66 1 1 0 0 1 1];
+y  = [0 b/2 1 1 -1 -1 -b/2];
+zT =  0.1;
+zB = -0.1;
+vW = [x' y' zT*ones(7,1);x' y' zB*ones(7,1)];
+fW = [ 1 3 2;<span class="keyword">...</span>
+       1 6 3;<span class="keyword">...</span>
+       1 7 6;<span class="keyword">...</span>
+       6 4 3;<span class="keyword">...</span>
+       6 5 4];
+
+vWN = vW;
+vWN(:,2) = -vWN(:,2);
+f = [fW;fliplr(fW)+size(vW,1)];
+
+v = [vW;vWN];
+
+lF = 1;
+wF = 11.8;
+
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'name'</span>, <span class="string">'Fuselage'</span>, <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>,[0;0;0],<span class="string">'b'</span>,eye(3),<span class="keyword">...</span>
+					 <span class="string">'vertex'</span>, v,<span class="string">'face'</span>, f,<span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel(<span class="string">'add component'</span>, m );
+
+
+<span class="comment">% Flaps</span>
+<span class="comment">%------</span>
+[v, f] = PlateTwoSided( [0 lF lF 0], [0 0 wF wF], 0 );
+
+x =  0;
+y =  1;
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'name'</span>, <span class="string">'Flap1'</span>, <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>,[x;y;zT],<span class="string">'b'</span>,eye(3),<span class="keyword">...</span>
+					 <span class="string">'vertex'</span>, v,<span class="string">'face'</span>, f,<span class="string">'faceColor'</span>, <span class="string">'steel'</span> );
+BuildCADModel(<span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'name'</span>, <span class="string">'Flap2'</span>, <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                      <span class="string">'rA'</span>,[x;-y-wF;zT],<span class="string">'b'</span>,eye(3),<span class="keyword">...</span>
+					 <span class="string">'vertex'</span>, v,<span class="string">'face'</span>, f,<span class="string">'faceColor'</span>, <span class="string">'steel'</span> );
+BuildCADModel(<span class="string">'add component'</span>, m );
+
+d.cadModel              = BuildCADModel(<span class="string">'get model'</span>);
+
+ax    = [0 0  0;<span class="keyword">...</span>
+         1 1  1;<span class="keyword">...</span>
+         0 0  0];
+
+
+r     = [5    0.5  0.5;<span class="keyword">...</span>
+         0    1.5 -1.5;<span class="keyword">...</span>
+         0    0    0];
+
+
+s = zeros(3,1);
+
+c = [0;0;0];
+
+<span class="keyword">for</span> k = 1:3
+    s(k) = sum(d.cadModel.component(k).a)/2;
+    c    = c + r(:,k)*s(k);
+<span class="keyword">end</span>
+
+d.rCM = c/sum(s);
+
+k = 1;
+
+x = [1;0;0];
+
+<span class="comment">% Aspect ratios</span>
+<span class="comment">%--------------</span>
+aR  = b^2/sum(s);
+aRA = wF^2/s(2);
+
+<span class="comment">% Thickness ratio</span>
+<span class="comment">%----------------</span>
+t   = 0.01;
+
+
+d.surface(k) = struct(<span class="string">'name'</span>, <span class="string">'Wing'</span>,           <span class="string">'length'</span>, 1,<span class="string">'alpha0'</span>,0,<span class="string">'zeroAxis'</span>,x,<span class="keyword">...</span>
+                      <span class="string">'oswaldEff'</span>, 0.99, <span class="string">'aspectRatio'</span>, aR, <span class="string">'thickness'</span>, t, <span class="string">'s'</span>, s(1), <span class="keyword">...</span>
+                      <span class="string">'r'</span>, r(:,1),<span class="string">'axis'</span>,ax(:,k), <span class="string">'cP'</span>, 0.002); k = k + 1;
+
+d.surface(k) = struct(<span class="string">'name'</span>, <span class="string">'Left aileron'</span>,       <span class="string">'length'</span>, 1,<span class="string">'alpha0'</span>,0,<span class="string">'zeroAxis'</span>,x,<span class="keyword">...</span>
+                      <span class="string">'oswaldEff'</span>, 0.99, <span class="string">'aspectRatio'</span>, aRA, <span class="string">'thickness'</span>, t, <span class="string">'s'</span>, s(2), <span class="keyword">...</span>
+                      <span class="string">'r'</span>, r(:,2),<span class="string">'axis'</span>,ax(:,k), <span class="string">'cP'</span>, 0); k = k + 1;
+
+d.surface(k) = struct(<span class="string">'name'</span>, <span class="string">'Right aileron'</span>,      <span class="string">'length'</span>, 1,<span class="string">'alpha0'</span>,0,<span class="string">'zeroAxis'</span>,x,<span class="keyword">...</span>
+                      <span class="string">'oswaldEff'</span>, 0.99, <span class="string">'aspectRatio'</span>, aRA, <span class="string">'thickness'</span>, t, <span class="string">'s'</span>, s(3), <span class="keyword">...</span>
+                      <span class="string">'r'</span>, r(:,3),<span class="string">'axis'</span>,ax(:,k), <span class="string">'cP'</span>, 0);
+
+SaveStructure(d,<span class="string">'FlatPlateAircraft'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildFlatPlateAircraft_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Create a flat plate vehicle with two flaps
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BuildCADModel, CreateBody, CreateComponent, PlateTwoSided, 
+%  SaveStructure.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2011 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+
+% Initialize the CAD GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+
+m = CreateBody( 'make', 'name', 'Core' );
+BuildCADModel('add body', m );
+
+% Add spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'set name' ,  'FlatPlateAircraft' );
+BuildCADModel( 'compute paths' );
+
+% Wing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- 
+b  = 12.8*2;
+x  = [27.66 1 1 0 0 1 1];
+y  = [0 b/2 1 1 -1 -1 -b/2];
+zT =  0.1;
+zB = -0.1;
+vW = [x' y' zT*ones(7,1);x' y' zB*ones(7,1)];
+fW = [ 1 3 2;...
+       1 6 3;...
+       1 7 6;...
+       6 4 3;...
+       6 5 4];
+           
+vWN = vW;
+vWN(:,2) = -vWN(:,2);
+f = [fW;fliplr(fW)+size(vW,1)];
+        
+v = [vW;vWN];
+
+lF = 1;
+wF = 11.8;
+
+        
+m = CreateComponent( 'make', 'generic','name', 'Fuselage', 'body', 1,...
+                     'rA',[0;0;0],'b',eye(3),...
+					 'vertex', v,'face', f,'faceColor', 'aluminum' );
+BuildCADModel('add component', m );
+
+        
+% Flaps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[v, f] = PlateTwoSided( [0 lF lF 0], [0 0 wF wF], 0 );
+
+x =  0;
+y =  1;
+      
+m = CreateComponent( 'make', 'generic','name', 'Flap1', 'body', 1,...
+                     'rA',[x;y;zT],'b',eye(3),...
+					 'vertex', v,'face', f,'faceColor', 'steel' );
+BuildCADModel('add component', m );
+        
+m = CreateComponent( 'make', 'generic','name', 'Flap2', 'body', 1,...
+                      'rA',[x;-y-wF;zT],'b',eye(3),...
+					 'vertex', v,'face', f,'faceColor', 'steel' );
+BuildCADModel('add component', m );
+        
+d.cadModel              = BuildCADModel('get model');
+
+ax    = [0 0  0;...
+         1 1  1;...
+         0 0  0];
+     
+     
+r     = [5    0.5  0.5;...
+         0    1.5 -1.5;...
+         0    0    0];
+     
+     
+s = zeros(3,1);
+
+c = [0;0;0];
+
+for k = 1:3
+    s(k) = sum(d.cadModel.component(k).a)/2;
+    c    = c + r(:,k)*s(k);
+end
+
+d.rCM = c/sum(s);
+         
+k = 1;
+
+x = [1;0;0];
+
+% Aspect ratios
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aR  = b^2/sum(s);
+aRA = wF^2/s(2);
+
+% Thickness ratio
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t   = 0.01;
+
+         
+d.surface(k) = struct('name', 'Wing',           'length', 1,'alpha0',0,'zeroAxis',x,...
+                      'oswaldEff', 0.99, 'aspectRatio', aR, 'thickness', t, 's', s(1), ...
+                      'r', r(:,1),'axis',ax(:,k), 'cP', 0.002); k = k + 1;
+                  
+d.surface(k) = struct('name', 'Left aileron',       'length', 1,'alpha0',0,'zeroAxis',x,...
+                      'oswaldEff', 0.99, 'aspectRatio', aRA, 'thickness', t, 's', s(2), ...
+                      'r', r(:,2),'axis',ax(:,k), 'cP', 0); k = k + 1;
+                      
+d.surface(k) = struct('name', 'Right aileron',      'length', 1,'alpha0',0,'zeroAxis',x,...
+                      'oswaldEff', 0.99, 'aspectRatio', aRA, 'thickness', t, 's', s(3), ...
+                      'r', r(:,3),'axis',ax(:,k), 'cP', 0);
+                  
+SaveStructure(d,'FlatPlateAircraft');                 
+    
+                      
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-04 15:40:34 -0400 (Wed, 04 Sep 2019) $
+% $Revision: 49706 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,369 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Compares UKF.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="UKFComparison.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Compares UKF.</h1><pre class="language-matlab">This <span class="string">is</span> <span class="string">for</span> <span class="string">a</span> <span class="string">1</span> <span class="string">dimensional</span> <span class="string">launch</span> <span class="string">problem</span> <span class="string">with</span> <span class="string">an</span> <span class="string">angle</span> <span class="string">sensor</span> <span class="string">that</span>
+measures <span class="string">the</span> <span class="string">angle</span> <span class="string">to</span> <span class="string">the</span> <span class="string">launch</span> <span class="string">vehicle.</span> <span class="string">The</span> <span class="string">vehicle</span> <span class="string">is</span> <span class="string">subject</span>
+to <span class="string">Gaussian</span> <span class="string">random</span> <span class="string">thrust</span> <span class="string">variations.</span> <span class="string">The</span> <span class="string">sensor</span> <span class="string">is</span> <span class="string">subject</span> <span class="string">to</span> <span class="string">Gaussian</span>
+white <span class="string">noise.</span>
+</pre><pre class="language-matlab">The <span class="string">script</span> <span class="string">compares</span> <span class="string">UKF</span> <span class="string">with</span> <span class="string">the</span> <span class="string">combination</span> <span class="string">of</span> <span class="string">UKFPredict/UKFUpdate.</span>
+</pre><pre class="language-matlab">UKF <span class="string">is</span> <span class="string">contained</span> <span class="string">in</span> <span class="string">one</span> <span class="string">file.</span> <span class="string">The</span> <span class="string">latter</span> <span class="string">requires</span> <span class="string">three</span> <span class="string">different</span>
+files. They both <span class="string">operate</span> <span class="string">on</span> <span class="string">datastructures</span> <span class="string">but</span> <span class="string">the</span> <span class="string">data</span> <span class="string">structures</span>
+are <span class="string">slightly</span> <span class="string">different.</span>
+</pre><pre class="language-matlab">The <span class="string">latter</span> <span class="string">uses</span> <span class="string">the</span> <span class="string">matrix</span> <span class="string">form</span> <span class="string">of</span> <span class="string">the</span> <span class="string">unscented</span> <span class="string">transformation.</span>
+</pre><pre class="language-matlab">This <span class="string">script</span> <span class="string">shows</span> <span class="string">that</span> <span class="string">the</span> <span class="string">results</span> <span class="string">are</span> <span class="string">identical</span>, as <span class="string">they</span> <span class="string">should</span> <span class="string">be.</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">11.</span>
+</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2012 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Clear the datastructures</span>
+<span class="comment">%-------------------------</span>
+clear <span class="string">u</span>
+clear <span class="string">d</span>
+
+n               = 800;
+dT              = 1;
+
+sigmaT          = 0.01;
+sigmaTheta      = 0.01;
+
+d.m             = 1;
+d.t0            = 11;
+d.g             = 9.806;
+d.b             = 1000;
+d.tNoise        = sigmaT;
+d.noise   	    = sigmaTheta;
+
+<span class="comment">% Initial state and measurement</span>
+<span class="comment">%------------------------------</span>
+x               = [0;0];
+theta           = 0;
+
+<span class="comment">% Estimation parameters</span>
+<span class="comment">%----------------------</span>
+dUKF            = d;
+dUKF.tNoise     = 0;
+dUKF.noise      = 0;
+r               = sigmaTheta^2; <span class="comment">% Measurement noise covariance</span>
+q0              = diag([0 sigmaT^2]); <span class="comment">% Plant noise covariance</span>
+p0              = diag([0.1 0.01]);
+
+<span class="comment">% Allocate memory for the plotting arrays to save time</span>
+<span class="comment">%-----------------------------------------------------</span>
+xS              = zeros(3,n);
+xF              = zeros(4,n);
+xO              = zeros(4,n);
+
+<span class="comment">% Run the simulation</span>
+<span class="comment">%-------------------</span>
+<span class="keyword">for</span> k = 1:n
+
+    <span class="comment">% Measurement</span>
+    <span class="comment">%------------</span>
+    theta       = AngleSensor(x,d);
+
+    <span class="comment">% State update</span>
+    <span class="comment">%-------------</span>
+    x           = RK4( <span class="string">'RHSX'</span>, x, dT, 0, d );
+
+    <span class="comment">% Store for plotting and processing in the UKS</span>
+    <span class="comment">%---------------------------------------------</span>
+    xS(:,k)     = [x;theta];
+<span class="keyword">end</span>
+
+<span class="comment">% Initialize the Unscented Kalman Filter</span>
+<span class="comment">%---------------------------------------</span>
+u     = KFInitialize( <span class="string">'ukf'</span>,<span class="string">'f'</span>,@RHSX,<span class="string">'alpha'</span>,1,<span class="keyword">...</span>
+                        <span class="string">'kappa'</span>,0,<span class="string">'beta'</span>,2,<span class="string">'dT'</span>,dT,<span class="string">'fData'</span>,dUKF,<span class="keyword">...</span>
+                        <span class="string">'p'</span>,p0,<span class="string">'q'</span>,q0,<span class="string">'x'</span>,[0;0], <span class="string">'m'</span>,[0;0]);
+
+
+<span class="comment">% Notice the different names</span>
+<span class="comment">%---------------------------</span>
+d.x             = u.m;
+d.dY            = 1;
+d.rHSFun        = @RHSX;
+d.measFun       = @AngleSensor;
+d.measFunData   = dUKF;
+d.rHSFunData    = dUKF;
+d.rP            = q0;
+d.rM            = r;
+d.sigmaPtAlg    = 2;
+d.alpha         = 1;
+d.kappa         = 0; <span class="comment">% Should be number of states - 2</span>
+d.beta          = 2;
+d.dT            = dT;
+d.p             = p0;
+
+<span class="comment">% This initializes the weights for UKF</span>
+<span class="comment">%-------------------------------------</span>
+d = UKF(<span class="string">'initialize'</span>, d );
+
+
+<span class="comment">% UKF</span>
+<span class="comment">%----</span>
+t = 0;
+<span class="keyword">for</span> k = 1:n
+
+    <span class="comment">% Store for plotting</span>
+    <span class="comment">%------------------</span>
+    xF(:,k)         = [u.m;diag(u.p)];
+    xO(:,k)         = [d.x;diag(d.p)];
+
+    <span class="comment">% UKF</span>
+    <span class="comment">%----</span>
+    u.t             = t;
+    u.y.data        = xS(3,k);
+    u.y.param.hFun	= @AngleSensor;
+    u.y.param.hData	= dUKF;
+    u.y.param.r     = r;
+
+    u               = UKFPredict( u );
+    u               = UKFUpdate( u );
+
+    <span class="comment">% Alternative UKF</span>
+    <span class="comment">%----------------</span>
+    d.t             = t;
+    d               = UKF( <span class="string">'update'</span>, d,  u.y.data  );
+
+    t               = t + dT;
+<span class="keyword">end</span>
+
+<span class="comment">% Plot the results</span>
+<span class="comment">%-----------------</span>
+[t,tL] = TimeLabl((0:(n-1))*dT);
+
+Plot2D(t,[xF(1:2,:);xO(1:2,:)],	tL, {<span class="string">'x (m)'</span> <span class="string">'v (m/s)'</span>},          <span class="string">'States'</span>,<span class="string">'lin'</span>,{<span class="string">'[1 3]'</span> <span class="string">'[2 4]'</span>})
+legend(<span class="string">'UKFPredict/UKFUpdate'</span>,<span class="string">'UKF'</span>);
+Plot2D(t,[xF(3:4,:);xO(3:4,:)], 	tL, {<span class="string">'p_x (m^2)'</span> <span class="string">'p_v (m^2/s^2)'</span>},<span class="string">'Covariance'</span>,<span class="string">'ylog'</span>,{<span class="string">'[1 3]'</span> <span class="string">'[2 4]'</span>})
+legend(<span class="string">'UKFPredict/UKFUpdate'</span>,<span class="string">'UKF'</span>);
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="UKFComparison_01.png" alt=""> <img vspace="5" hspace="5" src="UKFComparison_02.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%%  Compares UKF.
+%
+%   This is for a 1 dimensional launch problem with an angle sensor that 
+%   measures the angle to the launch vehicle. The vehicle is subject
+%   to Gaussian random thrust variations. The sensor is subject to Gaussian
+%   white noise.
+%
+%   The script compares UKF with the combination of UKFPredict/UKFUpdate.
+%
+%   UKF is contained in one file. The latter requires three different
+%   files. They both operate on datastructures but the data structures
+%   are slightly different.
+%
+%   The latter uses the matrix form of the unscented transformation.
+%
+%   This script shows that the results are identical, as they should be.
+%
+%   Since version 11.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2012 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Clear the datastructures
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+clear u
+clear d
+
+n               = 800;
+dT              = 1;
+
+sigmaT          = 0.01;
+sigmaTheta      = 0.01;
+
+d.m             = 1;
+d.t0            = 11;
+d.g             = 9.806;
+d.b             = 1000;
+d.tNoise        = sigmaT;
+d.noise   	    = sigmaTheta;
+
+% Initial state and measurement
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x               = [0;0];
+theta           = 0;
+
+% Estimation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dUKF            = d;
+dUKF.tNoise     = 0;
+dUKF.noise      = 0;
+r               = sigmaTheta^2; % Measurement noise covariance
+q0              = diag([0 sigmaT^2]); % Plant noise covariance
+p0              = diag([0.1 0.01]);
+
+% Allocate memory for the plotting arrays to save time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xS              = zeros(3,n);
+xF              = zeros(4,n);
+xO              = zeros(4,n);
+
+% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:n  
+    
+    % Measurement
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    theta       = AngleSensor(x,d);
+    
+    % State update
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    x           = RK4( 'RHSX', x, dT, 0, d );
+    
+    % Store for plotting and processing in the UKS
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    xS(:,k)     = [x;theta];
+end
+
+% Initialize the Unscented Kalman Filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+u     = KFInitialize( 'ukf','f',@RHSX,'alpha',1,...
+                        'kappa',0,'beta',2,'dT',dT,'fData',dUKF,...
+                        'p',p0,'q',q0,'x',[0;0], 'm',[0;0]);                  
+
+
+% Notice the different names
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.x             = u.m;
+d.dY            = 1;
+d.rHSFun        = @RHSX;
+d.measFun       = @AngleSensor;
+d.measFunData   = dUKF;
+d.rHSFunData    = dUKF;
+d.rP            = q0;
+d.rM            = r;
+d.sigmaPtAlg    = 2;
+d.alpha         = 1;
+d.kappa         = 0; % Should be number of states - 2
+d.beta          = 2;
+d.dT            = dT;
+d.p             = p0;
+
+% This initializes the weights for UKF
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = UKF('initialize', d );
+
+
+% UKF
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t = 0;
+for k = 1:n
+      
+    % Store for plotting
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    xF(:,k)         = [u.m;diag(u.p)];
+    xO(:,k)         = [d.x;diag(d.p)];
+    
+    % UKF
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    u.t             = t;
+    u.y.data        = xS(3,k);
+    u.y.param.hFun	= @AngleSensor;
+    u.y.param.hData	= dUKF;
+    u.y.param.r     = r;
+
+    u               = UKFPredict( u );
+    u               = UKFUpdate( u );
+    
+    % Alternative UKF
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    d.t             = t;
+    d               = UKF( 'update', d,  u.y.data  );
+
+    t               = t + dT;
+end
+
+% Plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t,tL] = TimeLabl((0:(n-1))*dT);
+
+Plot2D(t,[xF(1:2,:);xO(1:2,:)],	tL, {'x (m)' 'v (m/s)'},          'States','lin',{'[1 3]' '[2 4]'})
+legend('UKFPredict/UKFUpdate','UKF');
+Plot2D(t,[xF(3:4,:);xO(3:4,:)], 	tL, {'p_x (m^2)' 'p_v (m^2/s^2)'},'Covariance','ylog',{'[1 3]' '[2 4]'})
+legend('UKFPredict/UKFUpdate','UKF');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 14:40:37 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39870 $
+
+
+
+##### SOURCE END #####
+--></body></html>

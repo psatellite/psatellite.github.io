@@ -1,0 +1,234 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate a fuel mass Kalman filter for a blowdown system.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="PressureKF.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate a fuel mass Kalman filter for a blowdown system.</h1><!--introduction--><p>In a blowdown system, the fuel is pressurized by a gas, such as helium. As fuel is consumed the gas expands into the empty volume and the pressure decreases. The estimator uses a pulsewidth model and a pressure measurement. The pressure measurements on a spacecraft are generally low resolution, typically 8 bits over the entire pressure range (of 350 psi to 100 psi.) Every time a thruster fires, the model computes the fuel used based on a model of fuel consumption versus pulsewidth. This is the dynamical model. The measurement of pressure is then incorporated into the estimate using an Unscented Kalman Filter (UKF). The UKF can use a nonlinear measurement and plant (dynamics) model directly without any linearization.</p><p>The script computes a random pulsewidth from 0 to 8 seconds in length when a second random number between 0 and 1, is greater than 0.95.</p><p>The pressure measurement has 12 bits resolution and random noise.</p><p>The script plots true pressure, fuel mass estimated errors, pulsewidth and the pressure measurement.</p><pre>------------------------------------------------------------------------
+See also NQuant, Plot2D, UKF, BloDownMass, UE, BloDown, MolWt2R
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Estimation parameters</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+
+uE      = 200*9.806;
+thrust  = 1;
+dT      = 8;
+mDot    = thrust/uE;
+
+T       = 300;
+vTank   = 0.5;
+rhoFuel = 1000;
+mPress  = 0.5;
+rPress  = MolWt2R( 0.004 ); <span class="comment">% He</span>
+
+nSim    = 1000;
+
+p       = 350*6895;
+mFuel   = BloDownMass( mPress, rhoFuel, vTank, rPress, T, p );
+xPlot   = zeros(6,nSim);
+lSB     = p/2^12;
+sigQ    = sqrt(NQuant( lSB, <span class="string">'truncate'</span> ));
+sigN    = lSB/2;
+</pre><h2 id="2">Estimation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+d.x           = 0.9997*mFuel;
+d.rHSFun      = <span class="string">'RHSPressure'</span>;
+d.measFun     = <span class="string">'GPressure'</span>;
+d.measFunData = struct(<span class="string">'vTank'</span>,vTank,<span class="string">'rhoFuel'</span>,rhoFuel,<span class="string">'mPress'</span>,mPress,<span class="string">'rPress'</span>,rPress,<span class="string">'T'</span>,T);
+d.alpha       = 0.5;
+d.kappa       = 0;
+d.beta        = 2;
+d.dY          = 1;
+d.dT          = dT;
+d.rM          = sigQ^2 + sigN^2;
+d.rP          = 0.00001;
+d.p           = 40*d.rP;
+d             = UKF(<span class="string">'initialize'</span>, d );
+
+<span class="keyword">for</span> k = 1:nSim
+  <span class="keyword">if</span>( rand &gt; 0.95 )
+    pw = rand*8;
+  <span class="keyword">else</span>
+    pw = 0;
+  <span class="keyword">end</span>
+  p            = BloDown( mPress, rhoFuel, vTank, rPress, T, mFuel );
+  pMeas        = lSB*floor(p/lSB) + sigN*randn;
+  xPlot(:,k)   = [p;mFuel;pw;pMeas;d.x;d.p];
+  mFuel        = mFuel - mDot*pw;
+  d.t          = 0;
+  d.rHSFunData = struct(<span class="string">'mDot'</span>,mDot,<span class="string">'pw'</span>,pw,<span class="string">'dT'</span>,dT);
+  d            = UKF( <span class="string">'update'</span>, d, pMeas );
+<span class="keyword">end</span>
+
+yL = {<span class="string">'Pressure (N/m^2)'</span> <span class="string">'Fuel Error (kg)'</span> <span class="string">'Pulsewidth (sec)'</span> <span class="string">'Meas (N/m^2)'</span> , <span class="string">'P'</span>};
+Plot2D( (0:(nSim-1))*dT,[xPlot(1,:);xPlot(2,:) - xPlot(5,:);xPlot([3 4 6],:)] , <span class="string">'Time (sec)'</span>, yL, <span class="string">'Pressure KF'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="PressureKF_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate a fuel mass Kalman filter for a blowdown system.
+% In a blowdown system, the fuel is pressurized by a gas, such as
+% helium. As fuel is consumed the gas expands into the empty volume
+% and the pressure decreases. The estimator 
+% uses a pulsewidth model and a pressure measurement. The pressure
+% measurements on a spacecraft are generally low resolution, typically
+% 8 bits over the entire pressure range (of 350 psi to 100 psi.)
+% Every time a thruster fires, the model computes the fuel used
+% based on a model of fuel consumption versus pulsewidth. This is 
+% the dynamical model. The measurement of pressure is then 
+% incorporated into the estimate using an Unscented Kalman Filter
+% (UKF). The UKF can use a nonlinear measurement and plant (dynamics)
+% model directly without any linearization.
+%
+% The script computes a random pulsewidth from 0 to 8 seconds in 
+% length when a second random number between 0 and 1, is greater than
+% 0.95.
+%
+% The pressure measurement has 12 bits resolution and random noise.
+%
+% The script plots true pressure, fuel mass estimated errors, pulsewidth
+% and the pressure measurement.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also NQuant, Plot2D, UKF, BloDownMass, UE, BloDown, MolWt2R
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+uE      = 200*9.806;
+thrust  = 1;
+dT      = 8;
+mDot    = thrust/uE;
+
+T       = 300;
+vTank   = 0.5;
+rhoFuel = 1000;
+mPress  = 0.5;
+rPress  = MolWt2R( 0.004 ); % He
+
+nSim    = 1000;
+
+p       = 350*6895;
+mFuel   = BloDownMass( mPress, rhoFuel, vTank, rPress, T, p );
+xPlot   = zeros(6,nSim);
+lSB     = p/2^12;
+sigQ    = sqrt(NQuant( lSB, 'truncate' ));
+sigN    = lSB/2;
+
+%% Estimation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.x           = 0.9997*mFuel;
+d.rHSFun      = 'RHSPressure';
+d.measFun     = 'GPressure';
+d.measFunData = struct('vTank',vTank,'rhoFuel',rhoFuel,'mPress',mPress,'rPress',rPress,'T',T);
+d.alpha       = 0.5;
+d.kappa       = 0;
+d.beta        = 2;
+d.dY          = 1;
+d.dT          = dT;
+d.rM          = sigQ^2 + sigN^2;
+d.rP          = 0.00001;
+d.p           = 40*d.rP;
+d             = UKF('initialize', d );
+
+for k = 1:nSim
+  if( rand > 0.95 )
+    pw = rand*8;
+  else
+    pw = 0;
+  end  
+  p            = BloDown( mPress, rhoFuel, vTank, rPress, T, mFuel );
+  pMeas        = lSB*floor(p/lSB) + sigN*randn;
+  xPlot(:,k)   = [p;mFuel;pw;pMeas;d.x;d.p];
+  mFuel        = mFuel - mDot*pw;
+  d.t          = 0;
+  d.rHSFunData = struct('mDot',mDot,'pw',pw,'dT',dT);
+  d            = UKF( 'update', d, pMeas );
+end
+
+yL = {'Pressure (N/m^2)' 'Fuel Error (kg)' 'Pulsewidth (sec)' 'Meas (N/m^2)' , 'P'};
+Plot2D( (0:(nSim-1))*dT,[xPlot(1,:);xPlot(2,:) - xPlot(5,:);xPlot([3 4 6],:)] , 'Time (sec)', yL, 'Pressure KF')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+
+
+
+##### SOURCE END #####
+--></body></html>

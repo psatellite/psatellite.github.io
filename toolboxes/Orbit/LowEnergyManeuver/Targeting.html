@@ -1,0 +1,325 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate targeting</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="Targeting.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate targeting</h1><!--introduction--><p>Start with an initial orbit and impulsive burn, then numerically optimize so that the location of the Moon is the final condition and the magnitude of the burn is minimized. The dynamical model is the 3 body problem, but functions exist also for the CRTBP and the full 4 body problem.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">See also</a></li></ul></div><h2 id="1">See also</h2><p>LowEnergyTransferInCRTBP Targeting4BP</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2018.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Initialize the Earth-Moon-Sun system</span>
+id = PlanetId({<span class="string">'sun'</span> <span class="string">'earth'</span> <span class="string">'moon'</span>});
+
+PlanetPositionEMBarycenter(<span class="string">'initialize'</span>,id);
+
+<span class="comment">% Orbital elements</span>
+elements  = [7585.9 1.8086e-06 2.4524 2.4589 0.000833 3.1416];
+
+<span class="comment">% Initial velocity change</span>
+dV1       = 2.988;
+
+<span class="comment">% Time of trajectory</span>
+dT        = 8.6675e+06;
+
+<span class="comment">% Graviational constant of the moon</span>
+muMoon   = 4902.7933840088;
+
+<span class="comment">% Starting Julian Date</span>
+jD       = 2451546;
+
+<span class="comment">% Plot the initial trajectory</span>
+PlotLET3BP(elements,dV1,dT,jD);
+
+<span class="comment">% Update the elements</span>
+[elementsNew,dV1EphNew] = Targeting3BP2(elements,dV1,dT,0,muMoon,jD);
+
+<span class="comment">% Plot the new elements</span>
+PlotLET3BP(elementsNew,dV1EphNew,dT,jD);
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput"> 
+ Iteration   Func-count     min f(x)         Procedure
+     0            1          3.11606         
+     1            5          3.11606         initial simplex
+     2            7          3.06064         expand
+     3            8          3.06064         reflect
+     4           10            3.007         expand
+     5           11            3.007         reflect
+     6           13          2.89035         expand
+     7           14          2.89035         reflect
+     8           16          2.74766         expand
+     9           17          2.74766         reflect
+    10           19           2.4777         expand
+    11           20           2.4777         reflect
+    12           22          2.13328         expand
+    13           23          2.13328         reflect
+    14           25          1.57448         expand
+    15           26          1.57448         reflect
+    16           28         0.909496         expand
+    17           29         0.909496         reflect
+    18           31         0.255263         expand
+    19           32         0.255263         reflect
+    20           34         0.213276         reflect
+    21           35         0.213276         reflect
+    22           37         0.213276         contract outside
+    23           39         0.213276         contract inside
+    24           41         0.213276         contract inside
+    25           43         0.213276         contract inside
+    26           45         0.213276         contract inside
+    27           47         0.211073         contract inside
+    28           49         0.209444         contract inside
+    29           51         0.209444         contract inside
+    30           53         0.207384         contract inside
+    31           54         0.207384         reflect
+    32           56         0.207161         contract inside
+    33           58         0.206849         contract inside
+    34           60          0.20678         reflect
+    35           62         0.206527         contract inside
+    36           64         0.206527         contract inside
+    37           66         0.206243         reflect
+    38           68         0.206019         reflect
+    39           70         0.206007         contract inside
+    40           72         0.205282         expand
+    41           74         0.204489         expand
+    42           76          0.20362         expand
+    43           77          0.20362         reflect
+    44           79         0.200792         expand
+    45           80         0.200792         reflect
+    46           82          0.19868         expand
+    47           84          0.19531         expand
+    48           86          0.19001         expand
+    49           87          0.19001         reflect
+    50           89          0.18314         expand
+    51           91         0.170621         expand
+    52           92         0.170621         reflect
+    53           93         0.170621         reflect
+    54           95         0.167684         reflect
+    55           97         0.156252         expand
+    56           99         0.144369         expand
+    57          100         0.144369         reflect
+    58          102         0.144369         contract inside
+    59          104         0.122392         expand
+    60          105         0.122392         reflect
+    61          107         0.107766         expand
+    62          108         0.107766         reflect
+    63          109         0.107766         reflect
+    64          111         0.101156         reflect
+    65          113        0.0854941         reflect
+    66          115        0.0854941         contract inside
+    67          117        0.0852961         reflect
+    68          119        0.0846716         reflect
+    69          121        0.0846716         contract inside
+    70          123         0.064083         expand
+    71          125         0.064083         contract inside
+    72          126         0.064083         reflect
+    73          127         0.064083         reflect
+    74          129        0.0592255         expand
+    75          130        0.0592255         reflect
+    76          132        0.0499678         reflect
+    77          134        0.0499678         contract outside
+    78          135        0.0499678         reflect
+    79          136        0.0499678         reflect
+    80          138        0.0304419         expand
+    81          139        0.0304419         reflect
+    82          140        0.0304419         reflect
+    83          142        0.0304419         contract inside
+    84          144        0.0304419         contract outside
+    85          145        0.0304419         reflect
+    86          147        0.0261073         reflect
+    87          148        0.0261073         reflect
+    88          150        0.0155074         expand
+    89          152        0.0155074         contract inside
+    90          154        0.0155074         contract inside
+    91          155        0.0155074         reflect
+    92          157        0.0119127         expand
+    93          159        0.0119127         contract inside
+    94          161        0.0117321         reflect
+    95          162        0.0117321         reflect
+    96          163        0.0117321         reflect
+    97          165        0.0116092         contract inside
+    98          167        0.0116092         contract inside
+    99          169        0.0105409         contract inside
+   100          170        0.0105409         reflect
+   101          172       0.00731474         expand
+   102          173       0.00731474         reflect
+   103          175       0.00731474         contract inside
+   104          176       0.00731474         reflect
+   105          178       0.00731474         contract outside
+   106          180       0.00467096         expand
+   107          181       0.00467096         reflect
+   108          182       0.00467096         reflect
+   109          184       0.00467096         contract inside
+   110          186       0.00405597         expand
+   111          187       0.00405597         reflect
+   112          189       0.00299447         reflect
+   113          191       0.00137517         expand
+   114          193       0.00137517         contract inside
+   115          194       0.00137517         reflect
+   116          195       0.00137517         reflect
+   117          197       0.00137517         contract inside
+   118          199       0.00137517         contract inside
+   119          201      0.000587283         expand
+   120          202      0.000587283         reflect
+   121          203      0.000587283         reflect
+   122          205      0.000539435         contract outside
+   123          207      0.000539435         contract inside
+   124          209      0.000539435         contract inside
+   125          211      0.000295594         reflect
+   126          213      0.000295594         contract inside
+   127          215      0.000295594         contract inside
+   128          217      0.000284119         reflect
+   129          219      0.000284119         contract inside
+   130          220      0.000284119         reflect
+   131          222      0.000284119         contract inside
+   132          224      0.000231563         expand
+   133          226      0.000231563         contract outside
+   134          227      0.000231563         reflect
+   135          229      0.000231563         contract inside
+   136          231      0.000231563         contract inside
+   137          233      0.000231563         contract inside
+   138          235      0.000227704         contract inside
+   139          237      0.000226036         contract inside
+   140          238      0.000226036         reflect
+   141          240      0.000225986         contract inside
+   142          242      0.000225765         contract inside
+   143          244      0.000224909         contract inside
+   144          246      0.000224468         contract inside
+   145          248      0.000224032         contract inside
+   146          250      0.000224032         contract inside
+   147          252      0.000224032         contract outside
+   148          254      0.000223886         contract inside
+   149          256      0.000223865         contract inside
+   150          258      0.000223776         contract inside
+   151          260      0.000223776         contract inside
+   152          262      0.000223774         contract inside
+   153          264      0.000223738         contract inside
+   154          266      0.000223738         contract inside
+   155          268      0.000223723         contract outside
+   156          270      0.000223717         contract inside
+   157          272      0.000223717         contract inside
+ 
+Optimization terminated:
+ the current x satisfies the termination criteria using OPTIONS.TolX of 1.000000e-04 
+ and F(X) satisfies the convergence criteria using OPTIONS.TolFun of 1.000000e-03 
+
+</pre><img vspace="5" hspace="5" src="Targeting_01.png" alt=""> <img vspace="5" hspace="5" src="Targeting_02.png" alt=""> <img vspace="5" hspace="5" src="Targeting_03.png" alt=""> <img vspace="5" hspace="5" src="Targeting_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate targeting
+% Start with an initial orbit and impulsive burn, then numerically 
+% optimize so that the location of the Moon is the final condition 
+% and the magnitude of the burn is minimized. The dynamical model is 
+% the 3 body problem, but functions exist also for the CRTBP and the 
+% full 4 body problem.
+
+%% See also
+% LowEnergyTransferInCRTBP
+% Targeting4BP
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2018.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Initialize the Earth-Moon-Sun system 
+id = PlanetId({'sun' 'earth' 'moon'});
+
+PlanetPositionEMBarycenter('initialize',id);
+
+% Orbital elements
+elements  = [7585.9 1.8086e-06 2.4524 2.4589 0.000833 3.1416];
+
+% Initial velocity change
+dV1       = 2.988;
+
+% Time of trajectory
+dT        = 8.6675e+06;
+
+% Graviational constant of the moon
+muMoon   = 4902.7933840088;
+
+% Starting Julian Date
+jD       = 2451546;
+
+% Plot the initial trajectory
+PlotLET3BP(elements,dV1,dT,jD);
+
+% Update the elements
+[elementsNew,dV1EphNew] = Targeting3BP2(elements,dV1,dT,0,muMoon,jD);
+
+% Plot the new elements
+PlotLET3BP(elementsNew,dV1EphNew,dT,jD);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2018-12-20 $
+% $Revision: 795b02658daf606d1b3b1ece39f8e21de4254500 $
+
+##### SOURCE END #####
+--></body></html>

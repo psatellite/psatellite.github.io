@@ -1,0 +1,364 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a propulsion system for a low-earth orbit satellite</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="PropulsionSystemDesignLEO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a propulsion system for a low-earth orbit satellite</h1><!--introduction--><p>We assume a constant orbit for drag purposes. You can add any number of Hohmann transfers and any number of phase changes. You can add other maneuvers to this script.</p><p>We assume a blowdown system with helium as the pressurant. The momentum calculations assume a fixed center-of-mass offset. If one thruster overwhelms the RWA capacity it recommends a 4 thruster configuration. In that case you use off-pulsing during maneuvers.</p><p>See also OrbMnvrHohmann, OrbMnvrPhaseChange, DVOrbitDrag, RocketMass, BDDesign, Period, Constant, CreateLatexTable, DisplayLatexTable</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">User inputs</a></li><li><a href="#4">Compute the Delta-V Budget</a></li><li><a href="#5">Format output</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2017.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">year      = 86400*365.25;
+degToRad  = pi/180;
+rE        = Constant(<span class="string">'equatorial radius earth'</span>);
+g         = 9.806;
+u         = 0.1;    <span class="comment">% unit of cubesat - 10 cm == 0.1 m</span>
+kmToM     = 1000;
+mToCm     = 100;
+psiToP    = 6895;
+</pre><h2 id="3">User inputs</h2><pre class="codeinput"><span class="comment">% Orbit</span>
+h         = 400;        <span class="comment">% Altitude (km)</span>
+e         = 0.001;      <span class="comment">% Eccentricity</span>
+inc       = 28.6;       <span class="comment">% Inclination (deg)</span>
+lifetime  = 1;          <span class="comment">% Years</span>
+
+<span class="comment">% Spacecraft</span>
+massPay   = 5;            <span class="comment">% Mass payload (kg)</span>
+massFuel  = 2;            <span class="comment">% Guess (kg)</span>
+cD        = 2;            <span class="comment">% Drag cofficient worst case</span>
+area      = 3*2;          <span class="comment">% Biggest face of 6U Cubesat (u)</span>
+dTDrag    = 0.25*year;    <span class="comment">% Time between drag makeup maneuvers (sec)</span>
+momRWA    = 0.1;          <span class="comment">% Momentum storage of RWAs allocate to stationkeeping (Nms)</span>
+cMOffset  = 0.1*u;        <span class="comment">% Center of mass offset</span>
+fTank     = 0.05;         <span class="comment">% Structural fraction tanks</span>
+<span class="comment">% Maneuvers - Phase changes</span>
+deltaA    = [pi/32 pi/64];	<span class="comment">% Angle of phase change (rad)</span>
+kTarget   = [2 2];          <span class="comment">% Number of orbits to accomplish the phase change</span>
+
+<span class="comment">% Maneuvers - Hohmann transfers</span>
+dAHoh     = [10 2 3 34];    <span class="comment">% Altitude changes for Hohmann transfers (km)</span>
+
+<span class="comment">% Thruster parameters</span>
+rhoFuel   = 1000;         <span class="comment">% Fuel density (kg/m^3);</span>
+minPw     = 0.01;         <span class="comment">% Minimum pulsewidth (sec)</span>
+thrust    = 0.01;         <span class="comment">% Thrust (N)</span>
+iSp       = 200;          <span class="comment">% Specific impulse (sec)</span>
+tFuel     = 300;          <span class="comment">% Nominal tank temperature (deg-K)</span>
+pInitial  = 350*psiToP;   <span class="comment">% Initial tank pressure</span>
+pFinal    = 100*psiToP;   <span class="comment">% Final tank pressure (P)</span>
+</pre><h2 id="4">Compute the Delta-V Budget</h2><pre class="codeinput">massDry   = massPay + fTank*massFuel;
+sMA       = rE + h;
+nPer      = lifetime*year/Period(sMA);
+el        = [sMA inc*degToRad 0 0 e 0];
+
+<span class="comment">% ballistic coefficient: m^2/kg, use average mass</span>
+b         = cD*area*u^2/(massDry+0.5*massFuel);
+
+<span class="comment">% Drag - call DVOrbitDrag twice to get a plot</span>
+DVOrbitDrag( el, [-pi,pi], b );
+dVDrag    = DVOrbitDrag( el, [-pi,pi], b )*nPer;
+dVDragPM  = dVDrag/(lifetime*year)/dTDrag;
+
+<span class="comment">% Phase changes</span>
+deltaVPC = zeros(1,length(deltaA));
+<span class="keyword">for</span> k = 1:length(deltaA)
+  deltaVPC(k) = OrbMnvrPhaseChange( sMA, deltaA(k), kTarget(k) );
+<span class="keyword">end</span>
+dVPhase   = sum(deltaVPC);
+
+<span class="comment">% Hohmann Transfers</span>
+dVHohmann = 0;
+dVHohmannMax = 0;
+<span class="keyword">for</span> k = 1:length(dAHoh)
+  deltaVH       = OrbMnvrHohmann( sMA, sMA + dAHoh(k) );
+  dVHohmann     = dVHohmann + deltaVH.total;
+  dVHohmannMax  = max([dVHohmannMax deltaVH.a deltaVH.b]);
+<span class="keyword">end</span>
+
+dVTotal   = dVDrag + dVPhase + dVHohmann;
+
+massFuel    = RocketMass( iSp, massDry, fTank, dVTotal );
+rTank       = (massFuel/rhoFuel/(4*pi/3))^(1/3);
+[~, massP]	= BDDesign( massFuel, rhoFuel, tFuel, pInitial, pFinal );
+
+<span class="comment">% Find the torque</span>
+torque    = thrust*cMOffset;
+mass      = massPay + (1+fTank)*massFuel;
+accel     = thrust/mass;
+
+dTMax     =  max([dVDragPM  deltaVPC])*kmToM/accel;
+
+deltaMom  = torque*dTMax;
+
+nThrusters = 1;
+
+<span class="keyword">if</span>( deltaMom &gt; momRWA )
+  fprintf(1,<span class="string">'Warning: The change in momentum during a maneuver exceeds the RWA capability.\nWe need to do ACS with thrusters\n'</span>);
+  nThrusters = 4;
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Warning: The change in momentum during a maneuver exceeds the RWA capability.
+We need to do ACS with thrusters
+</pre><img vspace="5" hspace="5" src="PropulsionSystemDesignLEO_01.png" alt=""> <h2 id="5">Format output</h2><p>Create a latex table. Latex is a word processing language that produces nice technical documentation. CreateLatexTable creates a latex file with this table that can be imported into Latex documents.</p><pre class="codeinput">k         = 1;
+s         = cell(1,2);
+s{k,1}    = <span class="string">'Mass'</span>;                               s{k,2} = sprintf(<span class="string">'%12.2f (kg)'</span>,mass); k = k + 1;
+s{k,1}    = <span class="string">'Mass dry'</span>;                           s{k,2} = sprintf(<span class="string">'%12.2f (kg)'</span>,massDry); k = k + 1;
+s{k,1}    = <span class="string">'Mass fuel'</span>;                          s{k,2} = sprintf(<span class="string">'%12.2f (kg)'</span>,massFuel); k = k + 1;
+s{k,1}    = <span class="string">'Mass pressurant'</span>;           	        s{k,2} = sprintf(<span class="string">'%12.2e (kg)'</span>,massP); k = k + 1;
+s{k,1}    = <span class="string">'Density fuel'</span>;                       s{k,2} = sprintf(<span class="string">'%12.2f (kg/m^3)'</span>,rhoFuel); k = k + 1;
+s{k,1}    = <span class="string">'Tank fraction'</span>;                      s{k,2} = sprintf(<span class="string">'%12.2f '</span>,fTank); k = k + 1;
+s{k,1}    = <span class="string">'Tank radius'</span>;                        s{k,2} = sprintf(<span class="string">'%12.2f (cm)'</span>,rTank*mToCm); k = k + 1;
+s{k,1}    = <span class="string">'Area'</span>;                               s{k,2} = sprintf(<span class="string">'%12.1f (u^2)'</span>,area); k = k + 1;
+s{k,1}    = <span class="string">'Momentum capacity RWA'</span>;              s{k,2} = sprintf(<span class="string">'%12.3f (Nms)'</span>,momRWA); k = k + 1;
+s{k,1}    = <span class="string">'Semi-major axis'</span>;                    s{k,2} = sprintf(<span class="string">'%12.1f (km)'</span>,sMA); k = k + 1;
+s{k,1}    = <span class="string">'Minimum Pulsewidth'</span>;                 s{k,2} = sprintf(<span class="string">'%12.4f (s)'</span>,minPw); k = k + 1;
+s{k,1}    = <span class="string">'Thrust'</span>;                             s{k,2} = sprintf(<span class="string">'%12.1e (N)'</span>,thrust/nThrusters); k = k + 1;
+s{k,1}    = <span class="string">'I_{sp}'</span>;                             s{k,2} = sprintf(<span class="string">'%12.1f (s)'</span>,iSp); k = k + 1;
+s{k,1}    = <span class="string">'Delta V Drag'</span>;                       s{k,2} = sprintf(<span class="string">'%12.2f (m/s)'</span>,dVDrag*1e3); k = k + 1;
+s{k,1}    = <span class="string">'Delta V Phase Changes'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f (m/s)'</span>,dVPhase*1e3); k = k + 1;
+s{k,1}    = <span class="string">'Delta V Hohmann Transfers'</span>;          s{k,2} = sprintf(<span class="string">'%12.2f (m/s)'</span>,dVHohmann*1e3); k = k + 1;
+s{k,1}    = <span class="string">'Delta V Total'</span>;                      s{k,2} = sprintf(<span class="string">'%12.2f (m/s)'</span>,dVTotal*1e3); k = k + 1;
+s{k,1}    = <span class="string">'Number of thrusters'</span>;                s{k,2} = sprintf(<span class="string">'%d '</span>, nThrusters); k = k + 1;
+
+
+DisplayLatexTable(s);
+CreateLatexTable(s,<span class="string">'ThrusterDesign'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">                     Mass             5.44 (kg) 
+                 Mass dry             5.10 (kg) 
+                Mass fuel             0.42 (kg) 
+          Mass pressurant         6.54e-04 (kg) 
+             Density fuel      1000.00 (kg/m^3) 
+            Tank fraction                 0.05  
+              Tank radius             4.66 (cm) 
+                     Area             6.0 (u^2) 
+    Momentum capacity RWA           0.100 (Nms) 
+          Semi-major axis           6778.1 (km) 
+       Minimum Pulsewidth            0.0100 (s) 
+                   Thrust           2.5e-03 (N) 
+                   I_{sp}             200.0 (s) 
+             Delta V Drag           68.37 (m/s) 
+    Delta V Phase Changes           59.52 (m/s) 
+Delta V Hohmann Transfers           27.64 (m/s) 
+            Delta V Total          155.54 (m/s) 
+      Number of thrusters                    4  
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a propulsion system for a low-earth orbit satellite
+% We assume a constant orbit for drag purposes. You can add any number
+% of Hohmann transfers and any number of phase changes. You can add other
+% maneuvers to this script.
+%
+% We assume a blowdown system with helium as the pressurant.
+% The momentum calculations assume a fixed center-of-mass offset.
+% If one thruster overwhelms the RWA capacity it recommends a 4 thruster
+% configuration. In that case you use off-pulsing during maneuvers.
+%
+% See also OrbMnvrHohmann, OrbMnvrPhaseChange, DVOrbitDrag, RocketMass, 
+% BDDesign, Period, Constant, CreateLatexTable, DisplayLatexTable
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2017 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2017.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+year      = 86400*365.25;
+degToRad  = pi/180;
+rE        = Constant('equatorial radius earth');
+g         = 9.806;
+u         = 0.1;    % unit of cubesat - 10 cm == 0.1 m
+kmToM     = 1000;
+mToCm     = 100;
+psiToP    = 6895;
+
+%% User inputs
+
+% Orbit
+h         = 400;        % Altitude (km)
+e         = 0.001;      % Eccentricity
+inc       = 28.6;       % Inclination (deg)
+lifetime  = 1;          % Years
+
+% Spacecraft
+massPay   = 5;            % Mass payload (kg)
+massFuel  = 2;            % Guess (kg)
+cD        = 2;            % Drag cofficient worst case
+area      = 3*2;          % Biggest face of 6U Cubesat (u)
+dTDrag    = 0.25*year;    % Time between drag makeup maneuvers (sec)
+momRWA    = 0.1;          % Momentum storage of RWAs allocate to stationkeeping (Nms)
+cMOffset  = 0.1*u;        % Center of mass offset
+fTank     = 0.05;         % Structural fraction tanks
+% Maneuvers - Phase changes
+deltaA    = [pi/32 pi/64];	% Angle of phase change (rad)
+kTarget   = [2 2];          % Number of orbits to accomplish the phase change
+
+% Maneuvers - Hohmann transfers
+dAHoh     = [10 2 3 34];    % Altitude changes for Hohmann transfers (km)
+
+% Thruster parameters
+rhoFuel   = 1000;         % Fuel density (kg/m^3);
+minPw     = 0.01;         % Minimum pulsewidth (sec)
+thrust    = 0.01;         % Thrust (N)
+iSp       = 200;          % Specific impulse (sec)
+tFuel     = 300;          % Nominal tank temperature (deg-K)
+pInitial  = 350*psiToP;   % Initial tank pressure
+pFinal    = 100*psiToP;   % Final tank pressure (P)
+
+%% Compute the Delta-V Budget
+massDry   = massPay + fTank*massFuel;
+sMA       = rE + h;
+nPer      = lifetime*year/Period(sMA);
+el        = [sMA inc*degToRad 0 0 e 0];
+
+% ballistic coefficient: m^2/kg, use average mass
+b         = cD*area*u^2/(massDry+0.5*massFuel);
+
+% Drag - call DVOrbitDrag twice to get a plot
+DVOrbitDrag( el, [-pi,pi], b );
+dVDrag    = DVOrbitDrag( el, [-pi,pi], b )*nPer;
+dVDragPM  = dVDrag/(lifetime*year)/dTDrag;
+
+% Phase changes
+deltaVPC = zeros(1,length(deltaA));
+for k = 1:length(deltaA)
+  deltaVPC(k) = OrbMnvrPhaseChange( sMA, deltaA(k), kTarget(k) );
+end
+dVPhase   = sum(deltaVPC);
+
+% Hohmann Transfers
+dVHohmann = 0;
+dVHohmannMax = 0;
+for k = 1:length(dAHoh)
+  deltaVH       = OrbMnvrHohmann( sMA, sMA + dAHoh(k) );
+  dVHohmann     = dVHohmann + deltaVH.total;
+  dVHohmannMax  = max([dVHohmannMax deltaVH.a deltaVH.b]);
+end
+
+dVTotal   = dVDrag + dVPhase + dVHohmann;
+
+massFuel    = RocketMass( iSp, massDry, fTank, dVTotal );
+rTank       = (massFuel/rhoFuel/(4*pi/3))^(1/3);
+[~, massP]	= BDDesign( massFuel, rhoFuel, tFuel, pInitial, pFinal );
+
+% Find the torque
+torque    = thrust*cMOffset;
+mass      = massPay + (1+fTank)*massFuel;
+accel     = thrust/mass;
+
+dTMax     =  max([dVDragPM  deltaVPC])*kmToM/accel;
+
+deltaMom  = torque*dTMax;
+
+nThrusters = 1;
+
+if( deltaMom > momRWA )
+  fprintf(1,'Warning: The change in momentum during a maneuver exceeds the RWA capability.\nWe need to do ACS with thrusters\n');
+  nThrusters = 4;
+end
+
+%% Format output
+% Create a latex table. Latex is a word processing language that produces
+% nice technical documentation. CreateLatexTable creates a latex
+% file with this table that can be imported into Latex documents.
+
+k         = 1;
+s         = cell(1,2);
+s{k,1}    = 'Mass';                               s{k,2} = sprintf('%12.2f (kg)',mass); k = k + 1;
+s{k,1}    = 'Mass dry';                           s{k,2} = sprintf('%12.2f (kg)',massDry); k = k + 1;
+s{k,1}    = 'Mass fuel';                          s{k,2} = sprintf('%12.2f (kg)',massFuel); k = k + 1;
+s{k,1}    = 'Mass pressurant';           	        s{k,2} = sprintf('%12.2e (kg)',massP); k = k + 1;
+s{k,1}    = 'Density fuel';                       s{k,2} = sprintf('%12.2f (kg/m^3)',rhoFuel); k = k + 1;
+s{k,1}    = 'Tank fraction';                      s{k,2} = sprintf('%12.2f ',fTank); k = k + 1;
+s{k,1}    = 'Tank radius';                        s{k,2} = sprintf('%12.2f (cm)',rTank*mToCm); k = k + 1;
+s{k,1}    = 'Area';                               s{k,2} = sprintf('%12.1f (u^2)',area); k = k + 1;
+s{k,1}    = 'Momentum capacity RWA';              s{k,2} = sprintf('%12.3f (Nms)',momRWA); k = k + 1;
+s{k,1}    = 'Semi-major axis';                    s{k,2} = sprintf('%12.1f (km)',sMA); k = k + 1;
+s{k,1}    = 'Minimum Pulsewidth';                 s{k,2} = sprintf('%12.4f (s)',minPw); k = k + 1;
+s{k,1}    = 'Thrust';                             s{k,2} = sprintf('%12.1e (N)',thrust/nThrusters); k = k + 1;
+s{k,1}    = 'I_{sp}';                             s{k,2} = sprintf('%12.1f (s)',iSp); k = k + 1;
+s{k,1}    = 'Delta V Drag';                       s{k,2} = sprintf('%12.2f (m/s)',dVDrag*1e3); k = k + 1;
+s{k,1}    = 'Delta V Phase Changes';              s{k,2} = sprintf('%12.2f (m/s)',dVPhase*1e3); k = k + 1;
+s{k,1}    = 'Delta V Hohmann Transfers';          s{k,2} = sprintf('%12.2f (m/s)',dVHohmann*1e3); k = k + 1;
+s{k,1}    = 'Delta V Total';                      s{k,2} = sprintf('%12.2f (m/s)',dVTotal*1e3); k = k + 1;
+s{k,1}    = 'Number of thrusters';                s{k,2} = sprintf('%d ', nThrusters); k = k + 1;
+
+
+DisplayLatexTable(s);
+CreateLatexTable(s,'ThrusterDesign');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-06-05 15:12:36 -0400 (Mon, 05 Jun 2017) $
+% $Revision: 44762 $
+
+##### SOURCE END #####
+--></body></html>

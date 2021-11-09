@@ -1,0 +1,289 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Orbit separation demo</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="OrbitSeparationTradeStudy.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Orbit separation demo</h1><!--introduction--><p>Calculate a delta-V for an in-plane separation and size a thruster to perform the maneuver. This is a bang/bang maneuver.</p><p>This demonstrates that a small satellite deployed in LEO can move 1 km away from the "mother ship" in less than one orbit with a range of thrusters. The Lambert delta-V approaches the ideal delta-V as the time approaches one orbit.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters and ideal solution</a></li><li><a href="#3">Lambert delta-V study</a></li><li><a href="#4">Plot ideal transfer</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright 2017 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2017.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters and ideal solution</h2><pre class="codeinput"><span class="comment">% Mission Parameters</span>
+sma = 6740; <span class="comment">% km</span>
+dSep = 20;   <span class="comment">% km</span>
+mass = 12;  <span class="comment">% kg</span>
+
+<span class="comment">% Ideal delta-V for 1 revolution. This function can also calculate DVs for</span>
+<span class="comment">% multiple revolutions.</span>
+nRev = 1;
+dVPhase = OrbMnvrPhaseChange( sma, dSep/sma, nRev )*1e3;
+fprintf(1,<span class="string">'1 Rev Delta-V: %f m/s\n'</span>,dVPhase);
+</pre><pre class="codeoutput">1 Rev Delta-V: 2.420097 m/s
+</pre><h2 id="3">Lambert delta-V study</h2><p>Study a single-revolution Lambert maneuver to achieve the phase change. Then, determine how long the thruster(s) would need to fire to achieve the delta-V.</p><pre class="codeinput">thrusts = [0.1;0.5;1]; <span class="comment">% N</span>
+
+<span class="comment">% Initial orbit</span>
+el = [6740 0 0 0 0 0];
+[r1,v1] = El2RV(el);
+
+<span class="comment">% Target - 1 km trailing separation</span>
+delTheta = dSep/sma;
+elT = [6740 0 0 0 0 delTheta];
+[r2,v2] = El2RV(elT);
+
+<span class="comment">% Transfer times and plotting parameters</span>
+<span class="comment">% Do NOT go more than one revolution.</span>
+tTrans = [30:90]*60;
+dVa  = zeros(3,size(tTrans,2));
+dVb  = zeros(3,size(tTrans,2));
+tMPlot = zeros(size(tTrans));
+
+<span class="comment">% Perform targeting</span>
+<span class="keyword">for</span> k = 1:length(tTrans)
+  [dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans(k));
+  dVa(:,k)   = dV.a*1e3;
+  dVb(:,k)   = dV.b*1e3;
+  tMPlot(k)  = tM;
+<span class="keyword">end</span>
+
+aMag = Mag(dVa);
+bMag = aMag + Mag(dVb);
+
+Plot2D(tTrans/60,dVa)
+
+<span class="comment">% Generate plot</span>
+kShort = find(tMPlot&gt;0);
+kLong  = find(tMPlot&lt;0);
+kEarth = find(tMPlot==0);
+NewFig(<span class="string">'Delta V'</span>);
+plot(tTrans/60,[aMag;bMag],<span class="string">'k'</span>);
+hold <span class="string">on</span>
+hS = plot(tTrans(kShort)/60,[aMag(kShort);bMag(kShort)],<span class="string">'b*'</span>);
+<span class="keyword">if</span> ~isempty(kLong)
+  hL = plot(tTrans(kLong)/60,[aMag(kLong);bMag(kLong)],<span class="string">'go'</span>);
+  legend([hS(1) hL(1)],<span class="string">'Short'</span>,<span class="string">'Long'</span>);
+<span class="keyword">end</span>
+XLabelS(<span class="string">'Transfer TOF (min)'</span>);
+YLabelS(<span class="string">'First and Total Delta V (m/s)'</span>);
+TitleS(<span class="string">'Lambert Targeting Demo'</span>);
+grid <span class="string">on</span>;
+
+fprintf(1,<span class="string">'Minimum Lambert Delta-V: %f m/s\n'</span>,min(bMag));
+
+<span class="comment">% Estimate manuever time vs. thrust; assume constant mass</span>
+deltaT = mass*(1./thrusts)*bMag;
+Plot2D(tTrans/60,deltaT,<span class="string">'Transfer TOF (min)'</span>,<span class="string">'Total Burn Time (s)'</span>,<span class="string">'Thruster Performance'</span>)
+legend(num2str(thrusts))
+</pre><pre class="codeoutput">Minimum Lambert Delta-V: 2.424115 m/s
+</pre><img vspace="5" hspace="5" src="OrbitSeparationTradeStudy_01.png" alt=""> <img vspace="5" hspace="5" src="OrbitSeparationTradeStudy_02.png" alt=""> <img vspace="5" hspace="5" src="OrbitSeparationTradeStudy_03.png" alt=""> <h2 id="4">Plot ideal transfer</h2><p>The long and short way computed by the Lambert algorithm are both shown for clarify, but DVTarget automatically chooses the one with the lowest delta-V.</p><pre class="codeinput">tTrans = 60*60; <span class="comment">% long way (greater than pi mean anomaly change)</span>
+[dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans);
+
+<span class="comment">% Initial orbits</span>
+[r1p,v1p] = RVFromKepler(RV2El(r1,v1),linspace(0,tTrans));
+[r2p,v2p] = RVFromKepler(RV2El(r2,v2),linspace(0,tTrans));
+<span class="comment">% first transfer</span>
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, 1 );
+[rT1,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+<span class="comment">% second transfer</span>
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, -1 );
+[rT2,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+
+[h,h1] = Plot3D( r1p, <span class="string">'x (km)'</span>,<span class="string">'y (km)'</span>,<span class="string">'z (km)'</span>, <span class="string">'Lambert Maneuver, Long and Short Path'</span>, 6378 );
+hold <span class="string">on</span>;
+h2 = plot3(   r2p(1,:),   r2p(2,:),   r2p(3,:), <span class="string">'g'</span>);
+plot3(   rT1(1,:),   rT1(2,:),   rT1(3,:), <span class="string">'r--'</span>);
+plot3(   rT2(1,:),   rT2(2,:),   rT2(3,:), <span class="string">'m--'</span>);
+text( r1(1,1),  r1(2,1),  r1(3,1), <span class="string">'x Start of Maneuver'</span>)
+text( rT2(1,end),  rT2(2,end),  rT2(3,end), <span class="string">'x Rendezvous'</span>)
+axis <span class="string">square</span>; axis <span class="string">equal</span>;
+view(0,90);
+legend( [h1 h2], <span class="string">'Current'</span>, <span class="string">'Target'</span> )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="OrbitSeparationTradeStudy_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Orbit separation demo
+% Calculate a delta-V for an in-plane separation and size a thruster to perform
+% the maneuver. This is a bang/bang maneuver.
+%
+% This demonstrates that a small satellite deployed in LEO can move 1 km away
+% from the "mother ship" in less than one orbit with a range of thrusters. The
+% Lambert delta-V approaches the ideal delta-V as the time approaches one orbit.
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright 2017 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2017.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Parameters and ideal solution
+
+% Mission Parameters
+sma = 6740; % km
+dSep = 20;   % km
+mass = 12;  % kg
+
+% Ideal delta-V for 1 revolution. This function can also calculate DVs for
+% multiple revolutions.
+nRev = 1;
+dVPhase = OrbMnvrPhaseChange( sma, dSep/sma, nRev )*1e3;
+fprintf(1,'1 Rev Delta-V: %f m/s\n',dVPhase);
+
+%% Lambert delta-V study
+% Study a single-revolution Lambert maneuver to achieve the phase change. Then,
+% determine how long the thruster(s) would need to fire to achieve the delta-V.
+
+thrusts = [0.1;0.5;1]; % N
+
+% Initial orbit
+el = [6740 0 0 0 0 0];
+[r1,v1] = El2RV(el);
+
+% Target - 1 km trailing separation
+delTheta = dSep/sma;
+elT = [6740 0 0 0 0 delTheta];
+[r2,v2] = El2RV(elT);
+
+% Transfer times and plotting parameters
+% Do NOT go more than one revolution.
+tTrans = [30:90]*60;
+dVa  = zeros(3,size(tTrans,2));
+dVb  = zeros(3,size(tTrans,2));
+tMPlot = zeros(size(tTrans));
+
+% Perform targeting
+for k = 1:length(tTrans)
+  [dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans(k));
+  dVa(:,k)   = dV.a*1e3;
+  dVb(:,k)   = dV.b*1e3;
+  tMPlot(k)  = tM;
+end
+
+aMag = Mag(dVa);
+bMag = aMag + Mag(dVb);
+
+Plot2D(tTrans/60,dVa)
+
+% Generate plot
+kShort = find(tMPlot>0);
+kLong  = find(tMPlot<0);
+kEarth = find(tMPlot==0);
+NewFig('Delta V');
+plot(tTrans/60,[aMag;bMag],'k');
+hold on
+hS = plot(tTrans(kShort)/60,[aMag(kShort);bMag(kShort)],'b*');
+if ~isempty(kLong)
+  hL = plot(tTrans(kLong)/60,[aMag(kLong);bMag(kLong)],'go');
+  legend([hS(1) hL(1)],'Short','Long');
+end
+XLabelS('Transfer TOF (min)');
+YLabelS('First and Total Delta V (m/s)');
+TitleS('Lambert Targeting Demo');
+grid on;
+
+fprintf(1,'Minimum Lambert Delta-V: %f m/s\n',min(bMag));
+
+% Estimate manuever time vs. thrust; assume constant mass
+deltaT = mass*(1./thrusts)*bMag;
+Plot2D(tTrans/60,deltaT,'Transfer TOF (min)','Total Burn Time (s)','Thruster Performance')
+legend(num2str(thrusts))
+
+%% Plot ideal transfer
+% The long and short way computed by the Lambert algorithm are both shown for
+% clarify, but DVTarget automatically chooses the one with the lowest delta-V.
+
+tTrans = 60*60; % long way (greater than pi mean anomaly change)
+[dV,tM,ok] = DVTarget(r1,v1,r2,v2,tTrans);
+
+% Initial orbits
+[r1p,v1p] = RVFromKepler(RV2El(r1,v1),linspace(0,tTrans));
+[r2p,v2p] = RVFromKepler(RV2El(r2,v2),linspace(0,tTrans));
+% first transfer
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, 1 );
+[rT1,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+% second transfer
+[vTrans,a,p] = LambertTOF( r1, r2p(:,end), tTrans, -1 );
+[rT2,v] = RVFromKepler(RV2El(r1,vTrans(:,1)),linspace(0,tTrans));
+
+[h,h1] = Plot3D( r1p, 'x (km)','y (km)','z (km)', 'Lambert Maneuver, Long and Short Path', 6378 );
+hold on;
+h2 = plot3(   r2p(1,:),   r2p(2,:),   r2p(3,:), 'g');
+plot3(   rT1(1,:),   rT1(2,:),   rT1(3,:), 'rREPLACE_WITH_DASH_DASH');
+plot3(   rT2(1,:),   rT2(2,:),   rT2(3,:), 'mREPLACE_WITH_DASH_DASH');
+text( r1(1,1),  r1(2,1),  r1(3,1), 'x Start of Maneuver')
+text( rT2(1,end),  rT2(2,end),  rT2(3,end), 'x Rendezvous')
+axis square; axis equal;
+view(0,90);
+legend( [h1 h2], 'Current', 'Target' )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-04-28 15:56:25 -0400 (Fri, 28 Apr 2017) $
+% $Revision: 44428 $
+
+##### SOURCE END #####
+--></body></html>

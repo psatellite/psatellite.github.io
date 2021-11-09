@@ -1,0 +1,397 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test a Kalman Filter using a sun vector and the earth vector.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="KFSunAndEarthTest2.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test a Kalman Filter using a sun vector and the earth vector.</h1><!--introduction--><p>Includes states for unknown attitude biases. You can turn these states on or off. If on you will not get an accurate yaw bias estimate. -------------------------------------------------------------------------  See also C2DZOH, Plot2D, CosD, KFSunAndEarth2, RW2SDev -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Turn off the bias states</a></li><li><a href="#3">gyro model</a></li><li><a href="#4">use Litton HRG parameters (these are not IFOG #'s, but keep same variable names for convenience)</a></li><li><a href="#5">assume there is an unknown (and unestimable) attitude bias</a></li><li><a href="#6">convert from continuous to discrete measurement noise</a></li><li><a href="#7">Turn off the bias states</a></li><li><a href="#8">Simulation</a></li></ul></div><p>-------------------------------------------------------------------------   Copyright 1999 Princeton Satellite Systems, Inc.   All rights reserved. -------------------------------------------------------------------------</p><h2 id="2">Turn off the bias states</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+d = struct;
+d.biasStates = 1;
+
+degToRad      = (pi/180);
+radToDeg      = 180/pi;
+arcsecToRad   = degToRad / 3600;
+perHrToPerSec = 1/3600;
+
+dT       = 10;
+nSim     = 9000;
+angle    = linspace(0,7.291e-5*dT*nSim,nSim) + 3*pi/2 - pi/4;
+pPlot    = zeros(9,nSim);
+xPlot    = zeros(9,nSim);
+sunPlot  = zeros(1,nSim);
+bPlot    = zeros(3,nSim);
+</pre><h2 id="3">gyro model</h2><pre class="codeinput">sqrtDT  = sqrt(dT);
+<span class="comment">% units of 1 sigma given for wn is rad/sec^.5, for rw rad/sec^1.5</span>
+<span class="comment">% These are continuous values (except for an, which ??</span>
+wnIFOG  = 1.4544e-6*ones(3,1);<span class="comment">%/sqrtDT*ones(3,1); % white noise added to bias (drift) rad/sec</span>
+<span class="comment">% rwIFOG  = 8.0964e-9*ones(3,1); %*sqrtDT*ones(3,1); % random walk added to bias (drift) rad/sec</span>
+rwIFOG  = RW2SDev(0.015*perHrToPerSec)*ones(3,1); <span class="comment">% random walk added to bias (drift) rad/sec</span>
+<span class="comment">% rwIFOG  = RW2SDev(0.006*perHrToPerSec)*ones(3,1); % random walk added to bias (drift) rad/sec</span>
+anIFOG  = zeros(3,1); <span class="comment">%4.8481e-7*ones(3,1);        % white noise added to delta angles</span>
+<span class="comment">% sfIFOG  = 0.03928 * arcsecToRad;      % scale factor for gyro counts</span>
+</pre><h2 id="4">use Litton HRG parameters (these are not IFOG #'s, but keep same variable names for convenience)</h2><pre class="codeinput">rwIFOG  = RW2SDev(0.005*perHrToPerSec)*ones(3,1);
+wnIFOG  = RW2SDev(0.0003)*ones(3,1);
+</pre><h2 id="5">assume there is an unknown (and unestimable) attitude bias</h2><pre class="codeinput">bAtt     = [0;0;0]; <span class="comment">% this is the unknown attitude bias</span>
+nAtt     = [0.067; 0.071; 0] / 3 * degToRad;
+
+bGyro    = [1;2;4]*1.e-5;
+wO       = -7.291e-5;
+w        = [0;wO;0];
+p        = diag([1e-5;1e-5;1e-5;0;0;0; nAtt]);
+x        = zeros(9,1);
+theta    = [0;0;0]; <span class="comment">%[0.01;0.02;0.03] * degToRad;</span>
+d.wO     = w;
+</pre><h2 id="6">convert from continuous to discrete measurement noise</h2><p>sigmaESA = [0.0280 0.0180]*degToRad /sqrtDT;</p><pre class="codeinput">sigmaESA = [0.11 0.055]/3 *degToRad /sqrtDT;
+sigmaSSA = sqrt(0.003^2/12 + 0.001^2) *degToRad * ones(1,2) /sqrtDT;
+<span class="comment">% sigmaSSA = 3 *degToRad * ones(1,2) /sqrtDT;</span>
+d.r      = diag([sigmaSSA sigmaESA].^2);
+
+<span class="comment">% d.q      = diag([wnIFOG.^2; rwIFOG.^2]*dT); % discrete plant noise depends on gyro &amp; dT</span>
+d.q      = diag([wnIFOG.^2; rwIFOG.^2; zeros(3,1)]*dT); <span class="comment">% discrete plant noise depends on gyro &amp; dT</span>
+
+sigWN    = sqrt(diag(d.q(1:3,1:3)));
+sigRW    = sqrt(diag(d.q(4:6,4:6)));
+
+d.noSun  = CosD(50); <span class="comment">% cosine of the sun sensor FOV</span>
+<span class="comment">%d.noSun  = 1.1; % prevents all sun measurements</span>
+<span class="comment">%d.noSun  = -2;  % allows sun measurements throughout the orbit</span>
+b        = [eye(3);zeros(6,3)];
+a        = [ 0   0 -wO  -1  0  0    0   0 -wO;<span class="keyword">...</span>
+             0   0   0   0 -1  0    0   0   0  ;<span class="keyword">...</span>
+            wO   0   0   0  0 -1   wO   0   0  ;<span class="keyword">...</span>
+            zeros(6,9)];
+</pre><h2 id="7">Turn off the bias states</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+<span class="keyword">if</span>( ~d.biasStates )
+  a     = a(1:6,1:6);
+  b     = b(1:6,1:3);
+  d.q   = d.q(1:6,1:6);
+  p     = p(1:6,1:6);
+  pPlot = pPlot(1:6,:);
+  x     = x(1:6);
+  xPlot = xPlot(1:6,:);
+<span class="keyword">end</span>
+
+[d.a, d.b] = C2DZOH(a,b,dT);
+
+sunAng = 0; <span class="comment">% equinox</span>
+cSun   = cos(sunAng);
+sSun   = sin(sunAng);
+</pre><h2 id="8">Simulation</h2><pre class="codeinput"><span class="comment">%-----------</span>
+<span class="keyword">for</span> k = 1:length(angle)
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  pPlot(:,k) = diag(p);
+  bPlot(:,k) = bGyro;
+  xPlot(:,k) = x;
+
+  <span class="comment">% Sun sensor</span>
+  <span class="comment">%-----------</span>
+  sAK        = sin(angle(k));
+  cAK        = cos(angle(k));
+  d.u        = [-sAK*cSun;sSun;-cAK*cSun];
+
+  d.uMeas    = [ 1        theta(3) -theta(2);<span class="keyword">...</span>
+                -theta(3)    1      theta(1);<span class="keyword">...</span>
+                 theta(2) -theta(1) 1      ]*d.u;
+
+  d.uMeas(2:3) = d.uMeas(2:3) + sigmaSSA'.*randn(2,1);
+
+  <span class="comment">% Earth Sensor</span>
+  <span class="comment">%-------------</span>
+  d.theta    = (theta(1:2) + bAtt(1:2)) + sigmaESA'.*randn(2,1);
+
+  <span class="comment">% Random walk</span>
+  <span class="comment">%------------</span>
+  bGyro      = bGyro + sigRW.* randn(3,1);
+
+  <span class="comment">% Total drift is random walk + noise</span>
+  <span class="comment">%-----------------------------------</span>
+  drift      = bGyro + sigWN.* randn(3,1);
+
+  <span class="comment">% Update the covariance</span>
+  <span class="comment">%----------------------</span>
+  [p, x]     = KFSunAndEarth2( p, x, d, w + drift + anIFOG.*randn(3,1)/dT  );
+
+  <span class="comment">% Show when the sun is available as a measurement</span>
+  <span class="comment">%------------------------------------------------</span>
+  sunPlot(k) = d.u(1) &gt;= d.noSun;
+<span class="keyword">end</span>
+
+angle = angle*radToDeg;
+
+<span class="keyword">if</span>( d.biasStates )
+  yL = [<span class="string">'thetaX'</span>;<span class="string">'thetaY'</span>;<span class="string">'thetaZ'</span>;<span class="keyword">...</span>
+        <span class="string">'gyroBX'</span>;<span class="string">'gyroBY'</span>;<span class="string">'gyroBZ'</span>;<span class="keyword">...</span>
+        <span class="string">'attBX '</span>;<span class="string">'attBY '</span>;<span class="string">'attBZ '</span>];
+<span class="keyword">else</span>
+  yL = [<span class="string">'thetaX'</span>;<span class="string">'thetaY'</span>;<span class="string">'thetaZ'</span>;<span class="keyword">...</span>
+        <span class="string">'gyroBX'</span>;<span class="string">'gyroBY'</span>;<span class="string">'gyroBZ'</span>];
+<span class="keyword">end</span>
+
+Plot2D(angle,pPlot, <span class="string">'Alpha'</span>, yL, <span class="string">'Covariance Matrix'</span>);
+Plot2D(angle,xPlot(1:3,:)*radToDeg,<span class="string">'Alpha'</span>,<span class="string">'Angle (deg)'</span>,<span class="string">'Angle'</span>);
+legend(<span class="string">'roll'</span>,<span class="string">'pitch'</span>,<span class="string">'yaw'</span>)
+
+Plot2D(angle,[xPlot(4:6,:);bPlot],<span class="string">'Alpha'</span>,strvcat(<span class="string">'Estimated Bias (rad/sec)'</span>,<span class="string">'True bias'</span>),<span class="string">'Bias'</span>,[],[<span class="string">'1:3'</span>;<span class="string">'4:6'</span>]);
+legend(<span class="string">'roll'</span>,<span class="string">'pitch'</span>,<span class="string">'yaw'</span>)
+
+Plot2D(angle,sunPlot,<span class="string">'Alpha'</span>,<span class="string">'Sun in FOV'</span>);
+ax = axis; axis([ax(1:2) -0.5 1.5]);
+
+att3Sigma = sqrt(pPlot(1:3,:))*3*radToDeg;
+Plot2D(angle,att3Sigma,<span class="string">'Alpha'</span>,strvcat(<span class="string">'Roll (deg)'</span>,<span class="string">'Pitch (deg)'</span>,<span class="string">'Yaw (deg)'</span>),<span class="string">'Attitude Covariance 3 Sigma'</span>)
+ax = axis;
+<span class="keyword">for</span> k = 1:2
+  subplot(3,1,k);
+  set(gca,<span class="string">'xticklabelmode'</span>,<span class="string">'auto'</span>);
+  axis([ax(1:2) 0 0.02]);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="KFSunAndEarthTest2_01.png" alt=""> <img vspace="5" hspace="5" src="KFSunAndEarthTest2_02.png" alt=""> <img vspace="5" hspace="5" src="KFSunAndEarthTest2_03.png" alt=""> <img vspace="5" hspace="5" src="KFSunAndEarthTest2_04.png" alt=""> <img vspace="5" hspace="5" src="KFSunAndEarthTest2_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test a Kalman Filter using a sun vector and the earth vector.
+% Includes states for unknown attitude biases. You can turn these
+% states on or off. If on you will not get an accurate yaw bias estimate.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also C2DZOH, Plot2D, CosD, KFSunAndEarth2, RW2SDev
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 1999 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Turn off the bias states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = struct;
+d.biasStates = 1;
+
+degToRad      = (pi/180);
+radToDeg      = 180/pi;
+arcsecToRad   = degToRad / 3600;
+perHrToPerSec = 1/3600;
+
+dT       = 10;
+nSim     = 9000;
+angle    = linspace(0,7.291e-5*dT*nSim,nSim) + 3*pi/2 - pi/4;
+pPlot    = zeros(9,nSim);
+xPlot    = zeros(9,nSim);
+sunPlot  = zeros(1,nSim);
+bPlot    = zeros(3,nSim);
+
+%% gyro model
+sqrtDT  = sqrt(dT);
+% units of 1 sigma given for wn is rad/sec^.5, for rw rad/sec^1.5
+% These are continuous values (except for an, which ??
+wnIFOG  = 1.4544e-6*ones(3,1);%/sqrtDT*ones(3,1); % white noise added to bias (drift) rad/sec
+% rwIFOG  = 8.0964e-9*ones(3,1); %*sqrtDT*ones(3,1); % random walk added to bias (drift) rad/sec
+rwIFOG  = RW2SDev(0.015*perHrToPerSec)*ones(3,1); % random walk added to bias (drift) rad/sec
+% rwIFOG  = RW2SDev(0.006*perHrToPerSec)*ones(3,1); % random walk added to bias (drift) rad/sec
+anIFOG  = zeros(3,1); %4.8481e-7*ones(3,1);        % white noise added to delta angles
+% sfIFOG  = 0.03928 * arcsecToRad;      % scale factor for gyro counts
+
+%% use Litton HRG parameters (these are not IFOG #'s, but keep same variable names for convenience)
+rwIFOG  = RW2SDev(0.005*perHrToPerSec)*ones(3,1);
+wnIFOG  = RW2SDev(0.0003)*ones(3,1);
+
+%% assume there is an unknown (and unestimable) attitude bias
+bAtt     = [0;0;0]; % this is the unknown attitude bias
+nAtt     = [0.067; 0.071; 0] / 3 * degToRad;
+
+bGyro    = [1;2;4]*1.e-5;
+wO       = -7.291e-5;
+w        = [0;wO;0];
+p        = diag([1e-5;1e-5;1e-5;0;0;0; nAtt]);
+x        = zeros(9,1);
+theta    = [0;0;0]; %[0.01;0.02;0.03] * degToRad;
+d.wO     = w;
+%% convert from continuous to discrete measurement noise
+% sigmaESA = [0.0280 0.0180]*degToRad /sqrtDT;
+sigmaESA = [0.11 0.055]/3 *degToRad /sqrtDT;
+sigmaSSA = sqrt(0.003^2/12 + 0.001^2) *degToRad * ones(1,2) /sqrtDT;
+% sigmaSSA = 3 *degToRad * ones(1,2) /sqrtDT;
+d.r      = diag([sigmaSSA sigmaESA].^2);
+
+% d.q      = diag([wnIFOG.^2; rwIFOG.^2]*dT); % discrete plant noise depends on gyro & dT
+d.q      = diag([wnIFOG.^2; rwIFOG.^2; zeros(3,1)]*dT); % discrete plant noise depends on gyro & dT
+
+sigWN    = sqrt(diag(d.q(1:3,1:3)));
+sigRW    = sqrt(diag(d.q(4:6,4:6)));
+
+d.noSun  = CosD(50); % cosine of the sun sensor FOV
+%d.noSun  = 1.1; % prevents all sun measurements
+%d.noSun  = -2;  % allows sun measurements throughout the orbit
+b        = [eye(3);zeros(6,3)]; 
+a        = [ 0   0 -wO  -1  0  0    0   0 -wO;...
+             0   0   0   0 -1  0    0   0   0  ;...
+            wO   0   0   0  0 -1   wO   0   0  ;...
+            zeros(6,9)];
+  
+%% Turn off the bias states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( ~d.biasStates )
+  a     = a(1:6,1:6);
+  b     = b(1:6,1:3);
+  d.q   = d.q(1:6,1:6);
+  p     = p(1:6,1:6);
+  pPlot = pPlot(1:6,:);
+  x     = x(1:6);
+  xPlot = xPlot(1:6,:);
+end
+
+[d.a, d.b] = C2DZOH(a,b,dT);
+
+sunAng = 0; % equinox
+cSun   = cos(sunAng);
+sSun   = sin(sunAng);
+
+%% Simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:length(angle)
+    
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  pPlot(:,k) = diag(p);
+  bPlot(:,k) = bGyro;
+  xPlot(:,k) = x; 
+  
+  % Sun sensor
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  sAK        = sin(angle(k));
+  cAK        = cos(angle(k));
+  d.u        = [-sAK*cSun;sSun;-cAK*cSun];
+
+  d.uMeas    = [ 1        theta(3) -theta(2);...
+                -theta(3)    1      theta(1);...
+                 theta(2) -theta(1) 1      ]*d.u;
+                
+  d.uMeas(2:3) = d.uMeas(2:3) + sigmaSSA'.*randn(2,1);
+  
+  % Earth Sensor
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.theta    = (theta(1:2) + bAtt(1:2)) + sigmaESA'.*randn(2,1);
+  
+  % Random walk
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  bGyro      = bGyro + sigRW.* randn(3,1);
+  
+  % Total drift is random walk + noise
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  drift      = bGyro + sigWN.* randn(3,1);
+  
+  % Update the covariance
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [p, x]     = KFSunAndEarth2( p, x, d, w + drift + anIFOG.*randn(3,1)/dT  );
+
+  % Show when the sun is available as a measurement
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  sunPlot(k) = d.u(1) >= d.noSun;
+end
+
+angle = angle*radToDeg;
+
+if( d.biasStates )
+  yL = ['thetaX';'thetaY';'thetaZ';...
+        'gyroBX';'gyroBY';'gyroBZ';...
+        'attBX ';'attBY ';'attBZ '];
+else
+  yL = ['thetaX';'thetaY';'thetaZ';...
+        'gyroBX';'gyroBY';'gyroBZ'];
+end
+      
+Plot2D(angle,pPlot, 'Alpha', yL, 'Covariance Matrix');
+Plot2D(angle,xPlot(1:3,:)*radToDeg,'Alpha','Angle (deg)','Angle');
+legend('roll','pitch','yaw')
+
+Plot2D(angle,[xPlot(4:6,:);bPlot],'Alpha',strvcat('Estimated Bias (rad/sec)','True bias'),'Bias',[],['1:3';'4:6']);
+legend('roll','pitch','yaw')
+
+Plot2D(angle,sunPlot,'Alpha','Sun in FOV');
+ax = axis; axis([ax(1:2) -0.5 1.5]);
+
+att3Sigma = sqrt(pPlot(1:3,:))*3*radToDeg;
+Plot2D(angle,att3Sigma,'Alpha',strvcat('Roll (deg)','Pitch (deg)','Yaw (deg)'),'Attitude Covariance 3 Sigma')
+ax = axis;
+for k = 1:2
+  subplot(3,1,k); 
+  set(gca,'xticklabelmode','auto');
+  axis([ax(1:2) 0 0.02]);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

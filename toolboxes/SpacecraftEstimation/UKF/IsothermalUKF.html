@@ -1,0 +1,345 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>A UKF that estimates thermal parameters for an isothermal model.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="IsothermalUKF.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>A UKF that estimates thermal parameters for an isothermal model.</h1><!--introduction--><p>The measurement is the average of all spacecraft temperatures. The user can select which parameters to estimate. The demonstration is for geosynchronous orbit. An internal heater has a diurnal (orbit frequency) heating pattern. -------------------------------------------------------------------------  See also Plot2D, TimeLabl, DupVect, RK4, Date2JD, UKFP, RVFromKepler -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Select the set to estimate</a></li><li><a href="#3">Set the time</a></li><li><a href="#4">Multiply the true value by this factor to get an initial estimate</a></li><li><a href="#5">Thermal parameters</a></li><li><a href="#6">Orbital elements [a i W w e M]</a></li><li><a href="#7">Starting temperature</a></li><li><a href="#8">Estimation parameters</a></li><li><a href="#9">Orbit</a></li><li><a href="#10">Internal power with diurnal variation</a></li><li><a href="#11">Run the simulation</a></li><li><a href="#12">Plot the results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2007, 2012 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Select the set to estimate</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+est  = [1 2];
+nEst = length(est);
+</pre><h2 id="3">Set the time</h2><pre class="codeinput"><span class="comment">%---------------</span>
+tEnd = 400000;
+dT   = 200; <span class="comment">% Time step in seconds</span>
+n    = ceil(tEnd/dT); <span class="comment">% Number of time steps</span>
+
+d       = struct;
+d.jD0   = Date2JD([2007 12 20 0 0 ]); <span class="comment">% Start date</span>
+t       = (0:(n-1))*dT;
+</pre><h2 id="4">Multiply the true value by this factor to get an initial estimate</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------------</span>
+f    = [0.8; 0.8; 0.8];
+</pre><h2 id="5">Thermal parameters</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+aR    = 1; <span class="comment">% Radiator area</span>
+aS    = 1; <span class="comment">% Effective area normal to Sun</span>
+alpha = 0.3; <span class="comment">% Spacecraft average absorptivity</span>
+epsR  = 0.9; <span class="comment">% Spacecraft radiator emissivity</span>
+cP    = 900; <span class="comment">% Spacecraft average specific heat</span>
+m     = 1000; <span class="comment">% Spacecraft mass</span>
+</pre><h2 id="6">Orbital elements [a i W w e M]</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+el      = [42167 0 0 0 0 0];
+mCP     = m*cP;
+d.a1    =  epsR*aR/mCP; <span class="comment">% Coefficient of quadratic temperature turn</span>
+d.a2    = alpha*aS/mCP; <span class="comment">% Coefficient of the input flux</span>
+d.a3    =        1/mCP; <span class="comment">% Coefficient of the internal power</span>
+wTrue   = [d.a1;d.a2;d.a3];
+</pre><h2 id="7">Starting temperature</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+x             = 308;
+</pre><h2 id="8">Estimation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+u             = struct;
+u.x           = x;
+u.int         = <span class="string">'RK4'</span>;
+u.rHSFun      = <span class="string">'RHSIsothermalUKF'</span>;
+u.measFun     = <span class="string">'GXUKF'</span>;
+u.measFunData = [];
+u.alpha       = 0.5e-4;
+u.kappa       = 0;
+u.beta        = 2;
+u.dT          = dT;
+u.param       = est;
+u.rHSFunData  = d;
+u.rHSFunData.param = est; <span class="comment">% Parameters to estimate</span>
+sigY          = 0.001;
+u.rY          = sigY^2; <span class="comment">% Measurement noise covariance</span>
+u.rP          = 1e-9; <span class="comment">% Process noise covariance</span>
+u.p           = diag(((1-f(est)).*wTrue(est)).^2); <span class="comment">% Initial covariance</span>
+u.w           = f(est).*wTrue(est); <span class="comment">% Initial parameter estimate</span>
+u             = UKFP(<span class="string">'initialize'</span>, u );
+</pre><h2 id="9">Orbit</h2><pre class="codeinput"><span class="comment">%------</span>
+rECI          = RVFromKepler( el, t );
+</pre><h2 id="10">Internal power with diurnal variation</h2><pre class="codeinput"><span class="comment">%---------------------------------------</span>
+a             = linspace(0,2*pi*dT*n/86400,n);
+p             = 160*(1 + sin(a)); <span class="comment">% Watts</span>
+</pre><h2 id="11">Run the simulation</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+xPlot         = zeros(1+2*nEst,n);
+
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% UKF. Store old value of x. The parameter estimator</span>
+  <span class="comment">% is assumed to have a perfect state estimate.</span>
+  <span class="comment">% The only state is the temperature so this is a</span>
+  <span class="comment">% reasonable assumption.</span>
+  <span class="comment">%---------------------------------------------------</span>
+  u.x               = x;
+
+  <span class="comment">% Simulation</span>
+  <span class="comment">%-----------</span>
+  d.p               = p(k);
+  d.rECI            = rECI(:,k);
+  xPlot(:,k)        = [x;u.w;diag(u.p)];
+  x                 = RK4( <span class="string">'RHSIsothermal'</span>, x, dT, t(k), d );
+
+  <span class="comment">% UKF. This must be after the propagation</span>
+  <span class="comment">%----------------------------------------</span>
+  u.t               = t(k);
+
+  <span class="comment">% rHSFunData is the same as d above</span>
+  <span class="comment">%----------------------------------</span>
+  u.rHSFunData.rECI = rECI(:,k);
+  u.rHSFunData.p    = p(k);
+
+  <span class="comment">% The measurement plus noise</span>
+  <span class="comment">%----------------</span>
+  y                 = x + sigY*randn;
+
+  <span class="comment">% The parameter estimator</span>
+  <span class="comment">%------------------------</span>
+  u                 = UKFP( <span class="string">'update'</span>, u, y );
+
+<span class="keyword">end</span>
+</pre><h2 id="12">Plot the results</h2><pre class="codeinput"><span class="comment">%------------------</span>
+[t,tL] = TimeLabl(t);
+
+<span class="comment">% This arranges the data into three plots and creates plot labels</span>
+<span class="comment">%----------------------------------------------------------------</span>
+wL = {<span class="string">'a_1'</span> <span class="string">'a_2'</span> <span class="string">'a_3'</span> };
+yL = {<span class="string">'T deg-K'</span>};
+yD = {<span class="string">'[1]'</span>};
+yP = {};
+
+<span class="keyword">for</span> k = 1:nEst
+  yL = [yL(:)' {wL{est(k)}}];
+  yD = [yD(:)' {sprintf(<span class="string">'[%i %i]'</span>,k+1,nEst+est(k)+1)}];
+  yP = [yP(:)' {sprintf(<span class="string">'P %s'</span>,wL{est(k)})}];
+<span class="keyword">end</span>
+wTrue         = DupVect(wTrue,n);
+
+Plot2D( t, [xPlot(1:nEst+1,:);wTrue], tL, yL, <span class="string">'Isothermal Spacecraft Simulation: Parameters'</span>, <span class="string">'lin'</span>, yD );
+Plot2D( t, xPlot(nEst+2:end,:), tL, yP, <span class="string">'Isothermal Spacecraft Simulation: Covariance'</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="IsothermalUKF_01.png" alt=""> <img vspace="5" hspace="5" src="IsothermalUKF_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A UKF that estimates thermal parameters for an isothermal model.
+% The measurement is the average of all spacecraft temperatures. 
+% The user can select which parameters to estimate.
+% The demonstration is for geosynchronous orbit. An internal heater
+% has a diurnal (orbit frequency) heating pattern.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also Plot2D, TimeLabl, DupVect, RK4, Date2JD, UKFP, RVFromKepler
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2007, 2012 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+%% Select the set to estimate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+est  = [1 2];
+nEst = length(est);
+
+%%  Set the time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+tEnd = 400000;
+dT   = 200; % Time step in seconds
+n    = ceil(tEnd/dT); % Number of time steps
+
+d       = struct;
+d.jD0   = Date2JD([2007 12 20 0 0 ]); % Start date
+t       = (0:(n-1))*dT;
+
+
+%% Multiply the true value by this factor to get an initial estimate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+f    = [0.8; 0.8; 0.8];
+
+%% Thermal parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aR    = 1; % Radiator area
+aS    = 1; % Effective area normal to Sun
+alpha = 0.3; % Spacecraft average absorptivity
+epsR  = 0.9; % Spacecraft radiator emissivity
+cP    = 900; % Spacecraft average specific heat
+m     = 1000; % Spacecraft mass
+
+%% Orbital elements [a i W w e M]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+el      = [42167 0 0 0 0 0];
+mCP     = m*cP;
+d.a1    =  epsR*aR/mCP; % Coefficient of quadratic temperature turn
+d.a2    = alpha*aS/mCP; % Coefficient of the input flux
+d.a3    =        1/mCP; % Coefficient of the internal power
+wTrue   = [d.a1;d.a2;d.a3];
+
+%% Starting temperature
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x             = 308;
+
+%% Estimation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+u             = struct;
+u.x           = x;
+u.int         = 'RK4';
+u.rHSFun      = 'RHSIsothermalUKF';
+u.measFun     = 'GXUKF';
+u.measFunData = [];
+u.alpha       = 0.5e-4;
+u.kappa       = 0;
+u.beta        = 2;
+u.dT          = dT;
+u.param       = est;
+u.rHSFunData  = d;
+u.rHSFunData.param = est; % Parameters to estimate
+sigY          = 0.001;
+u.rY          = sigY^2; % Measurement noise covariance
+u.rP          = 1e-9; % Process noise covariance
+u.p           = diag(((1-f(est)).*wTrue(est)).^2); % Initial covariance
+u.w           = f(est).*wTrue(est); % Initial parameter estimate
+u             = UKFP('initialize', u );
+
+%% Orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rECI          = RVFromKepler( el, t );
+
+%% Internal power with diurnal variation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a             = linspace(0,2*pi*dT*n/86400,n);
+p             = 160*(1 + sin(a)); % Watts
+
+
+%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xPlot         = zeros(1+2*nEst,n);
+
+for k = 1:n
+
+  % UKF. Store old value of x. The parameter estimator  
+  % is assumed to have a perfect state estimate.
+  % The only state is the temperature so this is a 
+  % reasonable assumption.
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  u.x               = x;
+ 
+  % Simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.p               = p(k);
+  d.rECI            = rECI(:,k);
+  xPlot(:,k)        = [x;u.w;diag(u.p)];
+  x                 = RK4( 'RHSIsothermal', x, dT, t(k), d );
+
+  % UKF. This must be after the propagation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  u.t               = t(k);
+  
+  % rHSFunData is the same as d above
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  u.rHSFunData.rECI = rECI(:,k);
+  u.rHSFunData.p    = p(k);
+  
+  % The measurement plus noise
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  y                 = x + sigY*randn;
+  
+  % The parameter estimator
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  u                 = UKFP( 'update', u, y );
+
+end
+
+
+%% Plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t,tL] = TimeLabl(t);
+
+% This arranges the data into three plots and creates plot labels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+wL = {'a_1' 'a_2' 'a_3' };
+yL = {'T deg-K'};
+yD = {'[1]'};
+yP = {};
+
+for k = 1:nEst
+  yL = [yL(:)' {wL{est(k)}}];
+  yD = [yD(:)' {sprintf('[%i %i]',k+1,nEst+est(k)+1)}];
+  yP = [yP(:)' {sprintf('P %s',wL{est(k)})}];
+end
+wTrue         = DupVect(wTrue,n);
+
+Plot2D( t, [xPlot(1:nEst+1,:);wTrue], tL, yL, 'Isothermal Spacecraft Simulation: Parameters', 'lin', yD );
+Plot2D( t, xPlot(nEst+2:end,:), tL, yP, 'Isothermal Spacecraft Simulation: Covariance' );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-11-13 16:00:29 -0500 (Tue, 13 Nov 2018) $
+% $Revision: 47436 $
+
+
+##### SOURCE END #####
+--></body></html>

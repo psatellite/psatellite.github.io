@@ -1,0 +1,533 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Trim an F16</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="Trim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Trim an F16</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also AlphBeta, ECIToNED, VBDToVBT, VTToVB, DefaultACData, AC,
+ACInit, ACTrim, ACEngEq, @acstate/acstate.m, EigEval, SVPlot, Eul2Q,
+Q2Eul, QMult, QPose, Mag
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">F16 database</a></li><li><a href="#3">Initial state vector</a></li><li><a href="#4">Constraint</a></li><li><a href="#5">Control</a></li><li><a href="#6">Initialize the model</a></li><li><a href="#7">Find the initial acceleration vector</a></li><li><a href="#8">Compute alpha and beta and their rates</a></li><li><a href="#9">Trim the model</a></li><li><a href="#10">Find the final acceleration vector</a></li><li><a href="#11">Compute alpha and beta and their rates</a></li><li><a href="#12">Linearize the model</a></li><li><a href="#13">Analysis functions</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright  (c) 1998 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2.0 (ACT)</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">g</span>
+</pre><h2 id="2">F16 database</h2><pre class="codeinput"><span class="comment">%-------------</span>
+d = DefaultACData;
+</pre><h2 id="3">Initial state vector</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+alphaStart =  0.03691;
+betaStart  = -4e-9;
+vT         = 502;
+v          = VTToVB( vT, alphaStart, betaStart );
+cG         = [0.35;0;0];
+r          = [2.092565616797901e+07;0;0];
+eulInit    = [0;0.03691;0];
+qNEDToB    = Eul2Q(eulInit);
+qECIToNED  = ECIToNED( r, <span class="string">'quaternion'</span> );
+q          = QMult( qECIToNED, qNEDToB );
+w          = [0;0;0];
+wR         = 160;
+engine     = 0;   <span class="comment">% compute equilibrium below</span>
+mass       = 1/1.57e-3;
+inertia    = [9497;55814;63100;0;-982;0];
+actuator   = [];
+sensor     = [];
+flex       = [];
+disturb    = [];
+</pre><h2 id="4">Constraint</h2><pre class="codeinput"><span class="comment">%-----------</span>
+g.vT       = 502;
+</pre><h2 id="5">Control</h2><pre class="codeinput"><span class="comment">%--------</span>
+d.control.throttle  =  0.1385;
+d.control.elevator  =  -0.7588;
+d.control.aileron   = -1.2e-7;
+d.control.rudder    =  6.2e-7;
+start.control       = d.control;
+
+engine = ACEngEq( d, v, r );
+</pre><h2 id="6">Initialize the model</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+x = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+d = ACInit( x, d );
+</pre><h2 id="7">Find the initial acceleration vector</h2><pre class="codeinput"><span class="comment">%-------------------------------------</span>
+xDot          = AC( x, 0, 0, d, <span class="string">'xdot'</span> );
+</pre><h2 id="8">Compute alpha and beta and their rates</h2><pre class="codeinput"><span class="comment">%---------------------------------------</span>
+v             = get( x,    <span class="string">'v'</span> );
+vDot          = get( xDot, <span class="string">'v'</span> );
+wDot          = get( xDot, <span class="string">'w'</span> );
+vTDot         = VBDToVBT( v, vDot );
+[alpha, beta, alphaDot, betaDot] = AlphBeta( v, vDot );
+
+fprintf(<span class="string">'Magnitude of vDot (guess):  %f'</span>,Mag(vDot))
+
+xDotStart     = [vTDot;alphaDot;betaDot;wDot];
+
+engStart      = get(x,   <span class="string">'engine'</span>);
+engDotStart   = get(xDot,<span class="string">'engine'</span>);
+</pre><pre class="codeoutput">Magnitude of vDot (guess):  0.065625</pre><h2 id="9">Trim the model</h2><pre class="codeinput"><span class="comment">%---------------</span>
+w = ones(1,11);
+w(1) = 1/100;
+[x, d, cost]  = ACTrim( x, d, w, g );
+
+ds = d;
+
+v             = get( x, <span class="string">'v'</span> );
+w             = get( x, <span class="string">'w'</span> );
+vT            = Mag(v);
+qECIToB       = get( x, <span class="string">'q'</span> );
+qECIToNED     = ECIToNED( get( x, <span class="string">'r'</span> ), <span class="string">'quaternion'</span> );
+qNEDToB       = QMult( QPose(qECIToNED), get( x, <span class="string">'q'</span> ) );
+eul           = Q2Eul( qNEDToB, [0;0;0] );
+</pre><h2 id="10">Find the final acceleration vector</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+xDot          = AC( x, 0, 0, d, <span class="string">'xdot'</span> );
+
+fprintf(<span class="string">'Magnitude of vDot (after ACTrim):  %f\n'</span>,Mag(get(xDot,<span class="string">'v'</span>)))
+fprintf(<span class="string">'\nCONTROLS:\n'</span>)
+fprintf(<span class="string">'\tthrottle: %f\n'</span>,d.control.throttle)
+fprintf(<span class="string">'\televator: %f\n'</span>,d.control.elevator)
+fprintf(<span class="string">'\t aileron: %f\n'</span>,d.control.aileron)
+fprintf(<span class="string">'\t  rudder: %f\n\n'</span>,d.control.rudder)
+</pre><pre class="codeoutput">Magnitude of vDot (after ACTrim):  0.000535
+
+CONTROLS:
+	throttle: 0.143683
+	elevator: -1.468505
+	 aileron: -0.000000
+	  rudder: 0.000001
+
+</pre><h2 id="11">Compute alpha and beta and their rates</h2><pre class="codeinput"><span class="comment">%---------------------------------------</span>
+v             = get( x,    <span class="string">'v'</span> );
+vDot          = get( xDot, <span class="string">'v'</span> );
+wDot          = get( xDot, <span class="string">'w'</span> );
+vTDot         = VBDToVBT( v, vDot );
+[alpha, beta, alphaDot, betaDot] = AlphBeta( v, vDot );
+
+xDotFinish  = [vTDot;alphaDot;betaDot;wDot];
+
+engFinish    = get(x,   <span class="string">'engine'</span>);
+engDotFinish = get(xDot,<span class="string">'engine'</span>);
+
+fprintf(<span class="string">'Trim Results\n'</span>);
+fprintf(<span class="string">'             Initial         Final\n'</span>);
+fprintf(<span class="string">'Cost       %12.4e         %12.4e\n'</span>,cost.start,cost.end);
+fprintf(<span class="string">'Engine     %12.4f         %12.4f\n'</span>,engStart,engFinish);
+fprintf(<span class="string">'Throttle   %12.4f         %12.4f\n'</span>,start.control.throttle,d.control.throttle);
+fprintf(<span class="string">'Elevator   %12.4f         %12.4f\n'</span>,start.control.elevator,d.control.elevator);
+fprintf(<span class="string">'Aileron    %12.4e         %12.4e\n'</span>,start.control.aileron, d.control.aileron);
+fprintf(<span class="string">'Rudder     %12.4e         %12.4e\n'</span>,start.control.rudder,  d.control.rudder);
+fprintf(<span class="string">'Phi        %12.4f         %12.4f\n'</span>,eulInit(1),  eul(1));
+fprintf(<span class="string">'Theta      %12.4f         %12.4f\n'</span>,eulInit(2),  eul(2));
+fprintf(<span class="string">'Psi        %12.4f         %12.4f\n'</span>,eulInit(3),  eul(3));
+fprintf(<span class="string">'alpha      %12.4f         %12.4f\n'</span>,alphaStart,  alpha);
+fprintf(<span class="string">'beta       %12.4f         %12.4f\n'</span>,betaStart,   beta);
+fprintf(<span class="string">'vTDot      %12.4e         %12.4e\n'</span>,xDotStart(1),   xDotFinish(1));
+fprintf(<span class="string">'alphaDot   %12.4e         %12.4e\n'</span>,xDotStart(2),   xDotFinish(2));
+fprintf(<span class="string">'betaDot    %12.4e         %12.4e\n'</span>,xDotStart(3),   xDotFinish(3));
+fprintf(<span class="string">'wXDot      %12.4e         %12.4e\n'</span>,xDotStart(4),   xDotFinish(4));
+fprintf(<span class="string">'wYDot      %12.4e         %12.4e\n'</span>,xDotStart(5),   xDotFinish(5));
+fprintf(<span class="string">'wZDot      %12.4e         %12.4e\n'</span>,xDotStart(6),   xDotFinish(6));
+fprintf(<span class="string">'EngineDot  %12.4f         %12.4f\n'</span>,engDotStart,    engDotFinish);
+</pre><pre class="codeoutput">Trim Results
+             Initial         Final
+Cost         1.6573e-02           1.1839e-06
+Engine           8.9942               9.3308
+Throttle         0.1385               0.1437
+Elevator        -0.7588              -1.4685
+Aileron     -1.2000e-07          -2.2923e-07
+Rudder       6.2000e-07           5.4535e-07
+Phi              0.0000               0.0003
+Theta            0.0369               0.0374
+Psi              0.0000              -0.0098
+alpha            0.0369               0.0374
+beta            -0.0000              -0.0000
+vTDot       -3.1087e-03           4.8571e-04
+alphaDot    -1.3058e-04           4.4624e-07
+betaDot      1.8022e-09          -2.3773e-08
+wXDot        2.9170e-07           1.6995e-06
+wYDot       -1.2857e-01          -1.0727e-05
+wZDot       -7.1999e-08          -1.3721e-05
+EngineDot        0.0000               0.0000
+</pre><h2 id="12">Linearize the model</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+g = AC( x, 0, 0, d, <span class="string">'lin'</span>);
+
+a = get( g, <span class="string">'a'</span> );
+b = get( g, <span class="string">'b'</span> );
+c = get( g, <span class="string">'c'</span> );
+d = get( g, <span class="string">'d'</span> );
+
+k = 4:12;
+
+fprintf(<span class="string">'---------------------------\nThe linearized model\n\n'</span>)
+a = a(k,k);
+b = b(k,:);
+c = c(:,k);
+
+fprintf(<span class="string">'\nThe A matrix\n\n'</span>)
+fprintf(<span class="string">'%8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g\n\n'</span>,a);
+fprintf(<span class="string">'\nThe B matrix\n\n'</span>)
+fprintf(<span class="string">'%8.2g %8.2g %8.2g %8.2g\n\n'</span>,b);
+fprintf(<span class="string">'\nThe C matrix\n\n'</span>)
+fprintf(<span class="string">'%8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g\n\n'</span>,c);
+fprintf(<span class="string">'\nThe D matrix\n\n'</span>)
+fprintf(<span class="string">'%8.2g %8.2g %8.2g %8.2g\n\n'</span>,d);
+
+dmat = d;
+d    = ds;
+</pre><pre class="codeoutput">---------------------------
+The linearized model
+
+
+The A matrix
+
+-4.1e-05 -2.2e-05  -0.0011        0 -7.3e-11        0        0       32   -0.011
+
+ 2.2e-05        0  8.2e-07  4.8e-15  7.3e-11  7.6e-14      -32 -0.00041     -1.2
+
+       0        0        0        0 -2.2e-10        0  2.6e-07        0  1.3e-07
+
+       1        0        0     -3.7  2.1e-05   -0.024        0       19  2.7e-06
+
+ 1.3e-05        1  0.00034  0.00025     -1.3   0.0025      -18 -0.00089  4.5e+02
+
+   0.037 -0.00034        1     0.64  -0.0029    -0.48  1.3e-05   -5e+02   -0.001
+
+       0        0        0 -4.1e-09  8.9e-05 -2.2e-08   -0.017 -2.2e-05   -0.089
+
+       0        0        0   -0.061 -3.5e-12    0.018  2.2e-05    -0.33 -3.5e-06
+
+       0        0        0  2.3e-07  -0.0025 -9.9e-09    0.056  3.8e-06       -1
+
+
+The B matrix
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0    -0.18        0     0.21
+
+       0     -1.1        0        0
+
+       0    -0.73        0   -0.032
+
+       0     0.16        0        0
+
+       0        0     0.13        0
+
+  -0.064        0     0.43        0
+
+      -0       -0       -0  4.1e-09
+
+-8.9e-05  2.2e-08    0.017  2.2e-05
+
+   0.089       -0       -0       -0
+
+   0.061 -1.7e-10   -0.018 -2.2e-05
+
+    0.33  3.5e-06       -0       -0
+
+      -0 -2.3e-07   0.0025  9.9e-09
+
+  -0.056 -3.8e-06        1 
+The C matrix
+
+       0        0        0        0        0        0        0        0        0
+
+       0        0        0        0        0        0        0        0        0
+
+       0        0        0        0        0        0        0       57        0
+
+       0        0        0        0        0      1.5        0       57        0
+
+       0        0        0        0        0        0        0       57        0
+
+       0        0        0   0.0027        0        0        0  -0.0043        0
+
+  0.0009      1.2        0        0        0        0        0        0        0
+
+       0    0.032        0        0        0     0.11        0  3.3e-05    0.045
+
+
+The D matrix
+
+       0        0        0        0
+
+       0        0        0        0
+
+   0.033        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+       0        0        0        0
+
+</pre><h2 id="13">Analysis functions</h2><pre class="codeinput">SVPlot(g,logspace(-3,2));
+EigEval(g);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="Trim_01.png" alt=""> <img vspace="5" hspace="5" src="Trim_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Trim an F16
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AlphBeta, ECIToNED, VBDToVBT, VTToVB, DefaultACData, AC, 
+%  ACInit, ACTrim, ACEngEq, @acstate/acstate.m, EigEval, SVPlot, Eul2Q, 
+%  Q2Eul, QMult, QPose, Mag
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright  (c) 1998 Princeton Satellite Systems, Inc.
+%   All Rights Reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2.0 (ACT)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear g
+
+%% F16 database
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = DefaultACData;
+
+%% Initial state vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+alphaStart =  0.03691;
+betaStart  = -4e-9;
+vT         = 502;
+v          = VTToVB( vT, alphaStart, betaStart );
+cG         = [0.35;0;0];
+r          = [2.092565616797901e+07;0;0];
+eulInit    = [0;0.03691;0];
+qNEDToB    = Eul2Q(eulInit);
+qECIToNED  = ECIToNED( r, 'quaternion' );
+q          = QMult( qECIToNED, qNEDToB );
+w          = [0;0;0];
+wR         = 160;
+engine     = 0;   % compute equilibrium below
+mass       = 1/1.57e-3;
+inertia    = [9497;55814;63100;0;-982;0];
+actuator   = [];
+sensor     = [];
+flex       = [];
+disturb    = [];
+
+%% Constraint
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g.vT       = 502;
+
+%% Control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.control.throttle  =  0.1385;
+d.control.elevator  =  -0.7588;
+d.control.aileron   = -1.2e-7;
+d.control.rudder    =  6.2e-7;
+start.control       = d.control;
+
+engine = ACEngEq( d, v, r );
+
+%% Initialize the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x = acstate( r, q, w, v, wR, mass, inertia, cG, engine, actuator, sensor, flex, disturb );
+d = ACInit( x, d );
+
+%% Find the initial acceleration vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xDot          = AC( x, 0, 0, d, 'xdot' );
+
+%% Compute alpha and beta and their rates
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+v             = get( x,    'v' );
+vDot          = get( xDot, 'v' );
+wDot          = get( xDot, 'w' );
+vTDot         = VBDToVBT( v, vDot );
+[alpha, beta, alphaDot, betaDot] = AlphBeta( v, vDot );
+
+fprintf('Magnitude of vDot (guess):  %f',Mag(vDot))
+
+xDotStart     = [vTDot;alphaDot;betaDot;wDot];
+
+engStart      = get(x,   'engine');
+engDotStart   = get(xDot,'engine');
+
+%% Trim the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+w = ones(1,11);
+w(1) = 1/100;
+[x, d, cost]  = ACTrim( x, d, w, g );
+
+ds = d;
+
+v             = get( x, 'v' );
+w             = get( x, 'w' );
+vT            = Mag(v);
+qECIToB       = get( x, 'q' );
+qECIToNED     = ECIToNED( get( x, 'r' ), 'quaternion' );
+qNEDToB       = QMult( QPose(qECIToNED), get( x, 'q' ) );
+eul           = Q2Eul( qNEDToB, [0;0;0] );
+
+%% Find the final acceleration vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xDot          = AC( x, 0, 0, d, 'xdot' );
+
+fprintf('Magnitude of vDot (after ACTrim):  %f\n',Mag(get(xDot,'v')))
+fprintf('\nCONTROLS:\n')
+fprintf('\tthrottle: %f\n',d.control.throttle)
+fprintf('\televator: %f\n',d.control.elevator)
+fprintf('\t aileron: %f\n',d.control.aileron)
+fprintf('\t  rudder: %f\n\n',d.control.rudder)
+
+%% Compute alpha and beta and their rates
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+v             = get( x,    'v' );
+vDot          = get( xDot, 'v' );
+wDot          = get( xDot, 'w' );
+vTDot         = VBDToVBT( v, vDot );
+[alpha, beta, alphaDot, betaDot] = AlphBeta( v, vDot );
+
+xDotFinish  = [vTDot;alphaDot;betaDot;wDot];
+
+engFinish    = get(x,   'engine');
+engDotFinish = get(xDot,'engine');
+
+fprintf('Trim Results\n');
+fprintf('             Initial         Final\n');
+fprintf('Cost       %12.4e         %12.4e\n',cost.start,cost.end);
+fprintf('Engine     %12.4f         %12.4f\n',engStart,engFinish);
+fprintf('Throttle   %12.4f         %12.4f\n',start.control.throttle,d.control.throttle);
+fprintf('Elevator   %12.4f         %12.4f\n',start.control.elevator,d.control.elevator);
+fprintf('Aileron    %12.4e         %12.4e\n',start.control.aileron, d.control.aileron);
+fprintf('Rudder     %12.4e         %12.4e\n',start.control.rudder,  d.control.rudder);
+fprintf('Phi        %12.4f         %12.4f\n',eulInit(1),  eul(1));
+fprintf('Theta      %12.4f         %12.4f\n',eulInit(2),  eul(2));
+fprintf('Psi        %12.4f         %12.4f\n',eulInit(3),  eul(3));
+fprintf('alpha      %12.4f         %12.4f\n',alphaStart,  alpha);
+fprintf('beta       %12.4f         %12.4f\n',betaStart,   beta);
+fprintf('vTDot      %12.4e         %12.4e\n',xDotStart(1),   xDotFinish(1));
+fprintf('alphaDot   %12.4e         %12.4e\n',xDotStart(2),   xDotFinish(2));
+fprintf('betaDot    %12.4e         %12.4e\n',xDotStart(3),   xDotFinish(3));
+fprintf('wXDot      %12.4e         %12.4e\n',xDotStart(4),   xDotFinish(4));
+fprintf('wYDot      %12.4e         %12.4e\n',xDotStart(5),   xDotFinish(5));
+fprintf('wZDot      %12.4e         %12.4e\n',xDotStart(6),   xDotFinish(6));
+fprintf('EngineDot  %12.4f         %12.4f\n',engDotStart,    engDotFinish);
+
+%% Linearize the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g = AC( x, 0, 0, d, 'lin');
+
+a = get( g, 'a' );
+b = get( g, 'b' );
+c = get( g, 'c' );
+d = get( g, 'd' );
+
+k = 4:12;
+
+fprintf('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\nThe linearized model\n\n')
+a = a(k,k);
+b = b(k,:);
+c = c(:,k);
+
+fprintf('\nThe A matrix\n\n')
+fprintf('%8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g\n\n',a);
+fprintf('\nThe B matrix\n\n')
+fprintf('%8.2g %8.2g %8.2g %8.2g\n\n',b);
+fprintf('\nThe C matrix\n\n')
+fprintf('%8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g %8.2g\n\n',c);
+fprintf('\nThe D matrix\n\n')
+fprintf('%8.2g %8.2g %8.2g %8.2g\n\n',d);
+
+dmat = d;
+d    = ds;
+
+%% Analysis functions
+SVPlot(g,logspace(-3,2));
+EigEval(g);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-10-18 11:23:37 -0400 (Fri, 18 Oct 2019) $
+% $Revision: 50066 $
+
+##### SOURCE END #####
+--></body></html>

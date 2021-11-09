@@ -1,0 +1,656 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>TSTODemo</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-29"><meta name="DC.source" content="TSTODemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">TSTO takeoff demo.</a></li><li><a href="#2">TSTO Aircraft model</a></li><li><a href="#3">Control system data structure</a></li><li><a href="#4">Simulate</a></li><li><a href="#5">Plot</a></li><li><a href="#6">Second stage</a></li></ul></div><h2 id="1">TSTO takeoff demo.</h2><p>The TSTO stack starts on the runway in takeoff mode. When it is moving at the takeoff speed it climbs. It transitions from turbojet to ramjet and climbs to the separation altitude and velocity.</p><p>The simulation works with flight path and heading angles. You can try flying the vehicle in a variety of trajectories.</p><p>The vehicle parameters are documented in the paper:</p><p>Paluszek, M. and J. Mueller, Space Rapid Transit - A Two Stage to Orbit Fully Reusable Launch Vehicle, IAC-14,C4,6.2, Toronto, Ontario Canada, October 2014.</p><p>The parameters are for a small two stage to orbit vehicle.</p><p>The Orbiter starts at the termination condition. The script computes a transfer orbit and the necessary velocity changes to get the Orbiter into an ISS altitude orbit. The Orbiter trajectory is not simulated.</p><p>See also RHS3DPointAircraft, LiftAndDragJonesSearsHaack, ACPointMassControl, TurboRamjet, Turbojet, TSTOFerryData, TSTOOrbiterData, BoostPhaseDeltaV, TSTODragData, TSTOFlightProfile, LaunchConstants, AERToNu, SLR, DVOrbitDrag, OrbitVel2D, StdAtm, AtmData.txt, NewFig, Plot2D, TimeLabl, XLabelS, YLabelS, RK4</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2013-2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Time step</span>
+<span class="comment">%----------</span>
+dT                      = 0.2; <span class="comment">% sec</span>
+tEnd                    = 2000; <span class="comment">% sec</span>
+n                       = ceil(tEnd/dT);
+
+<span class="comment">% Constants</span>
+<span class="comment">%----------</span>
+g                       = 9.806; <span class="comment">% m/sec^2</span>
+radToDeg                = 180/pi;
+rEarth                  = 6378.165; <span class="comment">% km</span>
+kmToM                   = 1000; <span class="comment">% m/km</span>
+
+<span class="comment">% Mode ids</span>
+<span class="comment">%---------</span>
+ramjet                  = 1;
+turbofan                = 0;
+
+<span class="comment">% Second stage control</span>
+<span class="comment">%---------------------</span>
+hFinal                  = 370;
+orbiterFuelMass         = 22279.2;
+orbiterUE               = 464*g/kmToM ;
+orbiterDryMass          = 1223.2 + 221.6 + 750.9 + 1781.2 + 901.0 + 600;
+orbiterTotalMass        = orbiterDryMass + orbiterFuelMass;
+bOrbiter                = pi*2^2*2.7/orbiterTotalMass;
+
+<span class="comment">% Control settings</span>
+<span class="comment">%-----------------</span>
+hSeparation             = 40000; <span class="comment">% m desired</span>
+p                       = StdAtm(hSeparation);
+vTakeoff                = 120;
+gammaSetTurbofan        = 12.0/radToDeg;
+gammaSetRamjet          = 18.8/radToDeg;
+machTransition          = 1.25;
+hAccel                  = 10000; <span class="comment">% 10000</span>
+vClimbTurbofan          = 300;
+vMax                    = 6.5*p.speedOfSound;
+</pre><h2 id="2">TSTO Aircraft model</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+
+<span class="comment">% Aircraft</span>
+<span class="comment">%---------</span>
+dO                      = load(<span class="string">'TSTOOrbiterData'</span>);
+dF                      = load(<span class="string">'TSTOFerryData'</span>);
+d.lDData                = TSTODragData( dO, dF );
+d.lDData.cL             = 2*pi;
+d.lDData.alpha          = 0;
+massFuel                = dF.massFuel;
+massDry                 = dF.massDry;
+wingArea                = dF.wingArea;
+
+<span class="comment">% Lift and drag model for the Ferry stage</span>
+<span class="comment">%----------------------------------------</span>
+d.cDCL                  = @LiftAndDragJonesSearsHaack;
+cLAlpha                 = 2*pi;
+
+d.mass                  = massDry;          <span class="comment">% Dry mass of aircraft (kg)</span>
+d.atmData               = load(<span class="string">'AtmData.txt'</span>);
+
+<span class="comment">% Turbojet engine data</span>
+<span class="comment">%---------------------</span>
+d.thrust                        = @TurboRamjet;
+
+d.thrustData.ramjet.cP          = 1004;	<span class="comment">% Air specific heat</span>
+d.thrustData.ramjet.aInlet      = 1.0;	<span class="comment">% Inlet area</span>
+d.thrustData.ramjet.qR          = 121e6;
+d.thrustData.ramjet.gamma       = 1.4;
+d.thrustData.ramjet.tT4         = 4000;
+
+
+d.thrustData.turbojet           = Turbojet;
+d.thrustData.turbojet.qR        = 121e6;
+d.thrustData.machTransition     = inf;
+</pre><h2 id="3">Control system data structure</h2><pre class="codeinput">dC.gammaSet             = gammaSetTurbofan;
+dC.bankAngle	          = 0;
+dC.vSet                 = vClimbTurbofan;
+dC.gainGamma	          = 0.1;
+dC.gainThrust	          = 0.2;
+dC.throttle             = 1;
+dC.mode                 = <span class="string">'takeoff'</span>;
+dC.vTakeoff             = vTakeoff;
+dC.alpha                = 0;
+
+<span class="comment">% Set the initial engine mode</span>
+mode = turbofan;
+</pre><h2 id="4">Simulate</h2><pre class="codeinput"><span class="comment">% Initial conditions</span>
+<span class="comment">%-------------------</span>
+x   = [0;0;0;0;0;0;massFuel];
+t   = (0:(n-1))*dT;
+
+xP  = zeros(18,n);
+
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% Altitude</span>
+  <span class="comment">%---------</span>
+  h               = x(6);
+
+  <span class="comment">% Standard atmosphere</span>
+  <span class="comment">%--------------------</span>
+	p               = StdAtm( h );
+  mach            = x(1)/p.speedOfSound;
+
+  <span class="comment">% Accelerate at altitude in turbofan mode</span>
+  <span class="comment">%----------------------------------------</span>
+  <span class="keyword">if</span>( h &gt; hAccel &amp;&amp; mode == turbofan )
+    dC.vSet     = 1.05*p.speedOfSound*machTransition;
+    dC.gammaSet = 0;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Switch modes</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">if</span>( mach &gt;= machTransition &amp;&amp; mode == turbofan )
+    mode        = ramjet;
+    dC.vSet     = vMax;
+    dC.gammaSet = gammaSetRamjet;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Force ramjet mode</span>
+  <span class="comment">%------------------</span>
+  <span class="keyword">if</span>( mode == ramjet )
+    d.thrustData.machTransition = 0.9*mach;
+    <span class="keyword">if</span>( h &gt;= hSeparation )
+      dC.gammaSet = 0;
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="comment">% Control system</span>
+  <span class="comment">%---------------</span>
+  dC              = ACPointMassControl( x, p, d, dC );
+
+  <span class="comment">% Pass data to the dynamics data structure</span>
+  <span class="comment">%-----------------------------------------</span>
+	d.lDData.p      = p;
+	d.lDData.alpha	= dC.alpha;
+	d.phi           = dC.bankAngle;
+	d.throttle      = dC.throttle;
+  d.alpha         = dC.alpha;
+
+	<span class="comment">% Get D, L and rho for plotting</span>
+	<span class="comment">%------------------------------</span>
+	[~, D, L, rho, thrust, mach, q] = RHS3DPointAircraft( x, t(k), d );
+	xP(:,k)                         = [x;D;L;rho;d.alpha*radToDeg;d.phi*radToDeg;thrust;mach;q;d.throttle;mode;dC.gammaSet*radToDeg];
+
+	<span class="comment">% Update state</span>
+	<span class="comment">%-------------</span>
+  x = RK4(@RHS3DPointAircraft, x, dT, t(k), d );
+
+	<span class="comment">% Break if we run out of jet fuel</span>
+	<span class="comment">%--------------------------------</span>
+	<span class="keyword">if</span>( x(7) &lt;= 0  )
+    <span class="keyword">break</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="5">Plot</h2><pre class="codeinput"><span class="comment">%------</span>
+
+<span class="comment">% Limit the plot arrays if it the plane ran out of fuel</span>
+<span class="comment">%------------------------------------------------------</span>
+xP              = xP(:,1:k-1);
+t               =  t(:,1:k-1);
+
+[t,tL]          = TimeLabl( t );
+
+<span class="comment">% Convert to km</span>
+<span class="comment">%--------------</span>
+xP(4:6,:)       = xP(4:6,:)/kmToM;
+
+<span class="comment">% Convert to degrees</span>
+<span class="comment">%-------------------</span>
+xP(2:3,:)       = xP(2:3,:)*radToDeg;
+
+<span class="comment">% Convert to kN</span>
+<span class="comment">%--------------</span>
+xP([8 9 13],:)  = xP([8 9 13],:)/kmToM;
+
+yL              = {<span class="string">'V (m/s)'</span> <span class="string">'x (km)'</span> <span class="string">'h (km)'</span> <span class="string">'Mach'</span>  <span class="string">'q'</span> <span class="string">'Fuel (kg)'</span>};
+
+k               = [1 4 6 14 15 7];
+Plot2D(t,xP(k,:),tL,yL,<span class="string">'Summary'</span>,[],{},{},1,[],1)
+
+k               = [9 8 11 13 16 17];
+yL              = {<span class="string">'L (kN)'</span> <span class="string">'D (kN)'</span> <span class="string">'\alpha (deg)'</span>, <span class="string">'Thrust (kN)'</span> <span class="string">'Throttle'</span> <span class="string">'Mode'</span>};
+Plot2D(t,xP(k,:),tL,yL,<span class="string">'Lift and Drag'</span>,[],{},{},1,[],1)
+
+k               = [11 2 18];
+xP(2,:)         = xP(2,:)*radToDeg;
+yL              = {<span class="string">'\alpha (deg)'</span>, <span class="string">'\gamma (deg)'</span> <span class="string">'\gamma_s (deg)'</span>};
+Plot2D(t,xP(k,:),tL,yL,<span class="string">'Flight Path Control'</span>,[],{},{},1,[],1)
+
+ff = NewFig(<span class="string">'Mach and Altitude'</span>);
+subplot(2,1,1)
+[AX,H1,H2] = plotyy(t,xP(6,:),t,xP(14,:));
+
+set(get(AX(1),<span class="string">'Ylabel'</span>),<span class="string">'String'</span>,<span class="string">'h (km)'</span>,<span class="string">'FontWeight'</span>,<span class="string">'bold'</span>)
+set(get(AX(2),<span class="string">'Ylabel'</span>),<span class="string">'String'</span>,<span class="string">'Mach'</span>,<span class="string">'FontWeight'</span>,<span class="string">'bold'</span>)
+XLabelS(tL);
+set(H1(1),<span class="string">'linestyle'</span>,<span class="string">'-'</span>,<span class="string">'color'</span>,[0 0 1])
+set(H2(1),<span class="string">'linestyle'</span>,<span class="string">'-'</span>,<span class="string">'color'</span>,[0 1 0])
+
+<span class="comment">% Label final point</span>
+<span class="comment">%------------------</span>
+tEnd = t(end);
+mEnd = xP(14,end);
+hEnd = xP( 6,end);
+s = sprintf(<span class="string">'M = %4.1f'</span>,mEnd);
+text(tEnd-1,mEnd,s,<span class="string">'parent'</span>,AX(2));
+s = sprintf(<span class="string">'H = %4.0f km'</span>,hEnd);
+text(tEnd-1,hEnd,s,<span class="string">'parent'</span>,AX(1));
+grid <span class="string">on</span>
+subplot(2,1,2)
+plot(t,xP(17,:));
+grid
+XLabelS(tL);
+YLabelS(<span class="string">'Mode'</span>);
+set(gca,<span class="string">'YTick'</span>,[0 1],<span class="string">'YTickLabel'</span>,{<span class="string">'Turbofan'</span>, <span class="string">'Ramjet'</span>})
+set(ff,<span class="string">'Color'</span>,[1 1 1])
+</pre><img vspace="5" hspace="5" src="TSTODemo_01.png" alt=""> <img vspace="5" hspace="5" src="TSTODemo_02.png" alt=""> <img vspace="5" hspace="5" src="TSTODemo_03.png" alt=""> <img vspace="5" hspace="5" src="TSTODemo_04.png" alt=""> <h2 id="6">Second stage</h2><pre class="codeinput">vSep                = x(1)/kmToM;
+hSep                = x(6)/kmToM;
+[dV,dV1,dV2]        = BoostPhaseDeltaV( vSep, x(2), hSep, hFinal );
+[vF, gammaF, a, e]  = OrbitVel2D( vSep, x(2), hSep, hFinal );
+
+nuSep               = AERToNu( a, e, hSep+rEarth );
+dVDrag              = DVOrbitDrag( [a 0 0 0 e 0], [nuSep pi], bOrbiter  );
+dV                  = dV + dVDrag;
+
+massRatio         	= exp(dV/orbiterUE);
+massFuel            = orbiterDryMass*(massRatio-1);
+
+fprintf(1,<span class="string">'\n--------------------------------\n'</span>);
+fprintf(1,<span class="string">'First Stage\n'</span>);
+fprintf(1,<span class="string">'--------------------------------\n'</span>);
+fprintf(1,<span class="string">'Dry Mass                 %12.2f (kg)\n'</span>, d.mass);
+fprintf(1,<span class="string">'Volume                   %12.2f (m^3)\n'</span>,d.lDData.v);
+fprintf(1,<span class="string">'Surface Area             %12.2f (m^2)\n'</span>,d.lDData.s);
+fprintf(1,<span class="string">'Takeoff distance         %12.2f (km)\n'</span>,dC.xTakeoff/1000);
+
+fprintf(1,<span class="string">'\n--------------------------------\n'</span>);
+fprintf(1,<span class="string">'Second Stage\n'</span>);
+fprintf(1,<span class="string">'--------------------------------\n'</span>);
+fprintf(1,<span class="string">'True Anomaly Separation  %12.2f (rad)\n'</span>,nuSep);
+fprintf(1,<span class="string">'Separation Velocity      %12.2f (km/s)\n'</span>,vSep);
+fprintf(1,<span class="string">'Flight Path Angle        %12.2f (rad)\n'</span>,x(2));
+fprintf(1,<span class="string">'Separation Altitude      %12.2f (km)\n'</span>,hSep);
+fprintf(1,<span class="string">'Drag loss delta V        %12.2f (km/s)\n'</span>,dVDrag);
+fprintf(1,<span class="string">'Total delta V            %12.2f (km/s)\n'</span>,dV);
+fprintf(1,<span class="string">'Insertion delta V        %12.2f (km/s)\n'</span>,dV1);
+fprintf(1,<span class="string">'Circularization delta V  %12.2f (km/s)\n'</span>,dV2);
+fprintf(1,<span class="string">'Required Mass Fuel       %12.2f (kg)\n'</span>,massFuel);
+fprintf(1,<span class="string">'Fuel Margin              %12.2f (kg)\n'</span>,orbiterFuelMass-massFuel);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">wE =
+   7.2921e-05
+
+--------------------------------
+First Stage
+--------------------------------
+Dry Mass                     43785.60 (kg)
+Volume                          93.80 (m^3)
+Surface Area                   631.96 (m^2)
+Takeoff distance                 0.25 (km)
+
+--------------------------------
+Second Stage
+--------------------------------
+True Anomaly Separation          3.13 (rad)
+Separation Velocity              1.71 (km/s)
+Flight Path Angle                0.33 (rad)
+Separation Altitude             28.75 (km)
+Drag loss delta V                0.58 (km/s)
+Total delta V                    7.14 (km/s)
+Insertion delta V                4.02 (km/s)
+Circularization delta V          2.54 (km/s)
+Required Mass Fuel           20809.90 (kg)
+Fuel Margin                   1469.30 (kg)
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% TSTO takeoff demo.
+%
+% The TSTO stack starts on the runway in takeoff mode. When it is
+% moving at the takeoff speed it climbs. It transitions from turbojet
+% to ramjet and climbs to the separation altitude and velocity.
+%
+% The simulation works with flight path and heading angles. You can 
+% try flying the vehicle in a variety of trajectories.
+%
+% The vehicle parameters are documented in the paper:
+%
+% Paluszek, M. and J. Mueller, Space Rapid Transit - A Two Stage to Orbit
+% Fully Reusable Launch Vehicle, IAC-14,C4,6.2, Toronto, Ontario Canada,
+% October 2014.
+%
+% The parameters are for a small two stage to orbit vehicle. 
+%
+% The Orbiter starts at the termination condition. The script 
+% computes a transfer orbit and the necessary velocity changes to get
+% the Orbiter into an ISS altitude orbit. The Orbiter trajectory is
+% not simulated.
+%
+% See also RHS3DPointAircraft, LiftAndDragJonesSearsHaack, ACPointMassControl,
+% TurboRamjet, Turbojet, TSTOFerryData, TSTOOrbiterData, BoostPhaseDeltaV,
+% TSTODragData, TSTOFlightProfile, LaunchConstants, AERToNu, SLR, DVOrbitDrag,
+% OrbitVel2D, StdAtm, AtmData.txt, NewFig, Plot2D, TimeLabl, XLabelS,
+% YLabelS, RK4
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2013-2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT                      = 0.2; % sec
+tEnd                    = 2000; % sec
+n                       = ceil(tEnd/dT);
+
+% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g                       = 9.806; % m/sec^2
+radToDeg                = 180/pi;
+rEarth                  = 6378.165; % km
+kmToM                   = 1000; % m/km
+
+% Mode ids
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+ramjet                  = 1;
+turbofan                = 0;
+
+% Second stage control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hFinal                  = 370;
+orbiterFuelMass         = 22279.2;
+orbiterUE               = 464*g/kmToM ;
+orbiterDryMass          = 1223.2 + 221.6 + 750.9 + 1781.2 + 901.0 + 600;
+orbiterTotalMass        = orbiterDryMass + orbiterFuelMass;
+bOrbiter                = pi*2^2*2.7/orbiterTotalMass;
+
+% Control settings
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hSeparation             = 40000; % m desired
+p                       = StdAtm(hSeparation);
+vTakeoff                = 120;  
+gammaSetTurbofan        = 12.0/radToDeg;
+gammaSetRamjet          = 18.8/radToDeg;
+machTransition          = 1.25;
+hAccel                  = 10000; % 10000
+vClimbTurbofan          = 300; 
+vMax                    = 6.5*p.speedOfSound;
+ 
+
+%% TSTO Aircraft model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Aircraft
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dO                      = load('TSTOOrbiterData');
+dF                      = load('TSTOFerryData');
+d.lDData                = TSTODragData( dO, dF );
+d.lDData.cL             = 2*pi;
+d.lDData.alpha          = 0;
+massFuel                = dF.massFuel;
+massDry                 = dF.massDry;
+wingArea                = dF.wingArea;
+
+% Lift and drag model for the Ferry stage
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.cDCL                  = @LiftAndDragJonesSearsHaack;
+cLAlpha                 = 2*pi;
+
+d.mass                  = massDry;          % Dry mass of aircraft (kg)
+d.atmData               = load('AtmData.txt');
+ 
+% Turbojet engine data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.thrust                        = @TurboRamjet;
+
+d.thrustData.ramjet.cP          = 1004;	% Air specific heat
+d.thrustData.ramjet.aInlet      = 1.0;	% Inlet area
+d.thrustData.ramjet.qR          = 121e6;
+d.thrustData.ramjet.gamma       = 1.4;
+d.thrustData.ramjet.tT4         = 4000;
+
+
+d.thrustData.turbojet           = Turbojet;
+d.thrustData.turbojet.qR        = 121e6;
+d.thrustData.machTransition     = inf;
+
+%% Control system data structure
+dC.gammaSet             = gammaSetTurbofan;
+dC.bankAngle	          = 0;
+dC.vSet                 = vClimbTurbofan;
+dC.gainGamma	          = 0.1;
+dC.gainThrust	          = 0.2;
+dC.throttle             = 1;
+dC.mode                 = 'takeoff';
+dC.vTakeoff             = vTakeoff;
+dC.alpha                = 0;
+  
+% Set the initial engine mode
+mode = turbofan;
+
+%% Simulate
+
+% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x   = [0;0;0;0;0;0;massFuel];
+t   = (0:(n-1))*dT;
+
+xP  = zeros(18,n);
+
+for k = 1:n 
+  
+  % Altitude
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  h               = x(6);
+  
+  % Standard atmosphere
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	p               = StdAtm( h );
+  mach            = x(1)/p.speedOfSound;
+  
+  % Accelerate at altitude in turbofan mode
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( h > hAccel && mode == turbofan )
+    dC.vSet     = 1.05*p.speedOfSound*machTransition;
+    dC.gammaSet = 0;
+  end
+  
+  % Switch modes
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( mach >= machTransition && mode == turbofan )
+    mode        = ramjet;
+    dC.vSet     = vMax;
+    dC.gammaSet = gammaSetRamjet;
+  end
+  
+  % Force ramjet mode
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( mode == ramjet )
+    d.thrustData.machTransition = 0.9*mach;
+    if( h >= hSeparation )
+      dC.gammaSet = 0;
+    end
+  end
+    
+  % Control system
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  dC              = ACPointMassControl( x, p, d, dC );
+     
+  % Pass data to the dynamics data structure
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	d.lDData.p      = p;
+	d.lDData.alpha	= dC.alpha;
+	d.phi           = dC.bankAngle;
+	d.throttle      = dC.throttle;
+  d.alpha         = dC.alpha;
+
+	% Get D, L and rho for plotting
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	[~, D, L, rho, thrust, mach, q] = RHS3DPointAircraft( x, t(k), d );
+	xP(:,k)                         = [x;D;L;rho;d.alpha*radToDeg;d.phi*radToDeg;thrust;mach;q;d.throttle;mode;dC.gammaSet*radToDeg];
+    
+	% Update state
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x = RK4(@RHS3DPointAircraft, x, dT, t(k), d );
+     
+	% Break if we run out of jet fuel
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	if( x(7) <= 0  )
+    break
+  end    
+end
+
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Limit the plot arrays if it the plane ran out of fuel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xP              = xP(:,1:k-1);
+t               =  t(:,1:k-1);
+
+[t,tL]          = TimeLabl( t );
+
+% Convert to km
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xP(4:6,:)       = xP(4:6,:)/kmToM;
+
+% Convert to degrees
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP(2:3,:)       = xP(2:3,:)*radToDeg;
+
+% Convert to kN
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xP([8 9 13],:)  = xP([8 9 13],:)/kmToM;
+
+yL              = {'V (m/s)' 'x (km)' 'h (km)' 'Mach'  'q' 'Fuel (kg)'};
+
+k               = [1 4 6 14 15 7];
+Plot2D(t,xP(k,:),tL,yL,'Summary',[],{},{},1,[],1)
+
+k               = [9 8 11 13 16 17];
+yL              = {'L (kN)' 'D (kN)' '\alpha (deg)', 'Thrust (kN)' 'Throttle' 'Mode'};
+Plot2D(t,xP(k,:),tL,yL,'Lift and Drag',[],{},{},1,[],1)
+
+k               = [11 2 18];
+xP(2,:)         = xP(2,:)*radToDeg;
+yL              = {'\alpha (deg)', '\gamma (deg)' '\gamma_s (deg)'};
+Plot2D(t,xP(k,:),tL,yL,'Flight Path Control',[],{},{},1,[],1)
+
+ff = NewFig('Mach and Altitude');
+subplot(2,1,1)
+[AX,H1,H2] = plotyy(t,xP(6,:),t,xP(14,:));
+
+set(get(AX(1),'Ylabel'),'String','h (km)','FontWeight','bold') 
+set(get(AX(2),'Ylabel'),'String','Mach','FontWeight','bold')
+XLabelS(tL);
+set(H1(1),'linestyle','-','color',[0 0 1])
+set(H2(1),'linestyle','-','color',[0 1 0])
+
+% Label final point
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tEnd = t(end);
+mEnd = xP(14,end);
+hEnd = xP( 6,end);
+s = sprintf('M = %4.1f',mEnd);
+text(tEnd-1,mEnd,s,'parent',AX(2));
+s = sprintf('H = %4.0f km',hEnd);
+text(tEnd-1,hEnd,s,'parent',AX(1));
+grid on
+subplot(2,1,2)
+plot(t,xP(17,:));
+grid
+XLabelS(tL);
+YLabelS('Mode');
+set(gca,'YTick',[0 1],'YTickLabel',{'Turbofan', 'Ramjet'})
+set(ff,'Color',[1 1 1])
+
+%% Second stage
+vSep                = x(1)/kmToM;
+hSep                = x(6)/kmToM;
+[dV,dV1,dV2]        = BoostPhaseDeltaV( vSep, x(2), hSep, hFinal );
+[vF, gammaF, a, e]  = OrbitVel2D( vSep, x(2), hSep, hFinal );
+
+nuSep               = AERToNu( a, e, hSep+rEarth );
+dVDrag              = DVOrbitDrag( [a 0 0 0 e 0], [nuSep pi], bOrbiter  );
+dV                  = dV + dVDrag;
+
+massRatio         	= exp(dV/orbiterUE);
+massFuel            = orbiterDryMass*(massRatio-1);
+
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n');
+fprintf(1,'First Stage\n');
+fprintf(1,'REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n');
+fprintf(1,'Dry Mass                 %12.2f (kg)\n', d.mass);
+fprintf(1,'Volume                   %12.2f (m^3)\n',d.lDData.v);
+fprintf(1,'Surface Area             %12.2f (m^2)\n',d.lDData.s);
+fprintf(1,'Takeoff distance         %12.2f (km)\n',dC.xTakeoff/1000);
+
+fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n');
+fprintf(1,'Second Stage\n');
+fprintf(1,'REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n');
+fprintf(1,'True Anomaly Separation  %12.2f (rad)\n',nuSep);
+fprintf(1,'Separation Velocity      %12.2f (km/s)\n',vSep);
+fprintf(1,'Flight Path Angle        %12.2f (rad)\n',x(2));
+fprintf(1,'Separation Altitude      %12.2f (km)\n',hSep);
+fprintf(1,'Drag loss delta V        %12.2f (km/s)\n',dVDrag);
+fprintf(1,'Total delta V            %12.2f (km/s)\n',dV);
+fprintf(1,'Insertion delta V        %12.2f (km/s)\n',dV1);
+fprintf(1,'Circularization delta V  %12.2f (km/s)\n',dV2);
+fprintf(1,'Required Mass Fuel       %12.2f (kg)\n',massFuel);
+fprintf(1,'Fuel Margin              %12.2f (kg)\n',orbiterFuelMass-massFuel);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-10-27 $
+% $Revision: daf67a6f94c8db464bda407ebfd21f7d6d9c08eb $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,266 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-07-09"><meta name="DC.source" content="LiftingReentrySimulation3D.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m</h1><!--introduction--><p>The vehicle starts at 380 km, the ISS altitude. It does a delta-v to do a Hohmann transfer to 40 km where drag causes reentry. You can control reentry using angle of attack (d.alpha).  ------------------------------------------------------------------------  See also Plot2D, TimeLabl, Dot, Mag, RK4, Unit, DVHoh, RHSLiftingReentry3D  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Hohmann transfer to 70 km</a></li><li><a href="#3">Run the sim</a></li><li><a href="#4">Calculate the heating rate history</a></li><li><a href="#5">Plot the states</a></li><li><a href="#6">Plot the heat flux</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2009 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% The maximum number of integration time steps</span>
+nSim           = 4800;
+
+<span class="comment">% The time increment</span>
+dT             = 1; <span class="comment">% s</span>
+
+<span class="comment">% Setup the data structure</span>
+d              = RHSLiftingReentry3D;
+
+<span class="comment">% Adjust parameters in the data structure</span>
+d.sRef         = 20; <span class="comment">% m^2</span>
+d.mass         = 100; <span class="comment">% kg</span>
+
+<span class="comment">% Initial conditions</span>
+r0             = d.rPlanet + 380;
+r              = [r0;0;0];
+rI             = d.rPlanet +  40;
+</pre><h2 id="2">Hohmann transfer to 70 km</h2><pre class="codeinput">[dV, dV1, dVI] = DVHoh( rI, r0, sqrt(d.mu/rI) );
+v              = [0;sqrt(d.mu/r0) - dVI;0];
+x0             = [r;v]; <span class="comment">% Last number is mass of fuel</span>
+</pre><h2 id="3">Run the sim</h2><pre class="codeinput"><span class="comment">% Store plot points in x and f</span>
+x = [x0 zeros(length(x0),nSim)];
+f = [LiftAndDragSeaLevelToOrbit(x0,d)/d.mass zeros(3,nSim)];
+
+<span class="comment">% This displays a GUI to show you how much time is left in the sim</span>
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Reentry Simulation'</span>, nSim )
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Update the display</span>
+	TimeDisplay( <span class="string">'update'</span> )
+
+  <span class="comment">% Propagate the state</span>
+  x(:,k+1) = RK4( @RHSLiftingReentry3D, x(:,k), dT, 0, d );
+
+  <span class="comment">% Get the forces for plotting</span>
+  f(:,k+1) = LiftAndDragSeaLevelToOrbit(x(:,k),d)/d.mass;
+
+  <span class="comment">% Check for landing</span>
+  <span class="keyword">if</span>( Mag(x(1:3,k+1)) - d.rPlanet &lt;= eps )
+    <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% Close the display</span>
+TimeDisplay( <span class="string">'close'</span> )
+
+<span class="comment">% Adjust the size of the arrays in case we land sooner than nSim</span>
+x    = x(:,1:(k+1));
+f    = f(:,1:(k+1));
+</pre><h2 id="4">Calculate the heating rate history</h2><pre class="codeinput">q.time      = (0:k)*dT;
+q.velocity  = Mag(x(4:6,:))*1000;
+q.aoa       = d.alpha;
+q.altitude  = (Mag(x(1:3,:)) - d.rPlanet)*1000;
+k2          = find(q.altitude &lt; 80000,1);
+q.time      = q.time(k2:end);
+q.velocity  = q.velocity(k2:end);
+q.altitude  = q.altitude (k2:end);
+qDot        = AeroHeatFlux( q, d.l, <span class="string">'laminar plate'</span> );
+</pre><h2 id="5">Plot the states</h2><pre class="codeinput"><span class="comment">% Create the time array and label</span>
+[t, tL] = TimeLabl( (0:k)*dT );
+
+yL = {<span class="string">'X (km)'</span> <span class="string">'H (km)'</span> <span class="string">'V (km/s)'</span> <span class="string">'dh/dt (m/s)'</span>};
+dhdt = Dot(Unit(x(1:3,:)),x(4:6,:))*1000;
+
+h = Mag(x(1:3,:)) - d.rPlanet;
+Plot2D( t, [x(1,:);h;Mag(x(4:6,:));dhdt], tL, yL, <span class="string">'2D States'</span>);
+yL = {<span class="string">'X (km)'</span> <span class="string">'Y (km)'</span> <span class="string">'Z (km)'</span> <span class="string">'V_x (km/s)'</span> <span class="string">'V_y (km/s)'</span> <span class="string">'V_z (km/s)'</span>};
+Plot2D( t, x(1:6,:), tL, yL, <span class="string">'States'</span>);
+
+yL = {<span class="string">'Acceleration (m/s^2)'</span>};
+Plot2D( t, Mag(f), tL, yL, <span class="string">'Acceleration'</span>);
+</pre><img vspace="5" hspace="5" src="LiftingReentrySimulation3D_01.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_02.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_03.png" alt=""> <h2 id="6">Plot the heat flux</h2><pre class="codeinput">[t, tL] = TimeLabl( q.time );
+yL = {<span class="string">'Heat Flux (W/m^2)'</span>};
+Plot2D( t, qDot, tL, yL, <span class="string">'Heat Flux '</span> );
+
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LiftingReentrySimulation3D_04.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m
+% The vehicle starts at 380 km, the ISS altitude. It does a delta-v to do a
+% Hohmann transfer to 40 km where drag causes reentry. You can control
+% reentry using angle of attack (d.alpha).
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TimeLabl, Dot, Mag, RK4, Unit, DVHoh, RHSLiftingReentry3D
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright (c) 2009 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% The maximum number of integration time steps
+nSim           = 4800;
+
+% The time increment
+dT             = 1; % s
+
+% Setup the data structure
+d              = RHSLiftingReentry3D;
+
+% Adjust parameters in the data structure
+d.sRef         = 20; % m^2
+d.mass         = 100; % kg
+
+% Initial conditions
+r0             = d.rPlanet + 380;
+r              = [r0;0;0];
+rI             = d.rPlanet +  40;
+
+%% Hohmann transfer to 70 km
+[dV, dV1, dVI] = DVHoh( rI, r0, sqrt(d.mu/rI) );
+v              = [0;sqrt(d.mu/r0) - dVI;0];
+x0             = [r;v]; % Last number is mass of fuel
+
+%% Run the sim
+
+% Store plot points in x and f
+x = [x0 zeros(length(x0),nSim)];
+f = [LiftAndDragSeaLevelToOrbit(x0,d)/d.mass zeros(3,nSim)];
+
+% This displays a GUI to show you how much time is left in the sim
+TimeDisplay( 'initialize', 'Reentry Simulation', nSim )
+
+for k = 1:nSim
+  
+  % Update the display
+	TimeDisplay( 'update' )
+
+  % Propagate the state
+  x(:,k+1) = RK4( @RHSLiftingReentry3D, x(:,k), dT, 0, d );
+  
+  % Get the forces for plotting
+  f(:,k+1) = LiftAndDragSeaLevelToOrbit(x(:,k),d)/d.mass;
+  
+  % Check for landing
+  if( Mag(x(1:3,k+1)) - d.rPlanet <= eps ) 
+    break; 
+  end
+  
+end
+
+% Close the display
+TimeDisplay( 'close' )
+ 
+% Adjust the size of the arrays in case we land sooner than nSim
+x    = x(:,1:(k+1));
+f    = f(:,1:(k+1));
+
+%% Calculate the heating rate history
+q.time      = (0:k)*dT;
+q.velocity  = Mag(x(4:6,:))*1000;
+q.aoa       = d.alpha;
+q.altitude  = (Mag(x(1:3,:)) - d.rPlanet)*1000;
+k2          = find(q.altitude < 80000,1);
+q.time      = q.time(k2:end);
+q.velocity  = q.velocity(k2:end);
+q.altitude  = q.altitude (k2:end);
+qDot        = AeroHeatFlux( q, d.l, 'laminar plate' );
+
+%% Plot the states
+
+% Create the time array and label
+[t, tL] = TimeLabl( (0:k)*dT );
+
+yL = {'X (km)' 'H (km)' 'V (km/s)' 'dh/dt (m/s)'};
+dhdt = Dot(Unit(x(1:3,:)),x(4:6,:))*1000;
+
+h = Mag(x(1:3,:)) - d.rPlanet;
+Plot2D( t, [x(1,:);h;Mag(x(4:6,:));dhdt], tL, yL, '2D States');
+yL = {'X (km)' 'Y (km)' 'Z (km)' 'V_x (km/s)' 'V_y (km/s)' 'V_z (km/s)'};
+Plot2D( t, x(1:6,:), tL, yL, 'States');
+
+yL = {'Acceleration (m/s^2)'};
+Plot2D( t, Mag(f), tL, yL, 'Acceleration');
+
+%% Plot the heat flux
+[t, tL] = TimeLabl( q.time );
+yL = {'Heat Flux (W/m^2)'};
+Plot2D( t, qDot, tL, yL, 'Heat Flux ' );
+
+Figui;
+ 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-07-03 11:57:19 -0400 (Fri, 03 Jul 2020) $
+% $Revision: 52971 $
+
+
+##### SOURCE END #####
+--></body></html>

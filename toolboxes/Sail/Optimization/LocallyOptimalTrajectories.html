@@ -1,0 +1,375 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate locally optimal sail trajectories. Uses equinoctial elements.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-28"><meta name="DC.source" content="LocallyOptimalTrajectories.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate locally optimal sail trajectories. Uses equinoctial elements.</h1><!--introduction--><p>Shows inclination and semi-major axis control.</p><pre>------------------------------------------------------------------------
+See also LocallyOptimalConeClock3D, RHS3DOrbit, Constant, InformDlg,
+Plot2D, ElToMEq, MEqToEl
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setup</a></li><li><a href="#3">Semi-major axis test</a></li><li><a href="#4">Now do an inclination change</a></li><li><a href="#5">Now ascending node change</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	  Copyright (c) 2005-2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 7.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Setup</h2><pre class="codeinput"><span class="comment">% Constants</span>
+<span class="comment">%----------</span>
+aU                 = Constant(<span class="string">'au'</span>);
+c                  = Constant(<span class="string">'speed of light'</span>);
+secInYear          = 365.25*86400;
+
+<span class="comment">% This assumes 100 kg mass, 100x100 m sail</span>
+<span class="comment">%-----------------------------------------</span>
+d.accel            = 1e4*1367*aU^2*1e-6/(c*100); <span class="comment">% km/sec^2</span>
+d.coneClockFun     = <span class="string">'LocallyOptimalConeClock3D'</span>;
+rHSFun             = <span class="string">'RHS3DOrbit'</span>;
+
+<span class="comment">% Heliocentric system</span>
+<span class="comment">%---------------------</span>
+d.mu               = Constant(<span class="string">'mu sun'</span>);
+el                 = [aU;0.1;0;0;0.1;0];
+
+<span class="comment">% End time is 4 years</span>
+<span class="comment">%--------------------</span>
+tEnd               = 6*secInYear; <span class="comment">% (s)</span>
+
+<span class="comment">% Dynamics function</span>
+<span class="comment">%------------------</span>
+d.coordType        = <span class="string">'equinoctial'</span>; <span class="comment">% 'cartesian'</span>
+d.rhoS             = 1.0;
+d.rhoAD            = 0.0;
+d.rhoR             = 0.0;
+d.ascendingNode    = 0.0;
+</pre><h2 id="3">Semi-major axis test</h2><pre class="codeinput">d.maneuverType     = <span class="string">'semi-major axis'</span>;
+d.dirFlag          = -1;
+
+<span class="comment">% Initial orbit</span>
+<span class="comment">%--------------</span>
+x0                 = ElToMEq( el, d.mu );
+
+<span class="comment">% Integration (ode113) parameters</span>
+<span class="comment">%--------------------------------</span>
+oDEOptions         = odeset( <span class="string">'abstol'</span>, 1e-13, <span class="string">'reltol'</span>, 1e-13, <span class="string">'events'</span>, <span class="string">'off'</span> );
+
+<span class="comment">% Propagate the trajectory</span>
+<span class="comment">%-------------------------</span>
+hDlg               = InformDlg( <span class="string">'Integrating...'</span>, <span class="string">'LocallyOptimalTrajectories'</span> );
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+close(hDlg);
+
+<span class="comment">% Transpose for plotting</span>
+<span class="comment">%-----------------------</span>
+x                  = x';
+t                  = t'/secInYear;
+
+<span class="comment">% Get the cone and clock angles</span>
+<span class="comment">%------------------------------</span>
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, <span class="string">'equinoctial'</span>, d );
+
+<span class="comment">% Plot the equinoctial elements</span>
+<span class="comment">%------------------------------</span>
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'p'</span> <span class="string">'f'</span> <span class="string">'g'</span> <span class="string">'h'</span> <span class="string">'k'</span> <span class="string">'L'</span> },<span class="keyword">...</span>
+  <span class="string">'Semi-major axis: Equinoctial Elements'</span>,[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x(1,:)             = x(1,:)/aU;
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'a (au)'</span> <span class="string">'i (deg)'</span> <span class="string">'\Omega (deg)'</span> <span class="string">'\omega (deg)'</span> <span class="string">'e'</span> <span class="string">'M (deg)'</span> },<span class="keyword">...</span>
+  <span class="string">'Semi-major axis: Keplerian Elements'</span>,[],{},{},2)
+Plot2D( t, [cone;clock], <span class="string">'Time (years)'</span>, {<span class="string">'Cone (rad)'</span> <span class="string">'Clock (rad)'</span> }, <span class="string">'Semi-major axis: Cone and clock'</span>)
+</pre><img vspace="5" hspace="5" src="LocallyOptimalTrajectories_01.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_02.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_03.png" alt=""> <h2 id="4">Now do an inclination change</h2><pre class="codeinput">d.maneuverType     = <span class="string">'inclination'</span>;
+d.dirFlag          = -1;
+d.ascendingNode    = 0;
+
+x0                 = ElToMEq( el, d.mu );
+oDEOptions         = odeset( <span class="string">'abstol'</span>, 1e-4, <span class="string">'reltol'</span>, 1e-4, <span class="string">'events'</span>, <span class="string">'off'</span> );
+
+<span class="comment">% Propagate the trajectory</span>
+<span class="comment">%-------------------------</span>
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+
+<span class="comment">% Transpose for plotting</span>
+<span class="comment">%-----------------------</span>
+x                  = x';
+t                  = t'/secInYear;
+
+<span class="comment">% Get the cone and clock angles</span>
+<span class="comment">%------------------------------</span>
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, <span class="string">'equinoctial'</span>, d );
+
+<span class="comment">% Plot the equinoctial elements</span>
+<span class="comment">%------------------------------</span>
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'p'</span> <span class="string">'f'</span> <span class="string">'g'</span> <span class="string">'h'</span> <span class="string">'k'</span> <span class="string">'L'</span> },<span class="keyword">...</span>
+  <span class="string">'Inclination: Equinoctial Elements'</span>,[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'a (au)'</span> <span class="string">'i (deg)'</span> <span class="string">'\Omega (deg)'</span> <span class="string">'\omega (deg)'</span> <span class="string">'e'</span> <span class="string">'M (deg)'</span> },<span class="keyword">...</span>
+  <span class="string">'Inclination: Keplerian Elements'</span>,[],{},{},2)
+Plot2D( t, [cone;clock], <span class="string">'Time (years)'</span>, {<span class="string">'Cone (rad)'</span> <span class="string">'Clock (rad)'</span> }, <span class="string">'Inclination: Cone and clock'</span>)
+</pre><img vspace="5" hspace="5" src="LocallyOptimalTrajectories_04.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_05.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_06.png" alt=""> <h2 id="5">Now ascending node change</h2><pre class="codeinput">d.maneuverType     = <span class="string">'ascending node'</span>;
+d.dirFlag          = -1;
+d.ascendingNode    = 0;
+
+x0                 = ElToMEq( el, d.mu );
+oDEOptions         = odeset( <span class="string">'abstol'</span>, 1e-4, <span class="string">'reltol'</span>, 1e-4, <span class="string">'events'</span>, <span class="string">'off'</span> );
+
+<span class="comment">% Propagate the trajectory</span>
+<span class="comment">%-------------------------</span>
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+
+<span class="comment">% Transpose for plotting</span>
+<span class="comment">%-----------------------</span>
+x                  = x';
+t                  = t'/secInYear;
+
+<span class="comment">% Get the cone and clock angles</span>
+<span class="comment">%------------------------------</span>
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, <span class="string">'equinoctial'</span>, d );
+
+<span class="comment">% Plot the equinoctial elements</span>
+<span class="comment">%------------------------------</span>
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'p'</span> <span class="string">'f'</span> <span class="string">'g'</span> <span class="string">'h'</span> <span class="string">'k'</span> <span class="string">'L'</span> },<span class="keyword">...</span>
+  <span class="string">'Ascending Node: Equinoctial Elements'</span>,[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, <span class="string">'Time (years)'</span>, {<span class="string">'a (au)'</span> <span class="string">'i (deg)'</span> <span class="string">'\Omega (deg)'</span> <span class="string">'\omega (deg)'</span> <span class="string">'e'</span> <span class="string">'M (deg)'</span> },<span class="keyword">...</span>
+  <span class="string">'Ascending Node: Keplerian Elements'</span>,[],{},{},2)
+Plot2D( t, [cone;clock], <span class="string">'Time (years)'</span>, {<span class="string">'Cone (rad)'</span> <span class="string">'Clock (rad)'</span> }, <span class="string">'Ascending Node: Cone and clock'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LocallyOptimalTrajectories_07.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_08.png" alt=""> <img vspace="5" hspace="5" src="LocallyOptimalTrajectories_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate locally optimal sail trajectories. Uses equinoctial elements.
+% Shows inclination and semi-major axis control.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also LocallyOptimalConeClock3D, RHS3DOrbit, Constant, InformDlg, 
+%  Plot2D, ElToMEq, MEqToEl
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	  Copyright (c) 2005-2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%   Since version 7.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Setup
+
+% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+aU                 = Constant('au');
+c                  = Constant('speed of light');
+secInYear          = 365.25*86400;
+
+% This assumes 100 kg mass, 100x100 m sail
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.accel            = 1e4*1367*aU^2*1e-6/(c*100); % km/sec^2
+d.coneClockFun     = 'LocallyOptimalConeClock3D';
+rHSFun             = 'RHS3DOrbit';
+
+% Heliocentric system
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.mu               = Constant('mu sun');
+el                 = [aU;0.1;0;0;0.1;0];
+
+% End time is 4 years
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tEnd               = 6*secInYear; % (s)
+
+% Dynamics function
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.coordType        = 'equinoctial'; % 'cartesian'
+d.rhoS             = 1.0;
+d.rhoAD            = 0.0;
+d.rhoR             = 0.0;
+d.ascendingNode    = 0.0;
+
+%% Semi-major axis test
+
+d.maneuverType     = 'semi-major axis';
+d.dirFlag          = -1;
+
+% Initial orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x0                 = ElToMEq( el, d.mu );
+
+% Integration (ode113) parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+oDEOptions         = odeset( 'abstol', 1e-13, 'reltol', 1e-13, 'events', 'off' );
+
+% Propagate the trajectory
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hDlg               = InformDlg( 'Integrating...', 'LocallyOptimalTrajectories' );
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+close(hDlg);
+
+% Transpose for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x                  = x';
+t                  = t'/secInYear;
+
+% Get the cone and clock angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, 'equinoctial', d );
+
+% Plot the equinoctial elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D( t, x, 'Time (years)', {'p' 'f' 'g' 'h' 'k' 'L' },...
+  'Semi-major axis: Equinoctial Elements',[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x(1,:)             = x(1,:)/aU;
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, 'Time (years)', {'a (au)' 'i (deg)' '\Omega (deg)' '\omega (deg)' 'e' 'M (deg)' },...
+  'Semi-major axis: Keplerian Elements',[],{},{},2)
+Plot2D( t, [cone;clock], 'Time (years)', {'Cone (rad)' 'Clock (rad)' }, 'Semi-major axis: Cone and clock')
+
+%% Now do an inclination change
+
+d.maneuverType     = 'inclination';
+d.dirFlag          = -1;
+d.ascendingNode    = 0;
+
+x0                 = ElToMEq( el, d.mu );
+oDEOptions         = odeset( 'abstol', 1e-4, 'reltol', 1e-4, 'events', 'off' );
+
+% Propagate the trajectory
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+
+% Transpose for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x                  = x';
+t                  = t'/secInYear;
+
+% Get the cone and clock angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, 'equinoctial', d );
+
+% Plot the equinoctial elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D( t, x, 'Time (years)', {'p' 'f' 'g' 'h' 'k' 'L' },...
+  'Inclination: Equinoctial Elements',[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, 'Time (years)', {'a (au)' 'i (deg)' '\Omega (deg)' '\omega (deg)' 'e' 'M (deg)' },...
+  'Inclination: Keplerian Elements',[],{},{},2)
+Plot2D( t, [cone;clock], 'Time (years)', {'Cone (rad)' 'Clock (rad)' }, 'Inclination: Cone and clock')
+
+%% Now ascending node change
+
+d.maneuverType     = 'ascending node';
+d.dirFlag          = -1;
+d.ascendingNode    = 0;
+
+x0                 = ElToMEq( el, d.mu );
+oDEOptions         = odeset( 'abstol', 1e-4, 'reltol', 1e-4, 'events', 'off' );
+
+% Propagate the trajectory
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, x]             = ode113( rHSFun, [0, tEnd], x0,  oDEOptions, d );
+
+% Transpose for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x                  = x';
+t                  = t'/secInYear;
+
+% Get the cone and clock angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a, cone, clock]   = LocallyOptimalConeClock3D( x, 'equinoctial', d );
+
+% Plot the equinoctial elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D( t, x, 'Time (years)', {'p' 'f' 'g' 'h' 'k' 'L' },...
+  'Ascending Node: Equinoctial Elements',[],{},{},2)
+
+x                  = MEqToEl( x, d.mu );
+x([2 3 4 6],:)     = x([2 3 4 6],:)*180/pi;
+
+Plot2D( t, x, 'Time (years)', {'a (au)' 'i (deg)' '\Omega (deg)' '\omega (deg)' 'e' 'M (deg)' },...
+  'Ascending Node: Keplerian Elements',[],{},{},2)
+Plot2D( t, [cone;clock], 'Time (years)', {'Cone (rad)' 'Clock (rad)' }, 'Ascending Node: Cone and clock')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-09-20 $
+% $Revision: f32efc398331bf13ea204725c8408638364b66c4 $
+
+##### SOURCE END #####
+--></body></html>

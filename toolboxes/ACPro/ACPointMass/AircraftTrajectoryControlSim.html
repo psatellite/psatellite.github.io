@@ -1,0 +1,231 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Script to simulate aircraft trajectory control</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="AircraftTrajectoryControlSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Script to simulate aircraft trajectory control</h1><!--introduction--><p>You specify the initial state, the simulation time, the control gains, and the maneuver to be performed.  ------------------------------------------------------------------------  See also AircraftPointMassCLPSim, Ramp, Figui  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">User inputs</a></li><li><a href="#3">time vector</a></li><li><a href="#4">initial state</a></li><li><a href="#5">Define maneuver parameters</a></li><li><a href="#6">CONTROL GAINS</a></li><li><a href="#7">constant parameters</a></li><li><a href="#8">Generate desired ABSOLUTE trajectory</a></li><li><a href="#9">RUN Simulation</a></li><li><a href="#10">PLOTS</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">data</span>
+</pre><h2 id="2">User inputs</h2><h2 id="3">time vector</h2><pre class="codeinput">dT    = 1;
+t     = 0:dT:300;
+nt    = length(t);
+</pre><h2 id="4">initial state</h2><pre class="codeinput">v0    = 100;
+psi0  = 0;
+gama0 = 0;
+h0    = 0;
+x0    = [v0;gama0;psi0;0;0;h0;0];
+</pre><h2 id="5">Define maneuver parameters</h2><pre class="codeinput">hT       = -1;      <span class="comment">% altitude ramp start time</span>
+dH       = 250;     <span class="comment">% altitude change</span>
+hDot     = 1;       <span class="comment">% altitude change rate</span>
+vT       = 180;     <span class="comment">% velocity ramp start time</span>
+dV       = -10;     <span class="comment">% velocity change</span>
+vDot     = 2;       <span class="comment">% velocity change rate</span>
+psiT     = -1;      <span class="comment">% heading ramp start time</span>
+dPsi     = 2*pi;    <span class="comment">% heading change</span>
+psiDot   = .026;    <span class="comment">% heading change rate</span>
+</pre><h2 id="6">CONTROL GAINS</h2><pre class="codeinput">wn = .1;
+zeta = 0.8;
+data.Kh = [2*wn*zeta, wn^2];  <span class="comment">% altitude control gains</span>
+data.KL = [.1, .005];         <span class="comment">% lateral control gains</span>
+data.Ks = [.25, .005];         <span class="comment">% longitudinal control gains</span>
+</pre><h2 id="7">constant parameters</h2><pre class="codeinput">data.tau = 5;
+data.g   = 9.81;
+data.a   = zeros(3,1);
+data.W   = zeros(3,1);
+</pre><h2 id="8">Generate desired ABSOLUTE trajectory</h2><pre class="codeinput">hCmd   = Ramp( t, hT, h0,   h0+dH,           hDot );
+VCmd   = Ramp( t, vT, v0,   v0+dV,           vDot );
+psiCmd = Ramp( t, psiT, psi0, psi0+dPsi,     psiDot );
+cmdRef = [hCmd;VCmd;psiCmd];
+</pre><h2 id="9">RUN Simulation</h2><pre class="codeinput">[xs,us,xd,cmd] = AircraftPointMassCLPSim( x0, [hCmd;VCmd;psiCmd], t, data );
+
+fs=[];
+kR2D = 180/pi;
+</pre><h2 id="10">PLOTS</h2><pre class="codeinput">fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Velocity'</span>);
+plot(t,xs(1,:),t,VCmd,<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'V [m/s]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Flight Path Angle'</span>);
+plot(t,xs(2,:)*kR2D,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'\gamma [deg]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Heading Angle'</span>);
+plot(t,xs(3,:)*kR2D,t,psiCmd*kR2D,<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'\psi [deg]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'x-East'</span>);
+plot(t,xs(4,:),t,cmd(4,:),<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'x-East [m]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'y-North'</span>);
+plot(t,xs(5,:),t,cmd(5,:),<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'y-North [m]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'h-Altitude'</span>);
+plot(t,xs(6,:),t,hCmd,<span class="string">'--'</span>,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), ylabel(<span class="string">'h-Altitude [m]'</span>), xlabel(<span class="string">'Time [sec]'</span>)
+
+fs(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Controls'</span>);
+plot(t,us,<span class="string">'linewidth'</span>,2), grid <span class="string">on</span>, set(gca,<span class="string">'xlim'</span>,[0 t(end)],<span class="string">'fontsize'</span>,14), legend(<span class="string">'Norm. Lift'</span>,<span class="string">'Bank Angle'</span>,<span class="string">'Norm. Excess Thrust'</span>)
+
+Figui
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_01.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_02.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_03.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_04.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_05.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_06.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_07.png" alt=""> <img vspace="5" hspace="5" src="AircraftTrajectoryControlSim_08.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%%  Script to simulate aircraft trajectory control
+% You specify the initial state, the simulation time, the control gains,
+% and the maneuver to be performed.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AircraftPointMassCLPSim, Ramp, Figui
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright (c) 2007 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear data
+
+%% User inputs
+
+%% time vector
+dT    = 1;
+t     = 0:dT:300;
+nt    = length(t);
+
+%% initial state
+v0    = 100;
+psi0  = 0;
+gama0 = 0;
+h0    = 0;
+x0    = [v0;gama0;psi0;0;0;h0;0];
+
+%% Define maneuver parameters
+hT       = -1;      % altitude ramp start time
+dH       = 250;     % altitude change
+hDot     = 1;       % altitude change rate
+vT       = 180;     % velocity ramp start time
+dV       = -10;     % velocity change
+vDot     = 2;       % velocity change rate
+psiT     = -1;      % heading ramp start time
+dPsi     = 2*pi;    % heading change
+psiDot   = .026;    % heading change rate
+
+%% CONTROL GAINS
+wn = .1;
+zeta = 0.8;
+data.Kh = [2*wn*zeta, wn^2];  % altitude control gains
+data.KL = [.1, .005];         % lateral control gains
+data.Ks = [.25, .005];         % longitudinal control gains
+
+
+%% constant parameters
+data.tau = 5;
+data.g   = 9.81;
+data.a   = zeros(3,1);
+data.W   = zeros(3,1);
+
+%% Generate desired ABSOLUTE trajectory
+hCmd   = Ramp( t, hT, h0,   h0+dH,           hDot );
+VCmd   = Ramp( t, vT, v0,   v0+dV,           vDot );
+psiCmd = Ramp( t, psiT, psi0, psi0+dPsi,     psiDot );
+cmdRef = [hCmd;VCmd;psiCmd];
+
+%% RUN Simulation
+[xs,us,xd,cmd] = AircraftPointMassCLPSim( x0, [hCmd;VCmd;psiCmd], t, data );
+
+fs=[];
+kR2D = 180/pi;
+
+%% PLOTS
+fs(end+1) = figure('name','Velocity');
+plot(t,xs(1,:),t,VCmd,'REPLACE_WITH_DASH_DASH','linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('V [m/s]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','Flight Path Angle');
+plot(t,xs(2,:)*kR2D,'linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('\gamma [deg]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','Heading Angle');
+plot(t,xs(3,:)*kR2D,t,psiCmd*kR2D,'REPLACE_WITH_DASH_DASH','linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('\psi [deg]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','x-East');
+plot(t,xs(4,:),t,cmd(4,:),'REPLACE_WITH_DASH_DASH','linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('x-East [m]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','y-North');
+plot(t,xs(5,:),t,cmd(5,:),'REPLACE_WITH_DASH_DASH','linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('y-North [m]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','h-Altitude');
+plot(t,xs(6,:),t,hCmd,'REPLACE_WITH_DASH_DASH','linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), ylabel('h-Altitude [m]'), xlabel('Time [sec]')
+
+fs(end+1) = figure('name','Controls');
+plot(t,us,'linewidth',2), grid on, set(gca,'xlim',[0 t(end)],'fontsize',14), legend('Norm. Lift','Bank Angle','Norm. Excess Thrust')
+
+Figui
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-04 08:59:46 -0400 (Wed, 04 Sep 2019) $
+% $Revision: 49695 $
+
+##### SOURCE END #####
+--></body></html>

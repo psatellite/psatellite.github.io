@@ -1,0 +1,453 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates magnetic control and power profiles.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="MagneticControlSimWithPower.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates magnetic control and power profiles.</h1><!--introduction--><p>Six DOF simulation with point mass orbit, rigid body dynamics, and the magnetic torque handled explicitly in the RHS. Satellite is modeled with three magnetic torquers and four solar panels. -------------------------------------------------------------------------  See also MagField and FRBWithMag, QForm, Constant, NPlot, Plot2D,  Plot3D, PrintFig, TimeGUI, TimeLabl, RK4, Date2JD, OrbRate, El2RV,  PltOrbit, Eclipse, SunV1 -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Print plots to eps file</a></li><li><a href="#3">Global for the TimeGUI</a></li><li><a href="#4">Constants</a></li><li><a href="#5">Power system - 4 solar panels</a></li><li><a href="#6">Torquers</a></li><li><a href="#7">The control sampling period and the simulation integration time step</a></li><li><a href="#8">Number of sim steps</a></li><li><a href="#9">Plot every nPMax steps</a></li><li><a href="#10">Print the time to go message every nTTGo steps</a></li><li><a href="#11">Gravity model</a></li><li><a href="#12">The external disturbance model</a></li><li><a href="#13">Spacecraft inertia</a></li><li><a href="#14">Plotting arrays</a></li><li><a href="#15">Magnetic field</a></li><li><a href="#16">Epoch</a></li><li><a href="#17">Orbit</a></li><li><a href="#18">OrbRate function -</a></li><li><a href="#19">Initial conditions [r;v;q;omega]</a></li><li><a href="#20">Plotting controls</a></li><li><a href="#21">Initialize the time display</a></li><li><a href="#22">Run the simulation</a></li><li><a href="#23">Adjust the plotting arrays if you stopped early</a></li><li><a href="#24">Nice units for time</a></li><li><a href="#25">Plotting function</a></li><li><a href="#26">Save plots as eps files</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1995-2004, 2008, 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   2016.1 Switch to newer IGRF11 model (from 1995 data) for the Earth. Also</span>
+<span class="comment">%   change RHS to a function handle.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">d</span>
+</pre><h2 id="2">Print plots to eps file</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+printPlots = 0;
+</pre><h2 id="3">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="4">Constants</h2><pre class="codeinput"><span class="comment">%-----------</span>
+degToRad    = pi/180;
+radToDeg    = 180/pi;
+c45         = cos(45*degToRad);
+</pre><h2 id="5">Power system - 4 solar panels</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="comment">% assume same area and efficiency for all panels</span>
+pEff        = 0.15;
+pSun        = 1367; <span class="comment">% solar flux, Watts/m^2</span>
+areaPanel   = 0.2;  <span class="comment">%m^2</span>
+fPanel      = pEff*pSun*areaPanel;
+uPanel      = [1 0 0 -1;0 1 -1 0;0 0 0 0]; <span class="comment">% 4 unit vectors</span>
+</pre><h2 id="6">Torquers</h2><pre class="codeinput"><span class="comment">%----------</span>
+mTorquer    = 10*eye(3); <span class="comment">% 3 orthogonal torquers</span>
+uDipole     = [0;0;1]; <span class="comment">% The control (on/off flags)</span>
+</pre><h2 id="7">The control sampling period and the simulation integration time step</h2><p>---------------------------------------------------------------------</p><pre class="codeinput">dTSim       = 1; <span class="comment">% sec</span>
+</pre><h2 id="8">Number of sim steps</h2><p>--------------------</p><pre class="codeinput">nSim        = 6000; <span class="comment">% sec</span>
+tEnd        = nSim*dTSim;
+</pre><h2 id="9">Plot every nPMax steps</h2><p>-----------------------</p><pre class="codeinput">nPMax       = 1;
+nPlot       = nSim/nPMax;
+</pre><h2 id="10">Print the time to go message every nTTGo steps</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+nTTGo       = 100;
+</pre><h2 id="11">Gravity model</h2><pre class="codeinput"><span class="comment">%---------------</span>
+d.mu        = Constant(<span class="string">'mu earth'</span>);
+</pre><h2 id="12">The external disturbance model</h2><p>-------------------------------</p><pre class="codeinput">d.tExt      = [0.0;0.0;0.0];
+</pre><h2 id="13">Spacecraft inertia</h2><p>-------------------</p><pre class="codeinput">d.inr       = [2000,0,0;0,4000,0;0,0,2000];
+d.invInr    = inv(d.inr);
+</pre><h2 id="14">Plotting arrays</h2><p>----------------</p><pre class="codeinput">tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(26,nPlot);
+</pre><h2 id="15">Magnetic field</h2><pre class="codeinput"><span class="comment">%----------------</span>
+magFieldData = load(<span class="string">'IGRF11'</span>);
+</pre><h2 id="16">Epoch</h2><pre class="codeinput"><span class="comment">%-------</span>
+jD         = Date2JD([2004 7 21 0 0 0]); <span class="comment">% Julian date</span>
+</pre><h2 id="17">Orbit</h2><pre class="codeinput"><span class="comment">%-------</span>
+sma        = 7000;  <span class="comment">% km</span>
+inc        = 0.5;   <span class="comment">% rad</span>
+el         = [sma inc 0 0 0 0];
+[r0,v0]    = El2RV(el);
+PltOrbit( el, jD );
+</pre><img vspace="5" hspace="5" src="MagneticControlSimWithPower_01.png" alt=""> <h2 id="18">OrbRate function -</h2><p>r is radius; d.mu is Gravitational parameter;</p><pre class="codeinput">Orbit_Rate = @( r ) sqrt(d.mu*(2./r - 1./r))./r;
+</pre><h2 id="19">Initial conditions [r;v;q;omega]</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+q0         = [1;0;0;0]; <span class="comment">% ECI to body frame</span>
+w0         = [0;Orbit_Rate(7000);0]; <span class="comment">% rad/s</span>
+x          = [r0; v0;  q0;  w0]; <span class="comment">% r in km and v in km/s</span>
+t          = 0;
+</pre><h2 id="20">Plotting controls</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+nP         = 0;
+kP         = 0;
+</pre><h2 id="21">Initialize the time display</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, <span class="string">'Magnetic Control Sim'</span> );
+</pre><img vspace="5" hspace="5" src="MagneticControlSimWithPower_02.png" alt=""> <h2 id="22">Run the simulation</h2><p>-------------------</p><pre class="codeinput"><span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% The sun vector in the body frame</span>
+  <span class="comment">%---------------------------------</span>
+  [uSun,rSun] = SunV1( jD );
+  uSunBody = QForm( x(7:10), uSun );
+  n = Eclipse( x(1:3), rSun*uSun );
+
+  <span class="comment">% Power</span>
+  <span class="comment">%------</span>
+  f      = uSunBody'*uPanel;
+  <span class="comment">% find panels facing away from sun and set power to zero</span>
+  j      = find(f &lt; 0);
+  f(j)   = 0;
+  <span class="comment">% multiply power factor times cos(angle) to the sun, including eclipses</span>
+  pPanel = n*fPanel*f;
+
+  <span class="comment">% Control - compute total dipole</span>
+  <span class="comment">%-------------------------------</span>
+  d.dipole = [0;0;0];
+  <span class="keyword">for</span> j = 1:length(uDipole)
+      <span class="keyword">if</span>( uDipole(j) == 1 )
+          d.dipole = d.dipole + mTorquer(:,j);
+      <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="comment">% The magnetic field</span>
+  <span class="comment">%-------------------</span>
+  d.bECI =  MagField( x(1:3), jD, 2, magFieldData );
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% Integrate one time step</span>
+  <span class="comment">%------------------------</span>
+  x        = RK4( @FRBWithMag, x, dTSim, t, d );
+
+  <span class="comment">% Update the time</span>
+  <span class="comment">%----------------</span>
+  t        = t + dTSim;
+  jD       = jD + dTSim/86400;
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">% --------</span>
+  <span class="keyword">if</span>( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = [x;d.bECI;pPanel';d.dipole;uDipole];
+  	tPlot(kP)   = t;
+    nP          = nPMax - 1;
+  <span class="keyword">else</span>
+    nP          = nP - 1;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="MagneticControlSimWithPower_03.png" alt=""> <h2 id="23">Adjust the plotting arrays if you stopped early</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------</span>
+j     = 1:kP;
+tPlot = tPlot(j);
+xPlot = xPlot(:,j);
+</pre><h2 id="24">Nice units for time</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+[tPlot,tL] = TimeLabl( tPlot );
+</pre><h2 id="25">Plotting function</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+Plot3D( xPlot( 1: 3,:),<span class="string">'R_x (km)'</span>,<span class="string">'R_y (km)'</span>,<span class="string">'R_z (km)'</span>, <span class="string">'RECI'</span> );
+Plot2D( tPlot, xPlot( 7:10,:), tL, {<span class="string">'Q_s'</span>;<span class="string">'Q_x'</span>;<span class="string">'Q_y'</span>;<span class="string">'Q_z'</span>},                <span class="string">'Quaternion'</span>   )
+Plot2D( tPlot, xPlot(11:13,:), tL, {<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>},      <span class="string">'Angular Rates (rad/s)'</span>  )
+Plot2D( tPlot, xPlot(14:16,:), tL, {<span class="string">'B_x (T)'</span>;<span class="string">'B_y (T)'</span>;<span class="string">'B_z (T)'</span>},         <span class="string">'Magnetic Field'</span>)
+Plot2D( tPlot, xPlot(17:20,:), tL, {<span class="string">'P_1 (W)'</span>;<span class="string">'P_2 (W)'</span>;<span class="string">'P_3 (W)'</span>; <span class="string">'P_4 (W)'</span>}, <span class="string">'Power Generated by Panels'</span>)
+Plot2D( tPlot, xPlot(21:26,:), tL, {<span class="string">'m_x (ATM^2)'</span>  <span class="string">'m_y (ATM^2)'</span> <span class="string">'m_z (ATM^2)'</span> <span class="string">'u_1'</span>  <span class="string">'u_2'</span> <span class="string">'u_3'</span>}, <span class="string">'Dipole and Torquer On/Off'</span>)
+</pre><img vspace="5" hspace="5" src="MagneticControlSimWithPower_04.png" alt=""> <img vspace="5" hspace="5" src="MagneticControlSimWithPower_05.png" alt=""> <img vspace="5" hspace="5" src="MagneticControlSimWithPower_06.png" alt=""> <img vspace="5" hspace="5" src="MagneticControlSimWithPower_07.png" alt=""> <img vspace="5" hspace="5" src="MagneticControlSimWithPower_08.png" alt=""> <img vspace="5" hspace="5" src="MagneticControlSimWithPower_09.png" alt=""> <h2 id="26">Save plots as eps files</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+<span class="keyword">if</span>( printPlots )
+  PrintFig(0,1,1,<span class="string">'Mag_R'</span>);
+  PrintFig(0,1,2,<span class="string">'Mag_V'</span>);
+  PrintFig(0,1,3,<span class="string">'Mag_Q'</span>);
+  PrintFig(0,1,4,<span class="string">'Mag_Omega'</span>);
+  PrintFig(0,1,5,<span class="string">'Mag_B'</span>);
+  PrintFig(0,1,5,<span class="string">'Power'</span>);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates magnetic control and power profiles.
+% Six DOF simulation with point mass orbit, rigid body dynamics, and the
+% magnetic torque handled explicitly in the RHS. Satellite is modeled
+% with three magnetic torquers and four solar panels.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also MagField and FRBWithMag, QForm, Constant, NPlot, Plot2D, 
+%  Plot3D, PrintFig, TimeGUI, TimeLabl, RK4, Date2JD, OrbRate, El2RV, 
+%  PltOrbit, Eclipse, SunV1
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1995-2004, 2008, 2016 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   2016.1 Switch to newer IGRF11 model (from 1995 data) for the Earth. Also
+%   change RHS to a function handle.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear d
+
+%% Print plots to eps file
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+printPlots = 0;
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+degToRad    = pi/180;
+radToDeg    = 180/pi;
+c45         = cos(45*degToRad);
+
+%% Power system - 4 solar panels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% assume same area and efficiency for all panels
+pEff        = 0.15;
+pSun        = 1367; % solar flux, Watts/m^2
+areaPanel   = 0.2;  %m^2
+fPanel      = pEff*pSun*areaPanel;
+uPanel      = [1 0 0 -1;0 1 -1 0;0 0 0 0]; % 4 unit vectors
+
+%% Torquers
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mTorquer    = 10*eye(3); % 3 orthogonal torquers
+uDipole     = [0;0;1]; % The control (on/off flags)
+
+%% The control sampling period and the simulation integration time step
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dTSim       = 1; % sec
+
+%% Number of sim steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim        = 6000; % sec
+tEnd        = nSim*dTSim;
+
+%% Plot every nPMax steps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nPMax       = 1;
+nPlot       = nSim/nPMax;
+
+%% Print the time to go message every nTTGo steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nTTGo       = 100;
+
+%% Gravity model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.mu        = Constant('mu earth');
+
+%% The external disturbance model
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.tExt      = [0.0;0.0;0.0];
+			     
+%% Spacecraft inertia
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.inr       = [2000,0,0;0,4000,0;0,0,2000];
+d.invInr    = inv(d.inr);
+
+%% Plotting arrays
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tPlot      = zeros( 1,nPlot);
+xPlot      = zeros(26,nPlot);
+
+%% Magnetic field
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+magFieldData = load('IGRF11');
+
+%% Epoch
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+jD         = Date2JD([2004 7 21 0 0 0]); % Julian date
+
+%% Orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sma        = 7000;  % km
+inc        = 0.5;   % rad
+el         = [sma inc 0 0 0 0];
+[r0,v0]    = El2RV(el);
+PltOrbit( el, jD );
+
+%% OrbRate function - 
+% r is radius; d.mu is Gravitational parameter;
+Orbit_Rate = @( r ) sqrt(d.mu*(2./r - 1./r))./r;
+
+%% Initial conditions [r;v;q;omega]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+q0         = [1;0;0;0]; % ECI to body frame
+w0         = [0;Orbit_Rate(7000);0]; % rad/s
+x          = [r0; v0;  q0;  w0]; % r in km and v in km/s
+t          = 0;
+
+%% Plotting controls
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nP         = 0;
+kP         = 0;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dTSim, 'Magnetic Control Sim' );
+
+%% Run the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim 
+    
+  % The sun vector in the body frame
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [uSun,rSun] = SunV1( jD );
+  uSunBody = QForm( x(7:10), uSun );
+  n = Eclipse( x(1:3), rSun*uSun );
+  
+  % Power
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  f      = uSunBody'*uPanel;
+  % find panels facing away from sun and set power to zero
+  j      = find(f < 0);
+  f(j)   = 0;
+  % multiply power factor times cos(angle) to the sun, including eclipses
+  pPanel = n*fPanel*f;
+  
+  % Control - compute total dipole
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.dipole = [0;0;0];
+  for j = 1:length(uDipole)
+      if( uDipole(j) == 1 )
+          d.dipole = d.dipole + mTorquer(:,j);
+      end
+  end
+
+  % The magnetic field
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.bECI =  MagField( x(1:3), jD, 2, magFieldData );
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dTSim );
+  
+  % Integrate one time step
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x        = RK4( @FRBWithMag, x, dTSim, t, d );
+  
+  % Update the time
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t        = t + dTSim;
+  jD       = jD + dTSim/86400;
+  
+  % Plotting
+  % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( nP == 0 )
+    kP          = kP + 1;
+    xPlot(:,kP) = [x;d.bECI;pPanel';d.dipole;uDipole];
+  	tPlot(kP)   = t;
+    nP          = nPMax - 1;
+  else
+    nP          = nP - 1;
+  end
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+%% Adjust the plotting arrays if you stopped early
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+j     = 1:kP;
+tPlot = tPlot(j);
+xPlot = xPlot(:,j);
+
+%% Nice units for time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[tPlot,tL] = TimeLabl( tPlot );
+
+%% Plotting function
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot3D( xPlot( 1: 3,:),'R_x (km)','R_y (km)','R_z (km)', 'RECI' );
+Plot2D( tPlot, xPlot( 7:10,:), tL, {'Q_s';'Q_x';'Q_y';'Q_z'},                'Quaternion'   )
+Plot2D( tPlot, xPlot(11:13,:), tL, {'\omega_x';'\omega_y';'\omega_z'},      'Angular Rates (rad/s)'  )
+Plot2D( tPlot, xPlot(14:16,:), tL, {'B_x (T)';'B_y (T)';'B_z (T)'},         'Magnetic Field')
+Plot2D( tPlot, xPlot(17:20,:), tL, {'P_1 (W)';'P_2 (W)';'P_3 (W)'; 'P_4 (W)'}, 'Power Generated by Panels')
+Plot2D( tPlot, xPlot(21:26,:), tL, {'m_x (ATM^2)'  'm_y (ATM^2)' 'm_z (ATM^2)' 'u_1'  'u_2' 'u_3'}, 'Dipole and Torquer On/Off')
+
+%% Save plots as eps files
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( printPlots )
+  PrintFig(0,1,1,'Mag_R');
+  PrintFig(0,1,2,'Mag_V');
+  PrintFig(0,1,3,'Mag_Q');
+  PrintFig(0,1,4,'Mag_Omega');
+  PrintFig(0,1,5,'Mag_B');
+  PrintFig(0,1,5,'Power');
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 14:37:50 -0400 (Thu, 28 May 2020) $
+% $Revision: 52512 $
+
+##### SOURCE END #####
+--></body></html>

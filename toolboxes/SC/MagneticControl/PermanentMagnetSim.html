@@ -1,0 +1,287 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate the attitude of a rigid spacecraft with permanent magnet in LEO</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="PermanentMagnetSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate the attitude of a rigid spacecraft with permanent magnet in LEO</h1><!--introduction--><p>Demonstrates how the magnet dipole aligns with the Earth magnetic field over time. Depending on the orbit inclination and altitude, the field strength and direction undergoes a periodic change throughout the orbit. The magnetic field varies at twice orbit rate as shown in the plot.</p><p>The resulting motion is an undamped oscillation. The natural frequency of the oscillation changes with the square root of the inertia. The simulation includes gravity gradient torque as well.</p><p>See also QLVLH, InertiaCubeSat, PermanentMagnetRHS, El2RV, OrbRate, Period, PltOrbit, RVFromKepler, BDipole, Constant, AnimateCube, Plot2D, Mat2Q, Q2Mat, Date2JD, Mat2Eul, Dot, Unit</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">User inputs</a></li><li><a href="#3">Initial conditions</a></li><li><a href="#4">Run Simulation</a></li><li><a href="#5">Plots</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2011 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 10.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">User inputs</h2><p>Alter these to quickly vary the simulation results. Factor the inertia up / down to see effect on frequency. Change the orbit altitude or inclination; dial up or down the magnetic dipole.</p><pre class="codeinput">factor = 1;
+dipole = 0.05; <span class="comment">% A-m^2</span>
+sma    = 6728.14;   <span class="comment">% semi-major axis of orbit</span>
+inc    = 50*pi/180; <span class="comment">% inclination of orbit</span>
+</pre><h2 id="3">Initial conditions</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nOrbits = 3;
+el = [6728.14, inc, 0, 0, 0, 0];
+jD0 = Date2JD([2014, 3, 1, 0, 0, 0]);
+PltOrbit(el,jD0);
+t = 0 : 5 : Period(el(1))*nOrbits;
+
+[r,v] = El2RV(el);
+qEL = QLVLH(r,v);
+q0 = qEL;
+
+nRef = OrbRate(el(1));
+w0 = [0;-nRef;0];
+inertia = InertiaCubeSat( <span class="string">'3u'</span>, 2.8 );
+inertia = inertia * factor;
+
+d = struct;
+d.mu  = Constant(<span class="string">'mu earth'</span>);
+d.jD0 = jD0;
+d.t = t;
+[d.r,d.v] = RVFromKepler(el,t);
+d.inertia = inertia;
+d.dipole = -[cos(el(2));-sin(el(2));0]*dipole;
+
+nt = length(d.t);
+
+x = [q0;w0];
+
+<span class="comment">% Initialize fields for storing data from simulation</span>
+<span class="comment">%---------------------------------------------------</span>
+d.T       = Period(el(1));
+d.qEB     = zeros(4,nt);
+d.wB      = zeros(3,nt);
+d.wBDot   = zeros(3,nt);
+d.torque  = zeros(3,nt);
+d.bFBody  = zeros(3,nt);
+d.euler   = zeros(3,nt);
+d.qLB     = zeros(4,nt);
+
+j = 1;
+
+d.qEB(:,j)  = q0;
+d.wB(:,j)   = w0;
+
+[xDot,d.torque(:,j),d.bFBody(:,j)] = PermanentMagnetRHS(x,0,d);
+d.wBDot(:,j) = xDot(5:7);
+
+matEL = Q2Mat( QLVLH(d.r(:,j),d.v(:,j)) );
+matEB = Q2Mat( d.qEB(:,j) );
+matLB = matEB * matEL';
+d.euler(:,j)   = Mat2Eul(matLB);
+d.qLB(:,j) = Mat2Q(matLB);
+</pre><img vspace="5" hspace="5" src="PermanentMagnetSim_01.png" alt=""> <h2 id="4">Run Simulation</h2><pre class="codeinput"><span class="comment">%----------------</span>
+opts = odeset(<span class="string">'abstol'</span>,1e-8,<span class="string">'reltol'</span>,1e-8);
+rhs = @(t,x) PermanentMagnetRHS(x,t,d);
+[t,y] = ode45( rhs, t, x, opts );
+
+<span class="comment">% Compute state derivatives, torque, magnetic field</span>
+<span class="comment">%--------------------------------------------------</span>
+<span class="keyword">for</span> j=1:nt
+
+  d.qEB(:,j) = y(j,1:4)';
+  d.wB(:,j)  = y(j,5:7)';
+  [xDot,d.torque(:,j),d.bFBody(:,j)] = PermanentMagnetRHS(y(j,:)',t(j),d);
+  d.wBDot(:,j) = xDot(5:7);
+
+  matEL = Q2Mat( QLVLH(d.r(:,j),d.v(:,j)) );
+  matEB = Q2Mat( d.qEB(:,j) );
+  matLB = matEB * matEL';
+  d.euler(:,j)   = Mat2Eul(matLB);
+  d.qLB(:,j) = Mat2Q(matLB);
+
+<span class="keyword">end</span>
+</pre><h2 id="5">Plots</h2><pre class="codeinput"><span class="comment">%-------</span>
+angle = acos(Dot(Unit(d.bFBody),Unit(-d.dipole)));
+Plot2D(d.t/d.T,BDipole(d.r,jD0+t/86400),<span class="string">'Time (orbits)'</span>,<span class="string">'Magnetic Field in ECI Frame'</span>);
+Plot2D(d.t/d.T,d.euler*180/pi,<span class="string">'Time (orbits)'</span>,<span class="string">'Euler Angles (deg)'</span>);
+Plot2D(d.t/d.T,angle*180/pi,  <span class="string">'Time (orbits)'</span>,<span class="string">'Dipole-Field Angle (deg)'</span>)
+AnimateCube(<span class="string">'run'</span>,[1 1 3],[d.qLB(:,1:12:end);d.t(1:12:end)])
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ans =
+    'AnimateCube36      34.7111      67.8735'
+</pre><img vspace="5" hspace="5" src="PermanentMagnetSim_02.png" alt=""> <img vspace="5" hspace="5" src="PermanentMagnetSim_03.png" alt=""> <img vspace="5" hspace="5" src="PermanentMagnetSim_04.png" alt=""> <img vspace="5" hspace="5" src="PermanentMagnetSim_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate the attitude of a rigid spacecraft with permanent magnet in LEO
+% Demonstrates how the magnet dipole aligns with the Earth magnetic field
+% over time. Depending on the orbit inclination and altitude, the field
+% strength and direction undergoes a periodic change throughout the
+% orbit. The magnetic field varies at twice orbit rate as shown in the
+% plot.
+%   
+% The resulting motion is an undamped oscillation. The natural frequency
+% of the oscillation changes with the square root of the inertia. The
+% simulation includes gravity gradient torque as well.
+%
+% See also QLVLH, InertiaCubeSat, PermanentMagnetRHS, El2RV, OrbRate, Period,
+% PltOrbit, RVFromKepler, BDipole, Constant, AnimateCube, Plot2D, Mat2Q, Q2Mat,
+% Date2JD, Mat2Eul, Dot, Unit
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 2011 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Since version 10.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% User inputs
+% Alter these to quickly vary the simulation results.
+% Factor the inertia up / down to see effect on frequency.
+% Change the orbit altitude or inclination; dial up or down the magnetic
+% dipole.
+factor = 1;
+dipole = 0.05; % A-m^2
+sma    = 6728.14;   % semi-major axis of orbit
+inc    = 50*pi/180; % inclination of orbit
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nOrbits = 3;
+el = [6728.14, inc, 0, 0, 0, 0];
+jD0 = Date2JD([2014, 3, 1, 0, 0, 0]);
+PltOrbit(el,jD0);
+t = 0 : 5 : Period(el(1))*nOrbits;
+
+[r,v] = El2RV(el);
+qEL = QLVLH(r,v);
+q0 = qEL;
+
+nRef = OrbRate(el(1));
+w0 = [0;-nRef;0];
+inertia = InertiaCubeSat( '3u', 2.8 );
+inertia = inertia * factor;  
+
+d = struct;
+d.mu  = Constant('mu earth');
+d.jD0 = jD0;
+d.t = t;
+[d.r,d.v] = RVFromKepler(el,t);
+d.inertia = inertia;
+d.dipole = -[cos(el(2));-sin(el(2));0]*dipole;
+
+nt = length(d.t);
+
+x = [q0;w0];
+
+% Initialize fields for storing data from simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.T       = Period(el(1));
+d.qEB     = zeros(4,nt);
+d.wB      = zeros(3,nt);
+d.wBDot   = zeros(3,nt);
+d.torque  = zeros(3,nt);
+d.bFBody  = zeros(3,nt);
+d.euler   = zeros(3,nt);
+d.qLB     = zeros(4,nt);
+
+j = 1;
+
+d.qEB(:,j)  = q0;
+d.wB(:,j)   = w0;
+
+[xDot,d.torque(:,j),d.bFBody(:,j)] = PermanentMagnetRHS(x,0,d);
+d.wBDot(:,j) = xDot(5:7);
+
+matEL = Q2Mat( QLVLH(d.r(:,j),d.v(:,j)) );
+matEB = Q2Mat( d.qEB(:,j) );
+matLB = matEB * matEL';
+d.euler(:,j)   = Mat2Eul(matLB);
+d.qLB(:,j) = Mat2Q(matLB);
+
+%% Run Simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+opts = odeset('abstol',1e-8,'reltol',1e-8);
+rhs = @(t,x) PermanentMagnetRHS(x,t,d);
+[t,y] = ode45( rhs, t, x, opts );
+
+% Compute state derivatives, torque, magnetic field
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for j=1:nt
+  
+  d.qEB(:,j) = y(j,1:4)';
+  d.wB(:,j)  = y(j,5:7)';
+  [xDot,d.torque(:,j),d.bFBody(:,j)] = PermanentMagnetRHS(y(j,:)',t(j),d);
+  d.wBDot(:,j) = xDot(5:7);
+  
+  matEL = Q2Mat( QLVLH(d.r(:,j),d.v(:,j)) );
+  matEB = Q2Mat( d.qEB(:,j) );
+  matLB = matEB * matEL';
+  d.euler(:,j)   = Mat2Eul(matLB);
+  d.qLB(:,j) = Mat2Q(matLB);
+  
+end
+
+%% Plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+angle = acos(Dot(Unit(d.bFBody),Unit(-d.dipole)));
+Plot2D(d.t/d.T,BDipole(d.r,jD0+t/86400),'Time (orbits)','Magnetic Field in ECI Frame');
+Plot2D(d.t/d.T,d.euler*180/pi,'Time (orbits)','Euler Angles (deg)');
+Plot2D(d.t/d.T,angle*180/pi,  'Time (orbits)','Dipole-Field Angle (deg)')
+AnimateCube('run',[1 1 3],[d.qLB(:,1:12:end);d.t(1:12:end)])
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-12-18 08:36:51 -0500 (Tue, 18 Dec 2018) $
+% $Revision: 47630 $
+
+##### SOURCE END #####
+--></body></html>

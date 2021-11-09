@@ -1,0 +1,677 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulation for testing the collision monitoring algorithms.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-25"><meta name="DC.source" content="CollDetectSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulation for testing the collision monitoring algorithms.</h1><!--introduction--><p>Computes the probability of collision between the two spacecraft for a fixed prediction window at each step. Also outputs the probability of collision for "now". Also simulates a fault in one of the spacecrafts in Projected Line formation (so no measurements are received for a fraction of an orbit) and plots the actual ("now") and predicted probability of collision over 2 orbits.</p><p>This demo does not include maneuvers for any of the spacecraft.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Constant</span>, Plot2D, Plot3D, TimeLabl, Mag, UnwrapPhase,
+CollisionMonitor, Plot3DEllipsoids, ProjLine, RotateState,
+Geometry_Structure, HillsEqns, FFEccLawdensEqns, Goals2Hills, OrbRate,
+M2Nu, Period
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Algorithm Initialization</a></li><li><a href="#4">Simulation Initialization</a></li><li><a href="#5">Generate SC positions</a></li><li><a href="#6">Initialize Matrices</a></li><li><a href="#7">Algorithm</a></li><li><a href="#8">Plot simulation results</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2004-2005 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%% User Parameters %%%%%%%%%%%%%%%%%%</span>
+
+<span class="comment">% Relative orbit selection</span>
+<span class="comment">% 1: projected line with velocity set to cause a collision</span>
+<span class="comment">% 2: Hills ellipse (Reference: Campbell IEE CST, 2005)</span>
+relOrbit = 2;
+
+<span class="comment">% Discrete or continuous propagation method</span>
+discreteProp = 0;
+
+<span class="comment">% Relative measurements (from monitoring spacecraft)</span>
+relativeMeas = 1;
+
+<span class="comment">% Time window for prediction</span>
+predictTime = 0.5;    <span class="comment">% number of orbits</span>
+nSamples    = 2;
+
+<span class="comment">% Uncertainty in measurements of target, one sigma</span>
+positionError = 0.1;    <span class="comment">% m</span>
+velocityError = 0.0005; <span class="comment">% m/s</span>
+
+<span class="comment">% Reference orbit eccentricity</span>
+eRef = 1e-6;
+
+<span class="comment">% Relative orbit characteristic distance (km)</span>
+dR = 0.05;
+
+<span class="comment">% Measurement fault times (orbits)</span>
+faultStart = 0;
+faultEnd   = 2;
+
+<span class="comment">% Flag to plot the Hills orbit</span>
+plotFlag = 0;
+
+<span class="comment">% Index of sample times to save</span>
+nStore = 1;
+
+<span class="comment">%%%%%% End of Parameters %%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2>Constants<a name="2"></a></h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+deg2rad  = pi/180.0;  <span class="comment">% radians to degrees</span>
+km2m     = 1.0e03;
+</pre><h2>Algorithm Initialization<a name="3"></a></h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+
+<span class="comment">% Orbit parameters</span>
+d.hRef       = 550.0;	  <span class="comment">% km - altitude of the reference orbit</span>
+d.eRef       = eRef;    <span class="comment">% eccentricity</span>
+d.dR         = dR;       <span class="comment">% km - distance between spacecrafts</span>
+d.initBounds = [positionError*[1 1 1] velocityError*[1 1 1]]; <span class="comment">% 1 sig error in measurement (0.1m and 0.5mm/s)</span>
+
+<span class="comment">% General</span>
+d.nSC          = 2;     <span class="comment">% the number of S/C is a constant, two real S/C</span>
+                        <span class="comment">% plus a "virtual" S/C at the formation center</span>
+d.predictTime  = predictTime*Period(Constant(<span class="string">'earth radius mean'</span>)+d.hRef); <span class="comment">% amount of time to predict for</span>
+d.nSampleTimes = nSamples; <span class="comment">% number of sample times - must be at least 2</span>
+d.scalev       = 4;        <span class="comment">% sigma for GPS measurement noise</span>
+d.discrete     = discreteProp;
+
+<span class="comment">% Spacecraft physical parameters</span>
+d.mSC   = 150;		      <span class="comment">% kg - spacecraft mass</span>
+d.lenSC = 7.0;		      <span class="comment">% m -  spacecraft length</span>
+d.diaSC = 4.0;		      <span class="comment">% m -  spacecraft diameter</span>
+d.volSC = 4/3*pi*((d.lenSC/2)^3); <span class="comment">% Assume sphere</span>
+d.Cd    = 2.2;			   <span class="comment">% drag coefficient</span>
+d.Cr    = 1;            <span class="comment">% reflectivity of s/c: 0.0 for translucent;</span>
+                        <span class="comment">% 1.0 for black-body; 2.0 for flat mirror</span>
+</pre><h2>Simulation Initialization<a name="4"></a></h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+nPtsPerOrbit = 500;	    <span class="comment">% number of points at which to compute orbit data</span>
+jD           = 2451245;	<span class="comment">% epoch in the Julian date system</span>
+aRef         = Constant(<span class="string">'earth radius mean'</span>) + d.hRef;
+incRef       = 85*deg2rad;	<span class="comment">% inclination of reference orbit</span>
+orbPeriod    = Period(aRef);	<span class="comment">% Orbit period (sec)</span>
+wn           = OrbRate(aRef);
+</pre><h2>Generate SC positions<a name="5"></a></h2><pre class="codeinput"><span class="comment">%----------------------</span>
+<span class="keyword">switch</span> relOrbit
+  <span class="keyword">case</span> 1
+    <span class="comment">% Projected Line with impending collision</span>
+    <span class="comment">% Keplerian element set for each spacecraft orbit ([a,i,W,w,e,M])</span>
+    [elSet,rH0,vH0] = ProjLine( aRef, incRef, 2, d.dR );
+    <span class="comment">% Setting up a collision between the 2 satellites</span>
+    vH0(2,1) = d.dR/orbPeriod/3; <span class="comment">% This velocity with ProjLine causes a collision in one orbit</span>
+
+    rH0 = km2m*rH0;
+    vH0 = km2m*vH0;
+    xH0_1 = [rH0(:,1);vH0(:,1)];
+    xH0_2 = [rH0(:,2);vH0(:,2)];
+    <span class="comment">% number of orbits</span>
+    nOrbits = 2;
+    iPlot = [1 2 3];
+  <span class="keyword">case</span> 2
+    <span class="comment">% Projected circle state</span>
+    g      = Geometry_Structure;
+    phi    = [45 135]*deg2rad;
+    g.aE   = d.dR;
+    g.zLan = 0.0125*0;
+    g.zInc = 0.0125*0;
+    g1    = RotateState(g,phi(1));
+    xH0_1 = km2m*Goals2Hills(wn,0,g1);
+    g2    = RotateState(g,phi(2));
+    xH0_2 = km2m*Goals2Hills(wn,0,g2);
+    yAxis = [0 2*pi 0 80];
+    <span class="comment">% number of orbits</span>
+    nOrbits = 4;
+    faultEnd = nOrbits;
+    iPlot = [3 2 1];
+<span class="keyword">end</span>
+
+<span class="comment">% Time</span>
+nPts         = nPtsPerOrbit * nOrbits;
+duration     = nOrbits * orbPeriod;
+MET          = linspace(0, duration, nPts);
+dTSim        = MET(2)-MET(1);
+tFaultStart  = round(orbPeriod * faultStart);
+tFaultEnd    = round(orbPeriod * faultEnd);
+
+<span class="comment">% Propagate in Hills frame</span>
+xHill = [];
+nu0 = 0;
+nuF = UnwrapPhase(M2Nu(eRef,wn*MET)+nu0);
+xHill(:,:,1) = FFEccLawdensEqns( xH0_1, nu0, nuF, eRef, wn );
+xHill(:,:,2) = FFEccLawdensEqns( xH0_2, nu0, nuF, eRef, wn );
+
+<span class="keyword">if</span> plotFlag
+  <span class="comment">% spacecraft orbits:</span>
+  h = Plot3D(xHill(iPlot,:,1),<span class="string">'z'</span>,<span class="string">'y'</span>,<span class="string">'x'</span>,<span class="string">'Spacecraft Hills Orbits'</span>); hold <span class="string">on</span>;
+  plot3(  xHill(iPlot(1),1,1),xHill(iPlot(2),1,1),xHill(iPlot(3),1,1),<span class="string">'b.'</span>,<span class="string">'markersize'</span>,20);
+  plot3(  xHill(iPlot(1),:,2),xHill(iPlot(2),:,2),xHill(iPlot(3),:,2),<span class="string">'r'</span>);
+  plot3(  xHill(iPlot(1),1,2),xHill(iPlot(2),1,2),xHill(iPlot(3),1,2),<span class="string">'r.'</span>,<span class="string">'markersize'</span>,20);
+  axis <span class="string">equal</span>;
+  Plot2D( nuF, Mag(xHill(1:3,:,2)-xHill(1:3,:,1)) );
+  <span class="keyword">if</span> exist(<span class="string">'yAxis'</span>)
+    axis(yAxis);
+  <span class="keyword">end</span>
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+
+<span class="comment">% scales time and generates labels for it</span>
+[tForPlots,tLabel] = TimeLabl(MET);
+</pre><h2>Initialize Matrices<a name="6"></a></h2><pre class="codeinput"><span class="comment">%--------------------</span>
+Sigww = zeros(3,3,d.nSC-1);
+Sigvv = zeros(6,6,d.nSC-1);
+<span class="comment">% arrays for storing set membership estimator results (only for the 2 real S/C)</span>
+xhat   = zeros(6,nPts,d.nSC-1);
+Phat   = zeros(6,6,nPts,d.nSC-1);
+prob   = zeros(d.nSampleTimes,nPts);
+minD   = zeros(d.nSampleTimes,nPts);
+</pre><h2>Algorithm<a name="7"></a></h2><pre class="codeinput"><span class="comment">%----------</span>
+hW = waitbar(0,<span class="string">'Collision Sim'</span>);
+<span class="keyword">if</span> relativeMeas
+  CollisionMonitor(<span class="string">'initialize'</span>,d,jD,[zeros(6,1) xH0_2-xH0_1] );
+  xhat(:,1,2) = xH0_2-xH0_1;
+<span class="keyword">else</span>
+  CollisionMonitor(<span class="string">'initialize'</span>,d,jD,[xH0_1 xH0_2] );
+  xhat(:,1,1) = xH0_1;
+  xhat(:,1,2) = xH0_2;
+<span class="keyword">end</span>
+tic;
+<span class="keyword">for</span> n = 2:nPts
+	<span class="keyword">if</span>( tFaultStart &lt; MET(n) &amp;&amp; MET(n) &lt; tFaultEnd )
+    <span class="comment">% measurement failure!</span>
+    y = [];
+  <span class="keyword">else</span>
+  <span class="comment">% measurements, no noise added</span>
+  <span class="keyword">if</span> relativeMeas
+    y1 = [0;0;0;0;0;0];
+    y2 = xHill(:,n,2) - xHill(:,n,1);
+  <span class="keyword">else</span>
+    y1 = xHill(:,n,1);
+    y2 = xHill(:,n,2);
+  <span class="keyword">end</span>
+  y = [y1';y2']'; <span class="comment">% GPS measurement at time n</span>
+	<span class="keyword">end</span>
+  [prob(:,n), minD(:,n), xhatT, PhatT] = CollisionMonitor( <span class="string">'run'</span>, [], jD+MET(n)/86400, y );
+  xhat(:,n,1) = xhatT(:,nStore,1);
+  xhat(:,n,2) = xhatT(:,nStore,2);
+  Phat(:,:,n,1) = PhatT(:,:,nStore,1);
+  Phat(:,:,n,2) = PhatT(:,:,nStore,2);
+  waitbar(n/nPts);
+<span class="keyword">end</span>
+timeElapsed = toc;
+DispWithTitle(timeElapsed,<span class="string">'Elapsed time'</span>);
+close(hW)
+<span class="keyword">if</span> relativeMeas
+  xHill(1:3,:,2) = xHill(1:3,:,1) - xHill(1:3,:,2);
+  xHill(1:3,:,1) = xHill(1:3,:,1) - xHill(1:3,:,1);
+  dNom = Mag(xHill(1:3,:,2));
+<span class="keyword">else</span>
+  dNom = Mag(xHill(1:3,:,1) - xHill(1:3,:,2));
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Elapsed time
+       8.5162
+</pre><h2>Plot simulation results<a name="8"></a></h2><pre class="codeinput"><span class="comment">%------------------------</span>
+nPredictPts = round(d.predictTime/orbPeriod*nPtsPerOrbit);
+METfuture   = linspace(0,duration+d.predictTime,nPts+nPredictPts)/orbPeriod;
+z           = zeros(1,nPredictPts);
+
+<span class="comment">% Collision probability compared against prediction</span>
+figure(<span class="string">'name'</span>,<span class="string">'Prediction Performance'</span>);
+subplot(2,1,1)
+l = semilogy(MET/orbPeriod,prob(1,:));
+set(l,<span class="string">'linewidth'</span>,1)
+ylabel(<span class="string">'probability of collision'</span>,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>,<span class="string">'fontsize'</span>,11)
+grid <span class="string">on</span>;
+hold <span class="string">on</span>
+l = semilogy([tFaultStart tFaultEnd]/orbPeriod,[1 1]*1e-4,<span class="string">'r^'</span>);
+set(l,<span class="string">'linewidth'</span>,1)
+h = text(0,0,<span class="string">'fault'</span>);
+set(h,<span class="string">'color'</span>,[1 0 0]);
+axis([0 nOrbits+1 0 1]);
+title(<span class="string">'Now'</span>,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>,<span class="string">'fontsize'</span>,12);
+subplot(2,1,2)
+l = semilogy((MET+d.predictTime)/orbPeriod,prob(2,:),<span class="string">'g'</span>);
+set(l,<span class="string">'linewidth'</span>,1)
+ylabel(<span class="string">'probability of collision'</span>,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>,<span class="string">'fontsize'</span>,11)
+xlabel(<span class="string">'Time (orbits)'</span>,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>,<span class="string">'fontsize'</span>,11)
+title(<span class="string">'Future'</span>,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>,<span class="string">'fontsize'</span>,12);
+axis([0 nOrbits+1 0 1]);
+grid <span class="string">on</span>;
+
+<span class="comment">% Minimum distance</span>
+Plot2D(MET/orbPeriod,minD(1,:),<span class="string">'Time (orbits)'</span>,<span class="string">'d (m)'</span>,<span class="string">'Minimum and Center Distance'</span>);
+hold <span class="string">on</span>
+plot((MET+d.predictTime)/orbPeriod,minD(2,:),<span class="string">'g-.'</span>,<span class="string">'linewidth'</span>,2);
+plot((MET)/orbPeriod,dNom,<span class="string">'r-.'</span>,<span class="string">'linewidth'</span>,2);
+legend(<span class="string">'d_{min}, t=0'</span>,<span class="string">'d_{min}, pred.'</span>,<span class="string">'d_{nom}'</span>)
+plot([tFaultStart tFaultEnd]/orbPeriod,[0 0],<span class="string">'r^'</span>)
+h = text(0.05,0.05,<span class="string">'fault'</span>);
+set(h,<span class="string">'color'</span>,[1 0 0])
+grid <span class="string">on</span>;
+
+<span class="comment">% Both metrics together for "now"</span>
+h = Plot2D(MET/orbPeriod,[minD(1,:);dNom;prob(1,:)],<span class="string">'Time (orbits)'</span>,{<span class="string">'d (m)'</span>,<span class="string">'Probability'</span>},<span class="keyword">...</span>
+  <span class="string">'Minimum Distance and Probability'</span>,{<span class="string">'lin'</span> <span class="string">'ylog'</span>},[<span class="string">'[1 2]'</span>;<span class="string">'[3]  '</span>]);
+axis([0 nOrbits 8e-6 1])
+
+<span class="comment">% View stored ellipsoids along their trajectory</span>
+<span class="comment">%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Phat,'c',{[0.7;0;0] [0;0.7;0]}),@PlotEllipsoids,MET/orbPeriod);</span>
+
+<span class="comment">% Plot ellipsoid sizing</span>
+el1 = zeros(3,nPts);
+el2 = zeros(3,nPts);
+<span class="keyword">for</span> k = 1:nPts
+  P1 = Phat(1:3,1:3,k,1);
+  P2 = Phat(1:3,1:3,k,2);
+  [u,s,v]  = svd(P1);
+  el1(:,k) = sqrt(diag(s));
+  [u,s,v]  = svd(P2);
+  el2(:,k) = sqrt(diag(s));
+<span class="keyword">end</span>
+Plot2D(MET,[el1;el2],<span class="string">'Time (s)'</span>,{<span class="string">'Self'</span>,<span class="string">'Target'</span>},<span class="string">'Ellipsoid Semimajor Axes, m'</span>,<span class="string">'lin'</span>,<span class="keyword">...</span>
+  [<span class="string">'[1 2 3]'</span>;<span class="string">'[4 5 6]'</span>])
+Plot3DEllipsoids( xhat(1:3,1:nPtsPerOrbit,2), Phat(1:3,1:3,1:nPtsPerOrbit,2),12 )
+
+<span class="comment">% Compare against Monte-Carlo simulation using HillsEqns</span>
+<span class="keyword">if</span> relOrbit == 2
+  tMean    = 3.75;
+<span class="keyword">else</span>
+  tMean    = 1;
+<span class="keyword">end</span>
+tCollide = linspace(tMean-0.1,tMean+0.1,25)*orbPeriod;
+nProp = 2000;
+y0 = xH0_2-xH0_1;
+dMin = zeros(1,nProp);
+<span class="keyword">for</span> k = 1:nProp
+  y = y0 + d.initBounds'.*randn(6,1);
+  xHmc = HillsEqns( y, wn, tCollide, 1 );
+  dMin(k) = min(Mag(xHmc(1:3,:)));
+<span class="keyword">end</span>
+probTrue = length(find(dMin&lt;d.lenSC))/nProp;
+fprintf(1,<span class="string">'True probability of collision at %2.2g orbits: %3.3g%%\n'</span>,tMean,probTrue*100);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">True probability of collision at 3.8 orbits: 2.35%
+</pre><img vspace="5" hspace="5" src="CollDetectSim_01.png" alt=""> <img vspace="5" hspace="5" src="CollDetectSim_02.png" alt=""> <img vspace="5" hspace="5" src="CollDetectSim_03.png" alt=""> <img vspace="5" hspace="5" src="CollDetectSim_04.png" alt=""> <img vspace="5" hspace="5" src="CollDetectSim_05.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulation for testing the collision monitoring algorithms.
+% Computes the probability of collision between the two spacecraft for a 
+% fixed prediction window at each step. Also outputs the probability of 
+% collision for "now". Also simulates a fault in one of the spacecrafts 
+% in Projected Line formation (so no measurements are received for a 
+% fraction of an orbit) and plots the actual ("now") and predicted
+% probability of collision over 2 orbits.
+%
+% This demo does not include maneuvers for any of the spacecraft.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, Plot2D, Plot3D, TimeLabl, Mag, UnwrapPhase, 
+%  CollisionMonitor, Plot3DEllipsoids, ProjLine, RotateState, 
+%  Geometry_Structure, HillsEqns, FFEccLawdensEqns, Goals2Hills, OrbRate, 
+%  M2Nu, Period
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2004-2005 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% User Parameters %%%%%%%%%%%%%%%%%%
+
+% Relative orbit selection
+% 1: projected line with velocity set to cause a collision
+% 2: Hills ellipse (Reference: Campbell IEE CST, 2005)
+relOrbit = 2;
+
+% Discrete or continuous propagation method
+discreteProp = 0;
+
+% Relative measurements (from monitoring spacecraft)
+relativeMeas = 1;
+
+% Time window for prediction
+predictTime = 0.5;    % number of orbits
+nSamples    = 2;
+
+% Uncertainty in measurements of target, one sigma
+positionError = 0.1;    % m
+velocityError = 0.0005; % m/s
+
+% Reference orbit eccentricity
+eRef = 1e-6;
+
+% Relative orbit characteristic distance (km)
+dR = 0.05;
+
+% Measurement fault times (orbits)
+faultStart = 0;
+faultEnd   = 2;
+
+% Flag to plot the Hills orbit
+plotFlag = 0;       
+
+% Index of sample times to save
+nStore = 1; 
+
+%%%%%% End of Parameters %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+deg2rad  = pi/180.0;  % radians to degrees
+km2m     = 1.0e03;          
+
+%% Algorithm Initialization
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Orbit parameters
+d.hRef       = 550.0;	  % km - altitude of the reference orbit
+d.eRef       = eRef;    % eccentricity
+d.dR         = dR;       % km - distance between spacecrafts
+d.initBounds = [positionError*[1 1 1] velocityError*[1 1 1]]; % 1 sig error in measurement (0.1m and 0.5mm/s)
+
+% General
+d.nSC          = 2;     % the number of S/C is a constant, two real S/C
+                        % plus a "virtual" S/C at the formation center
+d.predictTime  = predictTime*Period(Constant('earth radius mean')+d.hRef); % amount of time to predict for
+d.nSampleTimes = nSamples; % number of sample times - must be at least 2
+d.scalev       = 4;        % sigma for GPS measurement noise
+d.discrete     = discreteProp;
+
+% Spacecraft physical parameters
+d.mSC   = 150;		      % kg - spacecraft mass
+d.lenSC = 7.0;		      % m -  spacecraft length
+d.diaSC = 4.0;		      % m -  spacecraft diameter
+d.volSC = 4/3*pi*((d.lenSC/2)^3); % Assume sphere
+d.Cd    = 2.2;			   % drag coefficient
+d.Cr    = 1;            % reflectivity of s/c: 0.0 for translucent;
+                        % 1.0 for black-body; 2.0 for flat mirror
+
+%% Simulation Initialization 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nPtsPerOrbit = 500;	    % number of points at which to compute orbit data
+jD           = 2451245;	% epoch in the Julian date system
+aRef         = Constant('earth radius mean') + d.hRef;
+incRef       = 85*deg2rad;	% inclination of reference orbit
+orbPeriod    = Period(aRef);	% Orbit period (sec)
+wn           = OrbRate(aRef);
+
+%% Generate SC positions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+switch relOrbit
+  case 1
+    % Projected Line with impending collision
+    % Keplerian element set for each spacecraft orbit ([a,i,W,w,e,M])
+    [elSet,rH0,vH0] = ProjLine( aRef, incRef, 2, d.dR ); 
+    % Setting up a collision between the 2 satellites 
+    vH0(2,1) = d.dR/orbPeriod/3; % This velocity with ProjLine causes a collision in one orbit
+
+    rH0 = km2m*rH0;
+    vH0 = km2m*vH0;
+    xH0_1 = [rH0(:,1);vH0(:,1)];
+    xH0_2 = [rH0(:,2);vH0(:,2)];
+    % number of orbits
+    nOrbits = 2;       
+    iPlot = [1 2 3];
+  case 2
+    % Projected circle state
+    g      = Geometry_Structure;
+    phi    = [45 135]*deg2rad;
+    g.aE   = d.dR;
+    g.zLan = 0.0125*0;
+    g.zInc = 0.0125*0;
+    g1    = RotateState(g,phi(1));
+    xH0_1 = km2m*Goals2Hills(wn,0,g1);
+    g2    = RotateState(g,phi(2));
+    xH0_2 = km2m*Goals2Hills(wn,0,g2);
+    yAxis = [0 2*pi 0 80];
+    % number of orbits
+    nOrbits = 4;    
+    faultEnd = nOrbits;
+    iPlot = [3 2 1];
+end
+
+% Time
+nPts         = nPtsPerOrbit * nOrbits;
+duration     = nOrbits * orbPeriod; 
+MET          = linspace(0, duration, nPts);   
+dTSim        = MET(2)-MET(1);
+tFaultStart  = round(orbPeriod * faultStart);
+tFaultEnd    = round(orbPeriod * faultEnd);
+
+% Propagate in Hills frame
+xHill = [];
+nu0 = 0;
+nuF = UnwrapPhase(M2Nu(eRef,wn*MET)+nu0);
+xHill(:,:,1) = FFEccLawdensEqns( xH0_1, nu0, nuF, eRef, wn );
+xHill(:,:,2) = FFEccLawdensEqns( xH0_2, nu0, nuF, eRef, wn );
+
+if plotFlag
+  % spacecraft orbits:
+  h = Plot3D(xHill(iPlot,:,1),'z','y','x','Spacecraft Hills Orbits'); hold on;
+  plot3(  xHill(iPlot(1),1,1),xHill(iPlot(2),1,1),xHill(iPlot(3),1,1),'b.','markersize',20);
+  plot3(  xHill(iPlot(1),:,2),xHill(iPlot(2),:,2),xHill(iPlot(3),:,2),'r');
+  plot3(  xHill(iPlot(1),1,2),xHill(iPlot(2),1,2),xHill(iPlot(3),1,2),'r.','markersize',20);
+  axis equal;
+  Plot2D( nuF, Mag(xHill(1:3,:,2)-xHill(1:3,:,1)) );
+  if exist('yAxis')
+    axis(yAxis);
+  end
+  return;
+end
+
+% scales time and generates labels for it
+[tForPlots,tLabel] = TimeLabl(MET);
+
+%% Initialize Matrices
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Sigww = zeros(3,3,d.nSC-1);
+Sigvv = zeros(6,6,d.nSC-1);
+% arrays for storing set membership estimator results (only for the 2 real S/C)
+xhat   = zeros(6,nPts,d.nSC-1);
+Phat   = zeros(6,6,nPts,d.nSC-1);
+prob   = zeros(d.nSampleTimes,nPts);
+minD   = zeros(d.nSampleTimes,nPts);
+
+%% Algorithm
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+hW = waitbar(0,'Collision Sim');
+if relativeMeas
+  CollisionMonitor('initialize',d,jD,[zeros(6,1) xH0_2-xH0_1] );
+  xhat(:,1,2) = xH0_2-xH0_1;
+else
+  CollisionMonitor('initialize',d,jD,[xH0_1 xH0_2] );
+  xhat(:,1,1) = xH0_1;
+  xhat(:,1,2) = xH0_2; 
+end
+tic;
+for n = 2:nPts
+	if( tFaultStart < MET(n) && MET(n) < tFaultEnd )
+    % measurement failure!
+    y = [];
+  else
+  % measurements, no noise added
+  if relativeMeas
+    y1 = [0;0;0;0;0;0];
+    y2 = xHill(:,n,2) - xHill(:,n,1);
+  else
+    y1 = xHill(:,n,1);
+    y2 = xHill(:,n,2);
+  end
+  y = [y1';y2']'; % GPS measurement at time n
+	end
+  [prob(:,n), minD(:,n), xhatT, PhatT] = CollisionMonitor( 'run', [], jD+MET(n)/86400, y );
+  xhat(:,n,1) = xhatT(:,nStore,1);
+  xhat(:,n,2) = xhatT(:,nStore,2);
+  Phat(:,:,n,1) = PhatT(:,:,nStore,1); 
+  Phat(:,:,n,2) = PhatT(:,:,nStore,2);
+  waitbar(n/nPts);
+end
+timeElapsed = toc;
+DispWithTitle(timeElapsed,'Elapsed time');
+close(hW)
+if relativeMeas
+  xHill(1:3,:,2) = xHill(1:3,:,1) - xHill(1:3,:,2);
+  xHill(1:3,:,1) = xHill(1:3,:,1) - xHill(1:3,:,1);
+  dNom = Mag(xHill(1:3,:,2));
+else
+  dNom = Mag(xHill(1:3,:,1) - xHill(1:3,:,2));
+end
+
+%% Plot simulation results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nPredictPts = round(d.predictTime/orbPeriod*nPtsPerOrbit);
+METfuture   = linspace(0,duration+d.predictTime,nPts+nPredictPts)/orbPeriod;
+z           = zeros(1,nPredictPts);
+
+% Collision probability compared against prediction
+figure('name','Prediction Performance');
+subplot(2,1,1)
+l = semilogy(MET/orbPeriod,prob(1,:));
+set(l,'linewidth',1)
+ylabel('probability of collision','fontweight','bold','fontsize',11)
+grid on;
+hold on
+l = semilogy([tFaultStart tFaultEnd]/orbPeriod,[1 1]*1e-4,'r^');
+set(l,'linewidth',1)
+h = text(0,0,'fault');
+set(h,'color',[1 0 0]);
+axis([0 nOrbits+1 0 1]);
+title('Now','fontweight','bold','fontsize',12);
+subplot(2,1,2)
+l = semilogy((MET+d.predictTime)/orbPeriod,prob(2,:),'g');
+set(l,'linewidth',1)
+ylabel('probability of collision','fontweight','bold','fontsize',11)
+xlabel('Time (orbits)','fontweight','bold','fontsize',11)
+title('Future','fontweight','bold','fontsize',12);
+axis([0 nOrbits+1 0 1]);
+grid on;
+
+% Minimum distance
+Plot2D(MET/orbPeriod,minD(1,:),'Time (orbits)','d (m)','Minimum and Center Distance');
+hold on
+plot((MET+d.predictTime)/orbPeriod,minD(2,:),'g-.','linewidth',2);
+plot((MET)/orbPeriod,dNom,'r-.','linewidth',2);
+legend('d_{min}, t=0','d_{min}, pred.','d_{nom}')
+plot([tFaultStart tFaultEnd]/orbPeriod,[0 0],'r^')
+h = text(0.05,0.05,'fault');
+set(h,'color',[1 0 0])
+grid on;
+
+% Both metrics together for "now"
+h = Plot2D(MET/orbPeriod,[minD(1,:);dNom;prob(1,:)],'Time (orbits)',{'d (m)','Probability'},...
+  'Minimum Distance and Probability',{'lin' 'ylog'},['[1 2]';'[3]  ']);
+axis([0 nOrbits 8e-6 1])
+
+% View stored ellipsoids along their trajectory
+%AnimateFunction('initialize',struct('xhat',xhat,'Shat',Phat,'c',{[0.7;0;0] [0;0.7;0]}),@PlotEllipsoids,MET/orbPeriod);
+
+% Plot ellipsoid sizing
+el1 = zeros(3,nPts);
+el2 = zeros(3,nPts);
+for k = 1:nPts
+  P1 = Phat(1:3,1:3,k,1);
+  P2 = Phat(1:3,1:3,k,2);
+  [u,s,v]  = svd(P1);
+  el1(:,k) = sqrt(diag(s));
+  [u,s,v]  = svd(P2);
+  el2(:,k) = sqrt(diag(s));
+end
+Plot2D(MET,[el1;el2],'Time (s)',{'Self','Target'},'Ellipsoid Semimajor Axes, m','lin',...
+  ['[1 2 3]';'[4 5 6]'])
+Plot3DEllipsoids( xhat(1:3,1:nPtsPerOrbit,2), Phat(1:3,1:3,1:nPtsPerOrbit,2),12 )
+
+% Compare against Monte-Carlo simulation using HillsEqns
+if relOrbit == 2
+  tMean    = 3.75;
+else
+  tMean    = 1;
+end
+tCollide = linspace(tMean-0.1,tMean+0.1,25)*orbPeriod;
+nProp = 2000;
+y0 = xH0_2-xH0_1;
+dMin = zeros(1,nProp);
+for k = 1:nProp
+  y = y0 + d.initBounds'.*randn(6,1);
+  xHmc = HillsEqns( y, wn, tCollide, 1 );
+  dMin(k) = min(Mag(xHmc(1:3,:)));
+end
+probTrue = length(find(dMin<d.lenSC))/nProp;
+fprintf(1,'True probability of collision at %2.2g orbits: %3.3g%%\n',tMean,probTrue*100);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2016-03-25 11:17:37 -0400 (Fri, 25 Mar 2016) $
+% $Revision: 42065 $
+
+##### SOURCE END #####
+--></body></html>

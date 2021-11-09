@@ -1,0 +1,297 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>LunarLanderSim</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="LunarLanderSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Demonstrate lunar lander guidance</a></li><li><a href="#2">User inputs</a></li><li><a href="#3">Set up the simulation</a></li><li><a href="#4">Simulate</a></li><li><a href="#5">Plot the results</a></li></ul></div><h2 id="1">Demonstrate lunar lander guidance</h2><p>Simulates in the moon fixed frame</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2016.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">q</span>
+</pre><h2 id="2">User inputs</h2><pre class="codeinput">thrust    = 0;<span class="comment">%45040;</span>
+iSp       = 311;
+g         = 9.806;
+massOrbIn = 30*thrust/(iSp*g);
+h0        = 15;   <span class="comment">% Inital altitude (km)</span>
+tEnd      = 2*86400;	<span class="comment">% End time (sec)</span>
+dT        = 5;    <span class="comment">% Time step (sec)</span>
+massFuel	= 8200 - massOrbIn; <span class="comment">% Fuel (kg) (Lunar Module)</span>
+inc       = pi/2; <span class="comment">% Orbit inclination (rad)</span>
+jD0       = Date2JD([2017 4 15 0 0 0]);
+nH        = 72; <span class="comment">% Number of harmonics in topology model</span>
+rotModel  = <span class="string">'mean'</span>;
+</pre><h2 id="3">Set up the simulation</h2><pre class="codeinput"><span class="comment">% Constant</span>
+kmToM = 1000;
+
+<span class="comment">% Default data</span>
+d                       = RHSRVPlanetFixed;
+d.rVStruct.mu           = Constant(<span class="string">'mu moon'</span>);
+d.rVStruct.jD0          = jD0;
+d.rVStruct.massDry      = 10334 - massFuel + 4700; <span class="comment">% Includes ascent stage</span>
+d.rVStruct.bFun         = @MoonRot;
+d.rVStruct.bFunData     = rotModel;
+d.dataFunThrust.uE      = iSp*g;
+d.dataFunThrust.thrust	= thrust;
+
+<span class="comment">% Initial orbit</span>
+rMoon     = Constant(<span class="string">'equatorial radius moon'</span>);
+el        = [rMoon + h0; inc; 0; 0; 0; 0]; <span class="comment">% Polar orbit</span>
+[r,v]     = El2RV(el,[],d.rVStruct.mu);
+
+<span class="comment">% Transform into moon fixed coordinates</span>
+[g,omega]	= MoonRot( jD0, rotModel );
+v         = g*(v - Cross(omega,r));
+r         = g*r;
+
+<span class="comment">% Lhnar topography</span>
+[s,c]     = LoadLunarTopography( nH );
+
+<span class="comment">% The initial state</span>
+x         = [r;v;massFuel];
+</pre><h2 id="4">Simulate</h2><pre class="codeinput">n         = ceil(tEnd/dT);
+xP        = zeros(length(x)+1,n);
+t         = 0;
+
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% Altitude</span>
+  h = AltitudeSH( x(1:3), s, c, nH );
+
+  <span class="comment">%  Control</span>
+  d.dataFunThrust.uThrust = -Unit(x(4:6));
+
+  <span class="comment">% Plotting</span>
+  xP(:,k)	= [x;h];
+
+  <span class="comment">% Terminate at zero altitude</span>
+  <span class="keyword">if</span>( h &lt;= 0 )
+    <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Propagate one step</span>
+  x = RungeKutta4thOrder( @RHSRVPlanetFixed, x, t, dT, d );
+  t = t + dT;
+
+<span class="keyword">end</span>
+
+<span class="comment">% Account for the termination of the sim due to altitude</span>
+xP = xP(:,1:k);
+</pre><h2 id="5">Plot the results</h2><pre class="codeinput">[t,tL]  = TimeLabl((0:(k-1))*dT);
+yL      = {<span class="string">'x (km)'</span>     <span class="string">'y (km)'</span>      <span class="string">'z (km)'</span> <span class="keyword">...</span>
+          <span class="string">'v_x (km/s)'</span>, <span class="string">'v_y (km/s)'</span>, <span class="string">'v_z (km/s)'</span> <span class="keyword">...</span>
+          <span class="string">'Fuel (kg)'</span> <span class="string">'h (km)'</span>};
+
+<span class="comment">% This is to make the plots look nice</span>
+k       = xP(7,:) &lt; 0;
+xP(7,k) = 0;
+k       = xP(8,:) &lt; 0;
+xP(8,k) = 0;
+
+<span class="comment">% 2D plots</span>
+k = [1:3 8];
+Plot2D( t, xP(k,:), tL, yL(k), <span class="string">'Lunar Lander Position and Altitude'</span>);
+
+k = 4:7;
+Plot2D( t, xP(k,:), tL, yL(k), <span class="string">'Lunar Lander Velocity and Fuel'</span>);
+
+<span class="comment">% 3D plots</span>
+[q.r, q.lambda, q.theta]	= RSHMoon; <span class="comment">% Clementine model</span>
+q.rEq                     = 1738000; <span class="comment">% m</span>
+q.name                    = <span class="string">'Moon'</span>;
+PlanetWithTerrain( q, 10 );
+hold <span class="string">on</span>
+plot3(xP(1,:)*kmToM,xP(2,:)*kmToM,xP(3,:)*kmToM,<span class="string">'r'</span>)
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LunarLanderSim_01.png" alt=""> <img vspace="5" hspace="5" src="LunarLanderSim_02.png" alt=""> <img vspace="5" hspace="5" src="LunarLanderSim_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate lunar lander guidance
+% Simulates in the moon fixed frame
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2016.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear q
+
+
+%% User inputs
+thrust    = 0;%45040;
+iSp       = 311;
+g         = 9.806;
+massOrbIn = 30*thrust/(iSp*g);
+h0        = 15;   % Inital altitude (km)
+tEnd      = 2*86400;	% End time (sec)
+dT        = 5;    % Time step (sec)
+massFuel	= 8200 - massOrbIn; % Fuel (kg) (Lunar Module)
+inc       = pi/2; % Orbit inclination (rad)
+jD0       = Date2JD([2017 4 15 0 0 0]);
+nH        = 72; % Number of harmonics in topology model
+rotModel  = 'mean';
+
+%% Set up the simulation
+
+% Constant
+kmToM = 1000;
+
+% Default data
+d                       = RHSRVPlanetFixed;
+d.rVStruct.mu           = Constant('mu moon');
+d.rVStruct.jD0          = jD0;
+d.rVStruct.massDry      = 10334 - massFuel + 4700; % Includes ascent stage
+d.rVStruct.bFun         = @MoonRot;
+d.rVStruct.bFunData     = rotModel;
+d.dataFunThrust.uE      = iSp*g;
+d.dataFunThrust.thrust	= thrust;
+
+% Initial orbit
+rMoon     = Constant('equatorial radius moon');
+el        = [rMoon + h0; inc; 0; 0; 0; 0]; % Polar orbit
+[r,v]     = El2RV(el,[],d.rVStruct.mu);
+
+% Transform into moon fixed coordinates
+[g,omega]	= MoonRot( jD0, rotModel );
+v         = g*(v - Cross(omega,r));
+r         = g*r;
+
+% Lhnar topography
+[s,c]     = LoadLunarTopography( nH );
+
+% The initial state
+x         = [r;v;massFuel];
+
+%% Simulate
+n         = ceil(tEnd/dT);
+xP        = zeros(length(x)+1,n);
+t         = 0;
+
+for k = 1:n
+  
+  % Altitude
+  h = AltitudeSH( x(1:3), s, c, nH );
+  
+  %  Control
+  d.dataFunThrust.uThrust = -Unit(x(4:6));
+  
+  % Plotting
+  xP(:,k)	= [x;h];
+  
+  % Terminate at zero altitude
+  if( h <= 0 )
+    break;
+  end
+  
+  % Propagate one step
+  x = RungeKutta4thOrder( @RHSRVPlanetFixed, x, t, dT, d );
+  t = t + dT;
+  
+end
+
+% Account for the termination of the sim due to altitude
+xP = xP(:,1:k);
+
+%% Plot the results
+[t,tL]  = TimeLabl((0:(k-1))*dT);
+yL      = {'x (km)'     'y (km)'      'z (km)' ...
+          'v_x (km/s)', 'v_y (km/s)', 'v_z (km/s)' ...
+          'Fuel (kg)' 'h (km)'};
+  
+% This is to make the plots look nice
+k       = xP(7,:) < 0;
+xP(7,k) = 0;
+k       = xP(8,:) < 0;
+xP(8,k) = 0;
+
+% 2D plots
+k = [1:3 8];
+Plot2D( t, xP(k,:), tL, yL(k), 'Lunar Lander Position and Altitude');
+
+k = 4:7;
+Plot2D( t, xP(k,:), tL, yL(k), 'Lunar Lander Velocity and Fuel');
+
+% 3D plots
+[q.r, q.lambda, q.theta]	= RSHMoon; % Clementine model
+q.rEq                     = 1738000; % m
+q.name                    = 'Moon';
+PlanetWithTerrain( q, 10 );
+hold on
+plot3(xP(1,:)*kmToM,xP(2,:)*kmToM,xP(3,:)*kmToM,'r')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2016-03-13 15:48:07 -0400 (Sun, 13 Mar 2016) $
+% $Revision: 41804 $
+##### SOURCE END #####
+--></body></html>

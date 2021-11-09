@@ -1,0 +1,338 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate combined simulation for a sail in ST9 orbit.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-28"><meta name="DC.source" content="ST9CombinedDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate combined simulation for a sail in ST9 orbit.</h1><!--introduction--><p>This is a dawn-dusk sun-synchronous orbit that keeps the sail illuminated at all times. The sail is initialized along the LVLH frame. Shows the torque produced when sail is pointed along velocity vector. This can be avoided by aligning the sail along LVLH with a small loss in orbit change produced per orbit. You can also test sun-pointing and edge-on attitudes. The gravity model includes J2 for sun-synch orbit precession. The integration takes about 20 seconds/simulated day on a MacBook.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+-------------------------------------------------------------------------
+See <span class="string">also:</span>     <span class="string">FSailCombined</span>     <span class="string">SailEnvironment</span>     <span class="string">SailDisturbance</span>
+SailEphemEarth     <span class="string">FOrbitSingle</span>     <span class="string">ST9Guidance</span>, QZero, AssignFHandle,
+Figui, InformDlg, Plot2D, Unit, Date2JD, El2RV, PltOrbit, SunV1,
+DisturbanceStruct, EnvironmentStruct, DrawSailAttitude, PlotSailForce,
+PlotSailProfile, DisplaySailProperties
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Number of days to simulate</a></li><li><a href="#3">Earth gravity parameters</a></li><li><a href="#4">CAD model selection</a></li><li><a href="#5">Epoch</a></li><li><a href="#6">Constants</a></li><li><a href="#7">Place sail in a sun-sychronous orbit</a></li><li><a href="#8">Initialize simulation data structure</a></li><li><a href="#9">Extract the profiles from the orbit</a></li></ul></div><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2007, 2010 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%% USER PARAMETERS</span>
+</pre><h2>Number of days to simulate<a name="2"></a></h2><pre class="codeinput"><span class="comment">%---------------------------</span>
+nDays = 1;
+</pre><h2>Earth gravity parameters<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+nZonal = 2;  <span class="comment">% J2</span>
+nTesseral = 0;
+
+<span class="comment">% Attitude profile method, see EarthGuidance</span>
+<span class="comment">% The available profiles are:</span>
+<span class="comment">%     1. Sun-pointing</span>
+<span class="comment">%     2. Constant force component along velocity vector</span>
+<span class="comment">%     3. Constant rotation with respect to LVLH frame</span>
+<span class="comment">%     4. Edge-on (no solar pressure force)</span>
+<span class="comment">%     5. Optimal angle for SMA increase</span>
+<span class="comment">%-----------------------------------------</span>
+methodST9 = 1;
+</pre><h2>CAD model selection<a name="4"></a></h2><pre class="codeinput"><span class="comment">%--------------------</span>
+cadModel = <span class="string">'SailGEO_450.mat'</span>;
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2>Epoch<a name="5"></a></h2><pre class="codeinput"><span class="comment">%------</span>
+jD = Date2JD([2010 3 15, 16 0 0]);
+[uSun,rS] = SunV1( jD );
+</pre><h2>Constants<a name="6"></a></h2><pre class="codeinput"><span class="comment">%----------</span>
+dE = load(<span class="string">'EarthGravityModel.mat'</span>);
+rE = dE.a; <span class="comment">% radius of earth</span>
+</pre><h2>Place sail in a sun-sychronous orbit<a name="7"></a></h2><pre class="codeinput"><span class="comment">%-------------------------------------</span>
+sma = 7978.1;
+meanm = sqrt( dE.mu/sma^3 );
+J2  = 0.001082;
+dW  = 360/(365*86400); <span class="comment">% deg/s</span>
+inc = acos( -dW*pi/180/ (3*meanm*J2*rE^2/(2*sma^2)) );
+RA  = atan2(uSun(1),uSun(2));
+el0 = [sma;inc;RA;0;0;0];
+<span class="comment">% Plot initial orbit</span>
+PltOrbit( el0, jD );
+set(gcf,<span class="string">'name'</span>,<span class="string">'Initial Sail Orbit'</span>);
+
+[r,v]     = El2RV( el0 );
+q         = QZero;
+w         = [0;0;0];
+</pre><img vspace="5" hspace="5" src="ST9CombinedDemo_01.png" alt=""> <h2>Initialize simulation data structure<a name="8"></a></h2><pre class="codeinput"><span class="comment">%-------------------------------------</span>
+[d,p] = InitializeSailSim(jD,cadModel,<span class="string">'EarthGuidance'</span>);
+d = InitializeSailGravity( d, <span class="string">'earth'</span>, dE, nZonal, nTesseral );
+<span class="comment">% set guidance method</span>
+d.method = methodST9;
+
+tEnd = nDays*86400;
+opts = odeset(<span class="string">'abstol'</span>,1e-12,<span class="string">'reltol'</span>,1e-10);
+hDlg = InformDlg( <span class="string">'Integrating...'</span>, <span class="string">'ST9CombinedDemo'</span> );
+tic
+[z, x] = ode113( @FSailCombined, [0 tEnd], [r;v;q;w], opts, p, d );
+toc
+close(hDlg);
+
+<span class="comment">% Find out how many points were computed</span>
+disp(<span class="string">'Number of output points'</span>)
+disp(length(z))
+</pre><pre class="codeoutput">
+-----------------------
+Flat Sail GEO
+Sail normal: [1 0 0]
+Sail area:     2000 m2
+Sail mass:      500 kg
+Sail inertia (kg/m2):
+   16741.667            0            0
+           0    8408.3333            0
+           0            0    8408.3333
+
+Sail characteristic accel: 0.036213 mm/s2
+Number of bodies in model: 1
+Number of components in model: 2
+Sail class components: 1
+
+Sail optical properties
+Component Sail:
+  Specular Front:         1 Back:     1
+  Diffuse Front:          0 Back:     0
+  Absorptivity Front:     0 Back:     0
+  Emissivity Front:     0.3 Back:   0.3
+Elapsed time is 6.943246 seconds.
+Number of output points
+        1103
+</pre><img vspace="5" hspace="5" src="ST9CombinedDemo_02.png" alt=""> <h2>Extract the profiles from the orbit<a name="9"></a></h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+[p, env, f, tq] = FSailCombined( z', x', p, d );
+
+PlotSailProfile( p, env, [1;0;0] );
+PlotSailForce( f, p, env )
+Plot2D(z',tq.total,<span class="string">'Sec'</span>,{<span class="string">'Tx'</span>,<span class="string">'Ty'</span>,<span class="string">'Tz'</span>},<span class="string">'Torque (N)'</span>)
+
+DrawSailAttitude( d.g, p.q(:,end), [env.uSun(:,end) -Unit(p.r(:,end))] );
+
+Figui
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ans = 
+  Figure (Plot2D) with properties:
+
+      Number: 7
+        Name: 'Sail Force Vector (mN) in Rotating Frame'
+       Color: [1 1 1]
+    Position: [440 378 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+hQ = 
+  Quiver with properties:
+
+        Color: [0 0.447 0.741]
+    LineStyle: '-'
+    LineWidth: 0.5
+        XData: 0
+        YData: 0
+        ZData: 0
+        UData: -10.388
+        VData: -26.774
+        WData: -56.349
+
+  Use GET to show all properties
+ans = 
+  Surface with properties:
+
+       EdgeColor: 'none'
+       LineStyle: '-'
+       FaceColor: [0 0 1]
+    FaceLighting: 'gouraud'
+       FaceAlpha: 1
+           XData: [25x25 double]
+           YData: [25x25 double]
+           ZData: [25x25 double]
+           CData: [25x25 double]
+
+  Use GET to show all properties
+</pre><img vspace="5" hspace="5" src="ST9CombinedDemo_03.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_04.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_05.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_06.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_07.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_08.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_09.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_10.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_11.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_12.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_13.png" alt=""> <img vspace="5" hspace="5" src="ST9CombinedDemo_14.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate combined simulation for a sail in ST9 orbit.
+% This is a dawn-dusk sun-synchronous orbit that keeps the sail illuminated at
+% all times. The sail is initialized along the LVLH frame.
+% Shows the torque produced when sail is pointed along velocity vector. 
+% This can be avoided by aligning the sail along LVLH with a small  
+% loss in orbit change produced per orbit. You can also test 
+% sun-pointing and edge-on attitudes.
+% The gravity model includes J2 for sun-synch orbit precession.
+% The integration takes about 20 seconds/simulated day on a MacBook.
+%
+%   Since version 7.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also:     FSailCombined     SailEnvironment     SailDisturbance     
+%  SailEphemEarth     FOrbitSingle     ST9Guidance, QZero, AssignFHandle, 
+%  Figui, InformDlg, Plot2D, Unit, Date2JD, El2RV, PltOrbit, SunV1, 
+%  DisturbanceStruct, EnvironmentStruct, DrawSailAttitude, PlotSailForce, 
+%  PlotSailProfile, DisplaySailProperties
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2007, 2010 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% USER PARAMETERS
+%% Number of days to simulate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nDays = 1;
+
+%% Earth gravity parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nZonal = 2;  % J2
+nTesseral = 0;
+
+% Attitude profile method, see EarthGuidance
+% The available profiles are:
+%     1. Sun-pointing
+%     2. Constant force component along velocity vector
+%     3. Constant rotation with respect to LVLH frame
+%     4. Edge-on (no solar pressure force)
+%     5. Optimal angle for SMA increase
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+methodST9 = 1;
+
+%% CAD model selection
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cadModel = 'SailGEO_450.mat';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Epoch
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD = Date2JD([2010 3 15, 16 0 0]); 
+[uSun,rS] = SunV1( jD );
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dE = load('EarthGravityModel.mat');
+rE = dE.a; % radius of earth
+
+%% Place sail in a sun-sychronous orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sma = 7978.1;
+meanm = sqrt( dE.mu/sma^3 );
+J2  = 0.001082;
+dW  = 360/(365*86400); % deg/s
+inc = acos( -dW*pi/180/ (3*meanm*J2*rE^2/(2*sma^2)) );
+RA  = atan2(uSun(1),uSun(2));
+el0 = [sma;inc;RA;0;0;0];
+% Plot initial orbit
+PltOrbit( el0, jD );
+set(gcf,'name','Initial Sail Orbit');
+
+[r,v]     = El2RV( el0 );
+q         = QZero;
+w         = [0;0;0];
+
+%% Initialize simulation data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[d,p] = InitializeSailSim(jD,cadModel,'EarthGuidance');
+d = InitializeSailGravity( d, 'earth', dE, nZonal, nTesseral );
+% set guidance method
+d.method = methodST9;
+
+tEnd = nDays*86400;
+opts = odeset('abstol',1e-12,'reltol',1e-10);
+hDlg = InformDlg( 'Integrating...', 'ST9CombinedDemo' );
+tic
+[z, x] = ode113( @FSailCombined, [0 tEnd], [r;v;q;w], opts, p, d );
+toc
+close(hDlg);
+
+% Find out how many points were computed
+disp('Number of output points')
+disp(length(z))
+
+%% Extract the profiles from the orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[p, env, f, tq] = FSailCombined( z', x', p, d );
+
+PlotSailProfile( p, env, [1;0;0] );
+PlotSailForce( f, p, env )
+Plot2D(z',tq.total,'Sec',{'Tx','Ty','Tz'},'Torque (N)')
+
+DrawSailAttitude( d.g, p.q(:,end), [env.uSun(:,end) -Unit(p.r(:,end))] );
+
+Figui
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 11:56:16 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39867 $
+
+##### SOURCE END #####
+--></body></html>

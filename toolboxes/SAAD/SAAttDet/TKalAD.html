@@ -1,0 +1,304 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Attitude determination using a Kalman Filter</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="TKalAD.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Attitude determination using a Kalman Filter</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also KFSAAD, Delay, Quant, RaDec2U, DupVect, UE, ADGen
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Sun vector is constant in this demo</a></li><li><a href="#3">The orbital elements</a></li><li><a href="#4">The true attitude</a></li><li><a href="#5">Get the horizon sensor data and sun angles</a></li><li><a href="#6">Reformat the data</a></li><li><a href="#7">Extract the data with chordwidths above a threshold</a></li><li><a href="#8">The state vector</a></li><li><a href="#9">Initial guess</a></li><li><a href="#10">Call the Kalman filter. It will process all measurements and plot the results</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1994-1995 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+nsamples  = 600;
+
+degToRad  = pi/180;
+rPMToRPS  = 2*pi/60;
+
+cant1     = 94*degToRad;
+cant2     = 86*degToRad;
+dihedral1 =  0*degToRad;
+dihedral2 = 45*degToRad;
+
+ssbias    = 0.0;
+ssnoise   = 0.0*degToRad;
+ssquant   = 0.000001*degToRad;
+
+erbias    =  0.0;
+cw1bias   =  0.0;
+cw2bias   =  0.0;
+da1bias   =  0.0;
+da2bias   =  0.0;
+cant1bias =  0.0;
+cant2bias =  0.0;
+</pre><h2 id="2">Sun vector is constant in this demo</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+c10      = cos(10*degToRad);
+s10      = sin(10*degToRad);
+usun     = DupVect([c10;0;s10],nsamples);
+
+qtype    = <span class="string">'round'</span>;
+onesigma = 0.0;
+sunbias  = 0.0;
+spinrate = 10*rPMToRPS;
+quant    = 1.e-6;
+delay    = 0;
+</pre><h2 id="3">The orbital elements</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+el(1)        = (42167 + 6800)/2;
+el(2)        = 7 * pi/180;
+el(3)        = 0;
+el(4)        = 0;
+el(5)        = 0.7;
+</pre><h2 id="4">The true attitude</h2><pre class="codeinput"><span class="comment">%------------------</span>
+ra           =  1.5;
+dec          = -0.4;
+uspin        = RaDec2U(ra,dec);
+</pre><h2 id="5">Get the horizon sensor data and sun angles</h2><pre class="codeinput"><span class="comment">%-------------------------------------------</span>
+cantAngle    = [cant1;cant2];
+cantBias     = [cant1bias;cant2bias];
+dihedralBias = [dihedral1;dihedral2];
+mA           = linspace(pi/2,3*pi/2,nsamples);
+
+[tLE,tTE,sa,unadir,eradius] = ADGen( el, usun, uspin, spinrate, mA, [delay;delay],<span class="keyword">...</span>
+                                     [quant;quant], [qtype;qtype], [onesigma;onesigma],<span class="keyword">...</span>
+                                     cantAngle, cantBias, dihedralBias, ssquant,<span class="keyword">...</span>
+                                     <span class="string">'round'</span>, ssnoise, ssbias, erbias );
+</pre><img vspace="5" hspace="5" src="TKalAD_01.png" alt=""> <h2 id="6">Reformat the data</h2><pre class="codeinput"><span class="comment">%------------------</span>
+tte1 = tTE(1,:);
+tte2 = tTE(2,:);
+tle1 = tLE(1,:);
+tle2 = tLE(2,:);
+</pre><h2 id="7">Extract the data with chordwidths above a threshold</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+chordwidth1 = spinrate*(tte1-tle1);
+chordwidth2 = spinrate*(tte2-tle2);
+
+kr          = find(chordwidth1 &gt; 6*degToRad | chordwidth2 &gt; 6*degToRad);
+
+us          =   usun(:,kr);
+ue          = unadir(:,kr);
+er          = eradius(kr);
+cw1         = chordwidth1(kr) + cw1bias;
+cw2         = chordwidth2(kr) + cw2bias;
+da1         = 0.5*spinrate*(tte1(kr)+tle1(kr))-dihedral1 + da1bias;
+da2         = 0.5*spinrate*(tte2(kr)+tle2(kr))-dihedral2 + da2bias;
+sb          = sa(kr);
+</pre><h2 id="8">The state vector</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+<span class="comment">%          1          2        3        4        5        6</span>
+<span class="comment">% [       ra,       dec, cwbias1, cwbias2, dabias1, dabias2,</span>
+<span class="comment">%          7          8        9      10</span>
+<span class="comment">%  cantbias1, cantbias2, sunbias, erbias]</span>
+
+<span class="comment">% Measurement functions</span>
+<span class="comment">% Sun:            harc, dhdxarc</span>
+<span class="comment">% Chordwidth:     hcw,  dhdxcw</span>
+<span class="comment">% Dihedral angle: hda,  dhdxda</span>
+
+H    = zeros(1,10);
+</pre><h2 id="9">Initial guess</h2><pre class="codeinput"><span class="comment">%--------------</span>
+x    = [1.5 -0.3  0.01 0 0  0 0 0  0 0]';
+ff   = 0.1;
+nits = 1;
+Rsb  = 0.01;
+Rcw  = 0.1;
+Rda  = 0.1;
+P    = diag([100,100,100,1,1,1,1,1,1,1]);
+</pre><h2 id="10">Call the Kalman filter. It will process all measurements and plot the results</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------------------------</span>
+KFSAAD(x,P,Rcw,Rda,Rsb,cw1,cw2,da1,da2,sb,ue,us,er,cant1,cant2,ff,[],[ra,dec])
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="TKalAD_02.png" alt=""> <img vspace="5" hspace="5" src="TKalAD_03.png" alt=""> <img vspace="5" hspace="5" src="TKalAD_04.png" alt=""> <img vspace="5" hspace="5" src="TKalAD_05.png" alt=""> <img vspace="5" hspace="5" src="TKalAD_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Attitude determination using a Kalman Filter
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also KFSAAD, Delay, Quant, RaDec2U, DupVect, UE, ADGen
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1994-1995 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+nsamples  = 600;
+
+degToRad  = pi/180;
+rPMToRPS  = 2*pi/60;
+
+cant1     = 94*degToRad;
+cant2     = 86*degToRad;
+dihedral1 =  0*degToRad;
+dihedral2 = 45*degToRad;
+
+ssbias    = 0.0;
+ssnoise   = 0.0*degToRad;
+ssquant   = 0.000001*degToRad;
+
+erbias    =  0.0;
+cw1bias   =  0.0;
+cw2bias   =  0.0;
+da1bias   =  0.0;
+da2bias   =  0.0;
+cant1bias =  0.0;
+cant2bias =  0.0;
+
+%% Sun vector is constant in this demo
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+c10      = cos(10*degToRad);
+s10      = sin(10*degToRad);
+usun     = DupVect([c10;0;s10],nsamples);
+
+qtype    = 'round';
+onesigma = 0.0;
+sunbias  = 0.0;
+spinrate = 10*rPMToRPS;
+quant    = 1.e-6;
+delay    = 0;
+
+%% The orbital elements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+el(1)        = (42167 + 6800)/2;
+el(2)        = 7 * pi/180;
+el(3)        = 0;
+el(4)        = 0;
+el(5)        = 0.7;
+
+%% The true attitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+ra           =  1.5;
+dec          = -0.4;
+uspin        = RaDec2U(ra,dec);
+
+%% Get the horizon sensor data and sun angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cantAngle    = [cant1;cant2];
+cantBias     = [cant1bias;cant2bias];
+dihedralBias = [dihedral1;dihedral2];
+mA           = linspace(pi/2,3*pi/2,nsamples);
+
+[tLE,tTE,sa,unadir,eradius] = ADGen( el, usun, uspin, spinrate, mA, [delay;delay],...
+                                     [quant;quant], [qtype;qtype], [onesigma;onesigma],...
+                                     cantAngle, cantBias, dihedralBias, ssquant,...
+                                     'round', ssnoise, ssbias, erbias );
+	
+%% Reformat the data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH				  
+tte1 = tTE(1,:);
+tte2 = tTE(2,:);
+tle1 = tLE(1,:);
+tle2 = tLE(2,:);
+
+%% Extract the data with chordwidths above a threshold
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+chordwidth1 = spinrate*(tte1-tle1);
+chordwidth2 = spinrate*(tte2-tle2);
+
+kr          = find(chordwidth1 > 6*degToRad | chordwidth2 > 6*degToRad);
+
+us          =   usun(:,kr);
+ue          = unadir(:,kr);
+er          = eradius(kr); 
+cw1         = chordwidth1(kr) + cw1bias;  
+cw2         = chordwidth2(kr) + cw2bias;  
+da1         = 0.5*spinrate*(tte1(kr)+tle1(kr))-dihedral1 + da1bias; 
+da2         = 0.5*spinrate*(tte2(kr)+tle2(kr))-dihedral2 + da2bias;  
+sb          = sa(kr);
+
+%% The state vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%          1          2        3        4        5        6
+% [       ra,       dec, cwbias1, cwbias2, dabias1, dabias2,
+%          7          8        9      10
+%  cantbias1, cantbias2, sunbias, erbias]
+
+% Measurement functions
+% Sun:            harc, dhdxarc
+% Chordwidth:     hcw,  dhdxcw
+% Dihedral angle: hda,  dhdxda
+
+H    = zeros(1,10);
+
+%% Initial guess
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x    = [1.5 -0.3  0.01 0 0  0 0 0  0 0]';
+ff   = 0.1;
+nits = 1;
+Rsb  = 0.01;
+Rcw  = 0.1;
+Rda  = 0.1;
+P    = diag([100,100,100,1,1,1,1,1,1,1]);
+
+%% Call the Kalman filter. It will process all measurements and plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+KFSAAD(x,P,Rcw,Rda,Rsb,cw1,cw2,da1,da2,sb,ue,us,er,cant1,cant2,ff,[],[ra,dec])
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-09-08 $
+% $Revision: 2214725ef0ffebb764ae379aec0e0d7b46e2b4a8 $
+
+##### SOURCE END #####
+--></body></html>

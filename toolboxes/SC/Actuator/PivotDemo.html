@@ -1,0 +1,341 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulates a pivot rotation.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="PivotDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulates a pivot rotation.</h1><!--introduction--><p>The pivot is rotated in two steps. The steps are timed to be exactly one half nutation period apart. The results is that the spacecraft rolls and there is no nutation. The pivot stepping motor is modeled by a high bandwidth PD controller. The gains are selected by the fields:</p><pre class="language-matlab">d.pivotAngleGain
+d.pivotRateGain
+</pre><p>The selected gains are the highest feasible with an integration time step of 0.0625 seconds.</p><p>The pivot is assumed to update every pivotUpdatePeriod.</p><pre>------------------------------------------------------------------------
+See also QTForm, Plot2D, TimeGUI, Jacobian, Mag, RK4, SCWithRollPivot
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Spacecraft parameters</a></li><li><a href="#4">Initialize the arrays</a></li><li><a href="#5">Initialize the time display</a></li><li><a href="#6">Initial conditions</a></li><li><a href="#7">Find the half nutation period. I know it is element 7 because I looked!</a></li><li><a href="#8">Initial wheel rate and momentum</a></li><li><a href="#9">Simulate the pivot</a></li><li><a href="#10">This is  necessary if the simulation is terminated early</a></li><li><a href="#11">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1999 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Spacecraft parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+clear <span class="string">d</span>;
+d.scInertia            = diag([10000 2000 10000]);
+d.pivotInertia         = eye(3);
+d.bWheelAlignment      = [1 0 0;0 -1 0;0 0 -1];
+d.wheelInertia         = [1 0];
+d.pivotAngleGain       = 600;
+d.pivotRateGain        = 2*.7071*sqrt(d.pivotAngleGain );
+d.torque               = [0;0;0];
+d.torqueWheel          = 0;
+d.commandedPivotAngle  = 0;
+pivotPeriod            = 50;
+pivotUpdatePeriod      = 1/8;
+
+pivotRate              = 0.002*pi/180;
+</pre><h2 id="4">Initialize the arrays</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+tEnd                   = 400;
+dT                     = 0.0625;
+nSim                   = tEnd/dT;
+xPlot                  = zeros(15,nSim);
+</pre><h2 id="5">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'Pivoted Wheel Simulation'</span> );
+</pre><img vspace="5" hspace="5" src="PivotDemo_01.png" alt=""> <h2 id="6">Initial conditions</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+w   = [0;7.291e-5;0];
+wP  = 0.0;
+wW  = 600;
+x   = [1;0;0;0; 0; w; wP; wW];
+t   = 0;
+</pre><h2 id="7">Find the half nutation period. I know it is element 7 because I looked!</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------------------</span>
+a                  = Jacobian( <span class="string">'SCWithRollPivot'</span>, x, 0, d );
+s                  = eig(a);
+halfNutationPeriod = pi/imag(s(7));
+</pre><h2 id="8">Initial wheel rate and momentum</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+w0     = x(10);
+h0     = QTForm( x(1:4), SCWithRollPivot( x, t, d, <span class="string">'h'</span> ) );
+magH0  = Mag(h0);
+tPivot = 0;
+</pre><h2 id="9">Simulate the pivot</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  <span class="comment">% Angular momentum</span>
+  <span class="comment">%-----------------</span>
+  h  = QTForm( x(1:4), SCWithRollPivot( x, t, d, <span class="string">'h'</span> ) );
+
+  <span class="comment">% Plots</span>
+  <span class="comment">%------</span>
+  xPlot(:,k) = [x;h - h0;Mag(h) - magH0;d.commandedPivotAngle];
+
+  <span class="comment">% Propagate the state</span>
+  <span class="comment">%---------------------</span>
+  x  = RK4( <span class="string">'SCWithRollPivot'</span>, x, dT, t, d );
+
+  <span class="comment">% The pivot control</span>
+  <span class="comment">%------------------</span>
+  <span class="keyword">if</span>( t &lt; pivotPeriod &amp; t &gt;= tPivot )
+    d.commandedPivotAngle = d.commandedPivotAngle + pivotRate*dT;
+	tPivot                = tPivot + pivotUpdatePeriod;
+  <span class="keyword">elseif</span>( t &lt; pivotPeriod + halfNutationPeriod &amp; t &gt; halfNutationPeriod &amp; t &gt;= tPivot  )
+    d.commandedPivotAngle = d.commandedPivotAngle + pivotRate*dT;
+	tPivot                = tPivot + pivotUpdatePeriod;
+  <span class="keyword">elseif</span>( t &gt;= tPivot )
+	tPivot                = tPivot + pivotUpdatePeriod;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Update the time</span>
+  <span class="comment">%----------------</span>
+  t  =  t + dT;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="PivotDemo_02.png" alt=""> <h2 id="10">This is  necessary if the simulation is terminated early</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------</span>
+j    = 1:k;
+t    = (0:(k-1))*dT;
+xLbl = <span class="string">'Time (sec)'</span>;
+</pre><h2 id="11">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+xPlot(10,:) = xPlot(10,:) - w0;
+Plot2D( t, xPlot(1:4,     j), xLbl, [<span class="string">'q1'</span>;<span class="string">'q2'</span>;<span class="string">'q3'</span>;<span class="string">'q4'</span>], <span class="string">'Quaternion'</span> );
+Plot2D( t, xPlot( 6: 8,   j), xLbl, [<span class="string">'x (rad/s)'</span>;<span class="string">'y (rad/s)'</span>;<span class="string">'z (rad/s)'</span>], <span class="string">'Body Rates'</span> );
+
+yLbl = [<span class="string">'Pivot Angle      '</span>;<span class="keyword">...</span>
+        <span class="string">'Pivot Rate       '</span>;<span class="keyword">...</span>
+		<span class="string">'Delta Wheel Rate '</span>;<span class="keyword">...</span>
+		<span class="string">'Commanded Angle  '</span>];
+
+Plot2D( t, xPlot([5 9 10 15],j), xLbl, yLbl, <span class="string">'Pivot'</span> );
+Plot2D( t, xPlot(11:14,   j), xLbl, [<span class="string">'hX '</span>;<span class="string">'hY '</span>;<span class="string">'hZ '</span>;<span class="string">'|h|'</span>], <span class="string">'Delta ECI Momentum'</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="PivotDemo_03.png" alt=""> <img vspace="5" hspace="5" src="PivotDemo_04.png" alt=""> <img vspace="5" hspace="5" src="PivotDemo_05.png" alt=""> <img vspace="5" hspace="5" src="PivotDemo_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulates a pivot rotation. 
+% The pivot is rotated in two steps. The steps are timed to be exactly 
+% one half nutation period apart. The results is that the spacecraft
+% rolls and there is no nutation. The pivot stepping motor is modeled by 
+% a high bandwidth PD controller. The gains are selected by the fields:
+%
+%   d.pivotAngleGain
+%   d.pivotRateGain
+%
+% The selected gains are the highest feasible with an integration time
+% step of 0.0625 seconds.
+%
+% The pivot is assumed to update every pivotUpdatePeriod.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also QTForm, Plot2D, TimeGUI, Jacobian, Mag, RK4, SCWithRollPivot
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1999 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Spacecraft parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear d;
+d.scInertia            = diag([10000 2000 10000]);
+d.pivotInertia         = eye(3);
+d.bWheelAlignment      = [1 0 0;0 -1 0;0 0 -1];
+d.wheelInertia         = [1 0];
+d.pivotAngleGain       = 600;
+d.pivotRateGain        = 2*.7071*sqrt(d.pivotAngleGain );
+d.torque               = [0;0;0];
+d.torqueWheel          = 0;
+d.commandedPivotAngle  = 0;
+pivotPeriod            = 50;
+pivotUpdatePeriod      = 1/8;
+
+pivotRate              = 0.002*pi/180;
+
+%% Initialize the arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tEnd                   = 400;
+dT                     = 0.0625;
+nSim                   = tEnd/dT;
+xPlot                  = zeros(15,nSim);
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, 'Pivoted Wheel Simulation' );
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+w   = [0;7.291e-5;0];
+wP  = 0.0;
+wW  = 600;
+x   = [1;0;0;0; 0; w; wP; wW];
+t   = 0;
+
+%% Find the half nutation period. I know it is element 7 because I looked!
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+a                  = Jacobian( 'SCWithRollPivot', x, 0, d );
+s                  = eig(a);
+halfNutationPeriod = pi/imag(s(7));
+
+%% Initial wheel rate and momentum
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w0     = x(10);
+h0     = QTForm( x(1:4), SCWithRollPivot( x, t, d, 'h' ) );
+magH0  = Mag(h0);
+tPivot = 0;
+
+%% Simulate the pivot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+  
+  % Angular momentum
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  h  = QTForm( x(1:4), SCWithRollPivot( x, t, d, 'h' ) );
+  
+  % Plots
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  xPlot(:,k) = [x;h - h0;Mag(h) - magH0;d.commandedPivotAngle];
+  
+  % Propagate the state
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x  = RK4( 'SCWithRollPivot', x, dT, t, d );
+  
+  % The pivot control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( t < pivotPeriod & t >= tPivot )
+    d.commandedPivotAngle = d.commandedPivotAngle + pivotRate*dT;
+	tPivot                = tPivot + pivotUpdatePeriod;            
+  elseif( t < pivotPeriod + halfNutationPeriod & t > halfNutationPeriod & t >= tPivot  )
+    d.commandedPivotAngle = d.commandedPivotAngle + pivotRate*dT;
+	tPivot                = tPivot + pivotUpdatePeriod;            
+  elseif( t >= tPivot )
+	tPivot                = tPivot + pivotUpdatePeriod;            
+  end
+  
+  % Update the time
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t  =  t + dT;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+end
+
+%% This is  necessary if the simulation is terminated early
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+j    = 1:k;
+t    = (0:(k-1))*dT;
+xLbl = 'Time (sec)';
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xPlot(10,:) = xPlot(10,:) - w0;
+Plot2D( t, xPlot(1:4,     j), xLbl, ['q1';'q2';'q3';'q4'], 'Quaternion' );
+Plot2D( t, xPlot( 6: 8,   j), xLbl, ['x (rad/s)';'y (rad/s)';'z (rad/s)'], 'Body Rates' );
+
+yLbl = ['Pivot Angle      ';...
+        'Pivot Rate       ';...
+		'Delta Wheel Rate ';...
+		'Commanded Angle  '];
+
+Plot2D( t, xPlot([5 9 10 15],j), xLbl, yLbl, 'Pivot' );
+Plot2D( t, xPlot(11:14,   j), xLbl, ['hX ';'hY ';'hZ ';'|h|'], 'Delta ECI Momentum' );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

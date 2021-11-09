@@ -1,0 +1,316 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test the smart reaction wheel model.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="RWASmartSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test the smart reaction wheel model.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also Plot2D, TimeGUI, RK4, RWASmart
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Simulation parameters</a></li><li><a href="#4">Input the friction model</a></li><li><a href="#5">Reinitialize</a></li><li><a href="#6">Initialize the time display</a></li><li><a href="#7">Initial conditions</a></li><li><a href="#8">Commanded voltage</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1999-2000 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the TimeGUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Simulation parameters</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+dT    = 0.0125;
+nSim  = 300;
+</pre><h2 id="4">Input the friction model</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+d = RWASmart(<span class="string">'get default datastructure'</span>);
+
+d.friction(1).fStatic   = 0.005;
+d.friction(1).fCoulomb  = 0.005/2;
+d.friction(1).vStribeck = 0.1;
+d.friction(1).sigma0    = 1;
+d.friction(1).sigma1    = 1e-4;
+d.friction(1).sigma2    = 4.0585e-05;
+d.friction(1).maxC      = 0.1/dT;
+d.nWheels               = 2;
+
+d.friction(2)           = d.friction(1);
+</pre><h2 id="5">Reinitialize</h2><pre class="codeinput"><span class="comment">%-------------</span>
+RWASmart( <span class="string">'initialize'</span>, d );
+</pre><h2 id="6">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'RWA Smart Simulation'</span> );
+</pre><img vspace="5" hspace="5" src="RWASmartSim_01.png" alt=""> <h2 id="7">Initial conditions</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+x     = [0;0;0;0;0;0];
+xPlot = zeros(22,nSim);
+t     = 0;
+</pre><h2 id="8">Commanded voltage</h2><pre class="codeinput"><span class="comment">%------------------</span>
+RWASmart( <span class="string">'put data word'</span>, [-100;100] );
+
+<span class="keyword">for</span> k = 1:nSim
+
+             RWASmart( <span class="string">'set tachometer states'</span>,  struct( <span class="string">'omega'</span>, x(1:2), <span class="string">'angle'</span>, x(5:6)) );
+  tachWord = RWASmart( <span class="string">'get tachometer word'</span> );
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  x          = RK4( <span class="string">'RWASmart'</span>, x, dT, [0;0] );
+  tPlot(k)   = t;
+
+  xPlot(:,k) = [x;<span class="keyword">...</span>
+                RWASmart( <span class="string">'get friction torque'</span> );<span class="keyword">...</span>
+                RWASmart( <span class="string">'get torque'</span>          );<span class="keyword">...</span>
+                RWASmart( <span class="string">'get power'</span>           );<span class="keyword">...</span>
+                RWASmart( <span class="string">'get motor current'</span>   );<span class="keyword">...</span>
+                RWASmart( <span class="string">'get motor voltage'</span>   );<span class="keyword">...</span>
+                tachWord(1).direction;<span class="keyword">...</span>
+                tachWord(1).count;<span class="keyword">...</span>
+                tachWord(1).scaling;<span class="keyword">...</span>
+                tachWord(2).direction;<span class="keyword">...</span>
+                tachWord(2).count;<span class="keyword">...</span>
+                tachWord(2).scaling];
+
+  <span class="comment">% Update the time</span>
+  <span class="comment">%----------------</span>
+  t  =  t + dT;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+RWASmart( <span class="string">'quit'</span> );
+
+yLbl = [<span class="string">'Omega    '</span>;<span class="keyword">...</span>
+        <span class="string">'Omega    '</span>;<span class="keyword">...</span>
+        <span class="string">'Bristle  '</span>;<span class="keyword">...</span>
+        <span class="string">'Bristle  '</span>;<span class="keyword">...</span>
+        <span class="string">'Angle    '</span>;<span class="keyword">...</span>
+        <span class="string">'Angle    '</span>;<span class="keyword">...</span>
+        <span class="string">'Friction '</span>;<span class="keyword">...</span>
+        <span class="string">'Friction '</span>;<span class="keyword">...</span>
+        <span class="string">'Torque   '</span>;<span class="keyword">...</span>
+        <span class="string">'Torque   '</span>;<span class="keyword">...</span>
+        <span class="string">'Power    '</span>;<span class="keyword">...</span>
+        <span class="string">'Power    '</span>;<span class="keyword">...</span>
+        <span class="string">'Current  '</span>;<span class="keyword">...</span>
+        <span class="string">'Current  '</span>;<span class="keyword">...</span>
+        <span class="string">'Voltage  '</span>;<span class="keyword">...</span>
+        <span class="string">'Voltage  '</span>;
+        <span class="string">'Direction'</span>;<span class="keyword">...</span>
+        <span class="string">'Count    '</span>;<span class="keyword">...</span>
+        <span class="string">'Scaling  '</span>];
+
+Plot2D( tPlot, xPlot( 1: 6,1:k), <span class="string">'Time (sec)'</span>, yLbl( 1: 6,:), <span class="string">'RWA States'</span>)
+Plot2D( tPlot, xPlot( 7:10,1:k), <span class="string">'Time (sec)'</span>, yLbl( 7:10,:), <span class="string">'RWA Torque'</span>)
+Plot2D( tPlot, xPlot(11:16,1:k), <span class="string">'Time (sec)'</span>, yLbl(11:16,:), <span class="string">'RWA Motor'</span>)
+Plot2D( tPlot, xPlot(17:19,1:k), <span class="string">'Time (sec)'</span>, yLbl(17:19,:), <span class="string">'RWA Tach 1'</span>)
+Plot2D( tPlot, xPlot(20:22,1:k), <span class="string">'Time (sec)'</span>, yLbl(17:19,:), <span class="string">'RWA Tach 2'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="RWASmartSim_02.png" alt=""> <img vspace="5" hspace="5" src="RWASmartSim_03.png" alt=""> <img vspace="5" hspace="5" src="RWASmartSim_04.png" alt=""> <img vspace="5" hspace="5" src="RWASmartSim_05.png" alt=""> <img vspace="5" hspace="5" src="RWASmartSim_06.png" alt=""> <img vspace="5" hspace="5" src="RWASmartSim_07.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test the smart reaction wheel model.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TimeGUI, RK4, RWASmart
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1999-2000 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT    = 0.0125;
+nSim  = 300;
+
+%% Input the friction model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = RWASmart('get default datastructure');
+
+d.friction(1).fStatic   = 0.005;
+d.friction(1).fCoulomb  = 0.005/2;
+d.friction(1).vStribeck = 0.1;
+d.friction(1).sigma0    = 1;
+d.friction(1).sigma1    = 1e-4;
+d.friction(1).sigma2    = 4.0585e-05;
+d.friction(1).maxC      = 0.1/dT;
+d.nWheels               = 2;
+
+d.friction(2)           = d.friction(1);
+
+%% Reinitialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+RWASmart( 'initialize', d );
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, 'RWA Smart Simulation' );
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x     = [0;0;0;0;0;0];
+xPlot = zeros(22,nSim);
+t     = 0;
+
+%% Commanded voltage
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+RWASmart( 'put data word', [-100;100] );
+
+for k = 1:nSim 
+	
+             RWASmart( 'set tachometer states',  struct( 'omega', x(1:2), 'angle', x(5:6)) );
+  tachWord = RWASmart( 'get tachometer word' );
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+ 
+  x          = RK4( 'RWASmart', x, dT, [0;0] );
+  tPlot(k)   = t;
+
+  xPlot(:,k) = [x;...
+                RWASmart( 'get friction torque' );...
+                RWASmart( 'get torque'          );...
+                RWASmart( 'get power'           );...
+                RWASmart( 'get motor current'   );...
+                RWASmart( 'get motor voltage'   );...
+                tachWord(1).direction;...
+                tachWord(1).count;...
+                tachWord(1).scaling;...
+                tachWord(2).direction;...
+                tachWord(2).count;...
+                tachWord(2).scaling];
+   
+  % Update the time
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t  =  t + dT;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+RWASmart( 'quit' );
+
+yLbl = ['Omega    ';...
+        'Omega    ';...
+        'Bristle  ';...
+        'Bristle  ';...
+        'Angle    ';...
+        'Angle    ';...
+        'Friction ';...
+        'Friction ';...
+        'Torque   ';...
+        'Torque   ';...
+        'Power    ';...
+        'Power    ';...
+        'Current  ';...
+        'Current  ';...
+        'Voltage  ';...
+        'Voltage  ';
+        'Direction';...
+        'Count    ';...
+        'Scaling  '];
+		
+Plot2D( tPlot, xPlot( 1: 6,1:k), 'Time (sec)', yLbl( 1: 6,:), 'RWA States')
+Plot2D( tPlot, xPlot( 7:10,1:k), 'Time (sec)', yLbl( 7:10,:), 'RWA Torque')
+Plot2D( tPlot, xPlot(11:16,1:k), 'Time (sec)', yLbl(11:16,:), 'RWA Motor')
+Plot2D( tPlot, xPlot(17:19,1:k), 'Time (sec)', yLbl(17:19,:), 'RWA Tach 1')
+Plot2D( tPlot, xPlot(20:22,1:k), 'Time (sec)', yLbl(17:19,:), 'RWA Tach 2')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-03-09 $
+% $Revision: ec8a116a18123f06c9438fe5b98f1be058042d97 $
+
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,407 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Compare the solar pressure force for uniform and irregular materials.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="SailForceImperfectMaterial.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Compare the solar pressure force for uniform and irregular materials.</h1><!--introduction--><p>Demonstrate optical properties which vary across the sail membrane, and compare to a uniform sail surface. The sail is in the X/Y plane and the sun incidence angle is in the X/Z plane.</p><p>Try running it for both flat and billowed shapes by changing the state of the sailIsFlat flag. There will be no torque on the uniform flat sail but substantial torques on the irregular flat sail even for zero incidence angle, due to the change in the center of pressure. The y torque on the billowed sail will be dominated by the sail shape but the x and z torques will be similar.</p><p>This demo uses the default random number generator so you will get the same irregular optical properties over multiple runs. -------------------------------------------------------------------------  See also: SailMesh, CP1Props, SolarPressureForce -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Define your sail model</a></li><li><a href="#3">Display the sail</a></li><li><a href="#4">Define the optical properties</a></li><li><a href="#5">Compute the force model on the sail for a full span of incidence angles</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	 Copyright 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2>Define your sail model<a name="2"></a></h2><p>The circular sail perimeter is in the X/Y plane.</p><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+sailIsFlat = true;
+
+theta = linspace(0,2*pi,20);
+theta = theta(1:end-1);
+rSail = 50;  <span class="comment">% m</span>
+x = rSail*cos(theta);
+y = rSail*sin(theta);
+<span class="keyword">if</span> sailIsFlat
+  <span class="comment">% Flat sail</span>
+  [v,f] = SailMesh( x, y );
+  shape = <span class="string">'Flat'</span>;
+<span class="keyword">else</span>
+  <span class="comment">% Billowed sail</span>
+  dBillow = struct(<span class="string">'b'</span>,0.1,<span class="string">'r'</span>,rSail);
+	[v,f] = SailMesh( x, y, <span class="string">'HCircularBillow'</span>, dBillow, 3 );
+  shape = <span class="string">'Billowed'</span>;
+<span class="keyword">end</span>
+[a, n, r] = PolygonProps( v, f );
+nEl = length(a);
+<span class="comment">% center of mass</span>
+rCM = [0;0;0];
+</pre><h2>Display the sail<a name="3"></a></h2><pre class="codeinput"><span class="comment">%------------------</span>
+NewFig(<span class="string">'Sail Mesh'</span>)
+patch(<span class="string">'vertices'</span>,v,<span class="string">'faces'</span>,f,<span class="keyword">...</span>
+    <span class="string">'facevertexcdata'</span>,v(:,3),<span class="string">'CDataMapping'</span>,<span class="string">'scaled'</span>,<span class="keyword">...</span>
+    <span class="string">'facecolor'</span>,<span class="string">'interp'</span>,<span class="string">'edgecolor'</span>,[0 0 0]);
+axis <span class="string">equal</span>; grid <span class="string">on</span>; colorbar
+xlabel(<span class="string">'x'</span>); ylabel(<span class="string">'y'</span>); zlabel(<span class="string">'z'</span>);
+</pre><img vspace="5" hspace="5" src="SailForceImperfectMaterial_01.png" alt=""> <h2>Define the optical properties<a name="4"></a></h2><p>CP1 properties - about 90% specular</p><pre class="codeinput"><span class="comment">%------------------------------------</span>
+[optical, infrared, thermal] = CP1Props;
+
+<span class="comment">% Change optical properties throughout mesh</span>
+sigmaS = ones(nEl,1)*optical.sigmaS;
+sigmaA = ones(nEl,1)*optical.sigmaA;
+sigmaD = ones(nEl,1)*optical.sigmaD;
+sigmaT = ones(nEl,1)*optical.sigmaT;
+
+<span class="comment">% Specify the default random number generator so the optical properties are</span>
+<span class="comment">% the same for successive runs.</span>
+scurr = rng;
+rng(<span class="string">'default'</span>);
+<span class="keyword">for</span> k = 1:nEl
+  <span class="comment">% introduce random changes in specular coefficient, maintain the sum of</span>
+  <span class="comment">% coefficients to be 1. 1 is the front of the sail and 2 is the back.</span>
+  sigmaS(k,1) = min(sigmaS(k,1) + 0.06*randn,0.95);
+  sigmaS(k,2) = min(sigmaS(k,2) + 0.08*randn,0.95);
+  sigRem = 1 - sigmaS(k,1);
+  sigmaD(k,1) = 0.19*sigRem;
+  sigmaA(k,1) = 0.78*sigRem;
+  sigmaT(k,1) = 0.03*sigRem;
+  sigRem = 1 - sigmaS(k,2);
+  sigmaD(k,2) = 0.19*sigRem;
+  sigmaA(k,2) = 0.78*sigRem;
+  sigmaT(k,2) = 0.03*sigRem;
+<span class="keyword">end</span>
+rng(scurr);
+
+<span class="comment">% Solar flux at 1 AU</span>
+<span class="comment">%--------------------</span>
+flux = SolarFlx( 1.0 );
+</pre><pre class="codeoutput">Warning: Using 'state' to set RAND's internal state causes RAND, RANDI, and
+RANDN to use legacy random number generators.  This syntax will be removed in a
+future release.  See &lt;a href="matlab:helpview([docroot
+'\techdoc\math\math.map'],'update_random_number_generator')"&gt;Updating Your
+Random Number Generator Syntax&lt;/a&gt; to use RNG to replace the old syntax. 
+</pre><h2>Compute the force model on the sail for a full span of incidence angles<a name="5"></a></h2><p>We will run through the calculations twice, once for uniform properties and once for random variations across the membrane.</p><pre class="codeinput"><span class="comment">% Create a vector of incidence angles in x/z plane</span>
+<span class="comment">%-------------------------------------------------</span>
+theta = linspace(0,pi/2);
+nPts  = length(theta);
+uSun  = [sin(theta);zeros(size(theta));cos(theta)];
+angles = theta*180/pi;
+aLabl = <span class="string">'Sun Incidence Angle (deg)'</span>;
+
+fTotal = cell(1,2);
+tTotal = cell(1,2);
+CpArray = cell(1,2);
+coneAngle = zeros(2,nPts);
+centerAngle = zeros(2,nPts);
+Tavg = zeros(2,nPts);
+
+ems = thermal.emissivity;
+rI  = r' - repmat(rCM,1,nEl);
+
+<span class="keyword">for</span> k = 1:2
+  fSail = zeros(3,nPts);
+  tSail = zeros(3,nPts);
+  Cp = zeros(3,nPts);
+  <span class="keyword">switch</span> k
+    <span class="keyword">case</span> 1
+      opt = optical;
+      name = <span class="string">'Uniform'</span>;
+    <span class="keyword">case</span> 2
+      opt.sigmaS = sigmaS;
+      opt.sigmaA = sigmaA;
+      opt.sigmaD = sigmaD;
+      opt.sigmaT = sigmaT;
+      name = <span class="string">'Irregular'</span>;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Compute the force and temperature of each element</span>
+  <span class="comment">%--------------------------------------------------</span>
+  <span class="keyword">for</span> j = 1:nPts
+    [fEl, T, fT] = SolarPressureForce( a', n', uSun(:,j), flux, <span class="keyword">...</span>
+                                           opt, ems );
+    F = Mag(fT);
+    tEl = Cross(rI,fEl);
+    tT = sum(tEl,2);
+    <span class="comment">% Approximations of center of pressure if Cp is perpendicular to F</span>
+    Cp(:,j) = Cross(fT,tT)/F;
+    Tavg(k,j) = mean(T);
+    fSail(:,j) = fT;
+    tSail(:,j) = tT;
+  <span class="keyword">end</span>
+  coneAngle(k,:) = acos(Dot(Unit(fSail),-uSun));
+  centerAngle(k,:) = acos(Dot(Unit(fSail),-[0;0;1]));
+  fTotal{k} = fSail;
+  tTotal{k} = tSail;
+  Plot2D(angles,Cp,aLabl,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},[<span class="string">'Equivalent Cp for '</span> shape <span class="string">' Sail (m)'</span>])
+  Plot2D(angles,tSail,aLabl,<span class="string">'Torque (Nm)'</span>,[<span class="string">'Torque on '</span> name <span class="string">' '</span> shape <span class="string">' Sail'</span>])
+  legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'Location'</span>,<span class="string">'southeast'</span>)
+  Plot2D(angles,fSail,aLabl,<span class="string">'Force (N)'</span>,[<span class="string">'Force on '</span> name <span class="string">' '</span> shape <span class="string">' Sail'</span>])
+  legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'Location'</span>,<span class="string">'southeast'</span>)
+<span class="keyword">end</span>
+
+Plot2D(angles, [Mag(fTotal{1});Mag(fTotal{2})], <span class="keyword">...</span>
+    aLabl,<span class="string">'Force Magnitude (N)'</span>,[shape <span class="string">' Sail Total Performance'</span>]);
+legend(<span class="string">'Uniform'</span>,<span class="string">'Variations'</span>)
+Plot2D(angles, fTotal{1}-fTotal{2}, <span class="keyword">...</span>
+    aLabl,{<span class="string">'\Delta F'</span>},[<span class="string">'Force Differences for '</span> shape <span class="string">' Sail (N)'</span>]);
+legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>)
+Plot2D(angles, [tTotal{1};tTotal{2}], <span class="keyword">...</span>
+    aLabl,{<span class="string">'Tx'</span>,<span class="string">'Ty'</span>,<span class="string">'Tz'</span>},[shape <span class="string">' Sail Torque (Nm)'</span>],<span class="string">'lin'</span>,<span class="keyword">...</span>
+    {[1 4],[2 5],[3 6]});
+subplot(3,1,1);
+legend(<span class="string">'Uniform'</span>,<span class="string">'Variations'</span>,<span class="string">'Location'</span>,<span class="string">'southeast'</span>)
+Plot2D(angles, tTotal{1}-tTotal{2}, <span class="keyword">...</span>
+    aLabl,{<span class="string">'\Delta T'</span>},[<span class="string">'Torque Differences for '</span> shape <span class="string">' Sail'</span>]);
+legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>)
+
+<span class="comment">% Display the variation in force for a single incidence angle for the</span>
+<span class="comment">% irregular sail.</span>
+g = struct(<span class="string">'v'</span>,v,<span class="string">'f'</span>,f,<span class="string">'optical'</span>,opt,<span class="string">'thermal'</span>,thermal);
+DrawSailMeshVectors( g, uSun(:,30) )
+
+Figui
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SailForceImperfectMaterial_02.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_03.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_04.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_05.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_06.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_07.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_08.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_09.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_10.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_11.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_12.png" alt=""> <img vspace="5" hspace="5" src="SailForceImperfectMaterial_13.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Compare the solar pressure force for uniform and irregular materials.
+% Demonstrate optical properties which vary across the sail membrane, and
+% compare to a uniform sail surface. The sail is in the X/Y plane and the
+% sun incidence angle is in the X/Z plane.
+%
+% Try running it for both flat and billowed shapes by changing the state of
+% the sailIsFlat flag. There will be no torque on the uniform flat sail but
+% substantial torques on the irregular flat sail even for zero incidence
+% angle, due to the change in the center of pressure. The y torque on the
+% billowed sail will be dominated by the sail shape but the x and z torques
+% will be similar.
+%
+% This demo uses the default random number generator so you will get the same
+% irregular optical properties over multiple runs.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also: SailMesh, CP1Props, SolarPressureForce
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	 Copyright 2014 Princeton Satellite Systems, Inc. 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Define your sail model
+% The circular sail perimeter is in the X/Y plane.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sailIsFlat = true;
+
+theta = linspace(0,2*pi,20);
+theta = theta(1:end-1);
+rSail = 50;  % m
+x = rSail*cos(theta);
+y = rSail*sin(theta);
+if sailIsFlat
+  % Flat sail
+  [v,f] = SailMesh( x, y ); 
+  shape = 'Flat';
+else
+  % Billowed sail
+  dBillow = struct('b',0.1,'r',rSail);
+	[v,f] = SailMesh( x, y, 'HCircularBillow', dBillow, 3 );
+  shape = 'Billowed';
+end
+[a, n, r] = PolygonProps( v, f );
+nEl = length(a);
+% center of mass
+rCM = [0;0;0];
+
+%% Display the sail
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+NewFig('Sail Mesh')
+patch('vertices',v,'faces',f,...
+    'facevertexcdata',v(:,3),'CDataMapping','scaled',...
+    'facecolor','interp','edgecolor',[0 0 0]);
+axis equal; grid on; colorbar
+xlabel('x'); ylabel('y'); zlabel('z');
+
+%% Define the optical properties
+% CP1 properties - about 90% specular
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[optical, infrared, thermal] = CP1Props;
+
+% Change optical properties throughout mesh
+sigmaS = ones(nEl,1)*optical.sigmaS;
+sigmaA = ones(nEl,1)*optical.sigmaA;
+sigmaD = ones(nEl,1)*optical.sigmaD;
+sigmaT = ones(nEl,1)*optical.sigmaT;
+
+% Specify the default random number generator so the optical properties are
+% the same for successive runs.
+scurr = rng;
+rng('default');
+for k = 1:nEl
+  % introduce random changes in specular coefficient, maintain the sum of
+  % coefficients to be 1. 1 is the front of the sail and 2 is the back.
+  sigmaS(k,1) = min(sigmaS(k,1) + 0.06*randn,0.95);
+  sigmaS(k,2) = min(sigmaS(k,2) + 0.08*randn,0.95);
+  sigRem = 1 - sigmaS(k,1);
+  sigmaD(k,1) = 0.19*sigRem;
+  sigmaA(k,1) = 0.78*sigRem;
+  sigmaT(k,1) = 0.03*sigRem;
+  sigRem = 1 - sigmaS(k,2);
+  sigmaD(k,2) = 0.19*sigRem;
+  sigmaA(k,2) = 0.78*sigRem;
+  sigmaT(k,2) = 0.03*sigRem;
+end
+rng(scurr);
+
+% Solar flux at 1 AU
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+flux = SolarFlx( 1.0 );
+
+%% Compute the force model on the sail for a full span of incidence angles
+% We will run through the calculations twice, once for uniform properties
+% and once for random variations across the membrane.
+
+% Create a vector of incidence angles in x/z plane
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+theta = linspace(0,pi/2);
+nPts  = length(theta);
+uSun  = [sin(theta);zeros(size(theta));cos(theta)];
+angles = theta*180/pi;
+aLabl = 'Sun Incidence Angle (deg)';
+
+fTotal = cell(1,2);
+tTotal = cell(1,2);
+CpArray = cell(1,2);
+coneAngle = zeros(2,nPts);
+centerAngle = zeros(2,nPts);
+Tavg = zeros(2,nPts);
+
+ems = thermal.emissivity;
+rI  = r' - repmat(rCM,1,nEl);
+
+for k = 1:2  
+  fSail = zeros(3,nPts); 
+  tSail = zeros(3,nPts); 
+  Cp = zeros(3,nPts); 
+  switch k
+    case 1
+      opt = optical;
+      name = 'Uniform';
+    case 2
+      opt.sigmaS = sigmaS;
+      opt.sigmaA = sigmaA;
+      opt.sigmaD = sigmaD;
+      opt.sigmaT = sigmaT;
+      name = 'Irregular';
+  end
+
+  % Compute the force and temperature of each element
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  for j = 1:nPts
+    [fEl, T, fT] = SolarPressureForce( a', n', uSun(:,j), flux, ...
+                                           opt, ems );
+    F = Mag(fT);
+    tEl = Cross(rI,fEl);
+    tT = sum(tEl,2);
+    % Approximations of center of pressure if Cp is perpendicular to F
+    Cp(:,j) = Cross(fT,tT)/F; 
+    Tavg(k,j) = mean(T);
+    fSail(:,j) = fT;
+    tSail(:,j) = tT;
+  end
+  coneAngle(k,:) = acos(Dot(Unit(fSail),-uSun));
+  centerAngle(k,:) = acos(Dot(Unit(fSail),-[0;0;1]));
+  fTotal{k} = fSail;
+  tTotal{k} = tSail;
+  Plot2D(angles,Cp,aLabl,{'x','y','z'},['Equivalent Cp for ' shape ' Sail (m)'])
+  Plot2D(angles,tSail,aLabl,'Torque (Nm)',['Torque on ' name ' ' shape ' Sail'])
+  legend('x','y','z','Location','southeast')
+  Plot2D(angles,fSail,aLabl,'Force (N)',['Force on ' name ' ' shape ' Sail'])
+  legend('x','y','z','Location','southeast')
+end
+
+Plot2D(angles, [Mag(fTotal{1});Mag(fTotal{2})], ... 
+    aLabl,'Force Magnitude (N)',[shape ' Sail Total Performance']);
+legend('Uniform','Variations')
+Plot2D(angles, fTotal{1}-fTotal{2}, ... 
+    aLabl,{'\Delta F'},['Force Differences for ' shape ' Sail (N)']);  
+legend('x','y','z')
+Plot2D(angles, [tTotal{1};tTotal{2}], ... 
+    aLabl,{'Tx','Ty','Tz'},[shape ' Sail Torque (Nm)'],'lin',...
+    {[1 4],[2 5],[3 6]});
+subplot(3,1,1);
+legend('Uniform','Variations','Location','southeast')
+Plot2D(angles, tTotal{1}-tTotal{2}, ... 
+    aLabl,{'\Delta T'},['Torque Differences for ' shape ' Sail']);
+legend('x','y','z')
+
+% Display the variation in force for a single incidence angle for the
+% irregular sail.
+g = struct('v',v,'f',f,'optical',opt,'thermal',thermal);
+DrawSailMeshVectors( g, uSun(:,30) )
+
+Figui
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-02-26 11:47:28 -0500 (Thu, 26 Feb 2015) $
+% $Revision: 39703 $
+##### SOURCE END #####
+--></body></html>

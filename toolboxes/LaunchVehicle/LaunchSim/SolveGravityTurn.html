@@ -1,0 +1,317 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Solve for the initial conditions to perform a gravity turn trajectory.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="SolveGravityTurn.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Solve for the initial conditions to perform a gravity turn trajectory.</h1><!--introduction--><pre>Iterate to compute the flight path angle perturbation (pitchover) to
+achieve a gravity turn launch trajectory that results in the desired
+flight path angle at burnout. Compare this ad hoc approach to the
+optimization performed in GravityTurnDemo.
+------------------------------------------------------------------------
+See also RHSLaunchVehicle2D, MSThrustModel, RK4
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initialize everything</a></li><li><a href="#3">Numerical loop around the simulation</a></li><li><a href="#4">Printouts</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2007 Princeton Satellite Systems, Inc. All rights reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Initialize everything</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+
+dT             = 0.5;
+mStage         = 5000; <span class="comment">% Dry mass of each stage</span>
+mFuel          = 100000;
+thrust         = 1.7e3; <span class="comment">% Thrust of each stage (kN)</span>
+Isp            = 405;
+lv             = CreateRocketModel(mStage,mFuel,thrust,Isp,<span class="string">'SingleStage'</span>,<span class="string">'l'</span>);
+d              = LaunchRHSData(2,lv);
+d.aE           = 0;
+d.cDA          = 1; <span class="comment">% Drag coefficient of each stage times area</span>
+gammaP0        = 0.01; <span class="comment">% Initial guess for pitchover angle</span>
+
+useRockot = true;
+<span class="keyword">if</span> useRockot
+  lv             = RocketDatabase(<span class="string">'rockot'</span>);
+  lv             = SetPayloadMass(lv,1000);
+  d.rocket       = lv;
+  d.cDA          = 0.35*[5 5 0]; <span class="comment">% Drag coefficient of each stage times area</span>
+  d.aE           = 0;
+  gammaP0        = 0.05; <span class="comment">% Initial guess for pitchover angle</span>
+<span class="keyword">end</span>
+
+nSim           = ceil(sum(lv.tBurn)/dT)+1;
+gammaFinalDes  = 0; <span class="comment">% horizontal flight</span>
+gammaFinal     = 1;
+kPitch         = 10;
+nTry           = 10;
+tol            = 1e-8;
+
+gammas = zeros(2,nTry);
+j = 1;
+</pre><h2 id="3">Numerical loop around the simulation</h2><pre class="codeinput">format <span class="string">long</span> <span class="string">g</span>
+fprintf(1,<span class="string">'\tPitch-over angle \t FPA at burnout\n'</span>);
+<span class="keyword">while</span>( j&lt;nTry &amp;&amp; abs(gammaFinalDes-gammaFinal)&gt;tol )
+
+   <span class="keyword">if</span>( j==1 )
+      <span class="comment">% initial guess</span>
+      gammaPitchover = gammaP0;
+      gammaPitchoverPrev = 0;
+      gammaFinalPrev = gammaFinalDes;
+   <span class="keyword">else</span>
+      <span class="comment">% Adjust pitchover</span>
+      deltaGamma0 = gammaPitchover - gammaPitchoverPrev;
+      gammaPitchoverPrev = gammaPitchover;
+      gammaPitchover = gammaPitchover - (deltaGamma0/deltaGammaF)*(gammaFinal - gammaFinalDes);
+   <span class="keyword">end</span>
+
+   <span class="comment">% Run the sim</span>
+   <span class="comment">%------------</span>
+   x = [0; 0; 0; pi/2; lv.mSP'];  <span class="comment">% [range  alt  vel  gamma massFuel]</span>
+   xPlot = zeros(length(x),nSim);
+   <span class="keyword">for</span> k = 1:nSim
+
+      xPlot(:,k) = x;
+
+      <span class="comment">% Initiate pitchover</span>
+      <span class="comment">%-------------------</span>
+      <span class="keyword">if</span>( k == kPitch )
+         x(4) = pi/2 - gammaPitchover;
+      <span class="keyword">end</span>
+
+      <span class="comment">% Propagate one step</span>
+      <span class="comment">%-------------------</span>
+      x = RK4( @RHSLaunchVehicle2D, x, dT, 0, d );
+
+      <span class="comment">% stop at burnout</span>
+      <span class="keyword">if</span>( x(end) &lt;= 0 )
+         hFinal = x(2);
+         vFinal = x(3);
+         deltaGammaF = x(4) - gammaFinal;
+         gammaFinal = x(4);
+         gammas(:,j) = [gammaPitchover;gammaFinal];
+         disp(gammas(:,j)')
+         <span class="keyword">break</span>;
+      <span class="keyword">end</span>
+
+   <span class="keyword">end</span>
+   j = j+1;
+
+<span class="keyword">end</span>
+gammas = gammas(:,1:j-1);
+</pre><pre class="codeoutput">	Pitch-over angle 	 FPA at burnout
+                      0.05         0.188723106468457
+        0.0616312388515672          0.13746062320256
+        0.0928204680752305       -0.0384572642657701
+        0.0860022164024663       0.00751375419621145
+        0.0871166286741767      0.000358708591819956
+        0.0871724982351543     -3.53732281678005e-06
+        0.0871719526702084      1.50893647070057e-09
+</pre><h2 id="4">Printouts</h2><pre class="codeinput">[vBO,dV,tOF] = BurnoutVelocity( lv );
+range = vBO/pi*cos((pi/2-gammaFinalDes)/2)*sum(tOF);
+
+fprintf(1,<span class="string">'Predicted burnout velocity: %f km/s\n'</span>,vBO);
+fprintf(1,<span class="string">'   Actual burnout velocity: %f km/s\n'</span>,vFinal);
+
+fprintf(1,<span class="string">'Predicted range: %f km\n'</span>,range);
+fprintf(1,<span class="string">'   Actual range: %f km\n'</span>,x(1));
+
+kPlot = 1:k;
+Plot2D(xPlot(1,kPlot),xPlot(2,kPlot),<span class="string">'Range (km)'</span>,<span class="string">'Altitude (km)'</span>,<span class="string">'Gravity Turn Trajectory'</span>);
+Plot2D(dT*kPlot,xPlot(1:4,kPlot),<span class="string">'Time (s)'</span>,{<span class="string">'Range'</span>,<span class="string">'Altitude'</span>,<span class="string">'Velocity'</span>,<span class="string">'FPA'</span>},<span class="string">'States'</span>);
+Plot2D(dT*kPlot,xPlot(5:end,kPlot),<span class="string">'Time (s)'</span>,<span class="string">'Fuel Mass'</span>,<span class="string">'Fuel Consumption'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Predicted burnout velocity: 10.604871 km/s
+   Actual burnout velocity: 9.395955 km/s
+Predicted range: 2680.451342 km
+   Actual range: 6840.663930 km
+</pre><img vspace="5" hspace="5" src="SolveGravityTurn_01.png" alt=""> <img vspace="5" hspace="5" src="SolveGravityTurn_02.png" alt=""> <img vspace="5" hspace="5" src="SolveGravityTurn_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Solve for the initial conditions to perform a gravity turn trajectory.
+%  
+%  Iterate to compute the flight path angle perturbation (pitchover) to
+%  achieve a gravity turn launch trajectory that results in the desired
+%  flight path angle at burnout. Compare this ad hoc approach to the
+%  optimization performed in GravityTurnDemo.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also RHSLaunchVehicle2D, MSThrustModel, RK4
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2007 Princeton Satellite Systems, Inc. All rights reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Initialize everything
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+dT             = 0.5;
+mStage         = 5000; % Dry mass of each stage
+mFuel          = 100000;
+thrust         = 1.7e3; % Thrust of each stage (kN)
+Isp            = 405;
+lv             = CreateRocketModel(mStage,mFuel,thrust,Isp,'SingleStage','l');
+d              = LaunchRHSData(2,lv);
+d.aE           = 0; 
+d.cDA          = 1; % Drag coefficient of each stage times area
+gammaP0        = 0.01; % Initial guess for pitchover angle
+
+useRockot = true;
+if useRockot
+  lv             = RocketDatabase('rockot');
+  lv             = SetPayloadMass(lv,1000);
+  d.rocket       = lv;
+  d.cDA          = 0.35*[5 5 0]; % Drag coefficient of each stage times area
+  d.aE           = 0;
+  gammaP0        = 0.05; % Initial guess for pitchover angle
+end
+
+nSim           = ceil(sum(lv.tBurn)/dT)+1;
+gammaFinalDes  = 0; % horizontal flight
+gammaFinal     = 1;
+kPitch         = 10;
+nTry           = 10;
+tol            = 1e-8;
+
+gammas = zeros(2,nTry);
+j = 1;
+
+%% Numerical loop around the simulation
+format long g
+fprintf(1,'\tPitch-over angle \t FPA at burnout\n');
+while( j<nTry && abs(gammaFinalDes-gammaFinal)>tol )
+
+   if( j==1 )
+      % initial guess
+      gammaPitchover = gammaP0;
+      gammaPitchoverPrev = 0;
+      gammaFinalPrev = gammaFinalDes;
+   else
+      % Adjust pitchover
+      deltaGamma0 = gammaPitchover - gammaPitchoverPrev;
+      gammaPitchoverPrev = gammaPitchover;
+      gammaPitchover = gammaPitchover - (deltaGamma0/deltaGammaF)*(gammaFinal - gammaFinalDes);
+   end
+
+   % Run the sim
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   x = [0; 0; 0; pi/2; lv.mSP'];  % [range  alt  vel  gamma massFuel]
+   xPlot = zeros(length(x),nSim);
+   for k = 1:nSim
+     
+      xPlot(:,k) = x;
+
+      % Initiate pitchover
+      %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+      if( k == kPitch )
+         x(4) = pi/2 - gammaPitchover;
+      end
+
+      % Propagate one step
+      %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+      x = RK4( @RHSLaunchVehicle2D, x, dT, 0, d );
+
+      % stop at burnout
+      if( x(end) <= 0 )
+         hFinal = x(2);
+         vFinal = x(3);
+         deltaGammaF = x(4) - gammaFinal;
+         gammaFinal = x(4);
+         gammas(:,j) = [gammaPitchover;gammaFinal];
+         disp(gammas(:,j)')
+         break;
+      end
+
+   end
+   j = j+1;
+
+end
+gammas = gammas(:,1:j-1);
+
+%% Printouts
+
+[vBO,dV,tOF] = BurnoutVelocity( lv );
+range = vBO/pi*cos((pi/2-gammaFinalDes)/2)*sum(tOF);
+
+fprintf(1,'Predicted burnout velocity: %f km/s\n',vBO);
+fprintf(1,'   Actual burnout velocity: %f km/s\n',vFinal);
+
+fprintf(1,'Predicted range: %f km\n',range);
+fprintf(1,'   Actual range: %f km\n',x(1));
+
+kPlot = 1:k;
+Plot2D(xPlot(1,kPlot),xPlot(2,kPlot),'Range (km)','Altitude (km)','Gravity Turn Trajectory');
+Plot2D(dT*kPlot,xPlot(1:4,kPlot),'Time (s)',{'Range','Altitude','Velocity','FPA'},'States');
+Plot2D(dT*kPlot,xPlot(5:end,kPlot),'Time (s)','Fuel Mass','Fuel Consumption');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-10-01 18:23:52 -0400 (Mon, 01 Oct 2018) $
+% $Revision: 47221 $
+
+##### SOURCE END #####
+--></body></html>

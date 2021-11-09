@@ -1,0 +1,591 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Implements and simulates a spacecraft with reaction wheels and thrusters.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-25"><meta name="DC.source" content="ThreeAxisControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Implements and simulates a spacecraft with reaction wheels and thrusters.</h1><!--introduction--><p>This script demonstrates:</p><div><ul><li>3-axis earth pointing attitude control with reaction wheels and thrusters</li><li>Disturbance modeling</li><li>Inertia computations</li><li>Thruster maneuvers</li></ul></div><p>The control system is designed for either Earth pointing or inertially fixed attitude. It does not allow attitude maneuvers. Thrusters can be used for attitude control. Thrusters are pulsewidth modulated and off-pulse for either east/west or north/south stationkeeping. The simulation also includes a single liquid apogee engine.</p><p>It is assumed that an IMU/Star tracker package is available that outputs a valid attitude quaternion in all modes.</p><p>Disturbance modeling is for solar pressure only.</p><p>The simulation propagates the orbit, the attitude and the reaction wheel rates. The reaction wheels are assume to take torque commands and produce that torque. That is to say they have a current feedback loop that compensates for back emf.</p><p>The controller is a simple PID controller in all modes.</p><p>The inertia matrix is for the deployed mode.</p><p>The wheels are Honeywell HR0610 wheels with 12 NMs max momentum at 6000 rpm. Max torque is 0.055 Nm.</p><p>The thrusters are EADS monopropellant thrusters:   <a href="http://www.space-propulsion.com/spacecraft-propulsion/hydrazine-thrusters/1n-thruster.html">http://www.space-propulsion.com/spacecraft-propulsion/hydrazine-thrusters/1n-thruster.html</a></p><pre class="language-matlab">CHT <span class="string">0.5</span> <span class="string">0.5</span> <span class="string">N</span> <span class="string">(north, east west)</span>
+CHT <span class="string">20</span> <span class="string">N</span> <span class="string">(base panel)</span>
+</pre><p>The apogee engine is a 400 N "S400-12":   <a href="http://www.space-propulsion.com/spacecraft-propulsion/apogee-motors/index.html">http://www.space-propulsion.com/spacecraft-propulsion/apogee-motors/index.html</a></p><pre class="language-matlab">S400-12 420 N <span class="string">318</span> <span class="string">sec</span>
+</pre><p>We put all properties into this script to make it self-contained. For more elaborate models they would be put in databases, etc.</p><pre>------------------------------------------------------------------------
+See also Inertias, PIDMIMO, QError, QLVLH, U2Q, Constant, Plot2D,
+TimeGUI, TimeLabl, CosD, RK4, Date2JD, MassProp, El2RV, Period, SunV1,
+ThrusterCommand, RHSRWA, ThreeAxisControlDisturb
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setup</a></li><li><a href="#3">Sim data</a></li><li><a href="#4">Spacecraft properties</a></li><li><a href="#5">Design the controller</a></li><li><a href="#6">Select the orbital elements</a></li><li><a href="#7">Select the initial attitude</a></li><li><a href="#8">Four reaction wheels</a></li><li><a href="#9">Put the state together</a></li><li><a href="#10">Initialize the time display</a></li><li><a href="#11">Allocate memory for plotting array</a></li><li><a href="#12">Run the simulation</a></li><li><a href="#13">Close the time gui</a></li><li><a href="#14">Adjust the arrays if you quit early</a></li><li><a href="#15">Plot</a></li></ul></div><p>------------------------------------------------------------------------------   Copyright (c) 2007 Princeton Satellite Systems, Inc. All rights reserved. ------------------------------------------------------------------------------ 2017.1 Update function handles ------------------------------------------------------------------------------</p><h2 id="2">Setup</h2><pre class="codeinput"><span class="comment">% Clear variables used in this demo</span>
+<span class="comment">%-----------------------------------</span>
+clear <span class="string">sc</span>
+
+<span class="comment">% Global for the time interface</span>
+<span class="comment">%------------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Sim data</h2><pre class="codeinput">nSim  = 2000;
+dT    = 0.25;
+jD0   = Date2JD( [2010 3 15 0 0 0] );
+
+<span class="comment">% Control delta v demand. If any of pOn are non zero it will go into</span>
+<span class="comment">% thruster mode</span>
+<span class="comment">%-------------------------------------------------------------------</span>
+pOn   = 1*[ones(1,4) ones(1,13)];
+
+<span class="comment">% The thrusters to be used for ACS</span>
+<span class="comment">%---------------------------------</span>
+kACS  = 1:12;
+</pre><h2 id="4">Spacecraft properties</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+width           =  2; <span class="comment">% Each side is 2 meters</span>
+solarWingLength = 10; <span class="comment">% A 10 kW satellite (assuming 20% efficient arrays)</span>
+solarWingBoom   =  1;
+cM              = [0;0.01;0]; <span class="comment">% A little offset to get a disturbance</span>
+
+sc.dist.areaArray  = 2*solarWingLength*width;
+sc.dist.areaBox    = width^2;
+sc.dist.cM         = cM;
+
+<span class="comment">% Surface properties [ absorbed specular diffuse transmitted ]</span>
+<span class="comment">%-------------------------------------------------------------</span>
+sc.dist.sigmaArray = [ 0.75; 0.17; 0.08; 0.0 ]; <span class="comment">% Solar panel</span>
+sc.dist.sigmaBox   = [ 0.0; 0.29; 0.71; 0.0 ]; <span class="comment">% Gold foil</span>
+
+<span class="comment">% Mass properties</span>
+<span class="comment">%----------------</span>
+massArray          = solarWingLength*width*0.95; <span class="comment">% 3 junction cells</span>
+massBox            = 1000;
+inrArray           = Inertias( massArray, [width, solarWingLength], <span class="string">'plate'</span> );
+inrBox             = Inertias( massBox,   [width width width],      <span class="string">'box'</span>);
+cMArray            = [0;width/2 + solarWingBoom + solarWingLength/2;0];
+
+inr                = [inrBox' inrArray' inrArray'];
+m                  = [massBox massArray massArray];
+cM                 = [[0;0;0] cMArray -cMArray];
+
+[sc.inertia, sc.mass] = MassProp( inr, m, cM, <span class="string">'mks'</span> );
+
+<span class="comment">% Create the thruster unit vectors. This is the force direction</span>
+<span class="comment">% [north west east base lae]</span>
+<span class="comment">%--------------------------------------------------------------</span>
+<span class="comment">%                      North       West        East       Base     LAE</span>
+<span class="comment">%                   ----------  ---------- -----------  ----------  -</span>
+tc.uT           = [ 0  0  0  0  1  1  1  1 -1 -1 -1 -1  0  0  0  0  0;<span class="keyword">...</span>
+                    1  1  1  1  0  0  0  0  0  0  0  0  0  0  0  0  0;<span class="keyword">...</span>
+                    0  0  0  0  0  0  0  0  0  0  0  0  1  1  1  1  1];
+
+tc.rT           = [ 1  1 -1 -1 -1 -1 -1 -1  1  1  1  1  1  1 -1 -1  0;<span class="keyword">...</span>
+                   -1 -1 -1 -1  1  1 -1 -1  1  1 -1 -1  1 -1  1 -1  0;<span class="keyword">...</span>
+                    1 -1  1 -1  1 -1  1 -1  1 -1  1 -1 -1 -1 -1 -1 -1]*width/2;
+
+tc.thrust       = [ones(1,12)*0.5 ones(1,4)*20 420];
+
+sc.inrWheel     = 12/(6000*pi/30); <span class="comment">% HR 610</span>
+sc.mu           = Constant(<span class="string">'mu earth'</span>);
+c45             = CosD(45);
+sc.uWheel       = c45*[1 0 -1 0; -1 -1 -1 -1; 0 1 0 -1];
+sc.tDist        = [0.0001;0.0001;-0.0001]; <span class="comment">% Just to see the transient response</span>
+sc.funDist      = @ThreeAxisControlDisturb;
+</pre><h2 id="5">Design the controller</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+[a,b,c,d] = PIDMIMO( 1, 1, 0.05, 200, 0.5, dT );
+
+<span class="comment">% PID States</span>
+<span class="comment">%-----------</span>
+xX = zeros(2,1);
+xY = zeros(2,1);
+xZ = zeros(2,1);
+
+<span class="comment">% Controller output</span>
+<span class="comment">%------------------</span>
+u  = zeros(3,1);
+</pre><h2 id="6">Select the orbital elements</h2><p>[a i W w e M]</p><pre class="codeinput"><span class="comment">%----------------------------</span>
+el = [42167 0 0 0 0 0];
+[r, v]      = El2RV( el );
+</pre><h2 id="7">Select the initial attitude</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+attitude = <span class="string">'LVLH'</span>; <span class="comment">% or burn unit vector</span>
+
+<span class="comment">% If attiude is a character align with LVLH, else align +z (the LAE thrust</span>
+<span class="comment">% direction with the vector attitude</span>
+<span class="comment">%-------------------------------------------------------------------------</span>
+<span class="keyword">if</span>( ischar( attitude ) )
+  qC   = QLVLH( r, v );
+  w    = [0;-2*pi/Period(el(1));0];
+  mode = 1;
+<span class="keyword">else</span>
+  qC   = U2Q( [0;0;1], attitude );
+  w    = [0;0;0];
+  mode = 2;
+<span class="keyword">end</span>
+</pre><h2 id="8">Four reaction wheels</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+wRWA = [0;0;0;0];
+q    = qC;
+</pre><h2 id="9">Put the state together</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+x    = [r;v;q;w;wRWA];
+</pre><h2 id="10">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ratioRealTime, tToGoMem] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'Three axis demo'</span> );
+</pre><img vspace="5" hspace="5" src="ThreeAxisControl_01.png" alt=""> <h2 id="11">Allocate memory for plotting array</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+xPlot = zeros(27,nSim);
+uTC   = zeros(length(kACS),nSim);
+</pre><h2 id="12">Run the simulation</h2><p>------------------</p><pre class="codeinput"><span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  <span class="comment">% Break up the state vector for convenience</span>
+  <span class="comment">%------------------------------------------</span>
+  r = x(1:3); v = x(4:6); q = x(7:10);
+
+  <span class="comment">% Julian date</span>
+  <span class="comment">%------------</span>
+  jD = jD0 + (k-1)*dT/86400;
+
+  <span class="comment">% Sun vector</span>
+  <span class="comment">%-----------</span>
+  sc.dist.uSun = SunV1( jD );
+
+  <span class="comment">% The controller</span>
+  <span class="comment">%---------------</span>
+  <span class="keyword">if</span>( mode == 1 )
+    qC = QLVLH( r, v );
+  <span class="keyword">end</span>
+
+  <span class="comment">% The attitude error</span>
+  <span class="comment">%-------------------</span>
+  theta = QError( qC, q, 1 );
+
+  <span class="comment">% The control</span>
+  <span class="comment">%------------</span>
+  u     = [c*xX + d*theta(1);<span class="keyword">...</span>
+           c*xY + d*theta(2);<span class="keyword">...</span>
+           c*xZ + d*theta(3)];
+
+  <span class="comment">% Convert angular accelerations to torque</span>
+  <span class="comment">%----------------------------------------</span>
+  tDemand   = sc.inertia*u;
+
+  <span class="comment">% Either use thrusters or reaction wheels</span>
+  <span class="comment">% Note the torque demand sign switch!</span>
+  <span class="comment">%----------------------------------------</span>
+  <span class="keyword">if</span>( max(pOn) &gt; 0 )
+    tDemand        = -tDemand;
+    [sc.dist.force, sc.dist.torque, uu] = ThrusterCommand( tDemand, pOn, kACS, tc );
+    sc.tRWA        = zeros(4,1);
+    uTC(:,k)       = uu;
+  <span class="keyword">else</span>
+    sc.dist.force  = zeros(3,1);
+    sc.dist.torque = zeros(3,1);
+    sc.tRWA        = pinv(sc.uWheel)*tDemand;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Propagate the controller state. There is no limiter applied</span>
+  <span class="comment">%------------------------------------------------------------</span>
+  xX    = a*xX + b*theta(1);
+  xY    = a*xY + b*theta(2);
+  xZ    = a*xZ + b*theta(3);
+
+  <span class="comment">% Store for plotting</span>
+  <span class="comment">%-------------------</span>
+  xPlot(:,k) = [x;theta;sc.tRWA;tDemand];
+
+  <span class="comment">% Integrate one step</span>
+  <span class="comment">%-------------------</span>
+  x          = RK4(@RHSRWA, x, dT, 0, sc );
+
+  <span class="comment">% Sim control from the time gui</span>
+  <span class="comment">%------------------------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="ThreeAxisControl_02.png" alt=""> <h2 id="13">Close the time gui</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+TimeGUI( <span class="string">'close'</span> );
+</pre><h2 id="14">Adjust the arrays if you quit early</h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+j           = 1:k;
+xPlot       = xPlot(:,j);
+[tPlot, g ] = TimeLabl( (j-1)*dT );
+</pre><h2 id="15">Plot</h2><pre class="codeinput"><span class="comment">%-----</span>
+Plot2D( tPlot, xPlot( 1: 3,:),        g, [<span class="string">'R_x (km)'</span>;<span class="string">'R_y (km)'</span>;<span class="string">'R_z (km)'</span>],                   <span class="string">'Position'</span>             )
+Plot2D( tPlot, xPlot( 4: 6,:),        g, [<span class="string">'V_x (km/s)'</span>;<span class="string">'V_y (km/s)'</span>;<span class="string">'V_z (km/s)'</span>],             <span class="string">'Velocity'</span>             )
+Plot2D( tPlot, xPlot( 7:10,:),        g, [<span class="string">'q_s'</span>;<span class="string">'q_x'</span>;<span class="string">'q_y'</span>;<span class="string">'q_z'</span>],                            <span class="string">'Quaternion'</span>           )
+Plot2D( tPlot, xPlot(11:13,:),        g, [<span class="string">'\omega_x'</span>;<span class="string">'\omega_y'</span>;<span class="string">'\omega_z'</span>],                   <span class="string">'Body Rates'</span>           )
+Plot2D( tPlot, xPlot(14:17,:),        g, [<span class="string">'\Omega_1'</span>;<span class="string">'\Omega_2'</span>;<span class="string">'\Omega_3'</span>;<span class="string">'\Omega_4'</span>],        <span class="string">'Reaction Wheel Rates'</span> )
+Plot2D( tPlot, xPlot(18:20,:)*180/pi, g, [<span class="string">'\theta_x (deg)'</span>;<span class="string">'\theta_y (deg)'</span>;<span class="string">'\theta_z (deg)'</span>], <span class="string">'Attitude Errors'</span>      )
+Plot2D( tPlot, xPlot(21:24,:),        g, [<span class="string">'t_1 (Nm)'</span>;<span class="string">'t_2 (Nm)'</span>;<span class="string">'t_3 (Nm)'</span>;<span class="string">'t_4 (Nm)'</span>],        <span class="string">'Wheel Control Demand'</span> )
+Plot2D( tPlot, xPlot(25:27,:),        g, [<span class="string">'t_x (Nm)'</span>;<span class="string">'t_y (Nm)'</span>;<span class="string">'t_z (Nm)'</span>],                   <span class="string">'Control Demand'</span>       )
+<span class="keyword">if</span>( max(pOn) &gt; 0 )
+  Plot2D( tPlot, uTC, g, <span class="string">'Thrusters'</span>, <span class="string">'Thruster Time Fractions'</span> );
+<span class="keyword">end</span>
+Figui
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ThreeAxisControl_03.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_04.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_05.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_06.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_07.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_08.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_09.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_10.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_11.png" alt=""> <img vspace="5" hspace="5" src="ThreeAxisControl_12.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Implements and simulates a spacecraft with reaction wheels and thrusters.
+% This script demonstrates:
+% 
+% * 3-axis earth pointing attitude control with reaction wheels and thrusters
+% * Disturbance modeling
+% * Inertia computations
+% * Thruster maneuvers
+%
+% The control system is designed for either Earth pointing or inertially fixed
+% attitude. It does not allow attitude maneuvers. Thrusters can be used for
+% attitude control. Thrusters are pulsewidth modulated and off-pulse for either
+% east/west or north/south stationkeeping. The simulation also includes a single
+% liquid apogee engine.
+%
+% It is assumed that an IMU/Star tracker package is available that outputs a
+% valid attitude quaternion in all modes.
+%
+% Disturbance modeling is for solar pressure only.
+%
+% The simulation propagates the orbit, the attitude and the reaction wheel
+% rates. The reaction wheels are assume to take torque commands and produce that
+% torque. That is to say they have a current feedback loop that compensates for
+% back emf.
+%   
+% The controller is a simple PID controller in all modes.
+%
+% The inertia matrix is for the deployed mode.
+%
+% The wheels are Honeywell HR0610 wheels with 12 NMs max momentum at
+% 6000 rpm. Max torque is 0.055 Nm.
+%
+% The thrusters are EADS monopropellant thrusters:
+%   http://www.space-propulsion.com/spacecraft-propulsion/hydrazine-thrusters/1n-thruster.html
+%
+%   CHT 0.5 0.5 N (north, east west)
+%   CHT 20 N (base panel)
+%   
+% The apogee engine is a 400 N "S400-12":
+%   http://www.space-propulsion.com/spacecraft-propulsion/apogee-motors/index.html
+%
+%   S400-12 420 N 318 sec
+%
+% We put all properties into this script to make it self-contained.
+% For more elaborate models they would be put in databases, etc.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Inertias, PIDMIMO, QError, QLVLH, U2Q, Constant, Plot2D, 
+%  TimeGUI, TimeLabl, CosD, RK4, Date2JD, MassProp, El2RV, Period, SunV1, 
+%  ThrusterCommand, RHSRWA, ThreeAxisControlDisturb
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2007 Princeton Satellite Systems, Inc. All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% 2017.1 Update function handles
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Setup
+
+% Clear variables used in this demo
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+clear sc
+
+% Global for the time interface
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+ 
+%% Sim data
+nSim  = 2000;
+dT    = 0.25;
+jD0   = Date2JD( [2010 3 15 0 0 0] );
+
+% Control delta v demand. If any of pOn are non zero it will go into
+% thruster mode
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+pOn   = 1*[ones(1,4) ones(1,13)];
+
+% The thrusters to be used for ACS
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+kACS  = 1:12;
+
+%% Spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+width           =  2; % Each side is 2 meters
+solarWingLength = 10; % A 10 kW satellite (assuming 20% efficient arrays)
+solarWingBoom   =  1; 
+cM              = [0;0.01;0]; % A little offset to get a disturbance
+
+sc.dist.areaArray  = 2*solarWingLength*width;
+sc.dist.areaBox    = width^2;
+sc.dist.cM         = cM;
+
+% Surface properties [ absorbed specular diffuse transmitted ]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sc.dist.sigmaArray = [ 0.75; 0.17; 0.08; 0.0 ]; % Solar panel
+sc.dist.sigmaBox   = [ 0.0; 0.29; 0.71; 0.0 ]; % Gold foil
+
+% Mass properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+massArray          = solarWingLength*width*0.95; % 3 junction cells
+massBox            = 1000;
+inrArray           = Inertias( massArray, [width, solarWingLength], 'plate' );
+inrBox             = Inertias( massBox,   [width width width],      'box');
+cMArray            = [0;width/2 + solarWingBoom + solarWingLength/2;0];
+
+inr                = [inrBox' inrArray' inrArray'];
+m                  = [massBox massArray massArray];
+cM                 = [[0;0;0] cMArray -cMArray];
+
+[sc.inertia, sc.mass] = MassProp( inr, m, cM, 'mks' );
+
+% Create the thruster unit vectors. This is the force direction
+% [north west east base lae]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%                      North       West        East       Base     LAE
+%                   REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH  -
+tc.uT           = [ 0  0  0  0  1  1  1  1 -1 -1 -1 -1  0  0  0  0  0;...
+                    1  1  1  1  0  0  0  0  0  0  0  0  0  0  0  0  0;...
+                    0  0  0  0  0  0  0  0  0  0  0  0  1  1  1  1  1];
+               
+tc.rT           = [ 1  1 -1 -1 -1 -1 -1 -1  1  1  1  1  1  1 -1 -1  0;...
+                   -1 -1 -1 -1  1  1 -1 -1  1  1 -1 -1  1 -1  1 -1  0;...
+                    1 -1  1 -1  1 -1  1 -1  1 -1  1 -1 -1 -1 -1 -1 -1]*width/2;
+                
+tc.thrust       = [ones(1,12)*0.5 ones(1,4)*20 420];
+
+sc.inrWheel     = 12/(6000*pi/30); % HR 610
+sc.mu           = Constant('mu earth');
+c45             = CosD(45);
+sc.uWheel       = c45*[1 0 -1 0; -1 -1 -1 -1; 0 1 0 -1];
+sc.tDist        = [0.0001;0.0001;-0.0001]; % Just to see the transient response
+sc.funDist      = @ThreeAxisControlDisturb;
+
+%% Design the controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a,b,c,d] = PIDMIMO( 1, 1, 0.05, 200, 0.5, dT ); 
+
+% PID States
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xX = zeros(2,1);
+xY = zeros(2,1);
+xZ = zeros(2,1);
+
+% Controller output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+u  = zeros(3,1);
+
+%% Select the orbital elements
+% [a i W w e M]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+el = [42167 0 0 0 0 0];
+[r, v]      = El2RV( el );
+
+%% Select the initial attitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+attitude = 'LVLH'; % or burn unit vector
+
+% If attiude is a character align with LVLH, else align +z (the LAE thrust
+% direction with the vector attitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( ischar( attitude ) )
+  qC   = QLVLH( r, v );
+  w    = [0;-2*pi/Period(el(1));0];
+  mode = 1;
+else
+  qC   = U2Q( [0;0;1], attitude );
+  w    = [0;0;0];
+  mode = 2;
+end
+
+%% Four reaction wheels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+wRWA = [0;0;0;0];
+q    = qC;
+
+%% Put the state together
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x    = [r;v;q;w;wRWA];
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ratioRealTime, tToGoMem] =  TimeGUI( nSim, 0, [], 0, dT, 'Three axis demo' );
+
+%% Allocate memory for plotting array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xPlot = zeros(27,nSim);
+uTC   = zeros(length(kACS),nSim);
+
+%% Run the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim 
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+  
+  % Break up the state vector for convenience
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  r = x(1:3); v = x(4:6); q = x(7:10);
+  
+  % Julian date
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  jD = jD0 + (k-1)*dT/86400;
+  
+  % Sun vector
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  sc.dist.uSun = SunV1( jD );
+  
+  % The controller
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( mode == 1 )
+    qC = QLVLH( r, v );
+  end
+  
+  % The attitude error
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  theta = QError( qC, q, 1 );
+  
+  % The control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  u     = [c*xX + d*theta(1);...
+           c*xY + d*theta(2);...
+           c*xZ + d*theta(3)];
+       
+  % Convert angular accelerations to torque
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tDemand   = sc.inertia*u;
+  
+  % Either use thrusters or reaction wheels
+  % Note the torque demand sign switch!
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( max(pOn) > 0 )
+    tDemand        = -tDemand;
+    [sc.dist.force, sc.dist.torque, uu] = ThrusterCommand( tDemand, pOn, kACS, tc );
+    sc.tRWA        = zeros(4,1);
+    uTC(:,k)       = uu;
+  else
+    sc.dist.force  = zeros(3,1);
+    sc.dist.torque = zeros(3,1);
+    sc.tRWA        = pinv(sc.uWheel)*tDemand;
+  end
+       
+  % Propagate the controller state. There is no limiter applied
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  xX    = a*xX + b*theta(1);     
+  xY    = a*xY + b*theta(2);     
+  xZ    = a*xZ + b*theta(3);   
+  
+  % Store for plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xPlot(:,k) = [x;theta;sc.tRWA;tDemand];
+  
+  % Integrate one step
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x          = RK4(@RHSRWA, x, dT, 0, sc );
+  
+  % Sim control from the time gui
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+%% Close the time gui
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+TimeGUI( 'close' );
+
+%% Adjust the arrays if you quit early
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+j           = 1:k;
+xPlot       = xPlot(:,j);
+[tPlot, g ] = TimeLabl( (j-1)*dT );
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D( tPlot, xPlot( 1: 3,:),        g, ['R_x (km)';'R_y (km)';'R_z (km)'],                   'Position'             )
+Plot2D( tPlot, xPlot( 4: 6,:),        g, ['V_x (km/s)';'V_y (km/s)';'V_z (km/s)'],             'Velocity'             )
+Plot2D( tPlot, xPlot( 7:10,:),        g, ['q_s';'q_x';'q_y';'q_z'],                            'Quaternion'           )
+Plot2D( tPlot, xPlot(11:13,:),        g, ['\omega_x';'\omega_y';'\omega_z'],                   'Body Rates'           )
+Plot2D( tPlot, xPlot(14:17,:),        g, ['\Omega_1';'\Omega_2';'\Omega_3';'\Omega_4'],        'Reaction Wheel Rates' )
+Plot2D( tPlot, xPlot(18:20,:)*180/pi, g, ['\theta_x (deg)';'\theta_y (deg)';'\theta_z (deg)'], 'Attitude Errors'      )
+Plot2D( tPlot, xPlot(21:24,:),        g, ['t_1 (Nm)';'t_2 (Nm)';'t_3 (Nm)';'t_4 (Nm)'],        'Wheel Control Demand' )
+Plot2D( tPlot, xPlot(25:27,:),        g, ['t_x (Nm)';'t_y (Nm)';'t_z (Nm)'],                   'Control Demand'       )
+if( max(pOn) > 0 )
+  Plot2D( tPlot, uTC, g, 'Thrusters', 'Thruster Time Fractions' );
+end
+Figui
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-05-09 12:37:25 -0400 (Tue, 09 May 2017) $
+% $Revision: 44511 $
+
+##### SOURCE END #####
+--></body></html>

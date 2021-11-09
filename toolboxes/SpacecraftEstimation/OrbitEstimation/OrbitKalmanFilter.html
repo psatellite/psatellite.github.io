@@ -1,0 +1,636 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test the orbit Kalman Filter with omni and GPS measurements.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-26"><meta name="DC.source" content="OrbitKalmanFilter.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test the orbit Kalman Filter with omni and GPS measurements.</h1><!--introduction--><p>The simulation and the filter both use the same RHS, FOrbKF, but the simulation uses more terms in the gravity model.  ------------------------------------------------------------------------  See also CDKF45, OrbitKFRHS, HRangeMeasurement, RangeMeasurement,  GPSReceiver, and FOrbKF, Plot2D, TimeGUI, Cross, RK4, RK45, Date2JD,  JD2T, LoadGravityModel, OrbRate, El2RV, Period, EarthRot, EarthRte,  GPSSatellite, Omni  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">Set up the orbit</a></li><li><a href="#4">Initial estimates</a></li><li><a href="#5">Initialize the sim</a></li><li><a href="#6">For print outs</a></li><li><a href="#7">Set up omni measurements</a></li><li><a href="#8">Set up GPS</a></li><li><a href="#9">Initialize the estimator</a></li><li><a href="#10">Plotting arrays</a></li><li><a href="#11">Numerical integration</a></li><li><a href="#12">Initialize the time display</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2001-2003 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+
+printIt = 0;
+</pre><h2 id="3">Set up the orbit</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+el        = [7000 0.6 0 0 0.0001 0];
+p         = Period( el(1) );
+[r, v]    = El2RV( el );
+</pre><h2 id="4">Initial estimates</h2><pre class="codeinput"><span class="comment">%------------------</span>
+dT        = 120;
+jD        = Date2JD([2001 3 20 13 15 1]);
+</pre><h2 id="5">Initialize the sim</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+nOrbits   = 2;
+nSim      = ceil(nOrbits*p/dT);
+bias      = 0.01/3e5/3600; <span class="comment">% 0.01 sec/hr one sigma</span>
+biasDrift = bias/3600;
+x         = [r;v;bias;biasDrift];
+t         = 0;
+useOmni   = 1;
+useGPS    = 1;
+gravityModel = LoadGravityModel( <span class="string">'load file'</span>, <span class="string">'GEMT1.geo'</span> );
+simData   = struct(<span class="string">'jD'</span>,jD,<span class="keyword">...</span>
+                   <span class="string">'gravityModel'</span>,gravityModel,<span class="keyword">...</span>
+                   <span class="string">'highFidelity'</span>,1,<span class="keyword">...</span>
+                   <span class="string">'nTess'</span>,6,<span class="keyword">...</span>
+                   <span class="string">'nZonal'</span>,6,<span class="keyword">...</span>
+                   <span class="string">'planetaryOn'</span>,1,<span class="keyword">...</span>
+                   <span class="string">'aExt'</span>,[0;0;0]);
+</pre><h2 id="6">For print outs</h2><pre class="codeinput"><span class="comment">%---------------</span>
+<span class="keyword">if</span>( bias &gt; 0 )
+  prefix = <span class="string">'Clock'</span>;
+<span class="keyword">else</span>
+  prefix = <span class="string">''</span>;
+<span class="keyword">end</span>
+</pre><h2 id="7">Set up omni measurements</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+rStationEF      = {};
+vStationEF      = {};
+rStationEF{1}   = [6378.165;0;0];
+vStationEF{1}   = Cross( [0;0;EarthRte(jD)], rStationEF{1} );
+nOmni           = length(rStationEF);
+rOmni           = [0.001 0;0 1e-6].^2;
+omni                 = struct();
+omni.power           = 5;
+omni.range1Sigma     = 0.001;
+omni.rangeRate1Sigma = 1e-6;
+omni.minimumAngle    = 3*pi/180;
+</pre><h2 id="8">Set up GPS</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------</span>
+nGPS                        = 4;
+useReceiver                 = 1;
+gPSReceiver                 = struct();
+gPSReceiver.tSamp           = 1;
+gPSReceiver.minimumAltitude = 100;
+gPSReceiver.power           = 5;
+gPSReceiver.range1Sigma     = 0.001; <span class="comment">% noise in model</span>
+gPSReceiver.rangeRate1Sigma = 1e-6;
+rGPS                        = [0.001 0;0 1e-6].^2;
+GPSReceiver( <span class="string">'initialize'</span>, gPSReceiver    );
+nMeas = useOmni*nOmni+useGPS*nGPS;
+</pre><h2 id="9">Initialize the estimator</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+dR              = 0.25;
+dV              = dR/1000;
+d               = struct;
+d.p             = diag([dR*[1 1 1] dV*[1 1 1] bias biasDrift].^2 );
+mu              = 3.98600436e5;
+rE              = r + [0.1;-0.15;0.07];
+vE              = v + [0.001;-0.004;0.003];
+d.x             = [rE;vE;0;0];
+d.propagator    = <span class="string">'RK45'</span>;
+d.q             = diag([0 0 0 (0.001*mu/7000^2)*[1 1 1] 0.1*bias 0.1*biasDrift].^2);
+d.fName         = @OrbitKFRHS;
+d.fData         = struct(<span class="string">'dFName'</span>,@FOrbKF,<span class="keyword">...</span>
+                          <span class="string">'nStates'</span>,17,<span class="keyword">...</span>
+                          <span class="string">'jD'</span>,jD,<span class="keyword">...</span>
+                          <span class="string">'highFidelity'</span>,1,<span class="keyword">...</span>
+                          <span class="string">'gravityModel'</span>,gravityModel,<span class="keyword">...</span>
+                          <span class="string">'nTess'</span>,2,<span class="keyword">...</span>
+                          <span class="string">'nZonal'</span>,2,<span class="keyword">...</span>
+                          <span class="string">'planetaryOn'</span>,1,<span class="keyword">...</span>
+                          <span class="string">'aExt'</span>,[0;0;0]);
+d.hName         = @HRangeMeasurement;
+<span class="keyword">if</span> (d.fData.nStates == 17)
+  d.x     = [d.x;zeros(9,1)];
+  pDist   = 1e-7*[1 1 1e-3];
+  d.p     = diag ([dR*[1 1 1] dV*[1 1 1] bias biasDrift pDist pDist pDist].^2 );
+  d.q     = diag([0 0 0 (0.001*mu/7000^2)*[1 1 1] 0.1*bias 0.1*biasDrift 0.1*[pDist pDist pDist]].^2);
+<span class="keyword">end</span>
+d.xMeas         = d.x;
+d.pMeas         = d.p;
+d.hLast         = 0.1*dT;
+d.nIterations   = 2;
+d.tol           = 1e-6;
+range           = [];
+rangeRate       = [];
+d.r             = {};
+j               = 0;
+</pre><h2 id="10">Plotting arrays</h2><pre class="codeinput"><span class="comment">%----------------</span>
+xPlot   = zeros(length(x),nSim);
+xEPlot  = zeros(length(d.x),nSim);
+pPlot   = zeros(length(d.x),nSim);
+rPlot   = zeros(nMeas*2,nSim);
+resPlot = zeros(nMeas*2,nSim);
+</pre><h2 id="11">Numerical integration</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+tol    = 1e-6;
+hLastT = 0.1*dT;
+hLastE = 0.1*dT;
+</pre><h2 id="12">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'Orbit Kalman Filter'</span> );
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  <span class="comment">% Measurement from earth stations</span>
+  <span class="comment">%--------------------------------</span>
+  <span class="keyword">if</span> useOmni
+    mEarth = EarthRot( JD2T( jD ) )';
+    <span class="keyword">for</span> i = 1:nOmni
+      j = j + 1;
+      <span class="comment">% Skip omni model and idealize ground stations as always available</span>
+      [range(j,1), rangeRate(j,1)] = RangeMeasurement(  x(1:3,:),  x(4:6,:), x(7:8,:)*3e5, mEarth*rStationEF{i}, mEarth*vStationEF{i} );
+      range(j,1)               = range(j,1) + omni.range1Sigma*randn;
+      rangeRate(j,1)           = rangeRate(j,1) + omni.rangeRate1Sigma*randn;
+      d.r{j}                   = rOmni;
+      d.hData(j).rSource       = rStationEF{i};
+      d.hData(j).vSource       = vStationEF{i};
+  	  d.hData(j).rSourceECI    = mEarth*rStationEF{i};
+  	  d.hData(j).vSourceECI    = mEarth*vStationEF{i};
+    <span class="keyword">end</span>
+  <span class="keyword">end</span> <span class="comment">% useOmni</span>
+
+  <span class="keyword">if</span> useGPS
+    <span class="comment">% Measurements from GPS</span>
+    <span class="comment">%----------------------</span>
+    <span class="keyword">if</span>( useReceiver )
+        <span class="comment">% Use GPSReceiver model</span>
+        <span class="comment">%-------------------------------------</span>
+      	GPSReceiver( <span class="string">'update'</span>, struct( <span class="string">'r'</span>,x(1:3),<span class="string">'v'</span>, x(4:6), <span class="string">'jD'</span>, jD, <span class="string">'clockError'</span>, x(7:8) )  );
+        gPSData = GPSReceiver( <span class="string">'get output'</span> );
+        <span class="keyword">if</span> gPSData.nSatellites &lt; nGPS
+          nGPS = gPSData.nSatellites;
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> i = 1:nGPS
+          j = j + 1;
+          range(j,1)            = gPSData.range(i);
+          rangeRate(j,1)        = gPSData.rangeRate(i);
+          d.hData(j).rSourceECI = gPSData.rGPS(:,i);
+          d.hData(j).vSourceECI = gPSData.vGPS(:,i);
+          d.r{j}                = rGPS;
+        <span class="keyword">end</span>
+    <span class="keyword">else</span>
+        <span class="comment">% Skip GPS model and idealize GPS satellites as always visible</span>
+        [r, v] = GPSSatellite( jD, <span class="string">'eci'</span> );
+        <span class="keyword">for</span> i = 1:nGPS
+          j = j + 1;
+
+          [range(j,1), rangeRate(j,1)] = RangeMeasurement(  x(1:3),  x(4:6), x(7:8), r(:,i), v(:,i) );
+          range(j,1)               = range(j,1) + gps.range1Sigma*randn;
+          rangeRate(j,1)           = rangeRate(j,1) + gps.rangeRate1Sigma*randn;
+          d.hData(j).rSourceECI = r(:,i);
+          d.hData(j).vSourceECI = v(:,i);
+          d.r{j}                = rGPS;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>  <span class="comment">% useReceiver</span>
+  <span class="keyword">end</span>  <span class="comment">% useGPS</span>
+
+  <span class="comment">% External disturbance</span>
+  <span class="comment">%---------------------</span>
+  simData.aExt = 1e-7*[0;0;5] + 1e-6*[1;1;1]*sin(OrbRate(el(1))*t);
+
+  <span class="comment">% Update the plot array</span>
+  <span class="comment">%----------------------</span>
+  xPlot(:,k)         = x;
+  pPlot(:,k)         = diag(d.p);
+  xEPlot(:,k)        = d.x;
+
+  <span class="comment">% Kalman Filter</span>
+  <span class="comment">%--------------</span>
+  d.secFromStart     = t;
+  d.time             = jD;
+  d.meas.z           = [range;rangeRate];
+  d.dT               = dT;
+  d                  = CDKF45( d );
+
+  <span class="comment">% Update the plot array</span>
+  <span class="comment">%----------------------</span>
+  rPlot(:,k)         = [range;rangeRate];
+  resPlot(:,k)       = d.residual;
+
+  <span class="comment">% Propagate</span>
+  <span class="comment">%----------</span>
+  <span class="keyword">switch</span> d.propagator
+    <span class="keyword">case</span> <span class="string">'RK45'</span>
+      [x,  hLastT] = RK45( @FOrbKF, x,  hLastT, dT, 0, tol, t, simData );
+    <span class="keyword">case</span> <span class="string">'RK4'</span>
+      x      = RK4( @FOrbKF, x, dT, t, simData );
+  <span class="keyword">end</span>
+  t                  = t + dT;
+  jD                 = jD + dT/86400;
+  range     = [];
+  rangeRate = [];
+  d.r       = {};
+  d.hData   = [];
+  d.meas.z  = [];
+  j         = 0;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+t  = ( 0:(nSim-1))*dT/60;
+dX = 1000*abs(xPlot(1:3,:) - xEPlot(1:3,:));
+dV = 1000*abs(xPlot(4:6,:) - xEPlot(4:6,:));
+P  = sqrt(pPlot);
+yCL = char({<span class="string">'|dRx|, sqrt(pXX) (m)'</span>,<span class="string">'|dRy|, sqrt(pYY) (m)'</span>,<span class="string">'|dRz|, sqrt(pZZ) (m)'</span>,<span class="keyword">...</span>
+             <span class="string">'|dVx|, sqrt(pUU) (m/s)'</span>,<span class="string">'|dVy|, sqrt(pVV) (m/s)'</span>,<span class="string">'|dVz|, sqrt(pWW) (m/s)'</span>,<span class="keyword">...</span>
+             <span class="string">' sqrt(b) (km)'</span>,<span class="string">'sqrt(f) (km/s)'</span>});
+
+Plot2D( t, xEPlot(1:3,:), <span class="string">'Time (min)'</span>, [<span class="string">'x (km)'</span>;<span class="string">'y (km)'</span>;<span class="string">'z (km)'</span>],   <span class="string">'Estimated Position'</span> );
+Plot2D( t, [dX; 1000*P(1:3,:)], <span class="string">'Time (min)'</span>, yCL(1:3,:),<span class="keyword">...</span>
+      <span class="string">'Absolute Position Error and Covariance'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>] );
+Plot2D( t, [dV; 1000*P(4:6,:)], <span class="string">'Time (min)'</span>, yCL(4:6,:),<span class="keyword">...</span>
+      <span class="string">'Absolute Velocity Error and Covariance'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>] );
+Plot2D( t, abs([xPlot(7:8,:) - xEPlot(7:8,:)]), <span class="string">'Time (min)'</span>, [<span class="string">' |bias| (km)  '</span>;<span class="string">'|drift| (km/s)'</span>],<span class="string">'Clock Errors'</span> );
+Plot2D( t, P(7:8,:), <span class="string">'Time (min)'</span>, yCL(7:8,:), <span class="string">'Clock Sqrt Covariance'</span>    );
+<span class="keyword">if</span> size(xEPlot,1) == 17
+  Plot2D( t, xEPlot(9:17,:), <span class="string">'Time (min)'</span>, [<span class="string">'B '</span>;<span class="string">'w1'</span>;<span class="string">'w2'</span>],<span class="string">'Disturbance states'</span>,<span class="keyword">...</span>
+          <span class="string">'lin'</span>,[<span class="string">'[1 4 7]'</span>;<span class="string">'[2 5 8]'</span>;<span class="string">'[3 6 9]'</span>]);
+  Plot2D( t, P(9:17,:), <span class="string">'Time (min)'</span>, [<span class="string">'Bias '</span>;<span class="string">'Harm1'</span>;<span class="string">'Harm2'</span>],<span class="keyword">...</span>
+          <span class="string">'Disturbances Covariance'</span>,<span class="string">'lin'</span>,[<span class="string">'[1 4 7]'</span>;<span class="string">'[2 5 8]'</span>;<span class="string">'[3 6 9]'</span>]);
+<span class="keyword">end</span>
+
+yL    = {}; nL = {};
+<span class="keyword">for</span> k = 1:useOmni*nOmni
+  yL{k} = [<span class="string">'Omni '</span> num2str(k)];
+  nL{k} = num2str(k);
+<span class="keyword">end</span>
+<span class="keyword">for</span> k = (useOmni*nOmni+1):(nMeas)
+  yL{k} = [<span class="string">'GPS '</span> num2str(k-useOmni*nOmni)];
+  nL{k} = num2str(k-useOmni*nOmni);
+<span class="keyword">end</span>
+Plot2D( t, rPlot(1:nMeas,:), <span class="string">'Time (sec)'</span>, yL,<span class="string">'Range Measurements'</span> );
+Plot2D( t, rPlot(nMeas+1:end,:), <span class="string">'Time (sec)'</span>, yL,<span class="string">'Range Rate Measurements'</span> );
+Plot2D( t, resPlot, <span class="string">'Time (sec)'</span>, {nL{:} nL{:}},<span class="string">'Residuals'</span> );
+
+TimeGUI(<span class="string">'close'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="OrbitKalmanFilter_01.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_02.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_03.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_04.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_05.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_06.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_07.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_08.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_09.png" alt=""> <img vspace="5" hspace="5" src="OrbitKalmanFilter_10.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test the orbit Kalman Filter with omni and GPS measurements.
+% The simulation and the filter both use the same RHS, FOrbKF, but the
+% simulation uses more terms in the gravity model.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also CDKF45, OrbitKFRHS, HRangeMeasurement, RangeMeasurement,      
+%  GPSReceiver, and FOrbKF, Plot2D, TimeGUI, Cross, RK4, RK45, Date2JD,   
+%  JD2T, LoadGravityModel, OrbRate, El2RV, Period, EarthRot, EarthRte,   
+%  GPSSatellite, Omni
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2001-2003 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+printIt = 0;
+
+%% Set up the orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+el        = [7000 0.6 0 0 0.0001 0];
+p         = Period( el(1) );
+[r, v]    = El2RV( el );
+
+%% Initial estimates
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT        = 120;
+jD        = Date2JD([2001 3 20 13 15 1]);
+
+%% Initialize the sim
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nOrbits   = 2;
+nSim      = ceil(nOrbits*p/dT);
+bias      = 0.01/3e5/3600; % 0.01 sec/hr one sigma
+biasDrift = bias/3600;
+x         = [r;v;bias;biasDrift];
+t         = 0;
+useOmni   = 1;
+useGPS    = 1;
+gravityModel = LoadGravityModel( 'load file', 'GEMT1.geo' );
+simData   = struct('jD',jD,...
+                   'gravityModel',gravityModel,...
+                   'highFidelity',1,...
+                   'nTess',6,...
+                   'nZonal',6,...
+                   'planetaryOn',1,...
+                   'aExt',[0;0;0]);
+                    
+%% For print outs
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( bias > 0 )
+  prefix = 'Clock';
+else
+  prefix = '';
+end
+
+%% Set up omni measurements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rStationEF      = {};
+vStationEF      = {};
+rStationEF{1}   = [6378.165;0;0];
+vStationEF{1}   = Cross( [0;0;EarthRte(jD)], rStationEF{1} );
+nOmni           = length(rStationEF);
+rOmni           = [0.001 0;0 1e-6].^2;
+omni                 = struct();
+omni.power           = 5;
+omni.range1Sigma     = 0.001;
+omni.rangeRate1Sigma = 1e-6;
+omni.minimumAngle    = 3*pi/180;
+
+%% Set up GPS
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nGPS                        = 4;
+useReceiver                 = 1;
+gPSReceiver                 = struct();
+gPSReceiver.tSamp           = 1;
+gPSReceiver.minimumAltitude = 100;
+gPSReceiver.power           = 5;
+gPSReceiver.range1Sigma     = 0.001; % noise in model
+gPSReceiver.rangeRate1Sigma = 1e-6;
+rGPS                        = [0.001 0;0 1e-6].^2;
+GPSReceiver( 'initialize', gPSReceiver    );
+nMeas = useOmni*nOmni+useGPS*nGPS;
+
+%% Initialize the estimator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dR              = 0.25;
+dV              = dR/1000;
+d               = struct;
+d.p             = diag([dR*[1 1 1] dV*[1 1 1] bias biasDrift].^2 );
+mu              = 3.98600436e5;
+rE              = r + [0.1;-0.15;0.07];
+vE              = v + [0.001;-0.004;0.003];
+d.x             = [rE;vE;0;0];
+d.propagator    = 'RK45';
+d.q             = diag([0 0 0 (0.001*mu/7000^2)*[1 1 1] 0.1*bias 0.1*biasDrift].^2);
+d.fName         = @OrbitKFRHS;
+d.fData         = struct('dFName',@FOrbKF,...
+                          'nStates',17,...
+                          'jD',jD,...
+                          'highFidelity',1,...
+                          'gravityModel',gravityModel,...
+                          'nTess',2,...
+                          'nZonal',2,...
+                          'planetaryOn',1,...
+                          'aExt',[0;0;0]);
+d.hName         = @HRangeMeasurement;
+if (d.fData.nStates == 17)
+  d.x     = [d.x;zeros(9,1)];
+  pDist   = 1e-7*[1 1 1e-3];
+  d.p     = diag ([dR*[1 1 1] dV*[1 1 1] bias biasDrift pDist pDist pDist].^2 );
+  d.q     = diag([0 0 0 (0.001*mu/7000^2)*[1 1 1] 0.1*bias 0.1*biasDrift 0.1*[pDist pDist pDist]].^2);
+end
+d.xMeas         = d.x;
+d.pMeas         = d.p;
+d.hLast         = 0.1*dT;
+d.nIterations   = 2;
+d.tol           = 1e-6;
+range           = [];
+rangeRate       = [];
+d.r             = {};
+j               = 0;
+
+%% Plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xPlot   = zeros(length(x),nSim);
+xEPlot  = zeros(length(d.x),nSim);
+pPlot   = zeros(length(d.x),nSim);
+rPlot   = zeros(nMeas*2,nSim);
+resPlot = zeros(nMeas*2,nSim);
+
+%% Numerical integration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tol    = 1e-6;
+hLastT = 0.1*dT;
+hLastE = 0.1*dT;
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, 'Orbit Kalman Filter' );
+
+for k = 1:nSim
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+  
+  % Measurement from earth stations
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if useOmni
+    mEarth = EarthRot( JD2T( jD ) )';
+    for i = 1:nOmni
+      j = j + 1;
+      % Skip omni model and idealize ground stations as always available
+      [range(j,1), rangeRate(j,1)] = RangeMeasurement(  x(1:3,:),  x(4:6,:), x(7:8,:)*3e5, mEarth*rStationEF{i}, mEarth*vStationEF{i} );
+      range(j,1)               = range(j,1) + omni.range1Sigma*randn;
+      rangeRate(j,1)           = rangeRate(j,1) + omni.rangeRate1Sigma*randn;
+      d.r{j}                   = rOmni;
+      d.hData(j).rSource       = rStationEF{i};
+      d.hData(j).vSource       = vStationEF{i};
+  	  d.hData(j).rSourceECI    = mEarth*rStationEF{i};
+  	  d.hData(j).vSourceECI    = mEarth*vStationEF{i};
+    end
+  end % useOmni
+  
+  if useGPS
+    % Measurements from GPS
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    if( useReceiver )
+        % Use GPSReceiver model
+        %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+      	GPSReceiver( 'update', struct( 'r',x(1:3),'v', x(4:6), 'jD', jD, 'clockError', x(7:8) )  );
+        gPSData = GPSReceiver( 'get output' );
+        if gPSData.nSatellites < nGPS
+          nGPS = gPSData.nSatellites;
+        end
+        for i = 1:nGPS
+          j = j + 1;
+          range(j,1)            = gPSData.range(i);
+          rangeRate(j,1)        = gPSData.rangeRate(i);
+          d.hData(j).rSourceECI = gPSData.rGPS(:,i);
+          d.hData(j).vSourceECI = gPSData.vGPS(:,i);
+          d.r{j}                = rGPS;
+        end  
+    else
+        % Skip GPS model and idealize GPS satellites as always visible
+        [r, v] = GPSSatellite( jD, 'eci' );
+        for i = 1:nGPS
+          j = j + 1;
+          
+          [range(j,1), rangeRate(j,1)] = RangeMeasurement(  x(1:3),  x(4:6), x(7:8), r(:,i), v(:,i) );
+          range(j,1)               = range(j,1) + gps.range1Sigma*randn;
+          rangeRate(j,1)           = rangeRate(j,1) + gps.rangeRate1Sigma*randn;
+          d.hData(j).rSourceECI = r(:,i);
+          d.hData(j).vSourceECI = v(:,i);
+          d.r{j}                = rGPS;
+        end  
+    end  % useReceiver
+  end  % useGPS
+  
+  % External disturbance
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  simData.aExt = 1e-7*[0;0;5] + 1e-6*[1;1;1]*sin(OrbRate(el(1))*t);
+ 
+  % Update the plot array
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  xPlot(:,k)         = x;
+  pPlot(:,k)         = diag(d.p);
+  xEPlot(:,k)        = d.x;
+  
+  % Kalman Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  d.secFromStart     = t;
+  d.time             = jD;
+  d.meas.z           = [range;rangeRate];
+  d.dT               = dT;
+  d                  = CDKF45( d );
+  
+  % Update the plot array
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  rPlot(:,k)         = [range;rangeRate]; 
+  resPlot(:,k)       = d.residual;
+   
+  % Propagate
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  switch d.propagator
+    case 'RK45'
+      [x,  hLastT] = RK45( @FOrbKF, x,  hLastT, dT, 0, tol, t, simData );
+    case 'RK4'
+      x      = RK4( @FOrbKF, x, dT, t, simData );
+  end
+  t                  = t + dT;
+  jD                 = jD + dT/86400;
+  range     = [];
+  rangeRate = [];
+  d.r       = {};
+  d.hData   = [];
+  d.meas.z  = [];  
+  j         = 0;
+	  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+t  = ( 0:(nSim-1))*dT/60;
+dX = 1000*abs(xPlot(1:3,:) - xEPlot(1:3,:));
+dV = 1000*abs(xPlot(4:6,:) - xEPlot(4:6,:));
+P  = sqrt(pPlot);
+yCL = char({'|dRx|, sqrt(pXX) (m)','|dRy|, sqrt(pYY) (m)','|dRz|, sqrt(pZZ) (m)',...
+             '|dVx|, sqrt(pUU) (m/s)','|dVy|, sqrt(pVV) (m/s)','|dVz|, sqrt(pWW) (m/s)',...
+             ' sqrt(b) (km)','sqrt(f) (km/s)'});
+
+Plot2D( t, xEPlot(1:3,:), 'Time (min)', ['x (km)';'y (km)';'z (km)'],   'Estimated Position' );
+Plot2D( t, [dX; 1000*P(1:3,:)], 'Time (min)', yCL(1:3,:),...
+      'Absolute Position Error and Covariance','lin',['[1 4]';'[2 5]';'[3 6]'] );
+Plot2D( t, [dV; 1000*P(4:6,:)], 'Time (min)', yCL(4:6,:),...
+      'Absolute Velocity Error and Covariance','lin',['[1 4]';'[2 5]';'[3 6]'] );
+Plot2D( t, abs([xPlot(7:8,:) - xEPlot(7:8,:)]), 'Time (min)', [' |bias| (km)  ';'|drift| (km/s)'],'Clock Errors' );
+Plot2D( t, P(7:8,:), 'Time (min)', yCL(7:8,:), 'Clock Sqrt Covariance'    );
+if size(xEPlot,1) == 17
+  Plot2D( t, xEPlot(9:17,:), 'Time (min)', ['B ';'w1';'w2'],'Disturbance states',...
+          'lin',['[1 4 7]';'[2 5 8]';'[3 6 9]']);
+  Plot2D( t, P(9:17,:), 'Time (min)', ['Bias ';'Harm1';'Harm2'],...
+          'Disturbances Covariance','lin',['[1 4 7]';'[2 5 8]';'[3 6 9]']);
+end
+
+yL    = {}; nL = {};
+for k = 1:useOmni*nOmni
+  yL{k} = ['Omni ' num2str(k)];
+  nL{k} = num2str(k);
+end
+for k = (useOmni*nOmni+1):(nMeas)
+  yL{k} = ['GPS ' num2str(k-useOmni*nOmni)];
+  nL{k} = num2str(k-useOmni*nOmni);
+end
+Plot2D( t, rPlot(1:nMeas,:), 'Time (sec)', yL,'Range Measurements' );
+Plot2D( t, rPlot(nMeas+1:end,:), 'Time (sec)', yL,'Range Rate Measurements' );
+Plot2D( t, resPlot, 'Time (sec)', {nL{:} nL{:}},'Residuals' );
+
+TimeGUI('close');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-06-19 15:47:59 -0400 (Mon, 19 Jun 2017) $
+% $Revision: 44889 $
+
+##### SOURCE END #####
+--></body></html>

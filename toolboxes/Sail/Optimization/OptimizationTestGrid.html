@@ -1,0 +1,677 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Do 10 tests on GAOT, simulated annealing and downhill simplex.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="OptimizationTestGrid.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Do 10 tests on GAOT, simulated annealing and downhill simplex.</h1><!--introduction--><pre class="language-matlab">Functions <span class="string">demonstrated:</span>
+  OptTestFun          <span class="string">Contains</span> <span class="string">DeJong</span> <span class="string">and</span> <span class="string">other</span> <span class="string">tests</span>
+  GAMin               <span class="string">Minimization</span> <span class="string">using</span> <span class="string">GAOT</span>
+  SimulatedAnnealilng <span class="string">Minimization</span> <span class="string">using</span> <span class="string">simulated</span> <span class="string">annealing</span>
+  CreateLatexTable    <span class="string">Creates</span> <span class="string">tables</span> <span class="string">for</span> <span class="string">import</span> <span class="string">into</span> <span class="string">latex</span> <span class="string">files.</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">PlotDeJong.</span>, CreateLatexTable, IsVersionBefore, OptTestFun,
+GAMin, SimulatedAnnealing
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Tests</a></li><li><a href="#3">Number of elements in state for each test</a></li><li><a href="#4">GAOT</a></li><li><a href="#5">Downhill simplex</a></li><li><a href="#6">Simulated Annealing</a></li><li><a href="#7">Gather data from different algorithms into single variables</a></li><li><a href="#8">Create latex tables for reporting</a></li></ul></div><pre class="codeinput"><span class="comment">%----------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2005 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved</span>
+<span class="comment">%----------------------------------------------------------------------------</span>
+
+clear <span class="string">s</span>;
+</pre><h2 id="2">Tests</h2><pre class="codeinput"><span class="comment">%------</span>
+name = {<span class="string">'de jong 1'</span>,<span class="string">'de jong 2'</span>,<span class="string">'de jong 3'</span>,<span class="string">'de jong 4'</span>,<span class="string">'de jong 5'</span>};
+
+fMin = [];
+<span class="keyword">for</span> k = 1:length(name)
+  fMin(k) = OptTestFun(name{k});
+<span class="keyword">end</span>
+
+d.n  = 5;
+isV5 = IsVersionBefore( 6 );
+dT   = zeros(3,length(name));
+fF   = zeros(3,length(name));
+fP   = zeros(3,length(name));
+</pre><pre class="codeoutput">Target value for f for de jong 1 is 1.000000e-04
+Target value for f for de jong 2 is 1.000000e-04
+Target value for f for de jong 3 is 0.000000e+00
+Target value for f for de jong 4 is 1.000000e-04
+Target value for f for de jong 5 is 9.980000e-01
+</pre><h2 id="3">Number of elements in state for each test</h2><pre class="codeinput"><span class="comment">%------------------------------------------</span>
+n   = [d.n 2 d.n 30 2];
+</pre><h2 id="4">GAOT</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+disp(<span class="string">'-------------------'</span>)
+disp(<span class="string">'GAOT'</span>)
+rng(0);
+s.nI            = 100;
+s.nG            = 300;
+s.bounds        = [-1 1];
+s.fncSelect     = <span class="string">'normGeomSelect'</span>;
+s.optSelect     = [0.01];
+s.fncXOver      = <span class="string">'heuristicXover'</span>;
+s.optXOver      = [30 3];
+s.fncMutate     = <span class="string">'nonUnifMutation'</span>;
+s.optMutate     = [15 s.nG 2];
+lim             = [5.1 2.048 5.12 1.28 65.536];
+<span class="keyword">for</span> k = 1:length(name)
+  rng(0);
+  fprintf(<span class="string">'%s test\n'</span>,name{k})
+  tic
+  <span class="keyword">if</span> isV5, flops(0), <span class="keyword">end</span>
+  s.bounds        = lim(k)*[-ones(1,n(k));ones(1,n(k))]';
+  d.name          = name{k};
+  x               = zeros(n(k),1);
+
+  x       = GAMin( <span class="string">'OptTestFun'</span>,x,d,s);
+  dT(3,k) = toc;
+  fF(3,k) = OptTestFun( x, d );
+  <span class="keyword">if</span> isV5
+    fP(3,k) = flops;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">-------------------
+GAOT
+de jong 1 test
+Generation 1 Generation 2 Generation 3 Generation 4 Generation 5  
+Generation 6 Generation 7 Generation 8 Generation 9 Generation 10  
+Generation 11 Generation 12 Generation 13 Generation 14 Generation 15  
+Generation 16 Generation 17 Generation 18 Generation 19 Generation 20  
+Generation 21 Generation 22 Generation 23 Generation 24 Generation 25  
+Generation 26 Generation 27 Generation 28 Generation 29 Generation 30  
+Generation 31 Generation 32 Generation 33 Generation 34 Generation 35  
+Generation 36 Generation 37 Generation 38 Generation 39 Generation 40  
+Generation 41 Generation 42 Generation 43 Generation 44 Generation 45  
+Generation 46 Generation 47 Generation 48 Generation 49 Generation 50  
+Generation 51 Generation 52 Generation 53 Generation 54 Generation 55  
+Generation 56 Generation 57 Generation 58 Generation 59 Generation 60  
+Generation 61 Generation 62 Generation 63 Generation 64 Generation 65  
+Generation 66 Generation 67 Generation 68 Generation 69 Generation 70  
+Generation 71 Generation 72 Generation 73 Generation 74 Generation 75  
+Generation 76 Generation 77 Generation 78 Generation 79 Generation 80  
+Generation 81 Generation 82 Generation 83 Generation 84 Generation 85  
+Generation 86 Generation 87 Generation 88 Generation 89 Generation 90  
+Generation 91 Generation 92 Generation 93 Generation 94 Generation 95  
+Generation 96 Generation 97 Generation 98 Generation 99 Generation 100  
+Generation 101 Generation 102 Generation 103 Generation 104 Generation 105  
+Generation 106 Generation 107 Generation 108 Generation 109 Generation 110  
+Generation 111 Generation 112 Generation 113 Generation 114 Generation 115  
+Generation 116 Generation 117 Generation 118 Generation 119 Generation 120  
+Generation 121 Generation 122 Generation 123 Generation 124 Generation 125  
+Generation 126 Generation 127 Generation 128 Generation 129 Generation 130  
+Generation 131 Generation 132 Generation 133 Generation 134 Generation 135  
+Generation 136 Generation 137 Generation 138 Generation 139 Generation 140  
+Generation 141 Generation 142 Generation 143 Generation 144 Generation 145  
+Generation 146 Generation 147 Generation 148 Generation 149 Generation 150  
+Generation 151 Generation 152 Generation 153 Generation 154 Generation 155  
+Generation 156 Generation 157 Generation 158 Generation 159 Generation 160  
+Generation 161 Generation 162 Generation 163 Generation 164 Generation 165  
+Generation 166 Generation 167 Generation 168 Generation 169 Generation 170  
+Generation 171 Generation 172 Generation 173 Generation 174 Generation 175  
+Generation 176 Generation 177 Generation 178 Generation 179 Generation 180  
+Generation 181 Generation 182 Generation 183 Generation 184 Generation 185  
+Generation 186 Generation 187 Generation 188 Generation 189 Generation 190  
+Generation 191 Generation 192 Generation 193 Generation 194 Generation 195  
+Generation 196 Generation 197 Generation 198 Generation 199 Generation 200  
+Generation 201 Generation 202 Generation 203 Generation 204 Generation 205  
+Generation 206 Generation 207 Generation 208 Generation 209 Generation 210  
+Generation 211 Generation 212 Generation 213 Generation 214 Generation 215  
+Generation 216 Generation 217 Generation 218 Generation 219 Generation 220  
+Generation 221 Generation 222 Generation 223 Generation 224 Generation 225  
+Generation 226 Generation 227 Generation 228 Generation 229 Generation 230  
+Generation 231 Generation 232 Generation 233 Generation 234 Generation 235  
+Generation 236 Generation 237 Generation 238 Generation 239 Generation 240  
+Generation 241 Generation 242 Generation 243 Generation 244 Generation 245  
+Generation 246 Generation 247 Generation 248 Generation 249 Generation 250  
+Generation 251 Generation 252 Generation 253 Generation 254 Generation 255  
+Generation 256 Generation 257 Generation 258 Generation 259 Generation 260  
+Generation 261 Generation 262 Generation 263 Generation 264 Generation 265  
+Generation 266 Generation 267 Generation 268 Generation 269 Generation 270  
+Generation 271 Generation 272 Generation 273 Generation 274 Generation 275  
+Generation 276 Generation 277 Generation 278 Generation 279 Generation 280  
+Generation 281 Generation 282 Generation 283 Generation 284 Generation 285  
+Generation 286 Generation 287 Generation 288 Generation 289 Generation 290  
+Generation 291 Generation 292 Generation 293 Generation 294 Generation 295  
+Generation 296 Generation 297 Generation 298 Generation 299 Generation 300  
+ 
+de jong 2 test
+Generation 1 Generation 2 Generation 3 Generation 4 Generation 5  
+Generation 6 Generation 7 Generation 8 Generation 9 Generation 10  
+Generation 11 Generation 12 Generation 13 Generation 14 Generation 15  
+Generation 16 Generation 17 Generation 18 Generation 19 Generation 20  
+Generation 21 Generation 22 Generation 23 Generation 24 Generation 25  
+Generation 26 Generation 27 Generation 28 Generation 29 Generation 30  
+Generation 31 Generation 32 Generation 33 Generation 34 Generation 35  
+Generation 36 Generation 37 Generation 38 Generation 39 Generation 40  
+Generation 41 Generation 42 Generation 43 Generation 44 Generation 45  
+Generation 46 Generation 47 Generation 48 Generation 49 Generation 50  
+Generation 51 Generation 52 Generation 53 Generation 54 Generation 55  
+Generation 56 Generation 57 Generation 58 Generation 59 Generation 60  
+Generation 61 Generation 62 Generation 63 Generation 64 Generation 65  
+Generation 66 Generation 67 Generation 68 Generation 69 Generation 70  
+Generation 71 Generation 72 Generation 73 Generation 74 Generation 75  
+Generation 76 Generation 77 Generation 78 Generation 79 Generation 80  
+Generation 81 Generation 82 Generation 83 Generation 84 Generation 85  
+Generation 86 Generation 87 Generation 88 Generation 89 Generation 90  
+Generation 91 Generation 92 Generation 93 Generation 94 Generation 95  
+Generation 96 Generation 97 Generation 98 Generation 99 Generation 100  
+Generation 101 Generation 102 Generation 103 Generation 104 Generation 105  
+Generation 106 Generation 107 Generation 108 Generation 109 Generation 110  
+Generation 111 Generation 112 Generation 113 Generation 114 Generation 115  
+Generation 116 Generation 117 Generation 118 Generation 119 Generation 120  
+Generation 121 Generation 122 Generation 123 Generation 124 Generation 125  
+Generation 126 Generation 127 Generation 128 Generation 129 Generation 130  
+Generation 131 Generation 132 Generation 133 Generation 134 Generation 135  
+Generation 136 Generation 137 Generation 138 Generation 139 Generation 140  
+Generation 141 Generation 142 Generation 143 Generation 144 Generation 145  
+Generation 146 Generation 147 Generation 148 Generation 149 Generation 150  
+Generation 151 Generation 152 Generation 153 Generation 154 Generation 155  
+Generation 156 Generation 157 Generation 158 Generation 159 Generation 160  
+Generation 161 Generation 162 Generation 163 Generation 164 Generation 165  
+Generation 166 Generation 167 Generation 168 Generation 169 Generation 170  
+Generation 171 Generation 172 Generation 173 Generation 174 Generation 175  
+Generation 176 Generation 177 Generation 178 Generation 179 Generation 180  
+Generation 181 Generation 182 Generation 183 Generation 184 Generation 185  
+Generation 186 Generation 187 Generation 188 Generation 189 Generation 190  
+Generation 191 Generation 192 Generation 193 Generation 194 Generation 195  
+Generation 196 Generation 197 Generation 198 Generation 199 Generation 200  
+Generation 201 Generation 202 Generation 203 Generation 204 Generation 205  
+Generation 206 Generation 207 Generation 208 Generation 209 Generation 210  
+Generation 211 Generation 212 Generation 213 Generation 214 Generation 215  
+Generation 216 Generation 217 Generation 218 Generation 219 Generation 220  
+Generation 221 Generation 222 Generation 223 Generation 224 Generation 225  
+Generation 226 Generation 227 Generation 228 Generation 229 Generation 230  
+Generation 231 Generation 232 Generation 233 Generation 234 Generation 235  
+Generation 236 Generation 237 Generation 238 Generation 239 Generation 240  
+Generation 241 Generation 242 Generation 243 Generation 244 Generation 245  
+Generation 246 Generation 247 Generation 248 Generation 249 Generation 250  
+Generation 251 Generation 252 Generation 253 Generation 254 Generation 255  
+Generation 256 Generation 257 Generation 258 Generation 259 Generation 260  
+Generation 261 Generation 262 Generation 263 Generation 264 Generation 265  
+Generation 266 Generation 267 Generation 268 Generation 269 Generation 270  
+Generation 271 Generation 272 Generation 273 Generation 274 Generation 275  
+Generation 276 Generation 277 Generation 278 Generation 279 Generation 280  
+Generation 281 Generation 282 Generation 283 Generation 284 Generation 285  
+Generation 286 Generation 287 Generation 288 Generation 289 Generation 290  
+Generation 291 Generation 292 Generation 293 Generation 294 Generation 295  
+Generation 296 Generation 297 Generation 298 Generation 299 Generation 300  
+ 
+de jong 3 test
+Generation 1 Generation 2 Generation 3 Generation 4 Generation 5  
+Generation 6 Generation 7 Generation 8 Generation 9 Generation 10  
+Generation 11 Generation 12 Generation 13 Generation 14 Generation 15  
+Generation 16 Generation 17 Generation 18 Generation 19 Generation 20  
+Generation 21 Generation 22 Generation 23 Generation 24 Generation 25  
+Generation 26 Generation 27 Generation 28 Generation 29 Generation 30  
+Generation 31 Generation 32 Generation 33 Generation 34 Generation 35  
+Generation 36 Generation 37 Generation 38 Generation 39 Generation 40  
+Generation 41 Generation 42 Generation 43 Generation 44 Generation 45  
+Generation 46 Generation 47 Generation 48 Generation 49 Generation 50  
+Generation 51 Generation 52 Generation 53 Generation 54 Generation 55  
+Generation 56 Generation 57 Generation 58 Generation 59 Generation 60  
+Generation 61 Generation 62 Generation 63 Generation 64 Generation 65  
+Generation 66 Generation 67 Generation 68 Generation 69 Generation 70  
+Generation 71 Generation 72 Generation 73 Generation 74 Generation 75  
+Generation 76 Generation 77 Generation 78 Generation 79 Generation 80  
+Generation 81 Generation 82 Generation 83 Generation 84 Generation 85  
+Generation 86 Generation 87 Generation 88 Generation 89 Generation 90  
+Generation 91 Generation 92 Generation 93 Generation 94 Generation 95  
+Generation 96 Generation 97 Generation 98 Generation 99 Generation 100  
+Generation 101 Generation 102 Generation 103 Generation 104 Generation 105  
+Generation 106 Generation 107 Generation 108 Generation 109 Generation 110  
+Generation 111 Generation 112 Generation 113 Generation 114 Generation 115  
+Generation 116 Generation 117 Generation 118 Generation 119 Generation 120  
+Generation 121 Generation 122 Generation 123 Generation 124 Generation 125  
+Generation 126 Generation 127 Generation 128 Generation 129 Generation 130  
+Generation 131 Generation 132 Generation 133 Generation 134 Generation 135  
+Generation 136 Generation 137 Generation 138 Generation 139 Generation 140  
+Generation 141 Generation 142 Generation 143 Generation 144 Generation 145  
+Generation 146 Generation 147 Generation 148 Generation 149 Generation 150  
+Generation 151 Generation 152 Generation 153 Generation 154 Generation 155  
+Generation 156 Generation 157 Generation 158 Generation 159 Generation 160  
+Generation 161 Generation 162 Generation 163 Generation 164 Generation 165  
+Generation 166 Generation 167 Generation 168 Generation 169 Generation 170  
+Generation 171 Generation 172 Generation 173 Generation 174 Generation 175  
+Generation 176 Generation 177 Generation 178 Generation 179 Generation 180  
+Generation 181 Generation 182 Generation 183 Generation 184 Generation 185  
+Generation 186 Generation 187 Generation 188 Generation 189 Generation 190  
+Generation 191 Generation 192 Generation 193 Generation 194 Generation 195  
+Generation 196 Generation 197 Generation 198 Generation 199 Generation 200  
+Generation 201 Generation 202 Generation 203 Generation 204 Generation 205  
+Generation 206 Generation 207 Generation 208 Generation 209 Generation 210  
+Generation 211 Generation 212 Generation 213 Generation 214 Generation 215  
+Generation 216 Generation 217 Generation 218 Generation 219 Generation 220  
+Generation 221 Generation 222 Generation 223 Generation 224 Generation 225  
+Generation 226 Generation 227 Generation 228 Generation 229 Generation 230  
+Generation 231 Generation 232 Generation 233 Generation 234 Generation 235  
+Generation 236 Generation 237 Generation 238 Generation 239 Generation 240  
+Generation 241 Generation 242 Generation 243 Generation 244 Generation 245  
+Generation 246 Generation 247 Generation 248 Generation 249 Generation 250  
+Generation 251 Generation 252 Generation 253 Generation 254 Generation 255  
+Generation 256 Generation 257 Generation 258 Generation 259 Generation 260  
+Generation 261 Generation 262 Generation 263 Generation 264 Generation 265  
+Generation 266 Generation 267 Generation 268 Generation 269 Generation 270  
+Generation 271 Generation 272 Generation 273 Generation 274 Generation 275  
+Generation 276 Generation 277 Generation 278 Generation 279 Generation 280  
+Generation 281 Generation 282 Generation 283 Generation 284 Generation 285  
+Generation 286 Generation 287 Generation 288 Generation 289 Generation 290  
+Generation 291 Generation 292 Generation 293 Generation 294 Generation 295  
+Generation 296 Generation 297 Generation 298 Generation 299 Generation 300  
+ 
+de jong 4 test
+Generation 1 Generation 2 Generation 3 Generation 4 Generation 5  
+Generation 6 Generation 7 Generation 8 Generation 9 Generation 10  
+Generation 11 Generation 12 Generation 13 Generation 14 Generation 15  
+Generation 16 Generation 17 Generation 18 Generation 19 Generation 20  
+Generation 21 Generation 22 Generation 23 Generation 24 Generation 25  
+Generation 26 Generation 27 Generation 28 Generation 29 Generation 30  
+Generation 31 Generation 32 Generation 33 Generation 34 Generation 35  
+Generation 36 Generation 37 Generation 38 Generation 39 Generation 40  
+Generation 41 Generation 42 Generation 43 Generation 44 Generation 45  
+Generation 46 Generation 47 Generation 48 Generation 49 Generation 50  
+Generation 51 Generation 52 Generation 53 Generation 54 Generation 55  
+Generation 56 Generation 57 Generation 58 Generation 59 Generation 60  
+Generation 61 Generation 62 Generation 63 Generation 64 Generation 65  
+Generation 66 Generation 67 Generation 68 Generation 69 Generation 70  
+Generation 71 Generation 72 Generation 73 Generation 74 Generation 75  
+Generation 76 Generation 77 Generation 78 Generation 79 Generation 80  
+Generation 81 Generation 82 Generation 83 Generation 84 Generation 85  
+Generation 86 Generation 87 Generation 88 Generation 89 Generation 90  
+Generation 91 Generation 92 Generation 93 Generation 94 Generation 95  
+Generation 96 Generation 97 Generation 98 Generation 99 Generation 100  
+Generation 101 Generation 102 Generation 103 Generation 104 Generation 105  
+Generation 106 Generation 107 Generation 108 Generation 109 Generation 110  
+Generation 111 Generation 112 Generation 113 Generation 114 Generation 115  
+Generation 116 Generation 117 Generation 118 Generation 119 Generation 120  
+Generation 121 Generation 122 Generation 123 Generation 124 Generation 125  
+Generation 126 Generation 127 Generation 128 Generation 129 Generation 130  
+Generation 131 Generation 132 Generation 133 Generation 134 Generation 135  
+Generation 136 Generation 137 Generation 138 Generation 139 Generation 140  
+Generation 141 Generation 142 Generation 143 Generation 144 Generation 145  
+Generation 146 Generation 147 Generation 148 Generation 149 Generation 150  
+Generation 151 Generation 152 Generation 153 Generation 154 Generation 155  
+Generation 156 Generation 157 Generation 158 Generation 159 Generation 160  
+Generation 161 Generation 162 Generation 163 Generation 164 Generation 165  
+Generation 166 Generation 167 Generation 168 Generation 169 Generation 170  
+Generation 171 Generation 172 Generation 173 Generation 174 Generation 175  
+Generation 176 Generation 177 Generation 178 Generation 179 Generation 180  
+Generation 181 Generation 182 Generation 183 Generation 184 Generation 185  
+Generation 186 Generation 187 Generation 188 Generation 189 Generation 190  
+Generation 191 Generation 192 Generation 193 Generation 194 Generation 195  
+Generation 196 Generation 197 Generation 198 Generation 199 Generation 200  
+Generation 201 Generation 202 Generation 203 Generation 204 Generation 205  
+Generation 206 Generation 207 Generation 208 Generation 209 Generation 210  
+Generation 211 Generation 212 Generation 213 Generation 214 Generation 215  
+Generation 216 Generation 217 Generation 218 Generation 219 Generation 220  
+Generation 221 Generation 222 Generation 223 Generation 224 Generation 225  
+Generation 226 Generation 227 Generation 228 Generation 229 Generation 230  
+Generation 231 Generation 232 Generation 233 Generation 234 Generation 235  
+Generation 236 Generation 237 Generation 238 Generation 239 Generation 240  
+Generation 241 Generation 242 Generation 243 Generation 244 Generation 245  
+Generation 246 Generation 247 Generation 248 Generation 249 Generation 250  
+Generation 251 Generation 252 Generation 253 Generation 254 Generation 255  
+Generation 256 Generation 257 Generation 258 Generation 259 Generation 260  
+Generation 261 Generation 262 Generation 263 Generation 264 Generation 265  
+Generation 266 Generation 267 Generation 268 Generation 269 Generation 270  
+Generation 271 Generation 272 Generation 273 Generation 274 Generation 275  
+Generation 276 Generation 277 Generation 278 Generation 279 Generation 280  
+Generation 281 Generation 282 Generation 283 Generation 284 Generation 285  
+Generation 286 Generation 287 Generation 288 Generation 289 Generation 290  
+Generation 291 Generation 292 Generation 293 Generation 294 Generation 295  
+Generation 296 Generation 297 Generation 298 Generation 299 Generation 300  
+ 
+de jong 5 test
+Generation 1 Generation 2 Generation 3 Generation 4 Generation 5  
+Generation 6 Generation 7 Generation 8 Generation 9 Generation 10  
+Generation 11 Generation 12 Generation 13 Generation 14 Generation 15  
+Generation 16 Generation 17 Generation 18 Generation 19 Generation 20  
+Generation 21 Generation 22 Generation 23 Generation 24 Generation 25  
+Generation 26 Generation 27 Generation 28 Generation 29 Generation 30  
+Generation 31 Generation 32 Generation 33 Generation 34 Generation 35  
+Generation 36 Generation 37 Generation 38 Generation 39 Generation 40  
+Generation 41 Generation 42 Generation 43 Generation 44 Generation 45  
+Generation 46 Generation 47 Generation 48 Generation 49 Generation 50  
+Generation 51 Generation 52 Generation 53 Generation 54 Generation 55  
+Generation 56 Generation 57 Generation 58 Generation 59 Generation 60  
+Generation 61 Generation 62 Generation 63 Generation 64 Generation 65  
+Generation 66 Generation 67 Generation 68 Generation 69 Generation 70  
+Generation 71 Generation 72 Generation 73 Generation 74 Generation 75  
+Generation 76 Generation 77 Generation 78 Generation 79 Generation 80  
+Generation 81 Generation 82 Generation 83 Generation 84 Generation 85  
+Generation 86 Generation 87 Generation 88 Generation 89 Generation 90  
+Generation 91 Generation 92 Generation 93 Generation 94 Generation 95  
+Generation 96 Generation 97 Generation 98 Generation 99 Generation 100  
+Generation 101 Generation 102 Generation 103 Generation 104 Generation 105  
+Generation 106 Generation 107 Generation 108 Generation 109 Generation 110  
+Generation 111 Generation 112 Generation 113 Generation 114 Generation 115  
+Generation 116 Generation 117 Generation 118 Generation 119 Generation 120  
+Generation 121 Generation 122 Generation 123 Generation 124 Generation 125  
+Generation 126 Generation 127 Generation 128 Generation 129 Generation 130  
+Generation 131 Generation 132 Generation 133 Generation 134 Generation 135  
+Generation 136 Generation 137 Generation 138 Generation 139 Generation 140  
+Generation 141 Generation 142 Generation 143 Generation 144 Generation 145  
+Generation 146 Generation 147 Generation 148 Generation 149 Generation 150  
+Generation 151 Generation 152 Generation 153 Generation 154 Generation 155  
+Generation 156 Generation 157 Generation 158 Generation 159 Generation 160  
+Generation 161 Generation 162 Generation 163 Generation 164 Generation 165  
+Generation 166 Generation 167 Generation 168 Generation 169 Generation 170  
+Generation 171 Generation 172 Generation 173 Generation 174 Generation 175  
+Generation 176 Generation 177 Generation 178 Generation 179 Generation 180  
+Generation 181 Generation 182 Generation 183 Generation 184 Generation 185  
+Generation 186 Generation 187 Generation 188 Generation 189 Generation 190  
+Generation 191 Generation 192 Generation 193 Generation 194 Generation 195  
+Generation 196 Generation 197 Generation 198 Generation 199 Generation 200  
+Generation 201 Generation 202 Generation 203 Generation 204 Generation 205  
+Generation 206 Generation 207 Generation 208 Generation 209 Generation 210  
+Generation 211 Generation 212 Generation 213 Generation 214 Generation 215  
+Generation 216 Generation 217 Generation 218 Generation 219 Generation 220  
+Generation 221 Generation 222 Generation 223 Generation 224 Generation 225  
+Generation 226 Generation 227 Generation 228 Generation 229 Generation 230  
+Generation 231 Generation 232 Generation 233 Generation 234 Generation 235  
+Generation 236 Generation 237 Generation 238 Generation 239 Generation 240  
+Generation 241 Generation 242 Generation 243 Generation 244 Generation 245  
+Generation 246 Generation 247 Generation 248 Generation 249 Generation 250  
+Generation 251 Generation 252 Generation 253 Generation 254 Generation 255  
+Generation 256 Generation 257 Generation 258 Generation 259 Generation 260  
+Generation 261 Generation 262 Generation 263 Generation 264 Generation 265  
+Generation 266 Generation 267 Generation 268 Generation 269 Generation 270  
+Generation 271 Generation 272 Generation 273 Generation 274 Generation 275  
+Generation 276 Generation 277 Generation 278 Generation 279 Generation 280  
+Generation 281 Generation 282 Generation 283 Generation 284 Generation 285  
+Generation 286 Generation 287 Generation 288 Generation 289 Generation 290  
+Generation 291 Generation 292 Generation 293 Generation 294 Generation 295  
+Generation 296 Generation 297 Generation 298 Generation 299 Generation 300  
+ 
+</pre><h2 id="5">Downhill simplex</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+disp(<span class="string">'-------------------'</span>)
+disp(<span class="string">'Downhill Simplex'</span>)
+rng(0);
+<span class="keyword">for</span> k = 1:length(name)
+  fprintf(<span class="string">'%s test\n'</span>,name{k})
+  tic
+  <span class="keyword">if</span> isV5, flops(0), <span class="keyword">end</span>
+  d.name  = name{k};
+  x       = zeros(1,n(k));
+  <span class="keyword">if</span> isV5
+    x = fmins(<span class="string">'OptTestFun'</span>,x,[],[],d);
+    fP(1,k) = flops;
+  <span class="keyword">else</span>
+    x = fminsearch( <span class="string">'OptTestFun'</span>, x,[],d );
+  <span class="keyword">end</span>
+  dT(1,k) = toc;
+  fF(1,k) = OptTestFun( x, d );
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">-------------------
+Downhill Simplex
+de jong 1 test
+de jong 2 test
+de jong 3 test
+de jong 4 test
+ 
+Exiting: Maximum number of function evaluations has been exceeded
+         - increase MaxFunEvals option.
+         Current function value: 0.000231 
+
+de jong 5 test
+</pre><h2 id="6">Simulated Annealing</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+disp(<span class="string">'-------------------'</span>)
+disp(<span class="string">'Simulated Annealing'</span>)
+rng(0);
+<span class="keyword">for</span> k = 1:length(name)
+  rng(0);
+  fprintf(<span class="string">'%s test\n'</span>,name{k})
+  tic
+  <span class="keyword">if</span> isV5, flops(0), <span class="keyword">end</span>
+  d.name  = name{k};
+  x       = zeros(1,n(k));
+  x       = SimulatedAnnealing( <span class="string">'OptTestFun'</span>,x,d);
+  dT(2,k) = toc;
+  <span class="keyword">if</span> isV5, fP(2,k) = flops; <span class="keyword">end</span>
+  fF(2,k) = OptTestFun( x, d );
+  <span class="keyword">if</span> isV5
+    fP(2,k) = flops;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">-------------------
+Simulated Annealing
+de jong 1 test
+de jong 2 test
+de jong 3 test
+de jong 4 test
+de jong 5 test
+</pre><h2 id="7">Gather data from different algorithms into single variables</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------</span>
+xT = {};
+xO = {};
+xF = {};
+<span class="keyword">for</span> k = 1:length(name)
+  xT{k,1} = name{k};
+  xO{k,1} = name{k};
+  xF{k,1} = name{k};
+  xF{k,2} = fMin(k);
+  <span class="keyword">for</span> j = 1:size(dT,1)
+    xT{k,j+1} = dT(j,k);
+    xO{k,j+1} = fP(j,k);
+    xF{k,j+2} = fF(j,k);
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="8">Create latex tables for reporting</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+disp({<span class="string">''</span>,<span class="string">'Typical'</span>,<span class="string">'DS'</span>,<span class="string">'SA'</span>,<span class="string">'GA'</span>})
+CreateLatexTable( xT, <span class="string">'TestGridTime'</span>  )
+CreateLatexTable( xO, <span class="string">'TestGridFlops'</span> )
+CreateLatexTable( xF, <span class="string">'TestGridF'</span>     )
+bar(dT',<span class="string">'stacked'</span>)
+legend(<span class="string">'DS'</span>,<span class="string">'SA'</span>,<span class="string">'GA'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">    ''    'Typical'    'DS'    'SA'    'GA'
+</pre><img vspace="5" hspace="5" src="OptimizationTestGrid_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Do 10 tests on GAOT, simulated annealing and downhill simplex.
+%   Functions demonstrated:
+%     OptTestFun          Contains DeJong and other tests
+%     GAMin               Minimization using GAOT
+%     SimulatedAnnealilng Minimization using simulated annealing
+%     CreateLatexTable    Creates tables for import into latex files.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also PlotDeJong., CreateLatexTable, IsVersionBefore, OptTestFun, 
+%  GAMin, SimulatedAnnealing
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2005 Princeton Satellite Systems, Inc.
+%   All Rights Reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear s;
+
+%% Tests
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+name = {'de jong 1','de jong 2','de jong 3','de jong 4','de jong 5'};
+
+fMin = [];
+for k = 1:length(name)
+  fMin(k) = OptTestFun(name{k});
+end
+
+d.n  = 5;
+isV5 = IsVersionBefore( 6 );
+dT   = zeros(3,length(name));
+fF   = zeros(3,length(name));
+fP   = zeros(3,length(name));
+
+%% Number of elements in state for each test
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+n   = [d.n 2 d.n 30 2];
+
+%% GAOT
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('GAOT')
+rng(0);
+s.nI            = 100;
+s.nG            = 300;
+s.bounds        = [-1 1];
+s.fncSelect     = 'normGeomSelect';
+s.optSelect     = [0.01];
+s.fncXOver      = 'heuristicXover';
+s.optXOver      = [30 3];
+s.fncMutate     = 'nonUnifMutation';
+s.optMutate     = [15 s.nG 2];
+lim             = [5.1 2.048 5.12 1.28 65.536];
+for k = 1:length(name)
+  rng(0);
+  fprintf('%s test\n',name{k})
+  tic
+  if isV5, flops(0), end
+  s.bounds        = lim(k)*[-ones(1,n(k));ones(1,n(k))]';
+  d.name          = name{k};
+  x               = zeros(n(k),1);
+
+  x       = GAMin( 'OptTestFun',x,d,s);
+  dT(3,k) = toc;
+  fF(3,k) = OptTestFun( x, d );
+  if isV5
+    fP(3,k) = flops;
+  end
+end
+
+%% Downhill simplex
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('Downhill Simplex')
+rng(0);
+for k = 1:length(name)
+  fprintf('%s test\n',name{k})
+  tic
+  if isV5, flops(0), end
+  d.name  = name{k};
+  x       = zeros(1,n(k));
+  if isV5
+    x = fmins('OptTestFun',x,[],[],d);
+    fP(1,k) = flops;
+  else
+    x = fminsearch( 'OptTestFun', x,[],d );
+  end
+  dT(1,k) = toc;
+  fF(1,k) = OptTestFun( x, d );
+end
+
+%% Simulated Annealing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+disp('Simulated Annealing')
+rng(0);
+for k = 1:length(name)
+  rng(0);
+  fprintf('%s test\n',name{k})
+  tic
+  if isV5, flops(0), end
+  d.name  = name{k};
+  x       = zeros(1,n(k));
+  x       = SimulatedAnnealing( 'OptTestFun',x,d);
+  dT(2,k) = toc;
+  if isV5, fP(2,k) = flops; end
+  fF(2,k) = OptTestFun( x, d );
+  if isV5
+    fP(2,k) = flops;
+  end
+end
+
+%% Gather data from different algorithms into single variables
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xT = {};
+xO = {};
+xF = {};
+for k = 1:length(name)
+  xT{k,1} = name{k};
+  xO{k,1} = name{k};
+  xF{k,1} = name{k};
+  xF{k,2} = fMin(k);
+  for j = 1:size(dT,1)
+    xT{k,j+1} = dT(j,k);
+    xO{k,j+1} = fP(j,k);
+    xF{k,j+2} = fF(j,k);
+  end
+end
+
+%% Create latex tables for reporting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp({'','Typical','DS','SA','GA'})
+CreateLatexTable( xT, 'TestGridTime'  )
+CreateLatexTable( xO, 'TestGridFlops' )
+CreateLatexTable( xF, 'TestGridF'     )
+bar(dT','stacked')
+legend('DS','SA','GA')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

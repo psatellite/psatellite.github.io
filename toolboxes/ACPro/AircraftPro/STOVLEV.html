@@ -1,0 +1,463 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate eigenvector assignment using an STOVL Model</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="STOVLEV.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate eigenvector assignment using an STOVL Model</h1><!--introduction--><p>The example is taken from:</p><p>Lee, H. P., Jr., Yousseff, H.M. and R.P. Habek, "Application of Eigenstructure Assignment to the Design of STOVL Flight Control Systems," AIAA 88-4140-CP.</p><pre>------------------------------------------------------------------------
+See also STOVL, ESAssign, IC
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Desired eigenstructures</a></li><li><a href="#3">Longitudinal Hover</a></li><li><a href="#4">Lateral Hover</a></li><li><a href="#5">Longitudinal transition</a></li><li><a href="#6">Lateral transition</a></li></ul></div><p>-------------------------------------------------------------------------   Copyright (c) 2003 Princeton Satellite Systems, Inc.   All rights reserved. -------------------------------------------------------------------------</p><pre class="codeinput">s = {<span class="string">'longitudinal hover'</span> <span class="keyword">...</span>
+     <span class="string">'lateral/directional hover'</span> <span class="keyword">...</span>
+     <span class="string">'longitudinal transition'</span> <span class="keyword">...</span>
+     <span class="string">'lateral/directional transition'</span>};
+
+i      = 1:4;
+lambda = {};
+vD     = {};
+fC     = {};
+x      = {};
+</pre><h2 id="2">Desired eigenstructures</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+</pre><h2 id="3">Longitudinal Hover</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+j         = sqrt(-1);
+lambda{1} = [ -1.5+j*2; -1.5-j*2; -0.667; -1.0; -1.25];
+
+vD{1}     = [ 0   0   1   0   0;<span class="keyword">...</span>
+              0   0   0   1   nan;<span class="keyword">...</span>
+              1   nan 0   0   0;<span class="keyword">...</span>
+            nan 1   nan nan nan;<span class="keyword">...</span>
+            nan nan nan nan 1;<span class="keyword">...</span>
+            nan*ones(2,5)];
+
+fC{1}     = [1 1 1 0 0; 0 0 0 1 1];
+
+x{1}      = [1;0;0;0;0;0;0];
+</pre><h2 id="4">Lateral Hover</h2><pre class="codeinput"><span class="comment">%--------------</span>
+lambda{2} = [ -1.5+j*2;-1.5-j*2;-.667;-4;-1];
+
+vD{2}     = [ nan nan 1   0   0;<span class="keyword">...</span>
+              1   nan nan 0   0;<span class="keyword">...</span>
+              nan 1   nan nan nan;<span class="keyword">...</span>
+              0   0   0   1   nan;<span class="keyword">...</span>
+              0   0   0   nan 1;<span class="keyword">...</span>
+              nan*ones(2,5)];
+
+fC{2}     = [1 1 1 0 0; 0 0 0 1 1];
+
+x{2}      = [1;0;0;0;0;0;0];
+</pre><h2 id="5">Longitudinal transition</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+lambda{3} = [ -1.25+j; -1.25-j; -7.5; -1.4];
+
+vD{3}     = [ 1   nan 0   0;<span class="keyword">...</span>
+              nan 1   0   0;<span class="keyword">...</span>
+              0   0   nan 1;<span class="keyword">...</span>
+              0   0   1   nan;<span class="keyword">...</span>
+              nan*ones(3,4)];
+
+fC{3}     = [1 1 0 0; 0 0 1 0; 0 0 0 1];
+x{3}      = [1;0;0;0;0;0;0];
+
+r         = [];
+</pre><h2 id="6">Lateral transition</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+lambda{4} = [ -1.4+j*1.43; -1.4-j*1.43; -2.1+j*2.14; -2.1-j*2.14];
+
+vD{4}     = [0   0   1   nan;<span class="keyword">...</span>
+             1   nan 0   0;<span class="keyword">...</span>
+		     nan 1   0   0;<span class="keyword">...</span>
+		     0   0   nan 1;<span class="keyword">...</span>
+		     nan*ones(3,4)];
+
+fC{4}     = [1 1 0 0;0 0 1 1];
+x{4}      = [1;0;0;0;0;0;0];
+
+<span class="keyword">for</span> k = i
+
+  disp(<span class="string">' '</span>)
+  disp(<span class="string">'========================================'</span>)
+  disp(s{k})
+  disp(<span class="string">'========================================'</span>)
+
+  <span class="comment">% System</span>
+  <span class="comment">%-------</span>
+  g = STOVL( s{k}) ;
+
+  disp(<span class="string">' '</span>)
+  disp(<span class="string">'----------------------'</span>)
+  disp(<span class="string">'Open loop eigenvalues'</span>)
+  disp(<span class="string">'----------------------'</span>)
+  eig(g)
+
+  <span class="comment">% Compute the gain and the achieved eigenvectors</span>
+  <span class="comment">%-----------------------------------------------</span>
+  f = ESAssign( g, lambda{k}, vD{k},fC{k});
+
+  disp(<span class="string">' '</span>)
+  disp(<span class="string">'-----------------------'</span>)
+  disp(<span class="string">'Gain'</span>)
+  disp(<span class="string">'-----------------------'</span>)
+  disp(f)
+
+  <span class="comment">% Create the closed loop system</span>
+  <span class="comment">%------------------------------</span>
+  [a, b, c] = getabcd( g );
+  aCL       = a - b*f*c;
+
+  disp(<span class="string">' '</span>)
+  disp(<span class="string">'-----------------------'</span>)
+  disp(<span class="string">'Closed loop eigenvalues'</span>)
+  disp(<span class="string">'-----------------------'</span>)
+  eig(aCL)
+
+  <span class="comment">% Simulate</span>
+  <span class="comment">%---------</span>
+  g = set( g, aCL, <span class="string">'a'</span> );
+
+  IC( g, x{k}, 0.01, 1000 );
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput"> 
+========================================
+longitudinal hover
+========================================
+ 
+----------------------
+Open loop eigenvalues
+----------------------
+ans =
+            0 +          0i
+       -0.014 +          0i
+      0.30556 +          0i
+     -0.21428 +    0.29724i
+     -0.21428 -    0.29724i
+          -50 +          0i
+           -4 +          0i
+ 
+-----------------------
+Gain
+-----------------------
+     -0.54281      0.31936      0.69081            0            0
+            0            0            0       1.0326        0.441
+ 
+-----------------------
+Closed loop eigenvalues
+-----------------------
+ans =
+      -46.456 +          0i
+      -1.5001 +          2i
+      -1.5001 -          2i
+     -0.66639 +          0i
+      -1.7657 +          0i
+      -1.0047 +          0i
+       -1.244 +          0i
+ 
+========================================
+lateral/directional hover
+========================================
+ 
+----------------------
+Open loop eigenvalues
+----------------------
+ans =
+            0 +          0i
+       -0.013 +          0i
+      0.65401 +          0i
+       -0.379 +    0.59485i
+       -0.379 -    0.59485i
+          -50 +          0i
+          -50 +          0i
+ 
+-----------------------
+Gain
+-----------------------
+     0.067459      0.04815     0.092453            0            0
+            0            0            0     -0.44616     -0.34769
+ 
+-----------------------
+Closed loop eigenvalues
+-----------------------
+ans =
+      -46.743 +          0i
+      -44.933 +          0i
+      -3.9913 +          0i
+       -1.386 +      1.791i
+       -1.386 -      1.791i
+      -1.0655 +          0i
+     -0.61269 +          0i
+ 
+========================================
+longitudinal transition
+========================================
+ 
+----------------------
+Open loop eigenvalues
+----------------------
+ans =
+      -2.5144 +          0i
+       1.8883 +          0i
+    -0.024921 +     0.1597i
+    -0.024921 -     0.1597i
+          -50 +          0i
+          -50 +          0i
+           -4 +          0i
+Warning: The selected eigenvector for eigenvalue 2 leads to an ill-conditioned inverse.
+Warning: The selected eigenvector for eigenvalue 4 leads to an ill-conditioned inverse.
+ 
+-----------------------
+Gain
+-----------------------
+       1.0955       2.0764            0            0
+            0            0      -1.8914            0
+            0            0            0      0.53071
+ 
+-----------------------
+Closed loop eigenvalues
+-----------------------
+ans =
+      -45.069 +          0i
+      -49.471 +          0i
+      -4.0474 +    0.29163i
+      -4.0474 -    0.29163i
+     -0.77002 +     1.0853i
+     -0.77002 -     1.0853i
+     -0.50182 +          0i
+ 
+========================================
+lateral/directional transition
+========================================
+ 
+----------------------
+Open loop eigenvalues
+----------------------
+ans =
+         -0.5 +          0i
+     0.068541 +     1.5783i
+     0.068541 -     1.5783i
+     -0.89017 +          0i
+    -0.059012 +          0i
+          -50 +          0i
+          -50 +          0i
+ 
+-----------------------
+Gain
+-----------------------
+       1.2904       2.0104            0            0
+            0            0       6.1928      -3.5525
+ 
+-----------------------
+Closed loop eigenvalues
+-----------------------
+ans =
+      -47.974 +          0i
+      -42.818 +          0i
+      -5.3652 +          0i
+      -2.3756 +          0i
+      -1.1369 +     1.5463i
+      -1.1369 -     1.5463i
+     -0.50548 +          0i
+</pre><img vspace="5" hspace="5" src="STOVLEV_01.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_02.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_03.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_04.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_05.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_06.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_07.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_08.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_09.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_10.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_11.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_12.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_13.png" alt=""> <img vspace="5" hspace="5" src="STOVLEV_14.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate eigenvector assignment using an STOVL Model
+%
+% The example is taken from:
+%
+% Lee, H. P., Jr., Yousseff, H.M. and R.P. Habek, "Application
+% of Eigenstructure Assignment to the Design of STOVL
+% Flight Control Systems," AIAA 88-4140-CP.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also STOVL, ESAssign, IC
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2003 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+s = {'longitudinal hover' ...
+     'lateral/directional hover' ...
+     'longitudinal transition' ...
+     'lateral/directional transition'};
+     
+i      = 1:4;
+lambda = {};
+vD     = {};
+fC     = {};
+x      = {};
+	 
+%% Desired eigenstructures
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Longitudinal Hover
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+j         = sqrt(-1);
+lambda{1} = [ -1.5+j*2; -1.5-j*2; -0.667; -1.0; -1.25];
+
+vD{1}     = [ 0   0   1   0   0;...
+              0   0   0   1   nan;...
+              1   nan 0   0   0;...
+            nan 1   nan nan nan;...
+            nan nan nan nan 1;...
+            nan*ones(2,5)];
+	  
+fC{1}     = [1 1 1 0 0; 0 0 0 1 1];
+
+x{1}      = [1;0;0;0;0;0;0];
+
+%% Lateral Hover
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+lambda{2} = [ -1.5+j*2;-1.5-j*2;-.667;-4;-1];
+
+vD{2}     = [ nan nan 1   0   0;...
+              1   nan nan 0   0;...
+              nan 1   nan nan nan;...
+              0   0   0   1   nan;...
+              0   0   0   nan 1;...
+              nan*ones(2,5)];
+	  
+fC{2}     = [1 1 1 0 0; 0 0 0 1 1];
+
+x{2}      = [1;0;0;0;0;0;0];
+
+%% Longitudinal transition
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+lambda{3} = [ -1.25+j; -1.25-j; -7.5; -1.4];
+
+vD{3}     = [ 1   nan 0   0;...
+              nan 1   0   0;...
+              0   0   nan 1;...
+              0   0   1   nan;...
+              nan*ones(3,4)];
+	  
+fC{3}     = [1 1 0 0; 0 0 1 0; 0 0 0 1];
+x{3}      = [1;0;0;0;0;0;0];
+
+r         = [];
+
+%% Lateral transition
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+lambda{4} = [ -1.4+j*1.43; -1.4-j*1.43; -2.1+j*2.14; -2.1-j*2.14];
+
+vD{4}     = [0   0   1   nan;...
+             1   nan 0   0;...
+		     nan 1   0   0;...
+		     0   0   nan 1;...
+		     nan*ones(3,4)];
+	  
+fC{4}     = [1 1 0 0;0 0 1 1];
+x{4}      = [1;0;0;0;0;0;0];
+	 
+for k = i
+
+  disp(' ')
+  disp('========================================')
+  disp(s{k})
+  disp('========================================')
+
+  % System
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  g = STOVL( s{k}) ;
+
+  disp(' ')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+  disp('Open loop eigenvalues')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+  eig(g)
+	  
+  % Compute the gain and the achieved eigenvectors
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  f = ESAssign( g, lambda{k}, vD{k},fC{k});
+
+  disp(' ')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  disp('Gain')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  disp(f)
+
+  % Create the closed loop system
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [a, b, c] = getabcd( g );
+  aCL       = a - b*f*c;
+
+  disp(' ')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  disp('Closed loop eigenvalues')
+  disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-')
+  eig(aCL)
+
+  % Simulate
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  g = set( g, aCL, 'a' );
+
+  IC( g, x{k}, 0.01, 1000 );
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-04 15:40:34 -0400 (Wed, 04 Sep 2019) $
+% $Revision: 49706 $
+
+##### SOURCE END #####
+--></body></html>

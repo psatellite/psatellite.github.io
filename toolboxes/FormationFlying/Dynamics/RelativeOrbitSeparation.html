@@ -1,0 +1,191 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Relative simulation with accelerations to produce an offset in leader-follower frame.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-06"><meta name="DC.source" content="RelativeOrbitSeparation.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Relative simulation with accelerations to produce an offset in leader-follower frame.</h1><!--introduction--><p>This demo uses DiscreteHills to simulate a phase-change maneuver in the relative frame. Equivalent maneuvers are applied one orbit period apart.</p><p>See also OrbMnvrPhaseChange, OrbRate, Period, DiscreteHills, Plot2D, HillsFramePlot, Plot3D</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters and ideal solution</a></li><li><a href="#3">Simulate for two orbits</a></li><li><a href="#4">Plot the resulting trajectory</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2017.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters and ideal solution</h2><p>Mission Parameters</p><pre class="codeinput">mass       = 12;
+sma        = 6740;
+thrust     = 0.1; <span class="comment">% N</span>
+
+<span class="comment">% Predicted phase-change delta-V</span>
+dSeparation = 20; <span class="comment">% km</span>
+dTheta = dSeparation/sma;
+dVPhase = OrbMnvrPhaseChange( 6740, dTheta, 1 )*1e3;
+fprintf(<span class="string">'1 rev delta-V: %g m/s\n'</span>,dVPhase);
+
+<span class="comment">% Compute an equivalent burn time for the selected thruster</span>
+tBurn = dVPhase/2*mass/thrust;
+fprintf(<span class="string">'Thrust: %g N\n'</span>,thrust);
+fprintf(<span class="string">'Burn time per maneuver: %g s\n'</span>,tBurn);
+</pre><pre class="codeoutput">1 rev delta-V: 2.4201 m/s
+Thrust: 0.1 N
+Burn time per maneuver: 145.206 s
+</pre><h2 id="3">Simulate for two orbits</h2><pre class="codeinput">dT         = 20;
+acc        = thrust/mass;
+P          = Period(6740);
+w0         = OrbRate(6740);
+t          = 0:dT:2*P;
+nBurn      = ceil(tBurn/dT);
+nPts       = length(t);
+f          = tBurn/(nBurn*dT);
+x0         = [0; 0; 0; 0; 0; 0];
+aC         = zeros(3,length(t)-1);
+tP         = floor(nPts/2);
+<span class="keyword">for</span> k = 1:nBurn
+  aC(:,k) = [0;f*acc;0];
+  aC(:,tP+k) = [0;-f*acc;0];
+<span class="keyword">end</span>
+xDisc = DiscreteHills( x0, w0, aC, dT );
+</pre><h2 id="4">Plot the resulting trajectory</h2><pre class="codeinput">Plot3D(xDisc(1:3,:))
+axis <span class="string">equal</span>
+HillsFramePlot(xDisc(1:3,:))
+Plot2D(t,xDisc(1:2,:),<span class="string">'Time'</span>,{<span class="string">'x - Radial'</span>,<span class="string">'y - Along-Track'</span>},<span class="string">'Time History'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ans = 
+  Figure (2) with properties:
+
+      Number: 2
+        Name: ''
+       Color: [0.94 0.94 0.94]
+    Position: [0 338 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+</pre><img vspace="5" hspace="5" src="RelativeOrbitSeparation_01.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitSeparation_02.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitSeparation_03.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitSeparation_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Relative simulation with accelerations to produce an offset in leader-follower frame.
+% This demo uses DiscreteHills to simulate a phase-change maneuver in the
+% relative frame. Equivalent maneuvers are applied one orbit period apart. 
+%
+% See also OrbMnvrPhaseChange, OrbRate, Period, DiscreteHills, Plot2D,
+% HillsFramePlot, Plot3D
+
+
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright 2017 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2017.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Parameters and ideal solution
+% Mission Parameters
+mass       = 12;
+sma        = 6740;
+thrust     = 0.1; % N
+
+% Predicted phase-change delta-V
+dSeparation = 20; % km
+dTheta = dSeparation/sma;
+dVPhase = OrbMnvrPhaseChange( 6740, dTheta, 1 )*1e3;
+fprintf('1 rev delta-V: %g m/s\n',dVPhase);
+
+% Compute an equivalent burn time for the selected thruster
+tBurn = dVPhase/2*mass/thrust;
+fprintf('Thrust: %g N\n',thrust);
+fprintf('Burn time per maneuver: %g s\n',tBurn);
+
+%% Simulate for two orbits
+dT         = 20;
+acc        = thrust/mass;
+P          = Period(6740);
+w0         = OrbRate(6740);
+t          = 0:dT:2*P;
+nBurn      = ceil(tBurn/dT);
+nPts       = length(t);
+f          = tBurn/(nBurn*dT);
+x0         = [0; 0; 0; 0; 0; 0];
+aC         = zeros(3,length(t)-1); 
+tP         = floor(nPts/2);
+for k = 1:nBurn
+  aC(:,k) = [0;f*acc;0];
+  aC(:,tP+k) = [0;-f*acc;0];
+end
+xDisc = DiscreteHills( x0, w0, aC, dT );
+
+%% Plot the resulting trajectory
+Plot3D(xDisc(1:3,:))
+axis equal
+HillsFramePlot(xDisc(1:3,:))
+Plot2D(t,xDisc(1:2,:),'Time',{'x - Radial','y - Along-Track'},'Time History')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-06-05 15:01:49 -0400 (Mon, 05 Jun 2017) $
+% $Revision: 44758 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,699 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate disturbance modeling with shadowing.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="SCDisturb.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate disturbance modeling with shadowing.</h1><!--introduction--><p>This example runs the disturbance model in single point mode, each call produces disturbance torques for a single point in time. You can run DrawSCPlugIn at the same time to make certain that the sun is in the right place and the spacecraft orientation and orbit are correct. -------------------------------------------------------------------------  See also BuildCADModel, CreateComponent, ArrayPatch, QForm, QLVLH,  QPose, FindSolsticeOrEquinox, RVFromKepler, Disturbances, SunV1,  DrawSCPlugIn -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters</a></li><li><a href="#3">Build the CAD model</a></li><li><a href="#4">Simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><pre class="codeinput"><span class="comment">% Spacecraft dimensions</span>
+xW               = 66/2;
+yW               = 62/2;
+zW               = 74/2;
+</pre><h2 id="3">Build the CAD model</h2><pre class="codeinput">BuildCADModel( <span class="string">'initialize'</span> );
+BuildCADModel( <span class="string">'set name'</span> , <span class="string">'Comsat'</span> );
+BuildCADModel( <span class="string">'set units'</span>, <span class="string">'in'</span>     );
+
+<span class="comment">% Core</span>
+m              = struct();
+m.name         = <span class="string">'Core'</span>;
+m.rHinge       = [0;0;0];
+m.bHinge.b     = eye(3);
+m.previousBody = [];
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% Solar array</span>
+m.name         = <span class="string">'South Solar Array'</span>;
+m.rHinge       = [0 0 0]';
+m.bHinge.b     = eye(3);
+m.previousBody = 1;
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+m.name         = <span class="string">'North Solar Array'</span>;
+m.rHinge       = [0 0 0]';
+m.bHinge.b     = eye(3);
+m.previousBody = 1;
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% This creates the connections between the bodies</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+
+<span class="comment">% The solar array when it is earth pointing</span>
+dArray          = struct();
+dArray.z        = 76.25;
+dArray.x        = 33;
+dArray.nZ       = 3;
+dArray.nX       = 2;
+dArray.theta    = (10*pi/180)*[1 -1];
+
+m               = ArrayPatch( dArray ); <span class="comment">% Only use the front of the array</span>
+m.v(:,3)        = m.v(:,3) + dArray.z/2;
+b               = [1 0 0;0 0 1;0 -1 0];
+
+mass            = struct();
+mass.mass       = 10/(9.806/0.0254);
+mass.inertia    = diag([10 1 10]);
+mass.cM         = [0;66;0];
+
+magnetic        = struct();
+magnetic.dipole = [0;5;0];
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'South Array'</span>, <span class="string">'body'</span>, 2, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>,<span class="keyword">...</span>
+                     <span class="string">'dipole'</span>, magnetic.dipole, <span class="string">'inside'</span>, 0 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+mass.cM         = [0;-66;0];
+m.v(:,3)        = - m.v(:,3);
+m.f             = fliplr(m.f);
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 -35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, b, <span class="string">'name'</span>, <span class="string">'North Array'</span>, <span class="string">'body'</span>, 3, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>,<span class="keyword">...</span>
+                     <span class="string">'dipole'</span>, magnetic.dipole, <span class="string">'inside'</span>, 0 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Struts are added just for the picture They are 'inside' so they will not be</span>
+<span class="comment">% considered in the disturbance analysis.</span>
+y       = 76.25/2;
+w       = 11;
+theta   = 10*pi/180;
+b       =  1;
+s       =  y*sin(theta)/2;
+c       =  y*cos(theta);
+m.v    = [    b   0   0;<span class="keyword">...</span>
+             -b   0   0;<span class="keyword">...</span>
+            w+b  -s   c;<span class="keyword">...</span>
+            w-b  -s   c;<span class="keyword">...</span>
+              b   0   0;<span class="keyword">...</span>
+             -b   0   0;<span class="keyword">...</span>
+          2*w+b  -s   c;<span class="keyword">...</span>
+          2*w-b  -s   c];
+
+m.f    = [ 1  2  4  3;<span class="keyword">...</span>
+           5  6  8  7];
+
+bStrut = [1 0 0;0 0 1;0 -1 0];
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, bStrut, <span class="string">'name'</span>, <span class="string">'South Array Strut 1'</span>, <span class="string">'body'</span>, 2, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m.v(:,3)    = -m.v(:,3);
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 -35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, bStrut, <span class="string">'name'</span>, <span class="string">'North Array Strut 1'</span>, <span class="string">'body'</span>, 3, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m.v    = [    b   0   0;<span class="keyword">...</span>
+             -b   0   0;<span class="keyword">...</span>
+           -w+b   s   c;<span class="keyword">...</span>
+           -w-b   s   c;<span class="keyword">...</span>
+              b   0   0;<span class="keyword">...</span>
+             -b   0   0;<span class="keyword">...</span>
+         -2*w+b   s   c;<span class="keyword">...</span>
+         -2*w-b   s   c];
+
+m.f         = [ 1  2  4  3;<span class="keyword">...</span>
+                5  6  8  7];
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, bStrut, <span class="string">'name'</span>, <span class="string">'South Array Strut 2'</span>, <span class="string">'body'</span>, 2, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m.v(:,3)    = -m.v(:,3);
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, [0 -35 2.5]',<span class="keyword">...</span>
+                     <span class="string">'b'</span>, bStrut, <span class="string">'name'</span>, <span class="string">'North Array Strut 2'</span>, <span class="string">'body'</span>, 3, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Core components</span>
+mass.mass       = 1000;
+mass.inertia    = diag([1000 1000 1000]);
+mass.cM         = [0;0;0];
+
+magnetic.dipole = [5;5;5];
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, 2*0.95*xW, <span class="string">'y'</span>, 2*0.95*yW, <span class="string">'z'</span>, 2*0.95*zW,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>,[0;1;0],<span class="string">'name'</span>, <span class="string">'Core Box'</span>, <span class="string">'mass'</span>, mass, <span class="keyword">...</span>
+                     <span class="string">'body'</span>, 1, <span class="string">'inside'</span>, 0, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, [0.7 0.7 0.7], <span class="string">'edgeColor'</span>, [0.7 0.7 0.7],<span class="keyword">...</span>
+                     <span class="string">'dipole'</span>, magnetic.dipole );
+
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+rF         = struct();
+rF.flux    = 600;
+rF.u       = [0;0;1];
+rF.r       = [0;0;0];
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'ellipsoid'</span>, <span class="string">'abc'</span>, [30 60 10], <span class="string">'thetaUpper'</span>, pi/4,<span class="keyword">...</span>
+                     <span class="string">'n'</span>, 10, <span class="string">'rA'</span>,[25;0;zW+10],<span class="string">'name'</span>, <span class="string">'Elliptical reflector'</span>, <span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, [0.5 0.5 0], <span class="string">'edgeColor'</span>, [1 1 1],<span class="keyword">...</span>
+                     <span class="string">'body'</span>, 1, <span class="string">'inside'</span>, 0, <span class="keyword">...</span>
+                     <span class="string">'flux'</span>,rF.flux, <span class="string">'u'</span>,rF.u, <span class="string">'r'</span>,rF.r );
+
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+BuildCADModel( <span class="string">'update body mass properties'</span> );
+BuildCADModel( <span class="string">'create body arrays'</span> ); <span class="comment">% for shadowing</span>
+
+g = BuildCADModel(<span class="string">'get model'</span>);
+</pre><img vspace="5" hspace="5" src="SCDisturb_01.png" alt=""> <h2 id="4">Simulation</h2><pre class="codeinput"><span class="comment">% Ephemeris</span>
+jD0                    = FindSolsticeOrEquinox(<span class="string">'spring equinox'</span>,2002);
+
+nDays                  = 4;
+nSamp                  = 200;
+t                      = linspace(0,nDays,nSamp)*86400;
+jD                     = jD0 + t/86400;
+
+[rECI, vECI]           = RVFromKepler( [42167 0 0 0 0 0], t );
+
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+
+<span class="comment">% Initialize the picture</span>
+g           = SetCADState(g,rECI(:,1), vECI(:,1));
+g           = SetCADQuaternion(g,QLVLH(rECI(:,1), vECI(:,1)));
+g.name      = <span class="string">'ComStar'</span>;
+tag3DWindow = DrawSCPlugIn( <span class="string">'initialize'</span>, g, [], [], <span class="string">'Earth'</span>, jD(1) );
+
+<span class="comment">% Disturbances</span>
+d             = Disturbances( <span class="string">'defaults'</span> );
+solarFlux     = 1358;
+d.s           = solarFlux*SunV1(jD(1)); <span class="comment">% Watts/m^2</span>
+d.tSamp       = 10;
+d.shadow      = 1;
+d.showScans   = 1;
+d.nScanLines  = 10;
+d.units       = <span class="string">'in'</span>;
+d.planet      = <span class="string">'earth'</span>;
+d.mu          = 3.986014e5;
+d.r           = rECI(:,1);
+d.b           = [0;0;71]*1.e-9;
+d.v           = vECI(:,1);
+d.tGas        = 900;
+d.mGas        = 0.02;
+d.computePR   = 1;
+d.computeAero = 1;
+
+<span class="comment">% Initialize the disturbance model</span>
+hD = Disturbances( <span class="string">'init'</span>, g, d );
+
+<span class="comment">% Loop through the disturbances</span>
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'SCDisturb'</span>, nSamp );
+<span class="keyword">for</span> k = 1:nSamp
+
+  <span class="comment">% Sun unit vector in the ECI frame</span>
+  uSun     = SunV1(jD(k));
+
+  <span class="comment">% CAD body structure</span>
+  g         = SetCADState(g,rECI(:,k), vECI(:,k));
+  g         = SetCADQuaternion(g,g.qLVLH);
+  uSunLVLH  = QForm( g.qLVLH, uSun );
+  theta     = atan2( uSunLVLH(1), uSunLVLH(3) );
+  g.body(2).bHinge.angle = -theta;
+  g.body(3).bHinge.angle = -theta;
+
+  <span class="comment">% Draw the picture</span>
+  DrawSCPlugIn( <span class="string">'update spacecraft'</span>, tag3DWindow, g, jD(k) );
+
+  <span class="comment">% Update the disturbances</span>
+  d.s    = 1367*uSun; <span class="comment">% W/m^2</span>
+  d.r    = rECI(:,k);
+  d.v    = vECI(:,k);
+  [f, t] = Disturbances( <span class="string">'run'</span>, g, d, hD );
+
+  TimeDisplay( <span class="string">'update'</span> );
+<span class="keyword">end</span>
+
+TimeDisplay( <span class="string">'close'</span> );
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">                       ALim: [0 2]
+                   ALimMode: 'auto'
+                 AlphaScale: 'linear'
+                   Alphamap: [1&times;64 double]
+          AmbientLightColor: [1 1 1]
+               BeingDeleted: off
+                        Box: off
+                   BoxStyle: 'back'
+                 BusyAction: 'queue'
+              ButtonDownFcn: ''
+                       CLim: [0 255]
+                   CLimMode: 'auto'
+             CameraPosition: [-1.5348e+07 -5.7002e+07 12716]
+         CameraPositionMode: 'manual'
+               CameraTarget: [-1.0963e+07 -4.0717e+07 9082.9]
+           CameraTargetMode: 'manual'
+             CameraUpVector: [5.6053e-05 0.00020798 1]
+         CameraUpVectorMode: 'manual'
+            CameraViewAngle: 30
+        CameraViewAngleMode: 'manual'
+                   Children: [6&times;1 Graphics]
+                   Clipping: on
+              ClippingStyle: '3dbox'
+                      Color: [0 0 0]
+                 ColorOrder: [7&times;3 double]
+            ColorOrderIndex: 1
+                 ColorScale: 'linear'
+                   Colormap: [256&times;3 double]
+                ContextMenu: [0&times;0 GraphicsPlaceholder]
+                  CreateFcn: ''
+               CurrentPoint: [2&times;3 double]
+            DataAspectRatio: [1 1 1]
+        DataAspectRatioMode: 'manual'
+                  DeleteFcn: ''
+                  FontAngle: 'normal'
+                   FontName: 'Helvetica'
+                   FontSize: 10
+               FontSizeMode: 'auto'
+              FontSmoothing: on
+                  FontUnits: 'points'
+                 FontWeight: 'normal'
+                  GridAlpha: 0.15
+              GridAlphaMode: 'auto'
+                  GridColor: [0.15 0.15 0.15]
+              GridColorMode: 'auto'
+              GridLineStyle: '-'
+           HandleVisibility: 'on'
+                    HitTest: on
+              InnerPosition: [0 0 340 340]
+               Interactions: [1&times;1 matlab.graphics.interaction.interface.DefaultAxesInteractionSet]
+              Interruptible: on
+    LabelFontSizeMultiplier: 1.1
+                      Layer: 'bottom'
+                     Layout: [0&times;0 matlab.ui.layout.LayoutOptions]
+                     Legend: [0&times;0 GraphicsPlaceholder]
+             LineStyleOrder: '-'
+        LineStyleOrderIndex: 1
+                  LineWidth: 0.5
+             MinorGridAlpha: 0.25
+         MinorGridAlphaMode: 'auto'
+             MinorGridColor: [0.1 0.1 0.1]
+         MinorGridColorMode: 'auto'
+         MinorGridLineStyle: ':'
+                   NextPlot: 'replace'
+            NextSeriesIndex: 1
+              OuterPosition: [-44.2 -37.4 416.5 402.9]
+                     Parent: [1&times;1 Figure]
+              PickableParts: 'visible'
+         PlotBoxAspectRatio: [1.3811 3.7151 1]
+     PlotBoxAspectRatioMode: 'auto'
+                   Position: [0 0 340 340]
+         PositionConstraint: 'innerposition'
+                 Projection: 'perspective'
+                   Selected: off
+         SelectionHighlight: on
+                 SortMethod: 'depth'
+                        Tag: 'Spacecraft'
+                    TickDir: 'out'
+                TickDirMode: 'auto'
+       TickLabelInterpreter: 'tex'
+                 TickLength: [0.01 0.025]
+                 TightInset: [0 0 0 0]
+                      Title: [1&times;1 Text]
+    TitleFontSizeMultiplier: 1.1
+            TitleFontWeight: 'bold'
+                    Toolbar: [1&times;1 AxesToolbar]
+                       Type: 'axes'
+                      Units: 'pixels'
+                   UserData: []
+                       View: [-62.829 0.080078]
+                    Visible: off
+                      XAxis: [1&times;1 NumericRuler]
+              XAxisLocation: 'bottom'
+                     XColor: [0.15 0.15 0.15]
+                 XColorMode: 'auto'
+                       XDir: 'normal'
+                      XGrid: on
+                     XLabel: [1&times;1 Text]
+                       XLim: [-1.1239e+07 6378100]
+                   XLimMode: 'auto'
+                 XMinorGrid: off
+                 XMinorTick: off
+                     XScale: 'linear'
+                      XTick: [1&times;9 double]
+                 XTickLabel: {9&times;1 cell}
+             XTickLabelMode: 'auto'
+         XTickLabelRotation: 0
+                  XTickMode: 'auto'
+                      YAxis: [1&times;1 NumericRuler]
+              YAxisLocation: 'left'
+                     YColor: [0.15 0.15 0.15]
+                 YColorMode: 'auto'
+                       YDir: 'normal'
+                      YGrid: on
+                     YLabel: [1&times;1 Text]
+                       YLim: [-4.1012e+07 6378100]
+                   YLimMode: 'auto'
+                 YMinorGrid: off
+                 YMinorTick: off
+                     YScale: 'linear'
+                      YTick: [-40000000 -30000000 -20000000 -10000000 0]
+                 YTickLabel: {5&times;1 cell}
+             YTickLabelMode: 'auto'
+         YTickLabelRotation: 0
+                  YTickMode: 'auto'
+                      ZAxis: [1&times;1 NumericRuler]
+                     ZColor: [0.15 0.15 0.15]
+                 ZColorMode: 'auto'
+                       ZDir: 'normal'
+                      ZGrid: on
+                     ZLabel: [1&times;1 Text]
+                       ZLim: [-6378100 6378100]
+                   ZLimMode: 'auto'
+                 ZMinorGrid: off
+                 ZMinorTick: off
+                     ZScale: 'linear'
+                      ZTick: [1&times;7 double]
+                 ZTickLabel: {7&times;1 cell}
+             ZTickLabelMode: 'auto'
+         ZTickLabelRotation: 0
+                  ZTickMode: 'auto'
+</pre><img vspace="5" hspace="5" src="SCDisturb_02.png" alt=""> <img vspace="5" hspace="5" src="SCDisturb_03.png" alt=""> <img vspace="5" hspace="5" src="SCDisturb_04.png" alt=""> <img vspace="5" hspace="5" src="SCDisturb_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate disturbance modeling with shadowing.
+% This example runs the disturbance model in single point mode,
+% each call produces disturbance torques for a single point in time.
+% You can run DrawSCPlugIn at the same time to make certain that the sun
+% is in the right place and the spacecraft orientation and orbit are
+% correct.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also BuildCADModel, CreateComponent, ArrayPatch, QForm, QLVLH, 
+%  QPose, FindSolsticeOrEquinox, RVFromKepler, Disturbances, SunV1, 
+%  DrawSCPlugIn
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Parameters
+
+% Spacecraft dimensions
+xW               = 66/2; 
+yW               = 62/2;
+zW               = 74/2;
+
+%% Build the CAD model
+BuildCADModel( 'initialize' );
+BuildCADModel( 'set name' , 'Comsat' );
+BuildCADModel( 'set units', 'in'     );
+
+% Core
+m              = struct();
+m.name         = 'Core';
+m.rHinge       = [0;0;0];
+m.bHinge.b     = eye(3);
+m.previousBody = [];
+BuildCADModel('add body', m );
+
+% Solar array
+m.name         = 'South Solar Array';
+m.rHinge       = [0 0 0]';
+m.bHinge.b     = eye(3);
+m.previousBody = 1;
+BuildCADModel('add body', m );
+
+m.name         = 'North Solar Array';
+m.rHinge       = [0 0 0]';
+m.bHinge.b     = eye(3);
+m.previousBody = 1;
+BuildCADModel('add body', m );
+
+% This creates the connections between the bodies
+BuildCADModel( 'compute paths' );
+
+% The solar array when it is earth pointing
+dArray          = struct();
+dArray.z        = 76.25;
+dArray.x        = 33;
+dArray.nZ       = 3;
+dArray.nX       = 2;
+dArray.theta    = (10*pi/180)*[1 -1];
+
+m               = ArrayPatch( dArray ); % Only use the front of the array
+m.v(:,3)        = m.v(:,3) + dArray.z/2;
+b               = [1 0 0;0 0 1;0 -1 0];
+
+mass            = struct();
+mass.mass       = 10/(9.806/0.0254);
+mass.inertia    = diag([10 1 10]);
+mass.cM         = [0;66;0];
+
+magnetic        = struct();
+magnetic.dipole = [0;5;0];
+
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 35 2.5]',...
+                     'b', b, 'name', 'South Array', 'body', 2, 'mass', mass, ...
+                     'faceColor', 'solar cell',...
+                     'dipole', magnetic.dipole, 'inside', 0 );
+BuildCADModel( 'add component', m );
+
+mass.cM         = [0;-66;0];
+m.v(:,3)        = - m.v(:,3);
+m.f             = fliplr(m.f);
+
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 -35 2.5]',...
+                     'b', b, 'name', 'North Array', 'body', 3, 'mass', mass, ...
+                     'faceColor', 'solar cell',...
+                     'dipole', magnetic.dipole, 'inside', 0 );
+BuildCADModel( 'add component', m );
+
+% Struts are added just for the picture They are 'inside' so they will not be
+% considered in the disturbance analysis.
+y       = 76.25/2;
+w       = 11;
+theta   = 10*pi/180;
+b       =  1;
+s       =  y*sin(theta)/2;
+c       =  y*cos(theta);
+m.v    = [    b   0   0;...
+             -b   0   0;...
+            w+b  -s   c;...
+            w-b  -s   c;...
+              b   0   0;...
+             -b   0   0;...
+          2*w+b  -s   c;...
+          2*w-b  -s   c];
+
+m.f    = [ 1  2  4  3;...
+           5  6  8  7];
+		   
+bStrut = [1 0 0;0 0 1;0 -1 0];
+
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 35 2.5]',...
+                     'b', bStrut, 'name', 'South Array Strut 1', 'body', 2, 'mass', mass, ...
+                     'faceColor', 'aluminum' );
+BuildCADModel( 'add component', m );
+
+m.v(:,3)    = -m.v(:,3);
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 -35 2.5]',...
+                     'b', bStrut, 'name', 'North Array Strut 1', 'body', 3, 'mass', mass, ...
+                     'faceColor', 'aluminum' );
+BuildCADModel( 'add component', m );
+
+m.v    = [    b   0   0;...
+             -b   0   0;...
+           -w+b   s   c;...
+           -w-b   s   c;...
+              b   0   0;...
+             -b   0   0;...
+         -2*w+b   s   c;...
+         -2*w-b   s   c];
+
+m.f         = [ 1  2  4  3;...
+                5  6  8  7];
+
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 35 2.5]',...
+                     'b', bStrut, 'name', 'South Array Strut 2', 'body', 2, 'mass', mass, ...
+                     'faceColor', 'aluminum' );
+BuildCADModel( 'add component', m );
+
+m.v(:,3)    = -m.v(:,3);
+m = CreateComponent( 'make', 'generic', 'vertex', m.v, 'face', m.f, 'rA', [0 -35 2.5]',...
+                     'b', bStrut, 'name', 'North Array Strut 2', 'body', 3, 'mass', mass, ...
+                     'faceColor', 'aluminum' );
+BuildCADModel( 'add component', m );
+
+% Core components
+mass.mass       = 1000;
+mass.inertia    = diag([1000 1000 1000]);
+mass.cM         = [0;0;0];
+
+magnetic.dipole = [5;5;5];
+m = CreateComponent( 'make', 'box', 'x', 2*0.95*xW, 'y', 2*0.95*yW, 'z', 2*0.95*zW,...
+                     'rA',[0;1;0],'name', 'Core Box', 'mass', mass, ...
+                     'body', 1, 'inside', 0, ...
+                     'faceColor', [0.7 0.7 0.7], 'edgeColor', [0.7 0.7 0.7],...
+                     'dipole', magnetic.dipole );
+
+BuildCADModel( 'add component', m );
+
+rF         = struct();
+rF.flux    = 600;
+rF.u       = [0;0;1];
+rF.r       = [0;0;0];
+m = CreateComponent( 'make', 'ellipsoid', 'abc', [30 60 10], 'thetaUpper', pi/4,...
+                     'n', 10, 'rA',[25;0;zW+10],'name', 'Elliptical reflector', ...
+                     'faceColor', [0.5 0.5 0], 'edgeColor', [1 1 1],...
+                     'body', 1, 'inside', 0, ...
+                     'flux',rF.flux, 'u',rF.u, 'r',rF.r );
+
+BuildCADModel( 'add component', m );
+
+BuildCADModel( 'update body mass properties' );
+BuildCADModel( 'create body arrays' ); % for shadowing
+
+g = BuildCADModel('get model');
+
+%% Simulation
+
+% Ephemeris
+jD0                    = FindSolsticeOrEquinox('spring equinox',2002);
+
+nDays                  = 4;
+nSamp                  = 200;
+t                      = linspace(0,nDays,nSamp)*86400;
+jD                     = jD0 + t/86400;
+
+[rECI, vECI]           = RVFromKepler( [42167 0 0 0 0 0], t );
+
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+
+% Initialize the picture
+g           = SetCADState(g,rECI(:,1), vECI(:,1));
+g           = SetCADQuaternion(g,QLVLH(rECI(:,1), vECI(:,1)));
+g.name      = 'ComStar';
+tag3DWindow = DrawSCPlugIn( 'initialize', g, [], [], 'Earth', jD(1) );
+
+% Disturbances
+d             = Disturbances( 'defaults' );
+solarFlux     = 1358;
+d.s           = solarFlux*SunV1(jD(1)); % Watts/m^2
+d.tSamp       = 10;
+d.shadow      = 1;
+d.showScans   = 1;
+d.nScanLines  = 10;
+d.units       = 'in';
+d.planet      = 'earth';
+d.mu          = 3.986014e5;
+d.r           = rECI(:,1);
+d.b           = [0;0;71]*1.e-9;
+d.v           = vECI(:,1);
+d.tGas        = 900;
+d.mGas        = 0.02;
+d.computePR   = 1;
+d.computeAero = 1;
+
+% Initialize the disturbance model
+hD = Disturbances( 'init', g, d );
+
+% Loop through the disturbances
+TimeDisplay( 'initialize', 'SCDisturb', nSamp );
+for k = 1:nSamp
+
+  % Sun unit vector in the ECI frame
+  uSun     = SunV1(jD(k));
+
+  % CAD body structure
+  g         = SetCADState(g,rECI(:,k), vECI(:,k));
+  g         = SetCADQuaternion(g,g.qLVLH);
+  uSunLVLH  = QForm( g.qLVLH, uSun );
+  theta     = atan2( uSunLVLH(1), uSunLVLH(3) );
+  g.body(2).bHinge.angle = -theta;
+  g.body(3).bHinge.angle = -theta;
+ 
+  % Draw the picture
+  DrawSCPlugIn( 'update spacecraft', tag3DWindow, g, jD(k) );
+
+  % Update the disturbances
+  d.s    = 1367*uSun; % W/m^2
+  d.r    = rECI(:,k);
+  d.v    = vECI(:,k);
+  [f, t] = Disturbances( 'run', g, d, hD );
+  
+  TimeDisplay( 'update' );
+end
+
+TimeDisplay( 'close' );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2018-08-04 $
+% $Revision: ddf51cc58ddf8258e5b1af70cc86246daaa37c43 $
+
+##### SOURCE END #####
+--></body></html>

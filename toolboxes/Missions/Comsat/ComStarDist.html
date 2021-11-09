@@ -1,0 +1,903 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Computes the total disturbance torque for the ComStar satellite.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="ComStarDist.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Computes the total disturbance torque for the ComStar satellite.</h1><!--introduction--><p>The disturbances include solar, gravity gradient, RF and residual dipole. This does not use the CAD disturbance package.</p><p>Since version 2. -------------------------------------------------------------------------  See also TGG, TRF, Loc3D, SolarF, Shadow, SumRXF, BMF, SCSeries,  ComStar, SunBeta, Constant, NewFig, TitleS, XLabelS, YLabelS, Cross,  DupVect, SumV, Date2JD, Geo, GeoEclps -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setup</a></li><li><a href="#3">Number of increments in alpha</a></li><li><a href="#4">The main loop</a></li><li><a href="#6">Harmonic expansion</a></li><li><a href="#7">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 1994-1998 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Setup</h2><h2 id="3">Number of increments in alpha</h2><pre class="codeinput"><span class="comment">%------------------------------</span>
+nAlpha     = 360;
+
+<span class="comment">% Set equal to 1 to plot all of the plots</span>
+<span class="comment">%----------------------------------------</span>
+allPlots   = 1;
+
+<span class="comment">% Constants</span>
+<span class="comment">%----------</span>
+pSolar     = Constant(<span class="string">'solar pressure mks'</span>);
+degToRad   = Constant(<span class="string">'Deg to Rad'</span>);
+
+<span class="comment">% RF</span>
+<span class="comment">%---</span>
+rRF        = ComStar(<span class="string">'R RF'</span>);
+uRF        = ComStar(<span class="string">'U RF'</span>);
+rFPower    = ComStar(<span class="string">'RF Power'</span>);
+
+<span class="comment">% Center-of-mass</span>
+<span class="comment">%---------------</span>
+cm         = ComStar(<span class="string">'MO CM'</span>);
+
+<span class="comment">% Array offsets from full sun (usually due to alignment uncertainties)</span>
+<span class="comment">%---------------------------------------------------------------------</span>
+dAN        =  5*degToRad;
+dAS        = -5*degToRad;
+
+<span class="comment">% Surface properties</span>
+<span class="comment">%-------------------</span>
+box         =  1:6;
+antennas    =  7:10;
+akm         =  11;
+coreSurf    = ComStar(<span class="string">'Core Surface'</span>);
+coreArea    = ComStar(<span class="string">'Core Area'</span>);
+coreNorm    = ComStar(<span class="string">'Core Normal'</span>);
+coreSLoc    = ComStar(<span class="string">'Core Location'</span>);
+coreShad    = ComStar(<span class="string">'Core Shadowing'</span>);
+
+cEls        = [box antennas akm];
+coreSurf    = coreSurf(:,cEls);
+coreArea    = coreArea(:,cEls);
+coreNorm    = coreNorm(:,cEls);
+coreSLoc    = coreSLoc(:,cEls);
+coreShad    = coreShad(:,cEls);
+
+arraySurf   = ComStar(<span class="string">'Solar Array Surface'</span>);
+arrayArea   = ComStar(<span class="string">'Solar Array Area'</span>);
+arrayNorm   = ComStar(<span class="string">'Solar Array Normal'</span>);
+arraySLoc   = ComStar(<span class="string">'Solar Array Location'</span>);
+arrayShad   = ComStar(<span class="string">'Solar Array Shadowing'</span>);
+arrayNBase  = ComStar(<span class="string">'North Solar Array Base'</span>);
+arraySBase  = ComStar(<span class="string">'South Solar Array Base'</span>);
+iNorthArray = ComStar(<span class="string">'North Array Elements'</span>);
+iSouthArray = ComStar(<span class="string">'South Array Elements'</span>);
+
+inertia   = ComStar(<span class="string">'MO Inertia'</span>);
+dateStart = [1998 6 21 0 0 0];
+
+mu        = Constant(<span class="string">'mu'</span>);
+wo        = Geo;
+
+tGG       = TGG( inertia, [0;0;1], wo );
+
+<span class="comment">% The RF contribution</span>
+<span class="comment">%--------------------</span>
+tRF       = SumV( TRF( rRF-cm, uRF, rFPower ) );
+
+<span class="comment">% The Residual dipole</span>
+<span class="comment">%--------------------</span>
+rDipArray = -ComStar(<span class="string">'Residual Dipole Array'</span>);
+rDipCore  = -ComStar(<span class="string">'Residual Dipole Core'</span>);
+
+<span class="comment">% Assign the base distances to the base array</span>
+<span class="comment">%--------------------------------------------</span>
+arrayBase(:,iNorthArray) = DupVect(arrayNBase,length(iNorthArray));
+arrayBase(:,iSouthArray) = DupVect(arraySBase,length(iSouthArray));
+
+<span class="comment">% Draw the cps</span>
+<span class="comment">%-------------</span>
+Loc3D([coreSLoc arrayBase + arraySLoc],[coreNorm arrayNorm],cm)
+
+<span class="comment">%--------------</span>
+</pre><img vspace="5" hspace="5" src="ComStarDist_01.png" alt=""> <h2 id="4">The main loop</h2><pre class="codeinput"><span class="comment">%--------------</span>
+
+dsunAlpha = 2*pi/nAlpha;
+
+<span class="comment">% When the sun angle is zero, the solar array normal is pointing</span>
+<span class="comment">% along -Z. This is solar noon.</span>
+<span class="comment">% The coordinate frame is +Z to the earth, +Y south, +X east.</span>
+<span class="comment">%---------------------------------------------------------------</span>
+deg = 0:359;
+jD  = Date2JD([1997 3 20 14 0 0]); <span class="comment">% Vernal equinox-the sun is aligned with the +x ECI axis</span>
+
+<span class="comment">% Initialize the vectors</span>
+<span class="comment">%-----------------------</span>
+torque            = zeros(3,360);
+torqueCore        = zeros(3,360);
+torqueSA          = zeros(3,360);
+torqueOther       = zeros(3,360);
+bField            = zeros(3,360);
+torqueCoreDipole  = zeros(3,360);
+torqueSADipole    = zeros(3,360);
+sunVector         = zeros(3,360);
+
+<span class="keyword">for</span> m = 1:3,
+</pre><pre class="codeinput">  <span class="comment">% Sun out-of-plane angle (&sect;)</span>
+  <span class="comment">%---------------------------</span>
+  sunBeta = (m-2)*23;
+
+  cBeta     = cos(sunBeta*degToRad);
+  sBeta     = sin(sunBeta*degToRad);
+
+  <span class="keyword">for</span> k = 1:nAlpha;
+    sunAlpha    = (k-1)*dsunAlpha;
+    cAlpha      = cos(sunAlpha);
+    sAlpha      = sin(sunAlpha);
+    r           = 42167*[cAlpha;sAlpha;0];
+
+    <span class="comment">% This is the sun in the body frame</span>
+    <span class="comment">%----------------------------------</span>
+    sun       = -[sAlpha*cBeta;sBeta;cAlpha*cBeta];
+
+    <span class="comment">% Test for eclipses</span>
+    <span class="comment">%------------------</span>
+    nPSolar   = pSolar*GeoEclps(sunAlpha,sunBeta);
+
+    <span class="comment">% Transformation matrices from the array frame to the core frame</span>
+    <span class="comment">%---------------------------------------------------------------</span>
+    bN        = [-cos(sunAlpha + dAN)   0  -sin(sunAlpha + dAN);<span class="keyword">...</span>
+                             0           1          0;<span class="keyword">...</span>
+                  sin(sunAlpha + dAN)   0  -cos(sunAlpha + dAN) ];
+
+    bS        = [-cos(sunAlpha + dAS)   0  -sin(sunAlpha + dAS);<span class="keyword">...</span>
+                             0           1          0;<span class="keyword">...</span>
+                  sin(sunAlpha + dAS)   0  -cos(sunAlpha + dAS) ];
+
+    <span class="keyword">if</span> ( nPSolar &gt; 0 )
+
+      <span class="comment">% The solar array</span>
+      <span class="comment">%----------------</span>
+      f           = SolarF( nPSolar, arraySurf, [bN*arrayNorm(:,iNorthArray) bS*arrayNorm(:,iSouthArray)], sun, arrayArea );
+      sASTorque   = SumRXF( [bN*arraySLoc(:,iNorthArray) bS*arraySLoc(:,iSouthArray)] + arrayBase, f, cm );
+
+      <span class="comment">% Find core modules that are shadowed and set their transmissivities to 1</span>
+      <span class="comment">%------------------------------------------------------------------------</span>
+      n           = Shadow(sunAlpha,sunBeta,coreShad);
+      coreSTemp   = coreSurf;
+      <span class="keyword">if</span>( isempty(n) )
+        coreSTemp(4,n) = ones(1,length(n));
+      <span class="keyword">end</span>
+
+      <span class="comment">% Compute the torques</span>
+      <span class="comment">%--------------------</span>
+       f           = SolarF( nPSolar, coreSTemp, coreNorm, sun, coreArea );
+       coreSTorque = SumRXF( coreSLoc, f, cm );
+    <span class="keyword">else</span>
+      coreSTorque = [0;0;0];
+      sASTorque   = [0;0;0];
+    <span class="keyword">end</span>
+
+    <span class="comment">% The residual dipole contribution</span>
+    <span class="comment">%---------------------------------</span>
+    bField(:,k)      = BMF(r,jD,1);
+    coreDipoleTorque = Cross( rDipCore,      bField(:,k) );
+    sADipoleTorque   = Cross( bN*rDipArray + bS*rDipArray, bField(:,k) );
+
+    <span class="comment">% Sum the components</span>
+    <span class="comment">%-------------------</span>
+    torqueCore(:,k)       = coreSTorque;
+    torqueSA(:,k)         = sASTorque;
+    torqueOther(:,k)      = tRF + tGG;
+    torqueCoreDipole(:,k) = coreDipoleTorque;
+    torqueSADipole(:,k)   = sADipoleTorque;
+    torque(:,k)           = torqueCore(:,k) + torqueSA(:,k) + torqueOther(:,k) + torqueCoreDipole(:,k) + torqueSADipole(:,k);
+
+    sunVector(:,k) =   sun;
+
+  <span class="keyword">end</span>
+</pre><h2 id="6">Harmonic expansion</h2><pre class="codeinput">  <span class="comment">%-------------------</span>
+  t = linspace(0,86400,360);
+
+  tHarm = [ SCSeries( t,6,6,wo,torque(1,:) )';<span class="keyword">...</span>
+            SCSeries( t,6,6,wo,torque(2,:) )';<span class="keyword">...</span>
+            SCSeries( t,6,6,wo,torque(3,:) )']*1.e6;
+
+  tMag   = sqrt(tHarm(:,2:4).^2 + tHarm(:,8:10).^2);
+  tPhase = atan2(tHarm(:,5:7),tHarm(:,2:4));
+
+  kPrint = [1:4 8:10];
+  fprintf(1,<span class="string">'\n\nSun Beta Angle = %4.1f deg\n\n'</span>,sunBeta);
+  fprintf(1,<span class="string">'       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)    Cos(wo)  Cos(2*wo)  Cos(3*wo)\n'</span>);
+  fprintf(1,<span class="string">'x %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n'</span>,  tHarm(1, kPrint) );
+  fprintf(1,<span class="string">'y %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n'</span>,  tHarm(2, kPrint) );
+  fprintf(1,<span class="string">'z %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n\n'</span>,tHarm(3, kPrint) );
+  fprintf(1,<span class="string">'       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)         phi(wo)  phi(2*wo)  phi(3*wo)\n'</span>);
+  fprintf(1,<span class="string">'x %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n'</span>,  tHarm(1,1), tMag(1,:), tPhase(1,:) );
+  fprintf(1,<span class="string">'y %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n'</span>,  tHarm(2,1), tMag(2,:), tPhase(2,:) );
+  fprintf(1,<span class="string">'z %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n\n'</span>,tHarm(3,1), tMag(3,:), tPhase(3,:) );
+
+  fPath = fileparts(which(mfilename));
+  save(fullfile(fPath,<span class="string">'DistModl'</span>),<span class="string">'tHarm'</span>,<span class="string">'-v6'</span>)
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+</pre><pre class="codeoutput">
+
+Sun Beta Angle = -23.0 deg
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)    Cos(wo)  Cos(2*wo)  Cos(3*wo)
+x     -6.34       8.04      -0.19       0.14      -8.74      -3.82       0.05     microNm
+y      3.80      53.26      -5.10      20.09      -1.15       0.32      -1.14     microNm
+z     -0.04       9.35      11.71       0.15       7.77      -0.38       0.11     microNm
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)         phi(wo)  phi(2*wo)  phi(3*wo)
+x     -6.34      11.88       3.83       0.15 microNm       0.00       3.05       0.32     rad
+y      3.80      53.27       5.11      20.12 microNm      -0.00      -2.38       0.01     rad
+z     -0.04      12.16      11.71       0.19 microNm      -0.33      -0.00       1.42     rad
+
+</pre><pre class="codeoutput">
+
+Sun Beta Angle =  0.0 deg
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)    Cos(wo)  Cos(2*wo)  Cos(3*wo)
+x      0.05       9.49      -0.03       0.13      -0.15      -0.10       0.10     microNm
+y      3.80      60.89      -6.06      23.43      -1.28       0.36      -1.32     microNm
+z      0.39       0.33       0.03      -0.14       8.34       0.89      -0.74     microNm
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)         phi(wo)  phi(2*wo)  phi(3*wo)
+x      0.05       9.49       0.10       0.16 microNm       0.01      -2.90       0.39     rad
+y      3.80      60.91       6.07      23.46 microNm       0.00      -2.35       0.03     rad
+z      0.39       8.34       0.90       0.75 microNm       0.17      -1.21       2.62     rad
+
+</pre><pre class="codeoutput">
+
+Sun Beta Angle = 23.0 deg
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)    Cos(wo)  Cos(2*wo)  Cos(3*wo)
+x      6.43       8.34       0.07       0.15       8.49       3.63       0.14     microNm
+y      3.80      53.26      -5.10      20.09      -1.15       0.32      -1.14     microNm
+z     -0.04      -8.71     -11.71      -0.34       8.08       0.43       0.13     microNm
+
+       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)         phi(wo)  phi(2*wo)  phi(3*wo)
+x      6.43      11.90       3.63       0.20 microNm       0.00       0.28      -0.11     rad
+y      3.80      53.27       5.11      20.12 microNm      -0.00      -2.38       0.01     rad
+z     -0.04      11.88      11.72       0.37 microNm       2.79       3.14      -1.90     rad
+
+</pre><h2 id="7">Plotting</h2><pre class="codeinput">  <span class="comment">%-------------------------------------------------------------------------</span>
+  NewFig(sprintf(<span class="string">'Total Torque: Beta = %4.1f deg'</span>,sunBeta) );
+  subplot(221)
+  plot(deg,torque(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(222)
+  plot(deg,torque(2,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(223)
+  plot(deg,torque(3,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),<span class="string">'--'</span>,deg,sunVector(3,:),<span class="string">'-.'</span>)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Unit Vector'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Sun'</span>)
+
+  <span class="keyword">if</span>( allPlots == 1)
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  NewFig(sprintf(<span class="string">'Core Solar Torque: Beta = %4.1f deg'</span>,sunBeta) );
+
+  subplot(221)
+  plot(deg,torqueCore(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(222)
+  plot(deg,torqueCore(2,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(223)
+  plot(deg,torqueCore(3,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),<span class="string">'--'</span>,deg,sunVector(3,:),<span class="string">'-.'</span>)
+  grid
+  YLabelS(<span class="string">'Unit Vector'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Sun'</span>)
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  NewFig(sprintf(<span class="string">'Solar Array Solar Torque: Beta = %4.1f deg'</span>,sunBeta) );
+
+  subplot(221)
+  plot(deg,torqueSA(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(222)
+  plot(deg,torqueSA(2,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(223)
+  plot(deg,torqueSA(3,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),<span class="string">'--'</span>,deg,sunVector(3,:),<span class="string">'-.'</span>)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Unit Vector'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Sun'</span>)
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  NewFig(sprintf(<span class="string">'GG and RF Torque: Beta = %4.1f deg'</span>,sunBeta) );
+  subplot(221)
+  plot(deg,torqueOther(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(222)
+  plot(deg,torqueOther(2,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(223)
+  plot(deg,torqueOther(3,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Torque'</span>)
+
+  subplot(224)
+  plot(deg,bField(1,:),deg,bField(2,:),<span class="string">'--'</span>,deg,bField(3,:),<span class="string">'-.'</span>)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Field (nT)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Magnetic field'</span>)
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  NewFig(sprintf(<span class="string">'Dipole Torques: Beta = %4.1f deg'</span>,sunBeta) );
+  subplot(321)
+  plot(deg,torqueCoreDipole(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Core Torque'</span>)
+
+  subplot(322)
+  plot(deg,torqueCoreDipole(2,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Core Torque'</span>)
+
+  subplot(323)
+  plot(deg,torqueCoreDipole(3,:)*1e6)
+  grid
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Core Torque'</span>)
+
+  subplot(324)
+  plot(deg,torqueSADipole(1,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'X Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Solar Array Torque'</span>)
+
+  subplot(325)
+  plot(deg,torqueSADipole(2,:)*1e6)
+  grid
+  YLabelS(<span class="string">'Y Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Solar Array Torque'</span>)
+
+  subplot(326)
+  plot(deg,torqueSADipole(3,:)*1e6)
+  grid <span class="string">on</span>
+  YLabelS(<span class="string">'Z Torque (microNm)'</span>)
+  XLabelS(<span class="string">'Alpha (deg)'</span>)
+  TitleS(<span class="string">'Solar Array Torque'</span>)
+
+  <span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="ComStarDist_02.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_03.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_04.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_05.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_06.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_07.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_08.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_09.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_10.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_11.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_12.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_13.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_14.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_15.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_16.png" alt=""> <img vspace="5" hspace="5" src="ComStarDist_17.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
+
+Figui
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Computes the total disturbance torque for the ComStar satellite.
+% The disturbances include solar, gravity gradient, RF and residual
+% dipole. This does not use the CAD disturbance package.
+%
+% Since version 2.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also TGG, TRF, Loc3D, SolarF, Shadow, SumRXF, BMF, SCSeries, 
+%  ComStar, SunBeta, Constant, NewFig, TitleS, XLabelS, YLabelS, Cross, 
+%  DupVect, SumV, Date2JD, Geo, GeoEclps
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 1994-1998 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Setup
+
+%% Number of increments in alpha
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nAlpha     = 360;
+
+% Set equal to 1 to plot all of the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+allPlots   = 1;
+
+% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+pSolar     = Constant('solar pressure mks');
+degToRad   = Constant('Deg to Rad');
+
+% RF
+%REPLACE_WITH_DASH_DASH-
+rRF        = ComStar('R RF');
+uRF        = ComStar('U RF');
+rFPower    = ComStar('RF Power');
+
+% Center-of-mass
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cm         = ComStar('MO CM');
+
+% Array offsets from full sun (usually due to alignment uncertainties)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dAN        =  5*degToRad;
+dAS        = -5*degToRad;
+
+% Surface properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+box         =  1:6;
+antennas    =  7:10;
+akm         =  11;
+coreSurf    = ComStar('Core Surface'); 
+coreArea    = ComStar('Core Area'); 
+coreNorm    = ComStar('Core Normal'); 
+coreSLoc    = ComStar('Core Location'); 
+coreShad    = ComStar('Core Shadowing'); 
+
+cEls        = [box antennas akm];
+coreSurf    = coreSurf(:,cEls); 
+coreArea    = coreArea(:,cEls); 
+coreNorm    = coreNorm(:,cEls); 
+coreSLoc    = coreSLoc(:,cEls); 
+coreShad    = coreShad(:,cEls); 
+
+arraySurf   = ComStar('Solar Array Surface'); 
+arrayArea   = ComStar('Solar Array Area'); 
+arrayNorm   = ComStar('Solar Array Normal');   
+arraySLoc   = ComStar('Solar Array Location');  
+arrayShad   = ComStar('Solar Array Shadowing'); 
+arrayNBase  = ComStar('North Solar Array Base');
+arraySBase  = ComStar('South Solar Array Base');
+iNorthArray = ComStar('North Array Elements');
+iSouthArray = ComStar('South Array Elements');
+
+inertia   = ComStar('MO Inertia');
+dateStart = [1998 6 21 0 0 0];
+
+mu        = Constant('mu');
+wo        = Geo;
+
+tGG       = TGG( inertia, [0;0;1], wo );
+  
+% The RF contribution
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tRF       = SumV( TRF( rRF-cm, uRF, rFPower ) );
+  
+% The Residual dipole
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rDipArray = -ComStar('Residual Dipole Array');
+rDipCore  = -ComStar('Residual Dipole Core');
+
+% Assign the base distances to the base array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+arrayBase(:,iNorthArray) = DupVect(arrayNBase,length(iNorthArray));
+arrayBase(:,iSouthArray) = DupVect(arraySBase,length(iSouthArray));
+
+% Draw the cps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Loc3D([coreSLoc arrayBase + arraySLoc],[coreNorm arrayNorm],cm)
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% The main loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+dsunAlpha = 2*pi/nAlpha;
+
+% When the sun angle is zero, the solar array normal is pointing
+% along -Z. This is solar noon.
+% The coordinate frame is +Z to the earth, +Y south, +X east.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+deg = 0:359;
+jD  = Date2JD([1997 3 20 14 0 0]); % Vernal equinox-the sun is aligned with the +x ECI axis
+
+% Initialize the vectors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+torque            = zeros(3,360);
+torqueCore        = zeros(3,360);
+torqueSA          = zeros(3,360);
+torqueOther       = zeros(3,360);
+bField            = zeros(3,360);
+torqueCoreDipole  = zeros(3,360);
+torqueSADipole    = zeros(3,360);
+sunVector         = zeros(3,360);
+
+for m = 1:3,
+  % Sun out-of-plane angle (§)
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  sunBeta = (m-2)*23;
+
+  cBeta     = cos(sunBeta*degToRad);
+  sBeta     = sin(sunBeta*degToRad);
+
+  for k = 1:nAlpha;
+    sunAlpha    = (k-1)*dsunAlpha;  
+    cAlpha      = cos(sunAlpha);
+    sAlpha      = sin(sunAlpha);
+    r           = 42167*[cAlpha;sAlpha;0];
+
+    % This is the sun in the body frame
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    sun       = -[sAlpha*cBeta;sBeta;cAlpha*cBeta];
+
+    % Test for eclipses
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    nPSolar   = pSolar*GeoEclps(sunAlpha,sunBeta);    
+	 
+    % Transformation matrices from the array frame to the core frame
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    bN        = [-cos(sunAlpha + dAN)   0  -sin(sunAlpha + dAN);...
+                             0           1          0;...
+                  sin(sunAlpha + dAN)   0  -cos(sunAlpha + dAN) ];
+				   
+    bS        = [-cos(sunAlpha + dAS)   0  -sin(sunAlpha + dAS);...
+                             0           1          0;...
+                  sin(sunAlpha + dAS)   0  -cos(sunAlpha + dAS) ];
+ 
+    if ( nPSolar > 0 )
+	 
+      % The solar array
+      %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+      f           = SolarF( nPSolar, arraySurf, [bN*arrayNorm(:,iNorthArray) bS*arrayNorm(:,iSouthArray)], sun, arrayArea ); 
+      sASTorque   = SumRXF( [bN*arraySLoc(:,iNorthArray) bS*arraySLoc(:,iSouthArray)] + arrayBase, f, cm ); 
+
+      % Find core modules that are shadowed and set their transmissivities to 1
+      %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+      n           = Shadow(sunAlpha,sunBeta,coreShad); 
+      coreSTemp   = coreSurf; 
+      if( isempty(n) )
+        coreSTemp(4,n) = ones(1,length(n));
+      end
+	
+      % Compute the torques
+      %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+       f           = SolarF( nPSolar, coreSTemp, coreNorm, sun, coreArea );    
+       coreSTorque = SumRXF( coreSLoc, f, cm ); 
+    else
+      coreSTorque = [0;0;0]; 
+      sASTorque   = [0;0;0]; 
+    end
+  
+    % The residual dipole contribution
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    bField(:,k)      = BMF(r,jD,1);
+    coreDipoleTorque = Cross( rDipCore,      bField(:,k) );
+    sADipoleTorque   = Cross( bN*rDipArray + bS*rDipArray, bField(:,k) ); 
+	 
+    % Sum the components
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    torqueCore(:,k)       = coreSTorque;
+    torqueSA(:,k)         = sASTorque;
+    torqueOther(:,k)      = tRF + tGG;
+    torqueCoreDipole(:,k) = coreDipoleTorque;
+    torqueSADipole(:,k)   = sADipoleTorque;
+    torque(:,k)           = torqueCore(:,k) + torqueSA(:,k) + torqueOther(:,k) + torqueCoreDipole(:,k) + torqueSADipole(:,k);
+	 
+    sunVector(:,k) =   sun;
+
+  end
+
+  %% Harmonic expansion
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  t = linspace(0,86400,360);
+
+  tHarm = [ SCSeries( t,6,6,wo,torque(1,:) )';... 
+            SCSeries( t,6,6,wo,torque(2,:) )';... 
+            SCSeries( t,6,6,wo,torque(3,:) )']*1.e6;
+			
+  tMag   = sqrt(tHarm(:,2:4).^2 + tHarm(:,8:10).^2);
+  tPhase = atan2(tHarm(:,5:7),tHarm(:,2:4)); 
+
+  kPrint = [1:4 8:10];		
+  fprintf(1,'\n\nSun Beta Angle = %4.1f deg\n\n',sunBeta);
+  fprintf(1,'       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)    Cos(wo)  Cos(2*wo)  Cos(3*wo)\n');
+  fprintf(1,'x %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n',  tHarm(1, kPrint) );
+  fprintf(1,'y %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n',  tHarm(2, kPrint) );
+  fprintf(1,'z %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f  %9.2f     microNm\n\n',tHarm(3, kPrint) );
+  fprintf(1,'       Bias    Sin(wo)   Sin(2*wo)  Sin(3*wo)         phi(wo)  phi(2*wo)  phi(3*wo)\n');
+  fprintf(1,'x %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n',  tHarm(1,1), tMag(1,:), tPhase(1,:) );
+  fprintf(1,'y %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n',  tHarm(2,1), tMag(2,:), tPhase(2,:) );
+  fprintf(1,'z %9.2f  %9.2f  %9.2f  %9.2f microNm  %9.2f  %9.2f  %9.2f     rad\n\n',tHarm(3,1), tMag(3,:), tPhase(3,:) );
+
+  fPath = fileparts(which(mfilename));
+  save(fullfile(fPath,'DistModl'),'tHarm','-v6')
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  %% Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  NewFig(sprintf('Total Torque: Beta = %4.1f deg',sunBeta) );
+  subplot(221)
+  plot(deg,torque(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(222)
+  plot(deg,torque(2,:)*1e6)
+  grid on
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(223)
+  plot(deg,torque(3,:)*1e6)
+  grid on
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),'REPLACE_WITH_DASH_DASH',deg,sunVector(3,:),'-.')
+  grid on
+  YLabelS('Unit Vector')
+  XLabelS('Alpha (deg)')
+  TitleS('Sun')
+  
+  if( allPlots == 1)
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  NewFig(sprintf('Core Solar Torque: Beta = %4.1f deg',sunBeta) );
+  
+  subplot(221)
+  plot(deg,torqueCore(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(222)
+  plot(deg,torqueCore(2,:)*1e6)
+  grid on
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(223)
+  plot(deg,torqueCore(3,:)*1e6)
+  grid on
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),'REPLACE_WITH_DASH_DASH',deg,sunVector(3,:),'-.')
+  grid
+  YLabelS('Unit Vector')
+  XLabelS('Alpha (deg)')
+  TitleS('Sun')
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  NewFig(sprintf('Solar Array Solar Torque: Beta = %4.1f deg',sunBeta) );
+  
+  subplot(221)
+  plot(deg,torqueSA(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(222)
+  plot(deg,torqueSA(2,:)*1e6)
+  grid on
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(223)
+  plot(deg,torqueSA(3,:)*1e6)
+  grid on
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(224)
+  plot(deg,sunVector(1,:),deg,sunVector(2,:),'REPLACE_WITH_DASH_DASH',deg,sunVector(3,:),'-.')
+  grid on
+  YLabelS('Unit Vector')
+  XLabelS('Alpha (deg)')
+  TitleS('Sun')
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  NewFig(sprintf('GG and RF Torque: Beta = %4.1f deg',sunBeta) );
+  subplot(221)
+  plot(deg,torqueOther(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(222)
+  plot(deg,torqueOther(2,:)*1e6)
+  grid on
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(223)
+  plot(deg,torqueOther(3,:)*1e6)
+  grid on
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Torque')
+
+  subplot(224)
+  plot(deg,bField(1,:),deg,bField(2,:),'REPLACE_WITH_DASH_DASH',deg,bField(3,:),'-.')
+  grid on
+  YLabelS('Field (nT)')
+  XLabelS('Alpha (deg)')
+  TitleS('Magnetic field')
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  NewFig(sprintf('Dipole Torques: Beta = %4.1f deg',sunBeta) );
+  subplot(321)
+  plot(deg,torqueCoreDipole(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Core Torque')
+
+  subplot(322)
+  plot(deg,torqueCoreDipole(2,:)*1e6)
+  grid on
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Core Torque')
+
+  subplot(323)
+  plot(deg,torqueCoreDipole(3,:)*1e6)
+  grid
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Core Torque')
+
+  subplot(324)
+  plot(deg,torqueSADipole(1,:)*1e6)
+  grid on
+  YLabelS('X Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Solar Array Torque')
+
+  subplot(325)
+  plot(deg,torqueSADipole(2,:)*1e6)
+  grid
+  YLabelS('Y Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Solar Array Torque')
+
+  subplot(326)
+  plot(deg,torqueSADipole(3,:)*1e6)
+  grid on
+  YLabelS('Z Torque (microNm)')
+  XLabelS('Alpha (deg)')
+  TitleS('Solar Array Torque')
+  
+  end
+
+end
+
+Figui
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-26 15:29:03 -0400 (Thu, 26 Sep 2019) $
+% $Revision: 49883 $
+
+##### SOURCE END #####
+--></body></html>

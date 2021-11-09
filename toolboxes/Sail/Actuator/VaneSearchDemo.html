@@ -1,0 +1,298 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate computing angles for a sail with four vanes.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="VaneSearchDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate computing angles for a sail with four vanes.</h1><!--introduction--><p>This is an underdetermined problem solved using fminsearch.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">9.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">SolveVaneAngles</span>, SailDisturbance, Theta0, Cone, Constant,
+WaitBarManager, Plot2D, Unit, Date2JD, El2RV, SearchVaneAngles,
+ConeClockToU, QSail, DisturbanceStruct, EnvironmentStruct, ProfileStruct,
+SailEnvironment, SailPropsToAccel
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Set up the problem</a></li><li><a href="#3">Use a CAD model to get actual torque produced by vanes</a></li><li><a href="#4">Define spacecraft properties</a></li><li><a href="#5">Vane area</a></li><li><a href="#6">Maximum torque</a></li><li><a href="#7">Environment and disturbance models</a></li><li><a href="#8">Profile: orbit, attitude</a></li><li><a href="#9">Define a torque space for solving angles</a></li><li><a href="#10">(Vanes don't produce a pure roll torque for nonzero cone angle)</a></li><li><a href="#11">Define a torque space for solving angles</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright 2009 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Set up the problem</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+clear <span class="string">SailDisturbance</span>; clear <span class="string">thetas</span>; clear <span class="string">ks2</span>;
+</pre><h2 id="3">Use a CAD model to get actual torque produced by vanes</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------</span>
+g = load(<span class="string">'SailWithFourVanes'</span>);
+</pre><h2 id="4">Define spacecraft properties</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+mass  = g.mass.mass; <span class="comment">% spacecraft mass in kg</span>
+lSail = max(max(g.component(2).v)); <span class="comment">% sail length along one side in m</span>
+area  = sum(g.component(2).a);
+acc0  = SailPropsToAccel( area, mass );
+</pre><h2 id="5">Vane area</h2><pre class="codeinput"><span class="comment">%-------------</span>
+areaVane = g.component(3).a; <span class="comment">% m2</span>
+</pre><h2 id="6">Maximum torque</h2><pre class="codeinput"><span class="comment">%---------------</span>
+thetaMax = 80*pi/180;
+Ps       = Constant(<span class="string">'solar pressure mks'</span>);
+fVane    = 2*Ps*areaVane;
+Tmax     = 4*lSail*fVane*sin(thetaMax);
+</pre><h2 id="7">Environment and disturbance models</h2><pre class="codeinput"><span class="comment">%-----------------------------------</span>
+d = struct;
+d = EnvironmentStruct( d );
+d = DisturbanceStruct( d );
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.magOn    = 0;
+d.radOn    = 0;
+</pre><h2 id="8">Profile: orbit, attitude</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+jD    = Date2JD;
+[r,v] = El2RV([Constant(<span class="string">'au'</span>) 0 0 0 0 0],[],Constant(<span class="string">'mu sun'</span>));
+uSun  = -Unit(r);
+qS    = QSail( uSun, r, v );
+p    = ProfileStruct;
+p.q  = qS;
+p.r  = r;
+p.v  = v;
+p.jD = jD;
+<span class="comment">% states for rotating vanes</span>
+p.body  = [2 3 4 5];
+p.angle = [0; 0; 0; 0];
+p.axis  = [0 0 1; 0 0 1; 0 0 1; 0 0 1]';
+
+<span class="comment">% Environment will be constant over this short period</span>
+env = SailEnvironment( <span class="string">'sun'</span>, p, d );
+</pre><h2 id="9">Define a torque space for solving angles</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+zz = zeros(1,20);
+oo = linspace(-1,1,20);
+Tcommand = Tmax/10*[oo zz zz; zz oo zz; zz zz oo];
+
+<span class="comment">% Investigate the effect of cone angle on the three-axis torque produced</span>
+</pre><h2 id="10">(Vanes don't produce a pure roll torque for nonzero cone angle)</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------------------------</span>
+cone = 0;
+clock = 0;
+torque = zeros(3,size(Tcommand,2));
+[u,qItoCC] = ConeClockToU( cone, clock, qS );
+p.q  = qItoCC;
+
+WaitBarManager( <span class="string">'initialize'</span>, struct(<span class="string">'nSamp'</span>,size(Tcommand,2),<span class="string">'name'</span>,<span class="string">'Vane Search'</span>) );
+<span class="keyword">for</span> k = 1:size(Tcommand,2)
+  <span class="comment">% Initialize for roll torque</span>
+  theta0       = asin(Tcommand(1,k)./(4*lSail*fVane));
+  [theta,iter] = SearchVaneAngles(Tcommand(:,k), theta0*ones(4,1), g, env, p, d);
+  p.angle      = theta;
+  [f, tq]      = SailDisturbance( g, p, env, d );
+  torque(:,k)  = tq.total;
+  thetas(:,k)  = theta;
+  ks2(k)       = iter;
+  WaitBarManager( <span class="string">'update'</span>, k );
+<span class="keyword">end</span>
+WaitBarManager( <span class="string">'close'</span> );
+
+Plot2D(1:size(Tcommand,2),Tcommand,<span class="string">'Steps'</span>,{<span class="string">'Tx'</span>,<span class="string">'Ty'</span>,<span class="string">'Tz'</span>},<span class="string">'Torque Demand vs. Achieved'</span>)
+<span class="keyword">for</span> j = 1:3
+  subplot(3,1,j)
+  hold <span class="string">on</span>
+  plot(1:size(Tcommand,2),torque(j,:),<span class="string">'r'</span>);
+<span class="keyword">end</span>
+Plot2D(1:size(Tcommand,2),Tcommand-torque,<span class="string">'Steps'</span>,<span class="string">'Torque Error'</span>)
+Plot2D(1:size(Tcommand,2),thetas*180/pi,<span class="string">'Steps'</span>,<span class="string">'Angles'</span>)
+Plot2D(1:size(Tcommand,2),ks2,<span class="string">'Steps'</span>,<span class="string">'Iterations'</span>)
+</pre><img vspace="5" hspace="5" src="VaneSearchDemo_01.png" alt=""> <img vspace="5" hspace="5" src="VaneSearchDemo_02.png" alt=""> <img vspace="5" hspace="5" src="VaneSearchDemo_03.png" alt=""> <img vspace="5" hspace="5" src="VaneSearchDemo_04.png" alt=""> <h2 id="11">Define a torque space for solving angles</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+<span class="comment">% Tcommand = Tmax/10*randn(3,100);</span>
+
+<span class="comment">% assign overturning torque in pairs?</span>
+
+
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate computing angles for a sail with four vanes.
+% This is an underdetermined problem solved using fminsearch.
+%
+%   Since version 9.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also SolveVaneAngles, SailDisturbance, Theta0, Cone, Constant, 
+%  WaitBarManager, Plot2D, Unit, Date2JD, El2RV, SearchVaneAngles, 
+%  ConeClockToU, QSail, DisturbanceStruct, EnvironmentStruct, ProfileStruct, 
+%  SailEnvironment, SailPropsToAccel
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  Copyright 2009 Princeton Satellite Systems, Inc. 
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Set up the problem
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear SailDisturbance; clear thetas; clear ks2;
+
+%% Use a CAD model to get actual torque produced by vanes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('SailWithFourVanes');
+
+%% Define spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mass  = g.mass.mass; % spacecraft mass in kg
+lSail = max(max(g.component(2).v)); % sail length along one side in m
+area  = sum(g.component(2).a);
+acc0  = SailPropsToAccel( area, mass );
+
+%% Vane area
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+areaVane = g.component(3).a; % m2
+
+%% Maximum torque 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+thetaMax = 80*pi/180;
+Ps       = Constant('solar pressure mks');
+fVane    = 2*Ps*areaVane;
+Tmax     = 4*lSail*fVane*sin(thetaMax);
+
+%% Environment and disturbance models
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = struct;
+d = EnvironmentStruct( d );
+d = DisturbanceStruct( d );
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.magOn    = 0;
+d.radOn    = 0;
+
+%% Profile: orbit, attitude
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+jD    = Date2JD;
+[r,v] = El2RV([Constant('au') 0 0 0 0 0],[],Constant('mu sun'));
+uSun  = -Unit(r);
+qS    = QSail( uSun, r, v );
+p    = ProfileStruct;
+p.q  = qS;
+p.r  = r;
+p.v  = v;
+p.jD = jD;
+% states for rotating vanes
+p.body  = [2 3 4 5];
+p.angle = [0; 0; 0; 0];
+p.axis  = [0 0 1; 0 0 1; 0 0 1; 0 0 1]';
+
+% Environment will be constant over this short period
+env = SailEnvironment( 'sun', p, d );
+
+%% Define a torque space for solving angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zz = zeros(1,20);
+oo = linspace(-1,1,20);
+Tcommand = Tmax/10*[oo zz zz; zz oo zz; zz zz oo];
+
+% Investigate the effect of cone angle on the three-axis torque produced
+%% (Vanes don't produce a pure roll torque for nonzero cone angle)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cone = 0;
+clock = 0;
+torque = zeros(3,size(Tcommand,2));
+[u,qItoCC] = ConeClockToU( cone, clock, qS );
+p.q  = qItoCC;
+
+WaitBarManager( 'initialize', struct('nSamp',size(Tcommand,2),'name','Vane Search') );
+for k = 1:size(Tcommand,2)
+  % Initialize for roll torque
+  theta0       = asin(Tcommand(1,k)./(4*lSail*fVane));
+  [theta,iter] = SearchVaneAngles(Tcommand(:,k), theta0*ones(4,1), g, env, p, d);
+  p.angle      = theta;
+  [f, tq]      = SailDisturbance( g, p, env, d );
+  torque(:,k)  = tq.total;
+  thetas(:,k)  = theta;
+  ks2(k)       = iter;
+  WaitBarManager( 'update', k );
+end
+WaitBarManager( 'close' );
+
+Plot2D(1:size(Tcommand,2),Tcommand,'Steps',{'Tx','Ty','Tz'},'Torque Demand vs. Achieved')
+for j = 1:3
+  subplot(3,1,j)
+  hold on
+  plot(1:size(Tcommand,2),torque(j,:),'r');
+end
+Plot2D(1:size(Tcommand,2),Tcommand-torque,'Steps','Torque Error')
+Plot2D(1:size(Tcommand,2),thetas*180/pi,'Steps','Angles')
+Plot2D(1:size(Tcommand,2),ks2,'Steps','Iterations')
+
+%% Define a torque space for solving angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Tcommand = Tmax/10*randn(3,100);
+
+% assign overturning torque in pairs?
+
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+
+##### SOURCE END #####
+--></body></html>

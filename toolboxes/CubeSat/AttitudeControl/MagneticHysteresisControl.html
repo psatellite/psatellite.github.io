@@ -1,0 +1,345 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate magnetic control</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-11-01"><meta name="DC.source" content="MagneticHysteresisControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate magnetic control</h1><!--introduction--><p>This uses 1 torquer for control. This demonstrates that magnetoresistive damping does not work unless a torquer is also used. Use the flags to turn the damping and control and off to see the effect! Use the dipole field to model a permanent magnet as an alternative to the torquer.</p><p>See also: RHSRigidBodyWithDamping, InertiaCubeSat, P3Axis, QUnit, Date2JD, ISSOrbit, El2RV, RHSHysteresisDamper, QTForm, BDipole, Dot, BFromHHysteresis, TimeDisplay, Skew, RK4, TimeLabl, Figui</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">User inputs</a></li><li><a href="#4">Set up the simulation</a></li><li><a href="#5">Simulation loop</a></li><li><a href="#6">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2020 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since 2021.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">secInDay    = 86400;
+mu0         = 4e-7*pi;
+</pre><h2 id="3">User inputs</h2><pre class="codeinput">dateStart   = [2023 6 1 0 0 0];
+tDuration   = 240*3600;        <span class="comment">% duration (s)</span>
+q0          = [1;0;0;0];       <span class="comment">% initial attitude</span>
+torqueD     = [0;0;0]*1e-7;    <span class="comment">% a disturbance torque for testing</span>
+tPulse      = [1 2]*100000;    <span class="comment">% time window for the torque pulse</span>
+dT          = 2;               <span class="comment">% simulation timestep (s)</span>
+dipole    	= [0;0;0];         <span class="comment">% fixed dipole if control is not on, body frame</span>
+omega0      = randn(3,1)*0.0001; <span class="comment">% initial body rates (rad/s)</span>
+
+<span class="comment">% Control flags</span>
+controlOn   = false;  <span class="comment">% turn torquer control on or off with this flag</span>
+mRDamping   = true;   <span class="comment">% damping with RHSHysteresisDamper</span>
+
+<span class="comment">% Update the inertia here</span>
+d           = RHSRigidBodyWithDamping;
+[d.inertia, d.mass]	= InertiaCubeSat(<span class="string">'1U'</span>);
+
+<span class="comment">% Proportional controller</span>
+dC          = P3Axis;
+dC.inertia  = d.inertia;
+cDamp       = 0.0001; <span class="comment">% optional constant damping</span>
+
+<span class="comment">% Target quaternion for the controller</span>
+qT          = QUnit([1;0.3;0;0]);
+</pre><h2 id="4">Set up the simulation</h2><pre class="codeinput"><span class="comment">% Start date</span>
+jDStart = Date2JD(dateStart);
+
+<span class="comment">% Orbit</span>
+[el,jD0] = ISSOrbit;
+el(6)    = el(6) + (jDStart-jD0)*secInDay*2*pi/Period(el(1));
+[r,v]    = El2RV(el); <span class="comment">% Get the starting position and velocity vectors</span>
+
+<span class="comment">% Time vector</span>
+n  = ceil(tDuration/dT);
+t  = linspace(0,tDuration,n);
+jD = jDStart + t/secInDay;
+
+<span class="keyword">if</span>( mRDamping )
+  <span class="comment">% implement a set of damping rods</span>
+  d.dampingType     = 0;
+  d.dampingData.Br	= 0.004;	<span class="comment">% Remanence (T)</span>
+  d.dampingData.Bs	= 0.025; 	<span class="comment">% Saturation flux density (T)</span>
+  d.dampingData.Hc	= 12;     <span class="comment">% Coercive force (A/m)</span>
+  <span class="comment">% Damper rod unit vectors</span>
+  d.dampingData.u   = [0 0 0 0 0 0;1 1 1 0 0 0;0 0 0 1 1 1];
+  <span class="comment">% Dimensions are radius 1 mm by 95 mm</span>
+  d.dampingData.v   = pi*0.001^2*0.095*ones(1,size(d.dampingData.u,2));
+  d.dampingFun    	= @RHSHysteresisDamper;       <span class="comment">% Damper function</span>
+  uECI            	= QTForm(q0,d.dampingData.u);
+  [bI,bIDot]        = BDipole(r,jDStart,v);
+  hMag            	= Dot(uECI,bI   )/mu0;
+  hMagDot         	= Dot(uECI,bIDot)/mu0;
+  z               	= BFromHHysteresis( hMag, hMagDot, d.dampingData )';
+<span class="keyword">else</span>
+  <span class="comment">% constant damping</span>
+  d.dampingType     = 1;
+  z                 = zeros(6,1);
+  d.dampingData     = cDamp;
+<span class="keyword">end</span>
+x                 = [r;v;q0;omega0;z];
+xP                = zeros(20,n);
+
+TimeDisplay(<span class="string">'initialize'</span>,<span class="string">'Hysteresis Damping'</span>,n);
+</pre><img vspace="5" hspace="5" src="MagneticHysteresisControl_01.png" alt=""> <h2 id="5">Simulation loop</h2><pre class="codeinput"><span class="keyword">for</span> k = 1:n
+
+  TimeDisplay(<span class="string">'update'</span>,k);
+
+  <span class="comment">% Get the damping torque for plotting</span>
+  [~,p] = RHSRigidBodyWithDamping( x, t(k), d );
+
+  <span class="comment">% Plotting</span>
+  omega     = x(11:13);
+  energy    = 0.5*omega'*d.inertia*omega;
+  xP(:,k)   = [x(7:end);p.torqueDipole;p.torqueDamper;energy];
+
+  <span class="comment">% Disturbance pulse for testing</span>
+  <span class="keyword">if</span>( t(k) &gt; tPulse(1) &amp;&amp; t(k) &lt; tPulse(2))
+    d.torque = torqueD;
+  <span class="keyword">else</span>
+    d.torque  = [0;0;0];
+  <span class="keyword">end</span>
+
+  <span class="comment">% Add the magnetic control torque</span>
+  <span class="keyword">if</span>( controlOn )
+    q                   = x(7:10);
+    bECI                = BDipole(x(1:3),jD(k)); <span class="comment">% Earth's magnetic field</span>
+    b                   = QForm(q,bECI);
+    dC.q_desired_state  = qT;
+    [tC,dC]             = P3Axis(q,dC);
+    sB                  = Skew(b);
+    m                   = -pinv(sB*sB)*sB*tC;
+    d.dipole            = m; <span class="comment">% ATM^2</span>
+  <span class="keyword">else</span>
+    d.dipole            = dipole; <span class="comment">% fixed dipole (permanent magnet)</span>
+  <span class="keyword">end</span>
+
+  <span class="comment">% Integrate</span>
+  x = RK4(@RHSRigidBodyWithDamping,x,dT,t(k),d);
+<span class="keyword">end</span>
+
+TimeDisplay(<span class="string">'close'</span>)
+</pre><h2 id="6">Plotting</h2><pre class="codeinput">[t,tL]  = TimeLabl(t);
+
+yL    	= [d.states(:)' {<span class="string">'M_x (ATM^2)'</span>} {<span class="string">'M_y (ATM^2)'</span>} {<span class="string">'M_z (ATM^2)'</span>} <span class="keyword">...</span>
+          {<span class="string">'T_x (Nm)'</span>} {<span class="string">'T_y (Nm)'</span>} {<span class="string">'T_z (Nm)'</span>} {<span class="string">'Energy (J)'</span>}];
+
+
+Plot2D(t,[xP(1: 4,:);repmat(qT,1,n)],tL,yL(7:10),<span class="string">'Quaternion'</span>,<span class="string">'lin'</span>,{<span class="string">'[1 5]'</span> <span class="string">'[2 6]'</span> <span class="string">'[3 7]'</span> <span class="string">'[4 8]'</span>})
+Plot2D(t,xP( 5: 7,:),tL,yL(11:13),<span class="string">'Angular Rates'</span>)
+Plot2D(t,xP( 8:13,:),tL,yL(14:19),<span class="string">'Damper States'</span>)
+Plot2D(t,xP(14:16,:),tL,yL(20:22),<span class="string">'Dipole'</span>)
+Plot2D(t,xP(17:20,:),tL,yL(23:26),<span class="string">'Damping Torque and Energy'</span>)
+
+Figui
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MagneticHysteresisControl_02.png" alt=""> <img vspace="5" hspace="5" src="MagneticHysteresisControl_03.png" alt=""> <img vspace="5" hspace="5" src="MagneticHysteresisControl_04.png" alt=""> <img vspace="5" hspace="5" src="MagneticHysteresisControl_05.png" alt=""> <img vspace="5" hspace="5" src="MagneticHysteresisControl_06.png" alt=""> <img vspace="5" hspace="5" src="MagneticHysteresisControl_07.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate magnetic control
+% This uses 1 torquer for control. This demonstrates that magnetoresistive
+% damping does not work unless a torquer is also used. Use the flags to turn the
+% damping and control and off to see the effect! Use the dipole field to model a
+% permanent magnet as an alternative to the torquer.
+%
+% See also: RHSRigidBodyWithDamping, InertiaCubeSat, P3Axis, QUnit, Date2JD,
+% ISSOrbit, El2RV, RHSHysteresisDamper, QTForm, BDipole, Dot, BFromHHysteresis,
+% TimeDisplay, Skew, RK4, TimeLabl, Figui
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2020 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%   Since 2021.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+secInDay    = 86400;
+mu0         = 4e-7*pi;
+
+%% User inputs
+dateStart   = [2023 6 1 0 0 0];
+tDuration   = 240*3600;        % duration (s)
+q0          = [1;0;0;0];       % initial attitude
+torqueD     = [0;0;0]*1e-7;    % a disturbance torque for testing
+tPulse      = [1 2]*100000;    % time window for the torque pulse
+dT          = 2;               % simulation timestep (s)
+dipole    	= [0;0;0];         % fixed dipole if control is not on, body frame
+omega0      = randn(3,1)*0.0001; % initial body rates (rad/s)
+
+% Control flags
+controlOn   = false;  % turn torquer control on or off with this flag
+mRDamping   = true;   % damping with RHSHysteresisDamper
+
+% Update the inertia here
+d           = RHSRigidBodyWithDamping;
+[d.inertia, d.mass]	= InertiaCubeSat('1U');
+
+% Proportional controller
+dC          = P3Axis;
+dC.inertia  = d.inertia;
+cDamp       = 0.0001; % optional constant damping
+
+% Target quaternion for the controller
+qT          = QUnit([1;0.3;0;0]);
+
+%% Set up the simulation
+
+% Start date
+jDStart = Date2JD(dateStart);
+
+% Orbit
+[el,jD0] = ISSOrbit;
+el(6)    = el(6) + (jDStart-jD0)*secInDay*2*pi/Period(el(1));
+[r,v]    = El2RV(el); % Get the starting position and velocity vectors
+
+% Time vector
+n  = ceil(tDuration/dT);
+t  = linspace(0,tDuration,n);
+jD = jDStart + t/secInDay;
+
+if( mRDamping )
+  % implement a set of damping rods
+  d.dampingType     = 0;
+  d.dampingData.Br	= 0.004;	% Remanence (T)
+  d.dampingData.Bs	= 0.025; 	% Saturation flux density (T)
+  d.dampingData.Hc	= 12;     % Coercive force (A/m)
+  % Damper rod unit vectors
+  d.dampingData.u   = [0 0 0 0 0 0;1 1 1 0 0 0;0 0 0 1 1 1];          
+  % Dimensions are radius 1 mm by 95 mm
+  d.dampingData.v   = pi*0.001^2*0.095*ones(1,size(d.dampingData.u,2));  
+  d.dampingFun    	= @RHSHysteresisDamper;       % Damper function
+  uECI            	= QTForm(q0,d.dampingData.u);
+  [bI,bIDot]        = BDipole(r,jDStart,v);
+  hMag            	= Dot(uECI,bI   )/mu0;
+  hMagDot         	= Dot(uECI,bIDot)/mu0;
+  z               	= BFromHHysteresis( hMag, hMagDot, d.dampingData )';
+else
+  % constant damping
+  d.dampingType     = 1;
+  z                 = zeros(6,1);
+  d.dampingData     = cDamp;
+end
+x                 = [r;v;q0;omega0;z];
+xP                = zeros(20,n);
+
+TimeDisplay('initialize','Hysteresis Damping',n);
+
+%% Simulation loop
+for k = 1:n
+  
+  TimeDisplay('update',k);
+
+  % Get the damping torque for plotting
+  [~,p] = RHSRigidBodyWithDamping( x, t(k), d );
+ 
+  % Plotting
+  omega     = x(11:13);
+  energy    = 0.5*omega'*d.inertia*omega;
+  xP(:,k)   = [x(7:end);p.torqueDipole;p.torqueDamper;energy];
+  
+  % Disturbance pulse for testing
+  if( t(k) > tPulse(1) && t(k) < tPulse(2))
+    d.torque = torqueD;
+  else
+    d.torque  = [0;0;0];
+  end
+  
+  % Add the magnetic control torque
+  if( controlOn )
+    q                   = x(7:10);
+    bECI                = BDipole(x(1:3),jD(k)); % Earth's magnetic field
+    b                   = QForm(q,bECI);
+    dC.q_desired_state  = qT;
+    [tC,dC]             = P3Axis(q,dC);
+    sB                  = Skew(b);
+    m                   = -pinv(sB*sB)*sB*tC; 
+    d.dipole            = m; % ATM^2
+  else
+    d.dipole            = dipole; % fixed dipole (permanent magnet)
+  end
+    
+  % Integrate
+  x = RK4(@RHSRigidBodyWithDamping,x,dT,t(k),d);
+end
+
+TimeDisplay('close')
+
+%% Plotting
+[t,tL]  = TimeLabl(t);
+
+yL    	= [d.states(:)' {'M_x (ATM^2)'} {'M_y (ATM^2)'} {'M_z (ATM^2)'} ...
+          {'T_x (Nm)'} {'T_y (Nm)'} {'T_z (Nm)'} {'Energy (J)'}];
+
+
+Plot2D(t,[xP(1: 4,:);repmat(qT,1,n)],tL,yL(7:10),'Quaternion','lin',{'[1 5]' '[2 6]' '[3 7]' '[4 8]'})
+Plot2D(t,xP( 5: 7,:),tL,yL(11:13),'Angular Rates')
+Plot2D(t,xP( 8:13,:),tL,yL(14:19),'Damper States')
+Plot2D(t,xP(14:16,:),tL,yL(20:22),'Dipole')
+Plot2D(t,xP(17:20,:),tL,yL(23:26),'Damping Torque and Energy')
+
+Figui
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-07-21 $
+% $Revision: 1bef073ce89ee19e9ac33be741bd93e48dae0006 $
+
+##### SOURCE END #####
+--></body></html>

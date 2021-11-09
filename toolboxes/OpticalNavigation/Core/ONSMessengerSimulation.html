@@ -1,0 +1,573 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate ONS for a spacecraft that flies by Mercury</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-11-01"><meta name="DC.source" content="ONSMessengerSimulation.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate ONS for a spacecraft that flies by Mercury</h1><!--introduction--><p>This only simulates the orbital motion.</p><p>See also: RHSHelioMission, PlanetPosJPL, NavigationCamera, StarCameraViewer, RHSUKFHelioMission, MeasGPS, MeasRangeGroundStation, MeasStarAngleAndChord, OpticalNavigation, RK4, TimeLabl, Plot2D, Figui</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Script control</a></li><li><a href="#4">Setup the camera data structure</a></li><li><a href="#5">Add noise</a></li><li><a href="#6">Set up the displays</a></li><li><a href="#7">Setup Optical Navigation</a></li><li><a href="#8">Run the simulation</a></li><li><a href="#9">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2021 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">rE        = Constant(<span class="string">'equatorial radius mercury'</span>);
+rS        = Constant(<span class="string">'sun radius'</span>);
+muSun     = Constant(<span class="string">'mu sun'</span>);
+muMercury = Constant(<span class="string">'mu mercury'</span>);
+aU        = Constant(<span class="string">'au'</span>);
+secToDay  = 1/86400;
+secInYear = 365.26*86400;
+kEarth    = 1; <span class="comment">% SPICE numbering 1-9 are the planets, 10 is the moon</span>
+mercury   = 1;
+sun       = 2;
+
+<span class="comment">% Get the defaults</span>
+dRHS        = RHSHelioMission;
+dRHS.mu(1)  = muMercury;
+</pre><h2 id="3">Script control</h2><pre class="codeinput">viewersOn = true;
+printAll  = false;
+
+<span class="comment">% acceleration model</span>
+massFuel	= 0;      <span class="comment">% kg</span>
+dRHS.mD   = 1000;   <span class="comment">% kg</span>
+dRHS.uE   = inf;
+
+plotRef = {<span class="string">'Sun'</span> <span class="string">'Mercury'</span>};
+
+<span class="comment">% Initialize the ephemeris</span>
+PlanetPosJPL( <span class="string">'initialize'</span>, kEarth )
+
+rHelio  = [-5.102050761318097E+07; -3.914630171469574E+07; -1.563888544075625E+07];
+vHelio  = [ 2.159852087150890E+01; -3.063444535492430E+01; -1.827429443660471E+01];
+jD0     = 2455755.50;
+
+
+<span class="comment">% Initialize the state</span>
+dRHS.ref      = sun;
+dT            = 10000;
+tEnd          = 10*dT; <span class="comment">% sec</span>
+
+<span class="comment">% This halo state does not take into account the sail's force</span>
+[r0, mu, v0]  = PlanetPosJPL( <span class="string">'update'</span>, jD0 );
+
+x             = [rHelio;vHelio;massFuel];
+dRHS.mu(1)    = mu; <span class="comment">% set the mu for the right planet</span>
+
+<span class="comment">% Set the Julian date for the dynamical model</span>
+dRHS.jD0      = jD0;
+
+<span class="comment">% Simulation steps</span>
+n             = ceil(tEnd/dT);
+</pre><h2 id="4">Setup the camera data structure</h2><pre class="codeinput">dCam	= NavigationCamera;
+dGPS  = MeasGPS;
+dGS   = MeasRangeGroundStation;
+dOM   = MeasStarAngleAndChord;
+</pre><h2 id="5">Add noise</h2><pre class="codeinput">dCam.camera.sigmaXY = 1;
+dCam.camera.noise   = true;
+dCam.namePlanet     = {<span class="string">'Mercury'</span> <span class="string">'Sun'</span>};
+dCam.radiusPlanet   = [rE rS];
+</pre><h2 id="6">Set up the displays</h2><pre class="codeinput">TimeDisplay(<span class="string">'initialize'</span>,<span class="string">'ONS Simulation'</span>,n);
+
+<span class="keyword">if</span>( viewersOn )
+  hNav = StarCameraViewer(<span class="string">'initialize'</span>,<span class="string">'Navigation Camera'</span>, n ); <span class="comment">%#ok&lt;*UNRCH&gt;</span>
+<span class="keyword">end</span>
+
+<span class="comment">% The time vector</span>
+t                   = (0:n-1)*dT;
+</pre><img vspace="5" hspace="5" src="ONSMessengerSimulation_01.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_02.png" alt=""> <h2 id="7">Setup Optical Navigation</h2><pre class="codeinput">dONS                = OpticalNavigation;
+r                   = x(1:3);
+v                   = x(4:6);
+
+dONS.ukf.fData        = RHSUKFHelioMission;
+dONS.ukf.fData.mu(1)  = muMercury;
+dONS.ukf.fData.jD0    = dRHS.jD0;
+dONS.target           = mercury;
+dONS.ukf.fData.ref    = sun;
+
+<span class="comment">% Initialize ONS</span>
+dONS                = OpticalNavigation( <span class="string">'initialize'</span>, dONS, r, v, dT );
+meas.optical        = NavigationCamera( r, dCam );
+
+<span class="comment">% Set up the parameters in ONS</span>
+dONS.t            	= t(1);
+dONS.useUKF        	= true;
+dONS.ukf.useOptical	= false;
+dONS.ukf.useState 	= false;
+dONS.ukf.usePos     = false;
+dONS.ukf.f          = @RHSUKFHelioMission;
+dONS.aBody1         = rE;
+dONS.aBody2         = rS;
+dONS.ref            = dRHS.ref;
+
+<span class="comment">% Plotting arrays</span>
+xP      = zeros(20,n);
+target  = zeros(1,n);
+type    = zeros(1,n);
+nStars  = zeros(1,n);
+</pre><h2 id="8">Run the simulation</h2><pre class="codeinput"><span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% ONS simulation</span>
+	TimeDisplay(<span class="string">'update'</span>,k);
+
+  <span class="comment">% Get data for plotting</span>
+  [~,~,~,acc] = RHSHelioMission(x,t(k),dRHS);
+
+  <span class="comment">% Get the location and velocity of Earth</span>
+  [rMercury,~,vMercury] = PlanetPosJPL( <span class="string">'update'</span>, jD0 + t(k)*secToDay );
+
+  <span class="keyword">if</span>( dRHS.ref == mercury )
+    dCam.xPlanet	= [[0;0;0] -rMercury];
+    rMercury      = [0;0;0];
+    vMercury      = [0;0;0];
+  <span class="keyword">else</span>
+    dCam.xPlanet  = [rMercury [0;0;0]];
+  <span class="keyword">end</span>
+
+	<span class="comment">% The camera boresight points at the target xCam is in the helio frame</span>
+  rCam = x(1:3);
+  vCam = x(4:6);
+
+  <span class="comment">% Needed to point the camera</span>
+  dONS          = OpticalNavigation( <span class="string">'get unit vector'</span>, dONS, rMercury, vMercury, rCam, vCam );
+
+	<span class="comment">% Get the measurements</span>
+  meas.jD0      = jD0 + t(k)*secToDay;
+  meas.state    = x(1:6);
+  meas.acc      = acc;
+  dCam.q        = U2Q(dONS.uC,[0;0;1]);
+	dOM.cam       = NavigationCamera( rCam, dCam );
+	dOM.type      = dONS.type;
+  dOM.target    = dONS.target;
+  dOM.ref       = dRHS.ref;
+  dOM.uCamera   = dONS.uCamera;
+  dOM.aBody1    = dONS.aBody1;
+  dOM.aBody2    = dONS.aBody2;
+  dOM.r1        = rMercury;
+  dOM.v1        = vMercury;
+
+  <span class="comment">% Measurements</span>
+	meas.state    = x(1:6);
+  meas.acc      = acc; <span class="comment">% Spacecraft non-gravitational acceleration</span>
+  meas.gps      = MeasGPS( x, dGPS );
+  meas.gs       = MeasRangeGroundStation( x, dGS );
+  meas.optical  = MeasStarAngleAndChord( [rCam;vCam], dOM );
+
+  <span class="comment">% ONS</span>
+	dONS.cam      = dOM.cam;
+  dONS.ref      = dRHS.ref;
+  dONS.r1       = dOM.r1;
+	dONS.v1       = dOM.v1;
+  dONS.t        = t(k);
+  dONS          = OpticalNavigation( <span class="string">'update'</span>, dONS, meas, rMercury, vMercury, rCam, vCam );
+  target(k)     = dONS.target;
+  type(k)       = dONS.type;
+  nStars(k)     = dONS.ukf.optical.nStars;
+
+  <span class="comment">% Display the cameras</span>
+  <span class="keyword">if</span>( viewersOn )
+    StarCameraViewer(<span class="string">'update'</span>, dOM.cam, [], hNav, dCam, k);
+  <span class="keyword">end</span>
+	xP(:,k)        = [x;rMercury;dRHS.thrust;dRHS.ref;dONS.x];
+
+  <span class="comment">% Propagate the state</span>
+  x           = RK4(@RHSHelioMission,x,dT,t(k),dRHS);
+<span class="keyword">end</span>
+
+TimeDisplay(<span class="string">'close'</span>);
+</pre><img vspace="5" hspace="5" src="ONSMessengerSimulation_03.png" alt=""> <h2 id="9">Plotting</h2><pre class="codeinput"><span class="comment">% Shorten the vectors if it hits the ground</span>
+j             = 1:k;
+xP            = xP(:,j);
+t             = t(j);
+target        = target(j);
+type          = type(j);
+nStars        = nStars(j);
+
+<span class="comment">% Make earth and sun referenced positions</span>
+rSun          = zeros(3,k);
+rMercury      = zeros(3,k);
+j             = find(xP(14,:) == mercury );
+rMercury(:,j) = xP(1:3,j);
+rSun(:,j)     = xP(8:10,j) - rMercury(:,j);
+
+j             = find(xP(14,:) == sun );
+rSun(:,j)     = xP(1:3,j);
+rMercury(:,j)	= xP(8:10,j) - rSun(:,j);
+
+<span class="comment">% Sun/Mercury plot</span>
+HelioPlot( 3, t(end)/secInYear, jD0, xP(1:3,:), {<span class="string">'Spacecraft'</span>} )
+
+<span class="comment">% Time histories</span>
+[t,tL]      = TimeLabl(t);
+yL          = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span>};
+yS          = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span>};
+
+Plot2D(t,xP(1:6,:),tL,yS,<span class="string">'State'</span>);
+Plot2D(t,rSun, tL,yL,<span class="string">'Sun Referenced Position'</span>);
+Plot2D(t,rMercury,tL,yL,<span class="string">'Mercury Referenced Position'</span>);
+Plot2D(t,xP(15:20,:) - xP(1:6,:),tL,yS,<span class="string">'Navigation Error'</span>);
+Plot2D(t,xP(15:20,:),tL,yS,<span class="string">'Navigation Solution'</span>);
+
+NewFig(<span class="string">'Targeting'</span>)
+subplot(3,1,1);
+h = plot(t,target);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Target'</span>)
+set(gca,<span class="string">'ytick'</span>,[1 2],<span class="string">'yticklabel'</span>,{<span class="string">'Mercury'</span> <span class="string">'Sun'</span>});
+
+subplot(3,1,2);
+h = plot(t,type);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Measurement Type'</span>)
+set(gca,<span class="string">'ytick'</span>,[1 2],<span class="string">'yticklabel'</span>,{<span class="string">'Horizon'</span> <span class="string">'Center'</span>});
+
+subplot(3,1,3);
+h = plot(t,nStars);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Stars'</span>)
+
+Figui
+
+<span class="keyword">if</span>( printAll )
+  n = get(gcf,<span class="string">'number'</span>);
+  <span class="keyword">for</span> k = 1:n
+    PrintFig(1,4,k,sprintf(<span class="string">'%s%d'</span>,simName,k));
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="ONSMessengerSimulation_04.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_05.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_06.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_07.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_08.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_09.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_10.png" alt=""> <img vspace="5" hspace="5" src="ONSMessengerSimulation_11.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate ONS for a spacecraft that flies by Mercury
+% This only simulates the orbital motion.
+%
+% See also: RHSHelioMission, PlanetPosJPL, NavigationCamera, StarCameraViewer,
+% RHSUKFHelioMission, MeasGPS, MeasRangeGroundStation, MeasStarAngleAndChord,
+% OpticalNavigation, RK4, TimeLabl, Plot2D, Figui
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2021 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+rE        = Constant('equatorial radius mercury');
+rS        = Constant('sun radius');
+muSun     = Constant('mu sun');
+muMercury = Constant('mu mercury');
+aU        = Constant('au');
+secToDay  = 1/86400;
+secInYear = 365.26*86400;
+kEarth    = 1; % SPICE numbering 1-9 are the planets, 10 is the moon
+mercury   = 1;
+sun       = 2;
+
+% Get the defaults
+dRHS        = RHSHelioMission;
+dRHS.mu(1)  = muMercury;
+
+%% Script control
+
+viewersOn = true;
+printAll  = false;
+
+% acceleration model
+massFuel	= 0;      % kg
+dRHS.mD   = 1000;   % kg
+dRHS.uE   = inf;
+
+plotRef = {'Sun' 'Mercury'};
+
+% Initialize the ephemeris
+PlanetPosJPL( 'initialize', kEarth )
+
+rHelio  = [-5.102050761318097E+07; -3.914630171469574E+07; -1.563888544075625E+07];
+vHelio  = [ 2.159852087150890E+01; -3.063444535492430E+01; -1.827429443660471E+01];
+jD0     = 2455755.50;
+
+
+% Initialize the state 
+dRHS.ref      = sun;
+dT            = 10000;
+tEnd          = 10*dT; % sec
+
+% This halo state does not take into account the sail's force
+[r0, mu, v0]  = PlanetPosJPL( 'update', jD0 );
+
+x             = [rHelio;vHelio;massFuel];
+dRHS.mu(1)    = mu; % set the mu for the right planet
+
+% Set the Julian date for the dynamical model
+dRHS.jD0      = jD0;
+
+% Simulation steps
+n             = ceil(tEnd/dT);
+
+%% Setup the camera data structure
+dCam	= NavigationCamera;
+dGPS  = MeasGPS;
+dGS   = MeasRangeGroundStation;
+dOM   = MeasStarAngleAndChord;
+
+%% Add noise
+dCam.camera.sigmaXY = 1;
+dCam.camera.noise   = true;
+dCam.namePlanet     = {'Mercury' 'Sun'}; 
+dCam.radiusPlanet   = [rE rS];
+
+%% Set up the displays
+TimeDisplay('initialize','ONS Simulation',n);
+
+if( viewersOn )
+  hNav = StarCameraViewer('initialize','Navigation Camera', n ); %#ok<*UNRCH>
+end
+
+% The time vector
+t                   = (0:n-1)*dT;
+
+%% Setup Optical Navigation
+dONS                = OpticalNavigation;
+r                   = x(1:3);
+v                   = x(4:6);
+
+dONS.ukf.fData        = RHSUKFHelioMission;
+dONS.ukf.fData.mu(1)  = muMercury;
+dONS.ukf.fData.jD0    = dRHS.jD0;
+dONS.target           = mercury; 
+dONS.ukf.fData.ref    = sun;
+
+% Initialize ONS
+dONS                = OpticalNavigation( 'initialize', dONS, r, v, dT );
+meas.optical        = NavigationCamera( r, dCam );
+
+% Set up the parameters in ONS
+dONS.t            	= t(1);
+dONS.useUKF        	= true;
+dONS.ukf.useOptical	= false;
+dONS.ukf.useState 	= false;
+dONS.ukf.usePos     = false;
+dONS.ukf.f          = @RHSUKFHelioMission;
+dONS.aBody1         = rE;
+dONS.aBody2         = rS;
+dONS.ref            = dRHS.ref;
+
+% Plotting arrays
+xP      = zeros(20,n);
+target  = zeros(1,n);
+type    = zeros(1,n);
+nStars  = zeros(1,n);
+
+%% Run the simulation
+for k = 1:n
+  
+  % ONS simulation
+	TimeDisplay('update',k);
+  
+  % Get data for plotting
+  [~,~,~,acc] = RHSHelioMission(x,t(k),dRHS);
+  
+  % Get the location and velocity of Earth
+  [rMercury,~,vMercury] = PlanetPosJPL( 'update', jD0 + t(k)*secToDay );
+
+  if( dRHS.ref == mercury )
+    dCam.xPlanet	= [[0;0;0] -rMercury];
+    rMercury      = [0;0;0];
+    vMercury      = [0;0;0];
+  else
+    dCam.xPlanet  = [rMercury [0;0;0]];
+  end
+  
+	% The camera boresight points at the target xCam is in the helio frame
+  rCam = x(1:3);
+  vCam = x(4:6);
+  
+  % Needed to point the camera
+  dONS          = OpticalNavigation( 'get unit vector', dONS, rMercury, vMercury, rCam, vCam );
+     
+	% Get the measurements
+  meas.jD0      = jD0 + t(k)*secToDay;
+  meas.state    = x(1:6);
+  meas.acc      = acc;
+  dCam.q        = U2Q(dONS.uC,[0;0;1]);
+	dOM.cam       = NavigationCamera( rCam, dCam );
+	dOM.type      = dONS.type;
+  dOM.target    = dONS.target;
+  dOM.ref       = dRHS.ref;
+  dOM.uCamera   = dONS.uCamera;
+  dOM.aBody1    = dONS.aBody1;
+  dOM.aBody2    = dONS.aBody2;
+  dOM.r1        = rMercury;
+  dOM.v1        = vMercury;
+
+  % Measurements
+	meas.state    = x(1:6);
+  meas.acc      = acc; % Spacecraft non-gravitational acceleration
+  meas.gps      = MeasGPS( x, dGPS );
+  meas.gs       = MeasRangeGroundStation( x, dGS );
+  meas.optical  = MeasStarAngleAndChord( [rCam;vCam], dOM );
+
+  % ONS
+	dONS.cam      = dOM.cam;
+  dONS.ref      = dRHS.ref;
+  dONS.r1       = dOM.r1;
+	dONS.v1       = dOM.v1;
+  dONS.t        = t(k);
+  dONS          = OpticalNavigation( 'update', dONS, meas, rMercury, vMercury, rCam, vCam );
+  target(k)     = dONS.target;
+  type(k)       = dONS.type;
+  nStars(k)     = dONS.ukf.optical.nStars;
+  
+  % Display the cameras
+  if( viewersOn )
+    StarCameraViewer('update', dOM.cam, [], hNav, dCam, k);
+  end
+	xP(:,k)        = [x;rMercury;dRHS.thrust;dRHS.ref;dONS.x];
+ 
+  % Propagate the state
+  x           = RK4(@RHSHelioMission,x,dT,t(k),dRHS);
+end
+
+TimeDisplay('close');
+
+%% Plotting
+
+% Shorten the vectors if it hits the ground
+j             = 1:k;
+xP            = xP(:,j);
+t             = t(j);
+target        = target(j);
+type          = type(j);
+nStars        = nStars(j);
+
+% Make earth and sun referenced positions
+rSun          = zeros(3,k);
+rMercury      = zeros(3,k);
+j             = find(xP(14,:) == mercury ); 
+rMercury(:,j) = xP(1:3,j);
+rSun(:,j)     = xP(8:10,j) - rMercury(:,j);
+
+j             = find(xP(14,:) == sun ); 
+rSun(:,j)     = xP(1:3,j);
+rMercury(:,j)	= xP(8:10,j) - rSun(:,j);
+
+% Sun/Mercury plot
+HelioPlot( 3, t(end)/secInYear, jD0, xP(1:3,:), {'Spacecraft'} )
+
+% Time histories
+[t,tL]      = TimeLabl(t);
+yL          = {'x (km)' 'y (km)' 'z (km)'};
+yS          = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)'};
+
+Plot2D(t,xP(1:6,:),tL,yS,'State');
+Plot2D(t,rSun, tL,yL,'Sun Referenced Position');
+Plot2D(t,rMercury,tL,yL,'Mercury Referenced Position');
+Plot2D(t,xP(15:20,:) - xP(1:6,:),tL,yS,'Navigation Error');
+Plot2D(t,xP(15:20,:),tL,yS,'Navigation Solution');
+
+NewFig('Targeting')
+subplot(3,1,1);
+h = plot(t,target);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Target')
+set(gca,'ytick',[1 2],'yticklabel',{'Mercury' 'Sun'});
+
+subplot(3,1,2);
+h = plot(t,type);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Measurement Type')
+set(gca,'ytick',[1 2],'yticklabel',{'Horizon' 'Center'});
+
+subplot(3,1,3);
+h = plot(t,nStars);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Stars')
+
+Figui
+
+if( printAll )
+  n = get(gcf,'number');
+  for k = 1:n
+    PrintFig(1,4,k,sprintf('%s%d',simName,k));
+  end
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-17 $
+% $Revision: a12ba870ffc5c6ca24861d7da48540a965cbe7b9 $
+
+##### SOURCE END #####
+--></body></html>

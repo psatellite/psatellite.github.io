@@ -1,0 +1,328 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>A very simple spacecraft with thrusters and one sensor.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="BuildSatWThrusters.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>A very simple spacecraft with thrusters and one sensor.</h1><!--introduction--><pre>This model is used in the demo REAControl. REA stands for Rocket Engine
+Assembly, i.e. thrusters. The thrusters are defined by their position in
+the body frame, r, and their thrust unit vector, u.
+-------------------------------------------------------------------------
+See also BuildCADModel, CreateBody, CreateComponent, QLVLH,
+FindDirectory, SaveStructure
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Data</a></li><li><a href="#3">Initialize</a></li><li><a href="#4">Create bodies first</a></li><li><a href="#5">Add Components</a></li><li><a href="#6">Get finished model and display</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+clear <span class="string">mass</span>
+</pre><h2 id="2">Data</h2><pre class="codeinput"><span class="comment">%------</span>
+r                  = 7000;
+v                  = sqrt(3.98600436e5/r);
+rECI               = [r;0;0];
+vECI               = [0;v;0];
+qLVLH              = QLVLH( rECI, vECI );
+q                  = [1;0;0;0];
+omega              = [0;-v/r;0];
+
+<span class="comment">% Core box</span>
+<span class="comment">%---------</span>
+coreX              = 1.0;
+coreY              = 1.0;
+coreZ              = 1.0;
+corePosition       = [0; 0; 0];
+
+<span class="comment">% Star tracker</span>
+<span class="comment">%-------------</span>
+sTBoresight  = [0;0;1];
+sTLoc        = [0.4;0.4;0.4];
+
+<span class="comment">% Set mass properties</span>
+<span class="comment">%--------------------</span>
+mass.mass    = 20;
+mass.cM      = [0;0;0];
+mass.inertia = 10/3*eye(3);
+</pre><h2 id="3">Initialize</h2><pre class="codeinput"><span class="comment">%-----------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+
+<span class="comment">% Add spacecraft properties</span>
+<span class="comment">%--------------------------</span>
+BuildCADModel( <span class="string">'set name'</span> ,      <span class="string">'REA Satellite'</span> );
+BuildCADModel( <span class="string">'set units'</span>,      <span class="string">'mks'</span>   );
+BuildCADModel( <span class="string">'set rECI'</span> ,       rECI   );
+BuildCADModel( <span class="string">'set vECI'</span> ,       vECI   );
+BuildCADModel( <span class="string">'set qLVLH'</span>,       qLVLH  );
+BuildCADModel( <span class="string">'set qECIToBody'</span>,  q      );
+BuildCADModel( <span class="string">'set omega'</span>,       omega  );
+BuildCADModel( <span class="string">'set mass'</span>,        mass   );
+</pre><h2 id="4">Create bodies first</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+
+<span class="comment">% Core</span>
+<span class="comment">%-----</span>
+m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, <span class="string">'Core'</span> );
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% This creates the connections between the bodies</span>
+<span class="comment">%------------------------------------------------</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+</pre><h2 id="5">Add Components</h2><pre class="codeinput"><span class="comment">%---------------</span>
+
+<span class="comment">% Core</span>
+<span class="comment">%-----------------------------------------------------------------------------------------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>, <span class="string">'x'</span>, coreX, <span class="string">'y'</span>, coreY, <span class="string">'z'</span>, coreZ,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, corePosition, <span class="string">'mass'</span>, 10, <span class="string">'name'</span>, <span class="string">'Panels'</span>, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Star Camera</span>
+<span class="comment">%--------------</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'camera'</span>, <span class="string">'model'</span>, <span class="string">'ct633'</span>,<span class="keyword">...</span>
+                     <span class="string">'unitVector'</span>, sTBoresight,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, sTLoc, <span class="string">'name'</span>, <span class="string">'Camera'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span> );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Thrusters</span>
+<span class="comment">%----------</span>
+thrust = ones(1,24);
+
+clear <span class="string">r</span>
+
+xPos1 = [ 0.5,  0.5,  0.5]; xPos2 = [ 0.5,  0.5, -0.5]; xPos3 = [ 0.5, -0.5, -0.5]; xPos4 = [ 0.5, -0.5,  0.5];
+yPos1 = [ 0.5,  0.5,  0.5]; yPos2 = [-0.5,  0.5,  0.5]; yPos3 = [-0.5,  0.5, -0.5]; yPos4 = [ 0.5,  0.5, -0.5];
+zPos1 = [ 0.5,  0.5,  0.5]; zPos2 = [ 0.5, -0.5,  0.5]; zPos3 = [-0.5, -0.5,  0.5]; zPos4 = [-0.5,  0.5,  0.5];
+xNeg1 = [-0.5,  0.5,  0.5]; xNeg2 = [-0.5,  0.5, -0.5]; xNeg3 = [-0.5, -0.5, -0.5]; xNeg4 = [-0.5, -0.5,  0.5];
+yNeg1 = [ 0.5, -0.5,  0.5]; yNeg2 = [-0.5, -0.5,  0.5]; yNeg3 = [-0.5, -0.5, -0.5]; yNeg4 = [ 0.5, -0.5, -0.5];
+zNeg1 = [ 0.5,  0.5, -0.5]; zNeg2 = [ 0.5, -0.5, -0.5]; zNeg3 = [-0.5, -0.5, -0.5]; zNeg4 = [-0.5,  0.5, -0.5];
+
+r = [xPos1; xPos2; xPos3; xPos4;<span class="keyword">...</span>
+     yPos1; yPos2; yPos3; yPos4;<span class="keyword">...</span>
+     zPos1; zPos2; zPos3; zPos4;<span class="keyword">...</span>
+     xNeg1; xNeg2; xNeg3; xNeg4;<span class="keyword">...</span>
+     yNeg1; yNeg2; yNeg3; yNeg4;<span class="keyword">...</span>
+     zNeg1; zNeg2; zNeg3; zNeg4]';
+
+u   = -[[ 1,  0,  0];  [ 1,  0,  0]; [ 1,  0,  0]; [ 1,  0,  0];<span class="keyword">...</span>
+        [ 0,  1,  0];  [ 0,  1,  0]; [ 0,  1,  0]; [ 0,  1,  0];<span class="keyword">...</span>
+        [ 0,  0,  1];  [ 0,  0,  1]; [ 0,  0,  1]; [ 0,  0,  1];<span class="keyword">...</span>
+        [-1,  0,  0];  [-1,  0,  0]; [-1,  0,  0]; [-1,  0,  0];<span class="keyword">...</span>
+        [ 0, -1,  0];  [ 0, -1,  0]; [ 0, -1,  0]; [ 0, -1,  0];<span class="keyword">...</span>
+        [ 0,  0, -1];  [ 0,  0, -1]; [ 0,  0, -1]; [ 0,  0, -1]]';
+
+type   = <span class="string">'mr-103c'</span>;
+<span class="keyword">for</span> k = 1:length(thrust)
+  m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'hydrazine thruster'</span>, <span class="string">'model'</span>, type, <span class="string">'name'</span>, sprintf(<span class="string">'Thruster %i'</span>,k),<span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'rA'</span>, r(:,k), <span class="string">'unitVector'</span>, u(:,k), <span class="keyword">...</span>
+                               <span class="string">'thrust'</span>, thrust(k), <span class="string">'positionVector'</span>, r(:,k), <span class="keyword">...</span>
+                               <span class="string">'pressureNominal'</span>,350*6895,<span class="string">'inside'</span>,0);
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="BuildSatWThrusters_01.png" alt=""> <h2 id="6">Get finished model and display</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+g = BuildCADModel( <span class="string">'get cad model'</span> );
+BuildCADModel(<span class="string">'show spacecraft'</span>);
+dName = FindDirectory(<span class="string">'SCModels'</span>);
+SaveStructure( g, fullfile(dName,<span class="string">'SatWThrusters'</span>) )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildSatWThrusters_02.png" alt=""> <img vspace="5" hspace="5" src="BuildSatWThrusters_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A very simple spacecraft with thrusters and one sensor.
+%  This model is used in the demo REAControl. REA stands for Rocket Engine
+%  Assembly, i.e. thrusters. The thrusters are defined by their position in
+%  the body frame, r, and their thrust unit vector, u.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also BuildCADModel, CreateBody, CreateComponent, QLVLH, 
+%  FindDirectory, SaveStructure
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright (c) 2003 Princeton Satellite Systems, Inc.
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+clear mass
+
+%% Data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r                  = 7000;
+v                  = sqrt(3.98600436e5/r);
+rECI               = [r;0;0];
+vECI               = [0;v;0];
+qLVLH              = QLVLH( rECI, vECI );
+q                  = [1;0;0;0];
+omega              = [0;-v/r;0];
+
+% Core box
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+coreX              = 1.0;
+coreY              = 1.0;
+coreZ              = 1.0;
+corePosition       = [0; 0; 0];
+
+% Star tracker
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+sTBoresight  = [0;0;1];
+sTLoc        = [0.4;0.4;0.4];
+
+% Set mass properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mass.mass    = 20;
+mass.cM      = [0;0;0];
+mass.inertia = 10/3*eye(3);
+
+%% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+
+% Add spacecraft properties
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'set name' ,      'REA Satellite' );
+BuildCADModel( 'set units',      'mks'   );
+BuildCADModel( 'set rECI' ,       rECI   );
+BuildCADModel( 'set vECI' ,       vECI   );
+BuildCADModel( 'set qLVLH',       qLVLH  );
+BuildCADModel( 'set qECIToBody',  q      );
+BuildCADModel( 'set omega',       omega  );
+BuildCADModel( 'set mass',        mass   );
+
+%%% Create bodies first
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateBody( 'make', 'name', 'Core' );
+BuildCADModel('add body', m );
+
+% This creates the connections between the bodies
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+BuildCADModel( 'compute paths' );
+
+%%% Add Components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Core
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = CreateComponent( 'make', 'box', 'x', coreX, 'y', coreY, 'z', coreZ,...
+                     'faceColor', 'gold foil','inside',0,...
+                     'rA', corePosition, 'mass', 10, 'name', 'Panels', 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Star Camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateComponent( 'make', 'camera', 'model', 'ct633',...
+                     'unitVector', sTBoresight,'inside',0,...
+                     'rA', sTLoc, 'name', 'Camera', 'body', 1, 'faceColor', 'aluminum' );
+BuildCADModel( 'add component', m );
+
+% Thrusters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+thrust = ones(1,24);
+		   
+clear r
+
+xPos1 = [ 0.5,  0.5,  0.5]; xPos2 = [ 0.5,  0.5, -0.5]; xPos3 = [ 0.5, -0.5, -0.5]; xPos4 = [ 0.5, -0.5,  0.5];
+yPos1 = [ 0.5,  0.5,  0.5]; yPos2 = [-0.5,  0.5,  0.5]; yPos3 = [-0.5,  0.5, -0.5]; yPos4 = [ 0.5,  0.5, -0.5];
+zPos1 = [ 0.5,  0.5,  0.5]; zPos2 = [ 0.5, -0.5,  0.5]; zPos3 = [-0.5, -0.5,  0.5]; zPos4 = [-0.5,  0.5,  0.5];
+xNeg1 = [-0.5,  0.5,  0.5]; xNeg2 = [-0.5,  0.5, -0.5]; xNeg3 = [-0.5, -0.5, -0.5]; xNeg4 = [-0.5, -0.5,  0.5];
+yNeg1 = [ 0.5, -0.5,  0.5]; yNeg2 = [-0.5, -0.5,  0.5]; yNeg3 = [-0.5, -0.5, -0.5]; yNeg4 = [ 0.5, -0.5, -0.5];
+zNeg1 = [ 0.5,  0.5, -0.5]; zNeg2 = [ 0.5, -0.5, -0.5]; zNeg3 = [-0.5, -0.5, -0.5]; zNeg4 = [-0.5,  0.5, -0.5];
+
+r = [xPos1; xPos2; xPos3; xPos4;... 
+     yPos1; yPos2; yPos3; yPos4;...
+     zPos1; zPos2; zPos3; zPos4;...
+     xNeg1; xNeg2; xNeg3; xNeg4;...
+     yNeg1; yNeg2; yNeg3; yNeg4;...
+     zNeg1; zNeg2; zNeg3; zNeg4]';
+
+u   = -[[ 1,  0,  0];  [ 1,  0,  0]; [ 1,  0,  0]; [ 1,  0,  0];...
+        [ 0,  1,  0];  [ 0,  1,  0]; [ 0,  1,  0]; [ 0,  1,  0];...
+        [ 0,  0,  1];  [ 0,  0,  1]; [ 0,  0,  1]; [ 0,  0,  1];...
+        [-1,  0,  0];  [-1,  0,  0]; [-1,  0,  0]; [-1,  0,  0];...
+        [ 0, -1,  0];  [ 0, -1,  0]; [ 0, -1,  0]; [ 0, -1,  0];...
+        [ 0,  0, -1];  [ 0,  0, -1]; [ 0,  0, -1]; [ 0,  0, -1]]';
+       
+type   = 'mr-103c';
+for k = 1:length(thrust)
+  m         = CreateComponent( 'make', 'hydrazine thruster', 'model', type, 'name', sprintf('Thruster %i',k),...
+                               'body', 1, 'rA', r(:,k), 'unitVector', u(:,k), ...
+                               'thrust', thrust(k), 'positionVector', r(:,k), ...
+                               'pressureNominal',350*6895,'inside',0);
+  BuildCADModel( 'add component', m );
+end
+
+%% Get finished model and display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g = BuildCADModel( 'get cad model' );
+BuildCADModel('show spacecraft');
+dName = FindDirectory('SCModels');
+SaveStructure( g, fullfile(dName,'SatWThrusters') )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

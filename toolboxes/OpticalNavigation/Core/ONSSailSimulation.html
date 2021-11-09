@@ -1,0 +1,679 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate ONS for a solar sail near the L1 Lagrange point</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="ONSSailSimulation.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate ONS for a solar sail near the L1 Lagrange point</h1><!--introduction--><p>This only simulates the orbital motion.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Script control</a></li><li><a href="#4">Setup the camera data structure</a></li><li><a href="#5">Add noise</a></li><li><a href="#6">Set up the displays</a></li><li><a href="#7">Setup Optical Navigation</a></li><li><a href="#8">Run the simulation</a></li><li><a href="#9">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2021 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">rE        = Constant(<span class="string">'equatorial radius earth'</span>);
+rS        = Constant(<span class="string">'sun radius'</span>);
+muSun     = Constant(<span class="string">'mu sun'</span>);
+aU        = Constant(<span class="string">'au'</span>);
+secToDay  = 1/86400;
+secInYear = 365.26*86400;
+kEarth    = 3; <span class="comment">% SPICE numbering 1-9 are the planets, 10 is the moon</span>
+earth     = 1;
+sun       = 2;
+
+<span class="comment">% Get the defaults</span>
+dRHS      = RHSHelioMission;
+</pre><h2 id="3">Script control</h2><pre class="codeinput">viewersOn = true;
+printAll  = false;
+
+
+<span class="comment">% acceleration model</span>
+massFuel	= 0;     <span class="comment">% kg</span>
+dRHS.mD   = 100;   <span class="comment">% kg</span>
+dRHS.uE   = inf;
+
+<span class="comment">% solar sail parameters</span>
+area = 1650; <span class="comment">% m2</span>
+optical    = struct(<span class="string">'sigmaS'</span>,[0.898 0.865],<span class="keyword">...</span>
+                    <span class="string">'sigmaD'</span>,[0.02  0.035],<span class="keyword">...</span>
+                    <span class="string">'sigmaA'</span>,[0.08  0.098]);
+emissivity = [0 0.3];
+
+<span class="comment">% Add Earth for CRTBP?</span>
+plotRef = {<span class="string">'Sun'</span> <span class="string">'Earth'</span>};
+
+<span class="comment">% Initialize the ephemeris</span>
+PlanetPosJPL( <span class="string">'initialize'</span>, kEarth )
+<span class="comment">% yDot = RHSCRTBP( t, y, mu )</span>
+
+<span class="comment">% Initialize the state</span>
+dRHS.ref    = sun;
+jD0         = Date2JD([2024 8 3 0 0 0]);
+dT          = 10000;
+tEnd        = 5*2e6; <span class="comment">% sec, 3e7</span>
+
+<span class="comment">% This halo state does not take into account the sail's force</span>
+[r0, mu, v0] = PlanetPosJPL( <span class="string">'update'</span>, jD0 );
+[rH,vH,p] = HALOState( 0.005,0.01,0,0, <span class="string">'SEM'</span>, 1, 0 ); <span class="comment">% non-dimensional</span>
+rH = rH*Mag(r0);
+vH = vH*aU/Constant(<span class="string">'earth year'</span>)*2*pi;
+<span class="comment">% TransSEMRToHelio this was using the unit vector of the sun backwards!!</span>
+<span class="comment">% deltas from Earth position may be in ecliptic</span>
+[rECI,vECI] = TransSEMRToEq( jD0, rH, vH );
+
+x = [rECI;vECI;massFuel];
+dRHS.mu(1)   = mu; <span class="comment">% set the mu for the right planet</span>
+
+<span class="comment">% Set the Julian date for the dynamical model</span>
+dRHS.jD0 = jD0;
+
+<span class="comment">% Simulation steps</span>
+n     = ceil(tEnd/dT);
+</pre><h2 id="4">Setup the camera data structure</h2><pre class="codeinput">dCam	= NavigationCamera;
+dGPS  = MeasGPS;
+dGS   = MeasRangeGroundStation;
+dOM   = MeasStarAngleAndChord;
+</pre><h2 id="5">Add noise</h2><pre class="codeinput">dCam.camera.sigmaXY = 1;
+dCam.camera.noise   = true;
+dCam.namePlanet     = {<span class="string">'Earth'</span> <span class="string">'Sun'</span>}; <span class="comment">% Earth?</span>
+dCam.radiusPlanet   = [rE rS];
+</pre><h2 id="6">Set up the displays</h2><pre class="codeinput">TimeDisplay(<span class="string">'initialize'</span>,<span class="string">'ONS Simulation'</span>,n);
+
+<span class="keyword">if</span>( viewersOn )
+  hNav = StarCameraViewer(<span class="string">'initialize'</span>,<span class="string">'Navigation Camera'</span>, n ); <span class="comment">%#ok&lt;*UNRCH&gt;</span>
+<span class="keyword">end</span>
+
+<span class="comment">% The time vector</span>
+t       = (0:n-1)*dT;
+</pre><img vspace="5" hspace="5" src="ONSSailSimulation_01.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_02.png" alt=""> <h2 id="7">Setup Optical Navigation</h2><pre class="codeinput">dONS      = OpticalNavigation;
+r         = x(1:3);
+v         = x(4:6);
+
+dONS.ukf.fData      = RHSUKFHelioMission;
+dONS.ukf.fData.jD0  = dRHS.jD0;
+dONS.target         = sun; <span class="comment">% 1 or 2?</span>
+dONS.ukf.fData.ref  = sun;
+
+<span class="comment">% Initialize ONS</span>
+dONS                = OpticalNavigation( <span class="string">'initialize'</span>, dONS, r, v, dT );
+meas.optical        = NavigationCamera( r, dCam );
+
+<span class="comment">% Set up the parameters in ONS</span>
+dONS.t            	= t(1);
+dONS.useUKF        	= true;
+dONS.ukf.useOptical	= false;
+dONS.ukf.useState 	= false;
+dONS.ukf.usePos     = false;
+dONS.ukf.f          = @RHSUKFHelioMission;
+dONS.aBody1         = rE;
+dONS.aBody2         = rS;
+dONS.rSwitch        = 1e10; <span class="comment">% km Switching distance between the two targets</span>
+
+<span class="comment">% Plotting arrays</span>
+xP      = zeros(21,n);
+target  = zeros(1,n);
+type    = zeros(1,n);
+nStars  = zeros(1,n);
+</pre><h2 id="8">Run the simulation</h2><pre class="codeinput">hLast = dT;
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% ONS simulation</span>
+	TimeDisplay(<span class="string">'update'</span>,k);
+
+  <span class="comment">% Determine if the spacecraft has hit the ground</span>
+  h = Mag(x(1:3))-rS;
+
+  <span class="comment">% Get data for plotting</span>
+  [~,~,~,acc] = RHSHelioMission(x,t(k),dRHS);
+
+  <span class="comment">% Get the location and velocity of Earth</span>
+  [rEarth,~,vEarth] = PlanetPosJPL( <span class="string">'update'</span>, jD0 + t(k)*secToDay );
+
+  <span class="keyword">if</span>( dRHS.ref == earth )
+    dCam.xPlanet = [[0;0;0] -rEarth];
+    rEarth        = [0;0;0];
+    vEarth        = [0;0;0];
+  <span class="keyword">else</span>
+    dCam.xPlanet = [rEarth [0;0;0]];
+  <span class="keyword">end</span>
+
+  <span class="comment">% Stop on landing</span>
+  <span class="keyword">if</span>( h &lt;= 0 )
+    <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+	<span class="comment">% The camera boresight points at the target xCam is in the ECI frame</span>
+  rCam = x(1:3);
+  vCam = x(4:6);
+
+  <span class="comment">% Needed to point the camera</span>
+  dONS          = OpticalNavigation( <span class="string">'get unit vector'</span>, dONS, rEarth, vEarth, rCam, vCam );
+
+	<span class="comment">% Get the measurements</span>
+  meas.jD0      = jD0 + t(k)*secToDay;
+  meas.state    = x(1:6);
+  meas.acc      = acc;
+  dCam.q        = U2Q(dONS.uC,[0;0;1]);
+	dOM.cam       = NavigationCamera( rCam, dCam );
+	dOM.type      = dONS.type;
+  dOM.target    = dONS.target;
+  dOM.ref       = dRHS.ref;
+  dOM.uCamera   = dONS.uCamera;
+  dOM.aBody1    = dONS.aBody1;
+  dOM.aBody2    = dONS.aBody2;
+  dOM.r1        = rEarth;
+  dOM.v1        = vEarth;
+
+	meas.state    = x(1:6);
+  meas.acc      = acc; <span class="comment">% Spacecraft non-gravitational acceleration</span>
+  meas.gps      = MeasGPS( x, dGPS );
+  meas.gs       = MeasRangeGroundStation( x, dGS );
+  meas.optical  = MeasStarAngleAndChord( [rCam;vCam], dOM );
+
+  <span class="comment">% ONS</span>
+	dONS.cam      = dOM.cam;
+  dONS.ref      = dRHS.ref;
+  dONS.r1       = dOM.r1;
+	dONS.v1       = dOM.v1;
+  dONS.t        = t(k);
+  dONS          = OpticalNavigation( <span class="string">'update'</span>, dONS, meas, rEarth, vEarth, rCam, vCam );
+  target(k)     = dONS.target;
+  type(k)       = dONS.type;
+  nStars(k)     = dONS.ukf.optical.nStars;
+
+  <span class="comment">% Display the cameras</span>
+  <span class="keyword">if</span>( viewersOn )
+    StarCameraViewer(<span class="string">'update'</span>, dOM.cam, [], hNav, dCam, k);
+  <span class="keyword">end</span>
+	xP(:,k)        = [x;rEarth;dRHS.thrust;dRHS.ref;h;dONS.x];
+
+  <span class="comment">% Propagate the state</span>
+  uSun       = -Unit(rCam); <span class="comment">% SJT is this always true?</span>
+  nB         = uSun; <span class="comment">% guidance would  go here, rotating off sun vector</span>
+  flux       = SolarFlx( Mag(rCam)/aU );
+  [f, T, fT] = SolarPressureForce( area, nB, uSun, flux, optical, emissivity );
+  dRHS.thrust = fT*1e-3;
+  <span class="comment">%x           = RK4(@RHSHelioMission,x,dT,t(k),dRHS);</span>
+  [x,hLast]   = RK45(@RHSHelioMission,x,hLast,dT,0.1*dT,[],t(k),dRHS);
+<span class="keyword">end</span>
+
+TimeDisplay(<span class="string">'close'</span>);
+</pre><img vspace="5" hspace="5" src="ONSSailSimulation_03.png" alt=""> <h2 id="9">Plotting</h2><pre class="codeinput"><span class="comment">% Shorten the vectors if it hits the ground</span>
+j           = 1:k;
+xP          = xP(:,j);
+t           = t(j);
+target      = target(j);
+type        = type(j);
+nStars      = nStars(j);
+
+<span class="comment">% Make earth and sun referenced positions</span>
+rSun        = zeros(3,k);
+rEarth      = zeros(3,k);
+j           = find(xP(14,:) == earth );
+rEarth(:,j) = xP(1:3,j);
+rSun(:,j)   = xP(8:10,j) - rEarth(:,j);
+
+j           = find(xP(14,:) == sun );
+rSun(:,j)   = xP(1:3,j);
+rEarth(:,j)	= xP(8:10,j) - rSun(:,j);
+
+<span class="comment">% Sun/Mars plot</span>
+HelioPlot( 3, t(end)/secInYear, jD0, xP(1:3,:), {<span class="string">'Spacecraft'</span>} )
+
+PlotSEMTraj( xP(1:3,:), <span class="string">'ECI'</span>, jD0+t*secToDay )
+
+<span class="comment">% Time histories</span>
+[t,tL]      = TimeLabl(t);
+yL          = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span>};
+yD          = {<span class="string">'a_x (km/s^2)'</span> <span class="string">'a_y (km/s^2)'</span> <span class="string">'a_z (km/s^2)'</span>  <span class="string">'H (km)'</span> <span class="string">'|a| (km/s^2)'</span>};
+yS          = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span>};
+
+Plot2D(t,xP(1:6,:),tL,yS,<span class="string">'State'</span>);
+Plot2D(t,rSun, tL,yL,<span class="string">'Sun Referenced Position'</span>);
+Plot2D(t,rEarth,tL,yL,<span class="string">'Earth Referenced Position'</span>);
+Plot2D(t,xP(16:21,:) - xP(1:6,:),tL,yS,<span class="string">'Navigation Error'</span>);
+Plot2D(t,xP(16:21,:),tL,yS,<span class="string">'Navigation Solution'</span>);
+
+NewFig(<span class="string">'Targeting'</span>)
+subplot(3,1,1);
+h = plot(t,target);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Target'</span>)
+set(gca,<span class="string">'ytick'</span>,[1 2],<span class="string">'yticklabel'</span>,{<span class="string">'Mars'</span> <span class="string">'Sun'</span>});
+
+subplot(3,1,2);
+h = plot(t,type);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Measurement Type'</span>)
+set(gca,<span class="string">'ytick'</span>,[1 2],<span class="string">'yticklabel'</span>,{<span class="string">'Horizon'</span> <span class="string">'Center'</span>});
+
+subplot(3,1,3);
+h = plot(t,nStars);
+set(h,<span class="string">'linewidth'</span>,2);
+grid <span class="string">on</span>
+XLabelS(tL);
+YLabelS(<span class="string">'Stars'</span>)
+
+Figui
+
+<span class="keyword">if</span>( printAll )
+  n = get(gcf,<span class="string">'number'</span>);
+  <span class="keyword">for</span> k = 1:n
+    PrintFig(1,4,k,sprintf(<span class="string">'%s%d'</span>,simName,k));
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> [rEq,vEq] = TransSEMRToEq(jD, rSEMR, vSEMR)
+<span class="comment">% Transform from SEMR to equatorial, sun-centered frame</span>
+
+mu  = Constant(<span class="string">'mu sem'</span>);            <span class="comment">% non-dimensional system mass parameter</span>
+L   = Constant(<span class="string">'au'</span>);                <span class="comment">% length unit (1 AU) (km)</span>
+T   = Constant(<span class="string">'earth year'</span>);        <span class="comment">% time unit (Earth year) (sec)</span>
+muSun = Constant(<span class="string">'mu sun'</span>);        <span class="comment">% km</span>
+
+rEq = 0*rSEMR;
+vEq = 0*vSEMR;
+<span class="keyword">for</span> k = 1:length(jD)
+  m{k} = CEcl2Eq(jD(k));
+  rECI = m{k}*( rSEMR(:,k) - [1-mu; 0; 0]*L );            <span class="comment">% position</span>
+  vECI = m{k}*( vSEMR(:,k) );<span class="comment">% + [0; 1-mu; 0]*L*2*pi/T ); % velocity</span>
+  [u, r]      = SunV2( jD(k), [0;0;0] ); <span class="comment">% current sun vector from Earth</span>
+  sunDist     = -u*r; <span class="comment">% position of Earth rel to sun in km</span>
+  rEq(:,k)    = rECI + sunDist;
+  vDirection  = m{k}*cross(-u, [0; 0; 1]); <span class="comment">% from ecliptic to equatorial</span>
+  vDirection  = vDirection/norm(vDirection);
+  vMag        = sqrt(muSun/L);
+  vEq(:,k)    = vECI - vDirection*vMag;
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">ans = 
+  Figure (PlotPSS) with properties:
+
+      Number: 6
+        Name: 'ECI'
+       Color: [0 0 0]
+    Position: [560 528 560 420]
+       Units: 'pixels'
+
+  Use GET to show all properties
+</pre><img vspace="5" hspace="5" src="ONSSailSimulation_04.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_05.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_06.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_07.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_08.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_09.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_10.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_11.png" alt=""> <img vspace="5" hspace="5" src="ONSSailSimulation_12.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate ONS for a solar sail near the L1 Lagrange point
+% This only simulates the orbital motion.
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2021 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+rE        = Constant('equatorial radius earth');
+rS        = Constant('sun radius');
+muSun     = Constant('mu sun');
+aU        = Constant('au');
+secToDay  = 1/86400;
+secInYear = 365.26*86400;
+kEarth    = 3; % SPICE numbering 1-9 are the planets, 10 is the moon
+earth     = 1;
+sun       = 2;
+
+% Get the defaults
+dRHS      = RHSHelioMission;
+
+%% Script control
+
+viewersOn = true;
+printAll  = false;
+
+
+% acceleration model
+massFuel	= 0;     % kg
+dRHS.mD   = 100;   % kg
+dRHS.uE   = inf;
+
+% solar sail parameters
+area = 1650; % m2
+optical    = struct('sigmaS',[0.898 0.865],...
+                    'sigmaD',[0.02  0.035],...
+                    'sigmaA',[0.08  0.098]);
+emissivity = [0 0.3];
+
+% Add Earth for CRTBP?
+plotRef = {'Sun' 'Earth'};
+
+% Initialize the ephemeris
+PlanetPosJPL( 'initialize', kEarth )
+% yDot = RHSCRTBP( t, y, mu )
+
+% Initialize the state 
+dRHS.ref    = sun;
+jD0         = Date2JD([2024 8 3 0 0 0]);
+dT          = 10000;
+tEnd        = 5*2e6; % sec, 3e7
+
+% This halo state does not take into account the sail's force
+[r0, mu, v0] = PlanetPosJPL( 'update', jD0 );
+[rH,vH,p] = HALOState( 0.005,0.01,0,0, 'SEM', 1, 0 ); % non-dimensional
+rH = rH*Mag(r0);
+vH = vH*aU/Constant('earth year')*2*pi; 
+% TransSEMRToHelio this was using the unit vector of the sun backwards!!
+% deltas from Earth position may be in ecliptic
+[rECI,vECI] = TransSEMRToEq( jD0, rH, vH );
+
+x = [rECI;vECI;massFuel];
+dRHS.mu(1)   = mu; % set the mu for the right planet
+
+% Set the Julian date for the dynamical model
+dRHS.jD0 = jD0;
+
+% Simulation steps
+n     = ceil(tEnd/dT);
+
+%% Setup the camera data structure
+dCam	= NavigationCamera;
+dGPS  = MeasGPS;
+dGS   = MeasRangeGroundStation;
+dOM   = MeasStarAngleAndChord;
+
+%% Add noise
+dCam.camera.sigmaXY = 1;
+dCam.camera.noise   = true;
+dCam.namePlanet     = {'Earth' 'Sun'}; % Earth?
+dCam.radiusPlanet   = [rE rS];
+
+%% Set up the displays
+TimeDisplay('initialize','ONS Simulation',n);
+
+if( viewersOn )
+  hNav = StarCameraViewer('initialize','Navigation Camera', n ); %#ok<*UNRCH>
+end
+
+% The time vector
+t       = (0:n-1)*dT;
+
+%% Setup Optical Navigation
+dONS      = OpticalNavigation;
+r         = x(1:3);
+v         = x(4:6);
+
+dONS.ukf.fData      = RHSUKFHelioMission;
+dONS.ukf.fData.jD0  = dRHS.jD0;
+dONS.target         = sun; % 1 or 2?
+dONS.ukf.fData.ref  = sun;
+
+% Initialize ONS
+dONS                = OpticalNavigation( 'initialize', dONS, r, v, dT );
+meas.optical        = NavigationCamera( r, dCam );
+
+% Set up the parameters in ONS
+dONS.t            	= t(1);
+dONS.useUKF        	= true;
+dONS.ukf.useOptical	= false;
+dONS.ukf.useState 	= false;
+dONS.ukf.usePos     = false;
+dONS.ukf.f          = @RHSUKFHelioMission;
+dONS.aBody1         = rE;
+dONS.aBody2         = rS;
+dONS.rSwitch        = 1e10; % km Switching distance between the two targets
+
+% Plotting arrays
+xP      = zeros(21,n);
+target  = zeros(1,n);
+type    = zeros(1,n);
+nStars  = zeros(1,n);
+
+%% Run the simulation
+hLast = dT;
+for k = 1:n
+  
+  % ONS simulation
+	TimeDisplay('update',k);
+  
+  % Determine if the spacecraft has hit the ground
+  h = Mag(x(1:3))-rS;
+  
+  % Get data for plotting
+  [~,~,~,acc] = RHSHelioMission(x,t(k),dRHS);
+  
+  % Get the location and velocity of Earth
+  [rEarth,~,vEarth] = PlanetPosJPL( 'update', jD0 + t(k)*secToDay );
+
+  if( dRHS.ref == earth )
+    dCam.xPlanet = [[0;0;0] -rEarth];
+    rEarth        = [0;0;0];
+    vEarth        = [0;0;0];
+  else
+    dCam.xPlanet = [rEarth [0;0;0]];
+  end
+
+  % Stop on landing
+  if( h <= 0 )
+    break;
+  end
+  
+	% The camera boresight points at the target xCam is in the ECI frame
+  rCam = x(1:3);
+  vCam = x(4:6);
+  
+  % Needed to point the camera
+  dONS          = OpticalNavigation( 'get unit vector', dONS, rEarth, vEarth, rCam, vCam );
+     
+	% Get the measurements
+  meas.jD0      = jD0 + t(k)*secToDay;
+  meas.state    = x(1:6);
+  meas.acc      = acc;
+  dCam.q        = U2Q(dONS.uC,[0;0;1]);
+	dOM.cam       = NavigationCamera( rCam, dCam );
+	dOM.type      = dONS.type;
+  dOM.target    = dONS.target;
+  dOM.ref       = dRHS.ref;
+  dOM.uCamera   = dONS.uCamera;
+  dOM.aBody1    = dONS.aBody1;
+  dOM.aBody2    = dONS.aBody2;
+  dOM.r1        = rEarth;
+  dOM.v1        = vEarth;
+
+	meas.state    = x(1:6);
+  meas.acc      = acc; % Spacecraft non-gravitational acceleration
+  meas.gps      = MeasGPS( x, dGPS );
+  meas.gs       = MeasRangeGroundStation( x, dGS );
+  meas.optical  = MeasStarAngleAndChord( [rCam;vCam], dOM );
+
+  % ONS
+	dONS.cam      = dOM.cam;
+  dONS.ref      = dRHS.ref;
+  dONS.r1       = dOM.r1;
+	dONS.v1       = dOM.v1;
+  dONS.t        = t(k);
+  dONS          = OpticalNavigation( 'update', dONS, meas, rEarth, vEarth, rCam, vCam );
+  target(k)     = dONS.target;
+  type(k)       = dONS.type;
+  nStars(k)     = dONS.ukf.optical.nStars;
+  
+  % Display the cameras
+  if( viewersOn )
+    StarCameraViewer('update', dOM.cam, [], hNav, dCam, k);
+  end
+	xP(:,k)        = [x;rEarth;dRHS.thrust;dRHS.ref;h;dONS.x];
+ 
+  % Propagate the state
+  uSun       = -Unit(rCam); % SJT is this always true?
+  nB         = uSun; % guidance would  go here, rotating off sun vector
+  flux       = SolarFlx( Mag(rCam)/aU );
+  [f, T, fT] = SolarPressureForce( area, nB, uSun, flux, optical, emissivity );
+  dRHS.thrust = fT*1e-3;
+  %x           = RK4(@RHSHelioMission,x,dT,t(k),dRHS);
+  [x,hLast]   = RK45(@RHSHelioMission,x,hLast,dT,0.1*dT,[],t(k),dRHS);
+end
+
+TimeDisplay('close');
+
+%% Plotting
+
+% Shorten the vectors if it hits the ground
+j           = 1:k;
+xP          = xP(:,j);
+t           = t(j);
+target      = target(j);
+type        = type(j);
+nStars      = nStars(j);
+
+% Make earth and sun referenced positions
+rSun        = zeros(3,k);
+rEarth      = zeros(3,k);
+j           = find(xP(14,:) == earth ); 
+rEarth(:,j) = xP(1:3,j);
+rSun(:,j)   = xP(8:10,j) - rEarth(:,j);
+
+j           = find(xP(14,:) == sun ); 
+rSun(:,j)   = xP(1:3,j);
+rEarth(:,j)	= xP(8:10,j) - rSun(:,j);
+
+% Sun/Mars plot
+HelioPlot( 3, t(end)/secInYear, jD0, xP(1:3,:), {'Spacecraft'} )
+
+PlotSEMTraj( xP(1:3,:), 'ECI', jD0+t*secToDay )
+
+% Time histories
+[t,tL]      = TimeLabl(t);
+yL          = {'x (km)' 'y (km)' 'z (km)'};
+yD          = {'a_x (km/s^2)' 'a_y (km/s^2)' 'a_z (km/s^2)'  'H (km)' '|a| (km/s^2)'};
+yS          = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)'};
+
+Plot2D(t,xP(1:6,:),tL,yS,'State');
+Plot2D(t,rSun, tL,yL,'Sun Referenced Position');
+Plot2D(t,rEarth,tL,yL,'Earth Referenced Position');
+Plot2D(t,xP(16:21,:) - xP(1:6,:),tL,yS,'Navigation Error');
+Plot2D(t,xP(16:21,:),tL,yS,'Navigation Solution');
+
+NewFig('Targeting')
+subplot(3,1,1);
+h = plot(t,target);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Target')
+set(gca,'ytick',[1 2],'yticklabel',{'Mars' 'Sun'});
+
+subplot(3,1,2);
+h = plot(t,type);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Measurement Type')
+set(gca,'ytick',[1 2],'yticklabel',{'Horizon' 'Center'});
+
+subplot(3,1,3);
+h = plot(t,nStars);
+set(h,'linewidth',2);
+grid on
+XLabelS(tL);
+YLabelS('Stars')
+
+Figui
+
+if( printAll )
+  n = get(gcf,'number');
+  for k = 1:n
+    PrintFig(1,4,k,sprintf('%s%d',simName,k));
+  end
+end
+
+function [rEq,vEq] = TransSEMRToEq(jD, rSEMR, vSEMR)
+% Transform from SEMR to equatorial, sun-centered frame
+
+mu  = Constant('mu sem');            % non-dimensional system mass parameter
+L   = Constant('au');                % length unit (1 AU) (km)
+T   = Constant('earth year');        % time unit (Earth year) (sec)
+muSun = Constant('mu sun');        % km
+
+rEq = 0*rSEMR;
+vEq = 0*vSEMR;
+for k = 1:length(jD)
+  m{k} = CEcl2Eq(jD(k));
+  rECI = m{k}*( rSEMR(:,k) - [1-mu; 0; 0]*L );            % position
+  vECI = m{k}*( vSEMR(:,k) );% + [0; 1-mu; 0]*L*2*pi/T ); % velocity
+  [u, r]      = SunV2( jD(k), [0;0;0] ); % current sun vector from Earth
+  sunDist     = -u*r; % position of Earth rel to sun in km
+  rEq(:,k)    = rECI + sunDist;
+  vDirection  = m{k}*cross(-u, [0; 0; 1]); % from ecliptic to equatorial
+  vDirection  = vDirection/norm(vDirection);
+  vMag        = sqrt(muSun/L);
+  vEq(:,k)    = vECI - vDirection*vMag;
+end
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-03 $
+% $Revision: 2cce32a1db10a54ff96fbc8af289eada50c3632c $
+
+##### SOURCE END #####
+--></body></html>

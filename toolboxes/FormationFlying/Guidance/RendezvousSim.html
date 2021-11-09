@@ -1,0 +1,267 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>RendezvousSim</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-05-27"><meta name="DC.source" content="RendezvousSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Demonstrate rendezvous control with PD or LQ</a></li><li><a href="#2">Constants</a></li><li><a href="#3">Design a quadratic regulator</a></li><li><a href="#4">Design a PD controller</a></li><li><a href="#5">Simulation</a></li><li><a href="#6">Plotting</a></li><li><a href="#7">Hills equations</a></li></ul></div><h2 id="1">Demonstrate rendezvous control with PD or LQ</h2><p>This allows for both a PD controller and LQ (linear quadratic) controller. Both work in continuous time. Script contains an embedded RHS function.</p><p>See also LinOrb, QCR, Riccati, DispWithTitle, TimeLabl, RK4, Odd</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2020 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">m     = 1000;
+dT    = 1;
+d.n   = 2*pi/(90*60);
+useLQ = true;
+</pre><h2 id="3">Design a quadratic regulator</h2><pre class="codeinput">[a, b]  = LinOrb( [], d.n );
+kLQ     = QCR( a, b, eye(6), 1e5*eye(3) );
+
+DispWithTitle(kLQ,<span class="string">'Gain Matrix LQ'</span>)
+DispWithTitle(eig(a-b*kLQ),<span class="string">'LQ eigenvalues'</span>)
+</pre><pre class="codeoutput">Gain Matrix LQ
+     0.003165  -9.2471e-05  -3.2574e-19     0.079624    7.462e-07  -1.4935e-18
+   9.2471e-05    0.0031609  -5.3816e-19    7.462e-07     0.079573   -1.041e-17
+   1.1592e-20   -3.251e-19    0.0031609   1.9551e-19  -3.3105e-18     0.079573
+LQ eigenvalues
+    -0.039801 +   0.040891i
+    -0.039801 -   0.040891i
+    -0.039798 +   0.038564i
+    -0.039798 -   0.038564i
+    -0.039786 +   0.039741i
+    -0.039786 -   0.039741i
+</pre><h2 id="4">Design a PD controller</h2><pre class="codeinput">zeta  = 1;
+omega = 0.06; <span class="comment">% Omega must be faster than n</span>
+kPD   = [omega^2*eye(3) 2*zeta*omega*eye(3)];
+
+DispWithTitle(kPD,<span class="string">'Gain Matrix PD'</span>)
+DispWithTitle(eig(a-b*kLQ),<span class="string">'PD eigenvalues'</span>)
+</pre><pre class="codeoutput">Gain Matrix PD
+       0.0036            0            0         0.12            0            0
+            0       0.0036            0            0         0.12            0
+            0            0       0.0036            0            0         0.12
+PD eigenvalues
+    -0.039801 +   0.040891i
+    -0.039801 -   0.040891i
+    -0.039798 +   0.038564i
+    -0.039798 -   0.038564i
+    -0.039786 +   0.039741i
+    -0.039786 -   0.039741i
+</pre><h2 id="5">Simulation</h2><pre class="codeinput">x     = [1;1;1;0.01;0.01;0.01];
+xP    = zeros(9,m);
+<span class="keyword">for</span> k = 1:m
+  <span class="keyword">if</span>( useLQ)
+    d.aD    = -kLQ*x; <span class="comment">%#ok&lt;*UNRCH&gt;</span>
+  <span class="keyword">else</span>
+    d.aD    = -kPD*x;
+  <span class="keyword">end</span>
+  xP(:,k) = [x;d.aD];
+  x       = RK4( @RHS, x, dT, 0, d );
+<span class="keyword">end</span>
+</pre><h2 id="6">Plotting</h2><pre class="codeinput">t = (0:m-1)*dT;
+h = figure;
+<span class="keyword">if</span>( useLQ )
+  s = <span class="string">'Rendezvous LQ Controller'</span>;
+<span class="keyword">else</span>
+  s = <span class="string">'Rendezvous PD Controller'</span>;
+<span class="keyword">end</span>
+
+set(h,<span class="string">'name'</span>,s)
+subplot(2,2,1)
+plot(xP(1,:),xP(2,:))
+grid <span class="string">on</span>
+xlabel(<span class="string">'x'</span>);
+ylabel(<span class="string">'y'</span>)
+
+subplot(2,2,2)
+plot(xP(1,:),xP(3,:))
+grid <span class="string">on</span>
+xlabel(<span class="string">'x'</span>);
+ylabel(<span class="string">'z'</span>)
+
+[t,tL] = TimeLabl(t);
+subplot(2,2,3)
+plot(t,xP(4:6,:))
+grid <span class="string">on</span>
+xlabel(tL);
+ylabel(<span class="string">'Velocity'</span>)
+legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'location'</span>,<span class="string">'best'</span>)
+
+subplot(2,2,4)
+plot(t,xP(7:9,:))
+grid <span class="string">on</span>
+xlabel(tL);
+ylabel(<span class="string">'Accelerations'</span>)
+legend(<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'location'</span>,<span class="string">'best'</span>)
+</pre><img vspace="5" hspace="5" src="RendezvousSim_01.png" alt=""> <h2 id="7">Hills equations</h2><pre class="codeinput"><span class="keyword">function</span> xDot = RHS(x,~,d)
+
+nSq   = d.n^2;
+xDot  = [x(4:6);d.aD+[2*d.n*x(5)+3*nSq*x(1);-2*d.n*x(4);-nSq*x(3)]];
+
+<span class="keyword">end</span>
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate rendezvous control with PD or LQ
+% This allows for both a PD controller and LQ (linear quadratic)
+% controller. Both work in continuous time. Script contains an embedded RHS
+% function.
+%
+% See also LinOrb, QCR, Riccati, DispWithTitle, TimeLabl, RK4, Odd
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2020 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+m     = 1000;
+dT    = 1;
+d.n   = 2*pi/(90*60);
+useLQ = true;
+
+%% Design a quadratic regulator
+[a, b]  = LinOrb( [], d.n );
+kLQ     = QCR( a, b, eye(6), 1e5*eye(3) );
+
+DispWithTitle(kLQ,'Gain Matrix LQ')
+DispWithTitle(eig(a-b*kLQ),'LQ eigenvalues')
+
+%% Design a PD controller
+zeta  = 1;
+omega = 0.06; % Omega must be faster than n
+kPD   = [omega^2*eye(3) 2*zeta*omega*eye(3)];
+
+DispWithTitle(kPD,'Gain Matrix PD')
+DispWithTitle(eig(a-b*kLQ),'PD eigenvalues')
+
+%% Simulation
+x     = [1;1;1;0.01;0.01;0.01];
+xP    = zeros(9,m);
+for k = 1:m
+  if( useLQ)
+    d.aD    = -kLQ*x; %#ok<*UNRCH>
+  else
+    d.aD    = -kPD*x;
+  end
+  xP(:,k) = [x;d.aD];
+  x       = RK4( @RHS, x, dT, 0, d );
+end
+
+%% Plotting
+t = (0:m-1)*dT;
+h = figure;
+if( useLQ )
+  s = 'Rendezvous LQ Controller';
+else
+  s = 'Rendezvous PD Controller';
+end
+
+set(h,'name',s)
+subplot(2,2,1)
+plot(xP(1,:),xP(2,:))
+grid on
+xlabel('x');
+ylabel('y')
+
+subplot(2,2,2)
+plot(xP(1,:),xP(3,:))
+grid on
+xlabel('x');
+ylabel('z')
+
+[t,tL] = TimeLabl(t);
+subplot(2,2,3)
+plot(t,xP(4:6,:))
+grid on
+xlabel(tL);
+ylabel('Velocity')
+legend('x','y','z','location','best')
+
+subplot(2,2,4)
+plot(t,xP(7:9,:))
+grid on
+xlabel(tL);
+ylabel('Accelerations')
+legend('x','y','z','location','best')
+
+%% Hills equations
+function xDot = RHS(x,~,d)
+
+nSq   = d.n^2;
+xDot  = [x(4:6);d.aD+[2*d.n*x(5)+3*nSq*x(1);-2*d.n*x(4);-nSq*x(3)]];
+
+end
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-26 12:41:40 -0400 (Tue, 26 May 2020) $
+% $Revision: 52411 $
+
+
+##### SOURCE END #####
+--></body></html>

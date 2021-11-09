@@ -1,0 +1,238 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Performs a covariance analysis of different gyros.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="CovarianceAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Performs a covariance analysis of different gyros.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also C2DZOH, Plot2D, RW2SDev
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Measurement noise</a></li><li><a href="#3">the final attitude stand. dev.</a></li></ul></div><p>------------------------------------------------------------------------- Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved. -------------------------------------------------------------------------</p><pre class="codeinput">radToDeg      = 180/pi;
+degToRad      = pi/180;
+perHrToPerSec = 1/3600;
+gyroType      = <span class="string">'HRG'</span>;
+
+<span class="keyword">switch</span> gyroType
+  <span class="keyword">case</span> <span class="string">'HRG'</span>
+    sigmaBias  = RW2SDev(0.005*perHrToPerSec);
+    sigmaNoise = RW2SDev(0.0003);
+
+  <span class="keyword">case</span> <span class="string">'IFOG'</span>
+    sigmaBias  = RW2SDev(0.015*perHrToPerSec); <span class="comment">% 8.0964e-9; %</span>
+    sigmaNoise = RW2SDev(0.005);
+
+  <span class="keyword">otherwise</span>
+    error([gyroType, <span class="string">' not supported.'</span>]);
+<span class="keyword">end</span>
+
+q11   = sigmaNoise^2*ones(1,3);
+q22   = sigmaBias^2*ones(1,3);
+
+dT = 10;
+
+qK = diag([q11 q22])*dT;
+</pre><h2 id="2">Measurement noise</h2><pre class="codeinput"><span class="comment">%------------------</span>
+r    = (0.001*degToRad)^2; <span class="comment">%*eye(2);</span>
+rK   = r/dT;
+h    = [1 0 0 0 0 0];
+
+nSim = 18*3600/dT;
+p    = zeros(6); <span class="comment">% start with perfect knowledge</span>
+
+t    = zeros(1,nSim);
+pDg  = zeros(6,nSim);
+
+w0       = -7.291e-5;
+b        = [eye(3);zeros(3,3)];
+a        = [ 0    0  w0   -1  0  0;<span class="keyword">...</span>
+             0    0  0     0 -1  0;<span class="keyword">...</span>
+            -w0   0  0     0  0 -1;<span class="keyword">...</span>
+             zeros(3,6)];
+[phi,gam] = C2DZOH(a,b,dT);
+
+
+<span class="keyword">for</span> k = 2:nSim
+  t(k) = t(k-1) + dT;
+
+  <span class="comment">% Compute the Kalman Gain &amp; update the covariance</span>
+  kG = p*h'*inv(h*p*h' + rK);
+
+  iKH = (eye(size(p)) - kG*h);
+  p   = iKH*p*iKH' + kG*r*kG';
+
+  p  = 0.5*(p + p');  <span class="comment">% Make p symmetric</span>
+
+  <span class="comment">% Propagate the covariance matrix</span>
+  p = phi*p*phi' + qK;
+  p = 0.5*(p + p');  <span class="comment">% Make p symmetric</span>
+
+  pDg(:,k) = diag(p);
+
+<span class="keyword">end</span>
+
+Plot2D(t/3600,[sqrt(pDg(1,:))*radToDeg;sqrt(pDg(4,:))*3600*radToDeg],<span class="string">'Time (hours) '</span>,strvcat(<span class="string">'theta (deg)'</span>,<span class="string">'bias (deg/hr)'</span>),<span class="string">'Roll Sigma'</span>)
+Plot2D(t/3600,[sqrt(pDg(2,:))*radToDeg;sqrt(pDg(5,:))*3600*radToDeg],<span class="string">'Time (hours) '</span>,strvcat(<span class="string">'theta (deg)'</span>,<span class="string">'bias (deg/hr)'</span>),<span class="string">'Pitch Sigma'</span>)
+Plot2D(t/3600,[sqrt(pDg(3,:))*radToDeg;sqrt(pDg(6,:))*3600*radToDeg],<span class="string">'Time (hours) '</span>,strvcat(<span class="string">'theta (deg)'</span>,<span class="string">'bias (deg/hr)'</span>),<span class="string">'Yaw Sigma'</span>)
+</pre><img vspace="5" hspace="5" src="CovarianceAnalysis_01.png" alt=""> <img vspace="5" hspace="5" src="CovarianceAnalysis_02.png" alt=""> <img vspace="5" hspace="5" src="CovarianceAnalysis_03.png" alt=""> <h2 id="3">the final attitude stand. dev.</h2><pre class="codeinput">pSig = sqrt(diag(p(1:3,1:3)))*radToDeg
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">pSig =
+    0.0009029
+      0.22038
+     0.072823
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Performs a covariance analysis of different gyros.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also C2DZOH, Plot2D, RW2SDev
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+radToDeg      = 180/pi;
+degToRad      = pi/180;
+perHrToPerSec = 1/3600;
+gyroType      = 'HRG';
+
+switch gyroType
+  case 'HRG'
+    sigmaBias  = RW2SDev(0.005*perHrToPerSec); 
+    sigmaNoise = RW2SDev(0.0003); 
+    
+  case 'IFOG'
+    sigmaBias  = RW2SDev(0.015*perHrToPerSec); % 8.0964e-9; %
+    sigmaNoise = RW2SDev(0.005);
+
+  otherwise
+    error([gyroType, ' not supported.']);
+end
+
+q11   = sigmaNoise^2*ones(1,3);
+q22   = sigmaBias^2*ones(1,3);
+
+dT = 10;
+
+qK = diag([q11 q22])*dT;
+
+%% Measurement noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r    = (0.001*degToRad)^2; %*eye(2);
+rK   = r/dT;
+h    = [1 0 0 0 0 0];
+
+nSim = 18*3600/dT;
+p    = zeros(6); % start with perfect knowledge
+
+t    = zeros(1,nSim);
+pDg  = zeros(6,nSim);
+
+w0       = -7.291e-5;
+b        = [eye(3);zeros(3,3)]; 
+a        = [ 0    0  w0   -1  0  0;...
+             0    0  0     0 -1  0;...
+            -w0   0  0     0  0 -1;...
+             zeros(3,6)];
+[phi,gam] = C2DZOH(a,b,dT);
+
+
+for k = 2:nSim
+  t(k) = t(k-1) + dT;
+  
+  % Compute the Kalman Gain & update the covariance
+  kG = p*h'*inv(h*p*h' + rK);
+  
+  iKH = (eye(size(p)) - kG*h);
+  p   = iKH*p*iKH' + kG*r*kG';
+
+  p  = 0.5*(p + p');  % Make p symmetric
+  
+  % Propagate the covariance matrix
+  p = phi*p*phi' + qK;
+  p = 0.5*(p + p');  % Make p symmetric
+  
+  pDg(:,k) = diag(p);
+  
+end
+
+Plot2D(t/3600,[sqrt(pDg(1,:))*radToDeg;sqrt(pDg(4,:))*3600*radToDeg],'Time (hours) ',strvcat('theta (deg)','bias (deg/hr)'),'Roll Sigma')  
+Plot2D(t/3600,[sqrt(pDg(2,:))*radToDeg;sqrt(pDg(5,:))*3600*radToDeg],'Time (hours) ',strvcat('theta (deg)','bias (deg/hr)'),'Pitch Sigma')  
+Plot2D(t/3600,[sqrt(pDg(3,:))*radToDeg;sqrt(pDg(6,:))*3600*radToDeg],'Time (hours) ',strvcat('theta (deg)','bias (deg/hr)'),'Yaw Sigma')  
+
+%% the final attitude stand. dev.
+pSig = sqrt(diag(p(1:3,1:3)))*radToDeg
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

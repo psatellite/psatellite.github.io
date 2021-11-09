@@ -1,0 +1,287 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate a pointing budget using PBudget.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="ExamplePointingBudget.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate a pointing budget using PBudget.</h1><!--introduction--><p>A pointing budget must account for all misalignments and attitude errors.</p><p>See also FindDirectory, PBudget</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">clear variables used in demo</a></li></ul></div><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2001-2002, 2007, 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%  2017.1 Update code from str2mat to char, which is now preferred</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+</pre><h2 id="2">clear variables used in demo</h2><pre class="codeinput"><span class="comment">%------------------------------</span>
+clear <span class="string">desc</span> <span class="string">categ</span> <span class="string">errors</span>
+
+k           = 1;
+desc        = <span class="string">'SSA temperature effects'</span>;
+categ       = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'SSA optics w.r.t. cube'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0250 0.0250 0.0000];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'SSA cube to MRC'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0250 0.0250 0.0000];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'Antenna B.S. w.r.t. antenna RC'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0180 0.0180 0.0000];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'Antenna RC w.r.t. MRC'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0150 0.0150 0.0150];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'Attitude sensing'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0012 0.0012 0.0012];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'S/C disturbance torque'</span>);
+categ       = char(categ,<span class="string">'Diurnal'</span>);
+errors(k,:) = [0.0080 0.0080 0.0080];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'S/C disturbance torque'</span>);
+categ       = char(categ,<span class="string">'Bias'</span>);
+errors(k,:) = [0.0031 0.0031 0.0031];
+kSK1        = k;
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'Antenna thermal distortion w.r.t. SSA RC'</span>);
+categ       = char(categ,<span class="string">'Diurnal'</span>);
+errors(k,:) = [0.0100 0.0100 0.0100];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'Attitude sensor &amp; actuator noise/resolution'</span>);
+categ       = char(categ,<span class="string">'Short Term'</span>);
+errors(k,:) = [0.0200 0.0200 0.0200];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'SA stepping transients'</span>);
+categ       = char(categ,<span class="string">'Short Term'</span>);
+errors(k,:) = [0.0000 0.0500 0.0000];
+
+k           = k + 1;
+desc        = char(desc,<span class="string">'S/C disturbance torques'</span>);
+categ       = char(categ,<span class="string">'Short Term'</span>);
+errors(k,:) = [0.0000 0.0000 0.0000];
+
+fName = fullfile(FindDirectory(<span class="string">'SCData'</span>),<span class="string">'SpacecraftPointingBudget.txt'</span>);
+[cep,r,s,t,cList] = PBudget(errors,desc,categ,0,0,fName);
+
+fprintf(<span class="string">'\n\n------------------------------------\n'</span>)
+disp(<span class="string">'Spacecraft Pointing Budget'</span>)
+disp(<span class="string">'------------------------------------'</span>)
+fprintf(<span class="string">'%s\n'</span>,<span class="string">'Circular error (3 sigma):'</span>);
+fprintf(<span class="string">'   %2.4f\n'</span>  , cep  );
+fprintf(<span class="string">'\n%s\n'</span>,<span class="string">'Azimuth and elevation errors:'</span>);
+fprintf(<span class="string">'   %2.4f\n'</span> , r    );
+fprintf(<span class="string">'\n%s\n'</span>,<span class="string">'Summary by category:'</span>  );
+<span class="keyword">for</span> m = 1:size(cList,1)
+  fprintf(<span class="string">'   %s\n'</span>, cList{m}    );
+  fprintf(<span class="string">'      %2.4f\n'</span> , s(m,:)        );
+<span class="keyword">end</span>
+fprintf(<span class="string">'\n%s\n'</span>,<span class="string">'Totals:'</span>)
+fprintf(<span class="string">'   %2.4f\n'</span> , t    );
+
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+
+------------------------------------
+Spacecraft Pointing Budget
+------------------------------------
+Circular error (3 sigma):
+   0.2271
+
+Azimuth and elevation errors:
+   0.1118
+   0.0779
+
+Summary by category:
+   Bias
+      0.0451
+      0.0451
+      0.0154
+
+Totals:
+   0.0779
+   0.1118
+   0.0482
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate a pointing budget using PBudget. 
+% A pointing budget must account for all misalignments and attitude errors.
+%
+% See also FindDirectory, PBudget
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright (c) 2001-2002, 2007, 2017 Princeton Satellite Systems, Inc.
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  2017.1 Update code from str2mat to char, which is now preferred
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% clear variables used in demo
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear desc categ errors
+
+k           = 1;		  
+desc        = 'SSA temperature effects';
+categ       = 'Bias';
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc        = char(desc,'SSA optics w.r.t. cube');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0250 0.0250 0.0000];
+		  
+k           = k + 1;
+desc        = char(desc,'SSA cube to MRC');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0250 0.0250 0.0000];
+		  
+k           = k + 1;
+desc        = char(desc,'Antenna B.S. w.r.t. antenna RC');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0180 0.0180 0.0000];
+		  
+k           = k + 1;
+desc        = char(desc,'Antenna RC w.r.t. MRC');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0150 0.0150 0.0150];
+
+k           = k + 1;
+desc        = char(desc,'Attitude sensing');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0012 0.0012 0.0012];
+
+k           = k + 1;
+desc        = char(desc,'S/C disturbance torque');
+categ       = char(categ,'Diurnal');
+errors(k,:) = [0.0080 0.0080 0.0080];
+
+k           = k + 1;
+desc        = char(desc,'S/C disturbance torque');
+categ       = char(categ,'Bias');
+errors(k,:) = [0.0031 0.0031 0.0031];
+kSK1        = k;
+
+k           = k + 1;
+desc        = char(desc,'Antenna thermal distortion w.r.t. SSA RC');
+categ       = char(categ,'Diurnal');
+errors(k,:) = [0.0100 0.0100 0.0100];
+
+k           = k + 1;
+desc        = char(desc,'Attitude sensor & actuator noise/resolution');
+categ       = char(categ,'Short Term');
+errors(k,:) = [0.0200 0.0200 0.0200];
+
+k           = k + 1;
+desc        = char(desc,'SA stepping transients');
+categ       = char(categ,'Short Term');
+errors(k,:) = [0.0000 0.0500 0.0000];
+
+k           = k + 1;
+desc        = char(desc,'S/C disturbance torques');
+categ       = char(categ,'Short Term');
+errors(k,:) = [0.0000 0.0000 0.0000];
+
+fName = fullfile(FindDirectory('SCData'),'SpacecraftPointingBudget.txt');
+[cep,r,s,t,cList] = PBudget(errors,desc,categ,0,0,fName); 
+
+fprintf('\n\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n')
+disp('Spacecraft Pointing Budget')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf('%s\n','Circular error (3 sigma):');
+fprintf('   %2.4f\n'  , cep  );
+fprintf('\n%s\n','Azimuth and elevation errors:');
+fprintf('   %2.4f\n' , r    );
+fprintf('\n%s\n','Summary by category:'  );
+for m = 1:size(cList,1)
+  fprintf('   %s\n', cList{m}    );
+  fprintf('      %2.4f\n' , s(m,:)        );
+end
+fprintf('\n%s\n','Totals:')
+fprintf('   %2.4f\n' , t    );
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 13:24:19 -0400 (Thu, 28 May 2020) $
+% $Revision: 52506 $
+
+##### SOURCE END #####
+--></body></html>

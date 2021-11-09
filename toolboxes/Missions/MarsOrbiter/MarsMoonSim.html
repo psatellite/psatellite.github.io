@@ -1,0 +1,189 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Spacecraft simulation around Mars with Phobos and Deimos</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="MarsMoonSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Spacecraft simulation around Mars with Phobos and Deimos</h1><!--introduction--><p>You can select orbital elements for the spaceraft The initial states for Phobos and Deimos are from the NASA Horizons system.  <a href="http://ssd.jpl.nasa.gov/horizons.cgi">http://ssd.jpl.nasa.gov/horizons.cgi</a> Uses RK4 to propagate the orbits.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Create the state vector  [spacecraft;phobos;deimos]</a></li><li><a href="#3">Simulation</a></li><li><a href="#4">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2017.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Constants</span>
+muMars = Constant(<span class="string">'mu mars'</span>);
+rMars  = Constant(<span class="string">'equatorial radius mars'</span>);
+
+<span class="comment">% User inputs</span>
+hP    = 2000; <span class="comment">% Altitude at perigee</span>
+[a,e]	= RPRA2AE(rMars+hP, rMars+10*hP);
+i     = 0; <span class="comment">% Inclination</span>
+lon   = 0; <span class="comment">% Longitude of the ascending node</span>
+arg   = 0; <span class="comment">% Argument of perigee</span>
+meanA	= 0; <span class="comment">% Mean anomaly</span>
+tEnd	= 7.6538*3600; <span class="comment">% One Deimos orbit period is 30.312 hours Phobos is 7.6538 hours</span>
+dT  	= 100;
+</pre><h2 id="2">Create the state vector  [spacecraft;phobos;deimos]</h2><pre class="codeinput">jD0   = 2457504.5;
+
+xMars =   [-1.556270572128525E+08 -1.588260151341932E+08 -6.864850347069533E+07<span class="keyword">...</span>
+            1.892393454800366E+01 -1.265972881093017E+01 -6.317572782411839E+00]';
+
+xDeimos = [-1.556471976805823E+08 -1.588240996199218E+08 -6.863662644229279E+07<span class="keyword">...</span>
+            1.853761291642451E+01 -1.387018839272505E+01 -6.776942570158258E+00]';
+
+xPhobos = [-1.556243982587785E+08 -1.588334963677697E+08 -6.865370813242640E+07<span class="keyword">...</span>
+            2.070933433329652E+01 -1.167145060591693E+01 -6.857269178105281E+00]';
+
+<span class="comment">% Spacecraft state</span>
+[r,v]   = El2RV([a i lon arg e meanA],[],muMars);
+
+<span class="comment">% Full state vector</span>
+x       = [r;v;xPhobos-xMars;xDeimos-xMars];
+</pre><h2 id="3">Simulation</h2><pre class="codeinput">n      	= ceil(tEnd/dT); <span class="comment">% Total number of integration steps</span>
+xP      = zeros(length(x),n);
+dT      = tEnd/n;
+
+<span class="keyword">for</span> k = 1:n
+  xP(:,k) = x;
+  x       = RK4(@RHSMarsOrbit,x,dT,0,muMars);
+<span class="keyword">end</span>
+</pre><h2 id="4">Plotting</h2><pre class="codeinput">jD = jD0 + (0:n-1)*dT/86400;
+
+PlotPlanetOrbit( xP, jD, {<span class="string">'Spacecraft'</span> <span class="string">'Phobos'</span> <span class="string">'Deimos'</span>}, <span class="string">'Mars'</span>, 1 );
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MarsMoonSim_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Spacecraft simulation around Mars with Phobos and Deimos
+% You can select orbital elements for the spaceraft
+% The initial states for Phobos and Deimos are from the NASA
+% Horizons system.  http://ssd.jpl.nasa.gov/horizons.cgi 
+% Uses RK4 to propagate the orbits.
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2016 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2017.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Constants
+muMars = Constant('mu mars');
+rMars  = Constant('equatorial radius mars');
+
+% User inputs
+hP    = 2000; % Altitude at perigee
+[a,e]	= RPRA2AE(rMars+hP, rMars+10*hP);
+i     = 0; % Inclination
+lon   = 0; % Longitude of the ascending node
+arg   = 0; % Argument of perigee
+meanA	= 0; % Mean anomaly
+tEnd	= 7.6538*3600; % One Deimos orbit period is 30.312 hours Phobos is 7.6538 hours
+dT  	= 100;
+
+%% Create the state vector  [spacecraft;phobos;deimos]
+
+jD0   = 2457504.5;
+
+xMars =   [-1.556270572128525E+08 -1.588260151341932E+08 -6.864850347069533E+07...
+            1.892393454800366E+01 -1.265972881093017E+01 -6.317572782411839E+00]';
+        
+xDeimos = [-1.556471976805823E+08 -1.588240996199218E+08 -6.863662644229279E+07...
+            1.853761291642451E+01 -1.387018839272505E+01 -6.776942570158258E+00]';
+      
+xPhobos = [-1.556243982587785E+08 -1.588334963677697E+08 -6.865370813242640E+07...
+            2.070933433329652E+01 -1.167145060591693E+01 -6.857269178105281E+00]';
+          
+% Spacecraft state
+[r,v]   = El2RV([a i lon arg e meanA],[],muMars);
+
+% Full state vector
+x       = [r;v;xPhobos-xMars;xDeimos-xMars];
+
+%% Simulation
+n      	= ceil(tEnd/dT); % Total number of integration steps
+xP      = zeros(length(x),n);
+dT      = tEnd/n;
+
+for k = 1:n
+  xP(:,k) = x;
+  x       = RK4(@RHSMarsOrbit,x,dT,0,muMars);
+end
+
+%% Plotting
+jD = jD0 + (0:n-1)*dT/86400;
+
+PlotPlanetOrbit( xP, jD, {'Spacecraft' 'Phobos' 'Deimos'}, 'Mars', 1 );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-04-28 13:12:37 -0400 (Fri, 28 Apr 2017) $
+% $Revision: 44417 $
+
+##### SOURCE END #####
+--></body></html>

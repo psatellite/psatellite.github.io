@@ -1,0 +1,233 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a radar</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="RadarAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a radar</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also Plot2D, TanD
+------------------------------------------------------------------------</pre><!--/introduction--><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright (c) 2001 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+apertureDiameter = 0.57;
+antennaArea = (pi/4)*apertureDiameter^2;
+
+apertureEfficiency = 0.5;
+
+aE = apertureEfficiency*antennaArea;
+lengthEfficiency = sqrt(apertureEfficiency);
+
+rangeResolution = .1;
+
+bandwidth = 3e8/(2*rangeResolution);
+
+
+k  = 1.38e-23; <span class="comment">% Boltzmann's constant</span>
+pT = 100;
+lP = 1;
+aT = 1;
+lGP = 1;
+lA  = 1;
+lS  = 10^(1.4/10);
+t0  = 290;
+f   = 10^(3.5/10);
+sN  = 10^(18/10);
+lI  = 10^(1.6/10); <span class="comment">% Voltage</span>
+nL  = 2048;
+b   = bandwidth;
+
+fprintf(<span class="string">'Required bandwidth         \t %12.4f \tGHz\n'</span>,bandwidth/1e9)
+fprintf(<span class="string">'Required range resolution  \t %12.4f \tm\n'</span>,rangeResolution)
+fprintf(<span class="string">'Aperture efficiency        \t %12.4f \t \n'</span>,apertureEfficiency)
+fprintf(<span class="string">'Range efficiency           \t %12.4f \t \n'</span>,lengthEfficiency)
+fprintf(<span class="string">'Required range resolution  \t %12.4f \tm\n'</span>,rangeResolution)
+fprintf(<span class="string">'Required S/N               \t %12.4f\t \n'</span>,sN)
+fprintf(<span class="string">'Transmitted power          \t %12.4f \tW\n'</span>,pT)
+fprintf(<span class="string">'Antenna area               \t %12.4f \tm^2\n'</span>,aE)
+fprintf(<span class="string">'Target area                \t %12.4f\t m^2\n'</span>,aT)
+fprintf(<span class="string">'Propagation loss           \t %12.4f\t \n'</span>,lA);
+fprintf(<span class="string">'Ground plane loss          \t %12.4f\t \n'</span>,lGP);
+fprintf(<span class="string">'System loss                \t %12.4f\t \n'</span>,lS);
+fprintf(<span class="string">'Integration loss           \t %12.4f\t \n'</span>,lI);
+fprintf(<span class="string">'Number of hits processed   \t %12.4f\t \n'</span>,nL);
+fprintf(<span class="string">'Noise factor               \t %12.4f\t \n'</span>,f);
+
+
+fHz      = logspace(9,11);
+c        = 3e8;
+
+lambda   = c./fHz;
+
+sigma    = 4*pi*aT./lambda.^2;
+gP       = nL/lI;
+
+z        = pT*aE^2*sigma*gP./(lambda.^2*4*pi*k*t0*b*f*lS*lA*lGP);
+
+r        = (z/sN).^(0.25);
+
+theta3dB = (180/pi)*lambda/(lengthEfficiency*apertureDiameter);
+
+Plot2D(fHz/1e9,r/1000,              <span class="string">'Frequency (GHz)'</span>,<span class="string">'Range (km)'</span>,<span class="string">'Radar'</span>,           <span class="string">'xlog'</span>)
+Plot2D(fHz/1e9,theta3dB/1000,       <span class="string">'Frequency (GHz)'</span>,<span class="string">'3 dB Angle (deg)'</span>,<span class="string">'3 dB Angle'</span>, <span class="string">'log'</span>)
+Plot2D(fHz/1e9,2*TanD(theta3dB)*100,<span class="string">'Frequency (GHz)'</span>,<span class="string">'Beam width (km)'</span>,<span class="string">'Width at range'</span>,   <span class="string">'log'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Required bandwidth         	       1.5000 	GHz
+Required range resolution  	       0.1000 	m
+Aperture efficiency        	       0.5000 	 
+Range efficiency           	       0.7071 	 
+Required range resolution  	       0.1000 	m
+Required S/N               	      63.0957	 
+Transmitted power          	     100.0000 	W
+Antenna area               	       0.1276 	m^2
+Target area                	       1.0000	 m^2
+Propagation loss           	       1.0000	 
+Ground plane loss          	       1.0000	 
+System loss                	       1.3804	 
+Integration loss           	       1.4454	 
+Number of hits processed   	    2048.0000	 
+Noise factor               	       2.2387	 
+</pre><img vspace="5" hspace="5" src="RadarAnalysis_01.png" alt=""> <img vspace="5" hspace="5" src="RadarAnalysis_02.png" alt=""> <img vspace="5" hspace="5" src="RadarAnalysis_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a radar
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TanD
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Copyright (c) 2001 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+apertureDiameter = 0.57;
+antennaArea = (pi/4)*apertureDiameter^2;
+
+apertureEfficiency = 0.5;
+
+aE = apertureEfficiency*antennaArea;
+lengthEfficiency = sqrt(apertureEfficiency);
+
+rangeResolution = .1;
+
+bandwidth = 3e8/(2*rangeResolution);
+
+
+k  = 1.38e-23; % Boltzmann's constant
+pT = 100;
+lP = 1;
+aT = 1;
+lGP = 1;
+lA  = 1;
+lS  = 10^(1.4/10);
+t0  = 290;
+f   = 10^(3.5/10);
+sN  = 10^(18/10);
+lI  = 10^(1.6/10); % Voltage
+nL  = 2048;
+b   = bandwidth;
+
+fprintf('Required bandwidth         \t %12.4f \tGHz\n',bandwidth/1e9)
+fprintf('Required range resolution  \t %12.4f \tm\n',rangeResolution)
+fprintf('Aperture efficiency        \t %12.4f \t \n',apertureEfficiency)
+fprintf('Range efficiency           \t %12.4f \t \n',lengthEfficiency)
+fprintf('Required range resolution  \t %12.4f \tm\n',rangeResolution)
+fprintf('Required S/N               \t %12.4f\t \n',sN)
+fprintf('Transmitted power          \t %12.4f \tW\n',pT)
+fprintf('Antenna area               \t %12.4f \tm^2\n',aE)
+fprintf('Target area                \t %12.4f\t m^2\n',aT)
+fprintf('Propagation loss           \t %12.4f\t \n',lA);
+fprintf('Ground plane loss          \t %12.4f\t \n',lGP);
+fprintf('System loss                \t %12.4f\t \n',lS);
+fprintf('Integration loss           \t %12.4f\t \n',lI);
+fprintf('Number of hits processed   \t %12.4f\t \n',nL);
+fprintf('Noise factor               \t %12.4f\t \n',f);
+
+
+fHz      = logspace(9,11);
+c        = 3e8;
+
+lambda   = c./fHz;
+
+sigma    = 4*pi*aT./lambda.^2;
+gP       = nL/lI;
+
+z        = pT*aE^2*sigma*gP./(lambda.^2*4*pi*k*t0*b*f*lS*lA*lGP);
+
+r        = (z/sN).^(0.25);
+
+theta3dB = (180/pi)*lambda/(lengthEfficiency*apertureDiameter);
+
+Plot2D(fHz/1e9,r/1000,              'Frequency (GHz)','Range (km)','Radar',           'xlog')
+Plot2D(fHz/1e9,theta3dB/1000,       'Frequency (GHz)','3 dB Angle (deg)','3 dB Angle', 'log')
+Plot2D(fHz/1e9,2*TanD(theta3dB)*100,'Frequency (GHz)','Beam width (km)','Width at range',   'log')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

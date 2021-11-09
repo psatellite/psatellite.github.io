@@ -1,0 +1,360 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test pyramid star identification with a random catalog</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="StarIDPyramidDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test pyramid star identification with a random catalog</h1><!--introduction--><p>Generate a random star catalog with 1000 stars, and test the Pyramid identification algorithm using a 30 degree field of view. The StarSensor model simply outputs ideal centroids.</p><p>See also RandSC, StarDataGeneration, StarSensor, StarIDPyramid</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Parameters</a></li><li><a href="#3">Create a random star catalog</a></li><li><a href="#4">Identify stars form random initial conditions</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2016 Princeton Satellite Systems, Inc</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Parameters</h2><p>Constant</p><pre class="codeinput">degToRad	            = pi/180;
+
+<span class="comment">% Camera parameters</span>
+fOV     	            = 30*degToRad;
+fScale   	            = 1;
+nPixels               = 1024;
+
+qBToS    	            = [1;0;0;0];
+uS       	            = [0 0 1]';
+</pre><h2 id="3">Create a random star catalog</h2><pre class="codeinput">nStars                = 1000;
+angRes                = 5*fOV/nPixels;
+[~,starCatalog]       = RandSC(nStars);
+d                     = StarDataGeneration( starCatalog, fOV*sqrt(2), angRes );
+</pre><pre class="codeoutput">
+StarDataGeneration: Eliminating stars that cannot be separated based on the input angular resolution.
+
+StarDataGeneration:     0 stars will be eliminated that are too close to other stars.
+                     1000 stars will be in the reduced catalog.
+</pre><h2 id="4">Identify stars form random initial conditions</h2><pre class="codeinput">disp(<span class="string">'Demo of StarIDPyramid --'</span>)
+options               = StarIDPyramid;
+options.pixelMapScale = fScale;
+<span class="keyword">for</span> k = 1:100
+  q                       = QRand;
+  s                       = StarSensor( q, qBToS, uS, d.starMatrix, fOV, fScale );
+  starMeas.pixelIntensity = s(1,:);
+  starMeas.pixelLocation  = s(2:3,:);
+  starID                  = StarIDPyramid( starMeas, d, options );
+  fprintf(<span class="string">'Quaternion: [%f %f %f %f]\n'</span>,q)
+  fprintf(<span class="string">'Star IDs:    %s\n'</span>,num2str(starID));
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Demo of StarIDPyramid --
+Quaternion: [0.744365 -0.214233 0.443110 0.451308]
+Star IDs:    98  144  214  322  343  448  457  461  518  586  594  614
+Quaternion: [0.226630 0.498801 0.406243 0.731302]
+Star IDs:    87  117  196  203  209  233  253  287  288  305  315  317
+Quaternion: [0.451293 -0.198102 -0.514947 0.701369]
+Star IDs:    40  120  131  178  254  311  320  407  575  596  600  649
+Quaternion: [0.582758 0.439934 -0.532435 -0.428211]
+Star IDs:    11   12  122  180  203  231  287  376  396  424  445  472
+Quaternion: [0.671549 0.347173 0.556363 -0.344896]
+Star IDs:    125  339  448  455  461  481  518  594  718  792  908
+Quaternion: [0.535579 0.412881 0.477278 -0.561151]
+Star IDs:    125  448  461  518  634  718  792  888  908
+Quaternion: [0.180829 0.509673 0.652550 -0.530767]
+Star IDs:    2   63   90   94  102  106  142  143  187  194  226  294
+Quaternion: [0.313974 -0.935185 0.096926 -0.132120]
+Star IDs:    108  138  149  212  252  291  316  327  329  357  427  433
+Quaternion: [0.137714 -0.413431 -0.573682 -0.693540]
+Star IDs:    73  136  185  196  225  233  253  283  288  317  330  366
+Quaternion: [0.192416 0.311257 0.196860 0.909583]
+Star IDs:    22   46   56   67  100  121  127  130  148  182  199  240
+Quaternion: [0.532389 -0.084531 -0.204866 -0.816974]
+Star IDs:    9   67  210  270  304  307  350  459  554  580  621  661
+Quaternion: [0.262565 -0.137671 -0.389284 -0.872103]
+Star IDs:    22   34   46   67  121  127  148  182  199  262  295  354
+Quaternion: [0.071766 -0.805673 0.483248 -0.334980]
+Star IDs:    25   44   57  163  191  207  212  303  388  427  462  590
+Quaternion: [0.745058 -0.118360 -0.427146 -0.498424]
+Star IDs:    56   83  100  130  216  227  240  270  306  331  353  414
+Quaternion: [0.241078 -0.746771 0.511849 -0.349607]
+Star IDs:    41   62  108  138  212  238  327  357  388  427  433  516
+Quaternion: [0.047563 -0.309754 0.684794 -0.657911]
+Star IDs:    74  115  264  323  431  561  616  667  676  683  699  700
+Quaternion: [0.460049 0.091762 0.116884 0.875370]
+Star IDs:    210  304  324  459  474  559  593  661  677  680  758  829
+Quaternion: [0.049859 0.562331 0.707321 0.425436]
+Star IDs:    68  112  198  263  409  419  444  471  491  511  530  548
+Quaternion: [0.132788 -0.839291 -0.448772 -0.276697]
+Star IDs:    163  195  207  220  300  378  380  426  436  438  462  489
+Quaternion: [0.558654 0.590280 0.474202 0.338538]
+Star IDs:    76   91  152  566  757  816  831  884  915
+Quaternion: [0.844331 -0.380317 0.173504 0.335201]
+Star IDs:    24   33   45   52   85  113  124  128  164  192  249  250
+Quaternion: [0.049770 0.699890 -0.029082 -0.711921]
+Star IDs:    49  125  256  275  339  455  481  718  792  865
+Quaternion: [0.497520 0.118183 0.305033 0.803406]
+Star IDs:    20   42   54   65  126  223  243  261  269  314  324  360
+Quaternion: [0.769224 0.362152 0.180991 -0.494350]
+Star IDs:    47   48   64   77   98  116  135  144  204  208  218  222
+Quaternion: [0.716719 0.039913 -0.054208 -0.694106]
+Star IDs:    9  133  210  459  509  559  593  758  846  906  927  935
+Quaternion: [0.556873 -0.455960 0.352756 -0.597960]
+Star IDs:    40  131  254  259  293  320  407  534  600  649  705  786
+Quaternion: [0.624682 -0.244594 -0.065641 -0.738673]
+Star IDs:    26   89  155  157  173  189  221  270  312  425  532  608
+Quaternion: [0.256443 0.429025 0.744975 0.441799]
+Star IDs:    18   91  190  198  205  245  310  318  408  419  480  784
+Quaternion: [0.129975 -0.273920 0.704865 -0.641279]
+Star IDs:    74  115  213  286  320  323  431  463  616  655  699  733
+Quaternion: [0.704616 -0.037194 0.705289 0.068558]
+Star IDs:    125  256  275  339  481  718  792  865
+Quaternion: [0.453199 0.587117 -0.549835 -0.384169]
+Star IDs:    11   76   91  190  205  231  245  480  799  831  883  884
+Quaternion: [0.228581 0.830945 0.332211 0.383297]
+Star IDs:    68  112  151  198  220  263  394  409  419  444  471  491
+Quaternion: [0.455279 -0.475189 0.590156 -0.467582]
+Star IDs:    55  115  201  213  286  431  463  629  655  761  772  922
+Quaternion: [0.618546 -0.577301 0.513254 0.143861]
+Star IDs:    2   32   37   63   94  142  242  272  294  363  467  517
+Quaternion: [0.581416 0.295223 0.630958 -0.420347]
+Star IDs:    125  187  275  339  634  718  792  888
+Quaternion: [0.048369 -0.535376 0.593554 0.598938]
+Star IDs:    104  110  174  292  386  401  415  421  423  449  470  496
+Quaternion: [0.732575 0.293738 -0.568449 0.232200]
+Star IDs:    105  158  239  353  368  428  450  551  665  825  841  878
+Quaternion: [0.320421 0.320039 -0.432936 0.779405]
+Star IDs:    17   30   39   97  114  161  169  176  188  193  202  285
+Quaternion: [0.131198 0.823309 0.480977 -0.271312]
+Star IDs:    5   14   28   59  237  276  302  351  385  521  595  726
+Quaternion: [0.748998 -0.197857 -0.090770 0.625791]
+Star IDs:    84  103  258  265  266  346  371  410  446  482  630  652
+Quaternion: [0.695023 -0.458954 0.464657 0.300664]
+Star IDs:    246  250  562  634  688  718  792  888  897  937
+Quaternion: [0.469523 -0.144273 -0.535920 -0.686675]
+Star IDs:    56   87  127  186  199  233  240  305  315  317  364  366
+Quaternion: [0.197180 -0.524921 -0.385016 0.733035]
+Star IDs:    1   32  177  234  251  301  362  363  384  475  484  560
+Quaternion: [0.611475 0.218027 -0.500931 0.572390]
+Star IDs:    29   39  114  188  193  202  230  348  358  373  439  485
+Quaternion: [0.009919 -0.661878 0.252422 0.705763]
+Star IDs:    49   69  141  386  432  455  481  501  865  977
+Quaternion: [0.290731 0.403446 0.585783 -0.639973]
+Star IDs:    32   63  177  242  272  294  363  562  634  658  673  710
+Quaternion: [0.288969 0.760492 0.099545 0.572923]
+Star IDs:    73  136  137  160  225  283  330  382  403  500  524  547
+Quaternion: [0.621857 0.326889 0.651123 0.287188]
+Star IDs:    71  147  171  174  292  326  345  539  543  577  612  620
+Quaternion: [0.066642 -0.416328 -0.600499 -0.679434]
+Star IDs:    117  196  209  225  253  283  288  330  366  382  403  493
+Quaternion: [0.367993 -0.602787 -0.705014 0.064687]
+Star IDs:    25   41   62  172  191  207  212  334  388  427  433  590
+Quaternion: [0.253762 -0.340551 -0.669829 0.609064]
+Star IDs:    55  115  201  213  286  333  431  463  616  629  655  761
+Quaternion: [0.104525 0.252587 -0.757722 0.592564]
+Star IDs:    74  172  264  323  497  561  667  676  683  700  733  837
+Quaternion: [0.343673 0.603277 -0.666264 0.272098]
+Star IDs:    195  200  241  248  300  342  378  380  426  438  552  602
+Quaternion: [0.923275 0.361776 0.122382 0.041276]
+Star IDs:    10   20   35   42   54   65  132  223  243  314  324  473
+Quaternion: [0.438986 0.088055 -0.490731 -0.747476]
+Star IDs:    34   75  148  261  262  269  277  295  376  472  535  613
+Quaternion: [0.786256 -0.556024 -0.114395 -0.244033]
+Star IDs:    40   50   60  111  146  211  254  293  311  407  437  442
+Quaternion: [0.601190 0.411122 -0.674251 0.122209]
+Star IDs:    105  136  137  160  239  349  368  370  500  524  547  581
+Quaternion: [0.388923 -0.896928 -0.129297 -0.165956]
+Star IDs:    25   41   62  172  191  212  334  388  427  433  497  516
+Quaternion: [0.628571 -0.387954 0.673939 0.013983]
+Star IDs:    2   63  102  142  187  242  272  294  467  562  591  597
+Quaternion: [0.578925 -0.417696 -0.434192 0.549412]
+Star IDs:    55  153  178  254  320  534  600  645  786  794  795  913
+Quaternion: [0.723588 0.498381 -0.189858 0.438167]
+Star IDs:    56  100  121  127  130  148  186  199  233  240  305  315
+Quaternion: [0.388665 0.907411 0.072827 -0.142273]
+Star IDs:    23   36   82   95  123  245  318  325  372  374  397  415
+Quaternion: [0.087856 0.855807 0.389828 -0.328496]
+Star IDs:    7   14   28   59   72  237  274  276  302  351  385  521
+Quaternion: [0.601904 -0.389546 -0.610841 -0.335915]
+Star IDs:    105  109  239  338  383  624  635  665  689  721  841  914
+Quaternion: [0.096787 0.835770 0.537598 -0.055754]
+Star IDs:    4    5    6   14   92  184  197  237  429  523  538  693
+Quaternion: [0.282966 0.286314 -0.587969 -0.701603]
+Star IDs:    12   76  152  180  290  328  391  396  566  714  782  821
+Quaternion: [0.159544 -0.378968 0.780993 -0.470083]
+Star IDs:    138  238  316  333  357  453  463  516  627  628  631  656
+Quaternion: [0.048529 -0.750498 -0.257354 0.606767]
+Star IDs:    2   63  102  142  187  232  242  272  294  562  591  673
+Quaternion: [0.021974 -0.555854 -0.474796 0.681991]
+Star IDs:    32   94  177  234  242  272  294  363  517  533  562  563
+Quaternion: [0.580548 0.524749 0.535086 -0.318255]
+Star IDs:    49  386  423  455  481  501  865  877
+Quaternion: [0.210620 -0.188126 0.607455 0.742459]
+Star IDs:    3   71   79  107  147  154  171  290  326  345  434  505
+Quaternion: [0.496904 -0.348846 -0.641324 -0.469145]
+Star IDs:    105  158  239  368  370  524  582  609  624  859  878
+Quaternion: [0.695235 0.339761 0.055034 0.631017]
+Star IDs:    22   34   46   67  121  148  182  199  261  262  269  295
+Quaternion: [0.693590 -0.528418 0.259575 0.415124]
+Star IDs:    1   24   32  128  177  192  234  246  250  355  362  367
+Quaternion: [0.011263 -0.596727 -0.573027 -0.561632]
+Star IDs:    136  137  151  160  263  283  330  382  403  409  500  530
+Quaternion: [0.056922 0.741343 -0.664890 -0.071356]
+Star IDs:    4   21   70   92  165  184  197  344  429  469  538  728
+Quaternion: [0.638299 0.011530 -0.386762 0.665475]
+Star IDs:    60   80   86   97  114  156  157  176  183  202  255  312
+Quaternion: [0.667632 0.238371 -0.583019 -0.396908]
+Star IDs:    87  117  122  186  196  203  209  233  253  287  288  305
+Quaternion: [0.050019 0.012485 0.984169 0.169569]
+Star IDs:    4    5   70   92  197  469  523  693  728  801  852  931
+Quaternion: [0.532991 0.247435 -0.692436 0.418602]
+Star IDs:    109  140  383  399  417  635  689  721  755  841  914  962
+Quaternion: [0.375695 0.311227 -0.335070 -0.806051]
+Star IDs:    10   20   35   42   54   65  132  159  243  313  314  473
+Quaternion: [0.096856 0.547526 0.773630 -0.303859]
+Star IDs:    14   15   28   43   59   72   93   99  101  129  134  167
+Quaternion: [0.099178 -0.666149 0.612357 -0.414039]
+Star IDs:    25   41   62  172  191  212  334  388  427  433  497  516
+Quaternion: [0.735766 -0.024817 0.568565 -0.367107]
+Star IDs:    1   24   85  128  164  177  192  246  250  355  389  420
+Quaternion: [0.428306 0.517279 0.421597 0.609288]
+Star IDs:    12  122  180  203  209  231  287  376  396  424  445  472
+Quaternion: [0.423488 0.452565 0.688639 0.376324]
+Star IDs:    95  235  245  374  784  816  831  839  866  902
+Quaternion: [0.055637 -0.555889 0.442434 -0.701530]
+Star IDs:    17   30  111  139  211  219  285  332  399  437  667  675
+Quaternion: [0.635301 0.355559 0.643015 -0.237704]
+Star IDs:    49  256  275  339  455  481  501  865  877
+Quaternion: [0.742587 0.638446 -0.171161 -0.107955]
+Star IDs:    12   76  180  231  328  376  391  396  445  472  558  782
+Quaternion: [0.643469 0.586707 0.265662 -0.413698]
+Star IDs:    3   49   69  141  273  432  434  455  456  498  501  510
+Quaternion: [0.738386 0.484942 -0.468431 0.013768]
+Star IDs:    73   87  185  196  209  225  233  253  287  288  315  317
+Quaternion: [0.124171 -0.625505 0.271374 -0.720889]
+Star IDs:    17  109  111  140  169  188  219  285  332  399  437  439
+Quaternion: [0.241748 0.841343 0.229786 0.425322]
+Star IDs:    151  263  309  390  394  409  471  491  511  530  548  585
+Quaternion: [0.697724 0.441708 0.363061 0.431582]
+Star IDs:    75  277  290  313  328  391  396  527  574  714  782  808
+Quaternion: [0.343429 -0.218507 -0.568244 -0.715129]
+Star IDs:    73   87  117  185  186  233  253  305  315  317  364  366
+Quaternion: [0.570906 0.740325 -0.261730 0.239756]
+Star IDs:    136  196  209  225  263  283  288  330  382  403  581  606
+Quaternion: [0.183905 0.201385 0.528989 -0.803613]
+Star IDs:    1   24   38  124  128  168  192  234  249  251  297  301
+Quaternion: [0.633065 0.155592 0.607321 0.454072]
+Star IDs:    3   71   79  107  147  154  159  171  326  345  434  443
+Quaternion: [0.050189 -0.139092 -0.450978 -0.880201]
+Star IDs:    34   75  148  261  262  269  277  295  360  535  613  749
+Quaternion: [0.698061 -0.236199 -0.160062 0.656735]
+Star IDs:    84   96  258  265  266  321  346  410  446  482  630  652
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test pyramid star identification with a random catalog
+% Generate a random star catalog with 1000 stars, and test the Pyramid
+% identification algorithm using a 30 degree field of view. The StarSensor model
+% simply outputs ideal centroids.
+%
+% See also RandSC, StarDataGeneration, StarSensor, StarIDPyramid
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2016 Princeton Satellite Systems, Inc
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Parameters
+% Constant
+degToRad	            = pi/180;
+
+% Camera parameters
+fOV     	            = 30*degToRad;
+fScale   	            = 1;
+nPixels               = 1024;
+
+qBToS    	            = [1;0;0;0];
+uS       	            = [0 0 1]';
+
+%% Create a random star catalog
+nStars                = 1000;
+angRes                = 5*fOV/nPixels;
+[~,starCatalog]       = RandSC(nStars);
+d                     = StarDataGeneration( starCatalog, fOV*sqrt(2), angRes );
+
+%% Identify stars form random initial conditions
+disp('Demo of StarIDPyramid REPLACE_WITH_DASH_DASH')
+options               = StarIDPyramid;
+options.pixelMapScale = fScale;
+for k = 1:100
+  q                       = QRand;
+  s                       = StarSensor( q, qBToS, uS, d.starMatrix, fOV, fScale );
+  starMeas.pixelIntensity = s(1,:);
+  starMeas.pixelLocation  = s(2:3,:);
+  starID                  = StarIDPyramid( starMeas, d, options );
+  fprintf('Quaternion: [%f %f %f %f]\n',q)
+  fprintf('Star IDs:    %s\n',num2str(starID));
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-01-02 14:06:48 -0500 (Tue, 02 Jan 2018) $
+% $Revision: 45749 $
+
+##### SOURCE END #####
+--></body></html>

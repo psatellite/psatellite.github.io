@@ -1,0 +1,320 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Verify momentum conservation and rate adjustment for gimbal commands.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="BoomMomentumDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Verify momentum conservation and rate adjustment for gimbal commands.</h1><!--introduction--><p>The CAD model has a flat plate sail with a rigid mast attached by two gimbals. The gimbals are modeled as achieving any commanded rate up to some maximum instantaneously. A momentum sink is used to isolate the boom motion from the core body rates. Angular momentum conservation is confirmed by using different time steps and confirming that a smaller time step results in a smaller momentum change over the course of the simulation.</p><pre class="language-matlab">Functions <span class="string">demonstrated:</span>
+    SailWithBoom.m / SailWithBoom.mat, the <span class="string">CAD</span> <span class="string">model</span>
+    HGimballedBoom.m, angular <span class="string">momentum</span> <span class="string">function</span>
+    TwoBodyRateModel.m, attitude <span class="string">dynamics</span> <span class="string">integrated</span> <span class="string">with</span> <span class="string">RK4</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Constant</span>, NewFig, Plot2D, Mag, RK4, Unit, JD2000,
+QSunPointing, SunVectorECI, HGimballedBoom
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Load the sail model</a></li><li><a href="#3">Create the disturbance profile</a></li><li><a href="#4">Parameters for the orbit. We are creating a circular orbit.</a></li><li><a href="#5">Initial Julian date</a></li><li><a href="#6">Orbit vector</a></li><li><a href="#7">Quaternion (sun pointing)</a></li><li><a href="#8">core and the boom. The core is defined as body 1 in the CAD file</a></li><li><a href="#9">Sim timing</a></li><li><a href="#10">Initial state</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2005 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%  User Parameters</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+dT    = 2;     <span class="comment">% sec</span>
+aRate = 0.01; <span class="comment">% rad/sec</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+clear <span class="string">f</span>; clear <span class="string">tq</span>;
+
+<span class="comment">%--------------------</span>
+</pre><h2 id="2">Load the sail model</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+g          = load(<span class="string">'SailWithBoom.mat'</span>);
+
+<span class="comment">%-------------------------------</span>
+</pre><h2 id="3">Create the disturbance profile</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+</pre><h2 id="4">Parameters for the orbit. We are creating a circular orbit.</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------</span>
+r          = Constant(<span class="string">'au'</span>); <span class="comment">% Radius in km</span>
+mu         = Constant(<span class="string">'mu sun'</span>);
+</pre><h2 id="5">Initial Julian date</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+p        = [];
+</pre><h2 id="6">Orbit vector</h2><pre class="codeinput"><span class="comment">%-------------</span>
+r0       = r*[1;0;0];
+</pre><h2 id="7">Quaternion (sun pointing)</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+SunVectorECI( <span class="string">'initialize'</span>, <span class="string">'sun'</span> );
+rSunECI  = SunVectorECI( <span class="string">'update'</span>, JD2000, r0 );
+q        = QSunPointing( Unit(rSunECI) );
+
+<span class="comment">% Gimbal angles. The sail is two body with a gimbaled boom</span>
+<span class="comment">% The first angle is the one nearest the core</span>
+<span class="comment">% The axes correspond to the angles</span>
+<span class="comment">% The body array says each gimbal is at the joint between the</span>
+</pre><h2 id="8">core and the boom. The core is defined as body 1 in the CAD file</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------------------</span>
+p.angle    = [0;0];
+p.axis     = [1 0;0 1;0 0];
+p.body     = [2 2];
+</pre><h2 id="9">Sim timing</h2><pre class="codeinput"><span class="comment">%-----------</span>
+nSim = 10;
+t    = 0;
+</pre><h2 id="10">Initial state</h2><pre class="codeinput"><span class="comment">%--------------</span>
+w     = 0.001*[-0.4;-1.6;0.1];
+angle = [0.2;-0.2];
+aDot  = [0;0];
+x     = [q;w;angle;aDot];
+hW    = [0;0;0];
+
+tPlot = zeros(1,nSim);
+xPlot = zeros(length(x),nSim);
+hPlot = zeros(3,nSim);
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Store data in plots</span>
+  <span class="comment">%--------------------</span>
+  tPlot(k)   = t;
+  xPlot(:,k) = x;
+
+  <span class="comment">% Compute the disturbances.</span>
+  <span class="comment">%--------------------------</span>
+  f.totalBody = zeros(3,1,2);
+  tq.totalBody = zeros(3,1,2);
+
+  <span class="comment">% Boom control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">if</span> (k == 5)
+    aDot = aRate*[1;-2];
+    <span class="comment">% Find angular momentum to be absorbed</span>
+    [hT, hW] = HGimballedBoom( [zeros(6,1);x], g, p.axis, aDot, hW );
+    x(10:11) = aDot;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Calculate momentum</span>
+  <span class="comment">%-------------------</span>
+  hPlot(:,k) = HGimballedBoom( [zeros(6,1);x], g, p.axis, [], hW );
+
+  <span class="comment">% RHS</span>
+  <span class="comment">%----</span>
+  x = RK4( <span class="string">'TwoBodyRateModel'</span>, x, dT, t, f, tq, g, p, hW );
+
+  <span class="comment">% Update time</span>
+  <span class="comment">%------------</span>
+  t    = t + dT;
+
+<span class="keyword">end</span>
+
+dH = hPlot-repmat(hPlot(:,1),1,nSim);
+Plot2D(tPlot,Mag(dH),<span class="string">'Time (sec)'</span>,<span class="string">'|\DeltaH|'</span>,[<span class="string">'Magnitude of Angular Momentum Change, dt = '</span> num2str(dT) <span class="string">' s'</span>],<span class="string">'ylog'</span>)
+Plot2D(tPlot,xPlot(8:9,:),<span class="string">'Time (sec)'</span>,{<span class="string">'\alpha'</span>,<span class="string">'\beta'</span>},<span class="string">'Gimbal Angles'</span>)
+NewFig(<span class="string">'Momentum'</span>); bar(hW);
+xlabel(<span class="string">'Axis'</span>)
+title(<span class="string">'Stored Momentum, hW'</span>,<span class="string">'fontsize'</span>,14,<span class="string">'fontweight'</span>,<span class="string">'bold'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BoomMomentumDemo_01.png" alt=""> <img vspace="5" hspace="5" src="BoomMomentumDemo_02.png" alt=""> <img vspace="5" hspace="5" src="BoomMomentumDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Verify momentum conservation and rate adjustment for gimbal commands.
+% The CAD model has a flat plate sail with a rigid mast attached by
+% two gimbals. The gimbals are modeled as achieving any commanded 
+% rate up to some maximum instantaneously. A momentum sink is used to 
+% isolate the boom motion from the core body rates. Angular momentum 
+% conservation is confirmed by using different time steps and  
+% confirming that a smaller time step results in a smaller momentum 
+% change over the course of the simulation.
+%
+%   Functions demonstrated:
+%       SailWithBoom.m / SailWithBoom.mat, the CAD model
+%       HGimballedBoom.m, angular momentum function
+%       TwoBodyRateModel.m, attitude dynamics integrated with RK4
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, NewFig, Plot2D, Mag, RK4, Unit, JD2000, 
+%  QSunPointing, SunVectorECI, HGimballedBoom
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2005 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  User Parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+dT    = 2;     % sec
+aRate = 0.01; % rad/sec
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear f; clear tq;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Load the sail model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g          = load('SailWithBoom.mat');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Create the disturbance profile
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Parameters for the orbit. We are creating a circular orbit.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r          = Constant('au'); % Radius in km
+mu         = Constant('mu sun');
+
+%% Initial Julian date
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p        = [];
+
+%% Orbit vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r0       = r*[1;0;0];
+
+%% Quaternion (sun pointing)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+SunVectorECI( 'initialize', 'sun' );
+rSunECI  = SunVectorECI( 'update', JD2000, r0 );
+q        = QSunPointing( Unit(rSunECI) );
+
+% Gimbal angles. The sail is two body with a gimbaled boom
+% The first angle is the one nearest the core
+% The axes correspond to the angles
+% The body array says each gimbal is at the joint between the 
+%% core and the boom. The core is defined as body 1 in the CAD file
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+p.angle    = [0;0];
+p.axis     = [1 0;0 1;0 0];
+p.body     = [2 2];
+
+%% Sim timing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSim = 10;
+t    = 0;
+
+%% Initial state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w     = 0.001*[-0.4;-1.6;0.1];
+angle = [0.2;-0.2];
+aDot  = [0;0];
+x     = [q;w;angle;aDot];
+hW    = [0;0;0];
+
+tPlot = zeros(1,nSim);
+xPlot = zeros(length(x),nSim);
+hPlot = zeros(3,nSim);
+
+for k = 1:nSim
+  
+  % Store data in plots
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tPlot(k)   = t;
+  xPlot(:,k) = x;
+  
+  % Compute the disturbances. 
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  f.totalBody = zeros(3,1,2);
+  tq.totalBody = zeros(3,1,2);
+
+  % Boom control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if (k == 5)
+    aDot = aRate*[1;-2];
+    % Find angular momentum to be absorbed
+    [hT, hW] = HGimballedBoom( [zeros(6,1);x], g, p.axis, aDot, hW );
+    x(10:11) = aDot;
+  end
+ 
+  % Calculate momentum
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  hPlot(:,k) = HGimballedBoom( [zeros(6,1);x], g, p.axis, [], hW );
+  
+  % RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4( 'TwoBodyRateModel', x, dT, t, f, tq, g, p, hW );
+  
+  % Update time
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t    = t + dT;
+
+end
+
+dH = hPlot-repmat(hPlot(:,1),1,nSim);
+Plot2D(tPlot,Mag(dH),'Time (sec)','|\DeltaH|',['Magnitude of Angular Momentum Change, dt = ' num2str(dT) ' s'],'ylog')
+Plot2D(tPlot,xPlot(8:9,:),'Time (sec)',{'\alpha','\beta'},'Gimbal Angles')
+NewFig('Momentum'); bar(hW);
+xlabel('Axis')
+title('Stored Momentum, hW','fontsize',14,'fontweight','bold')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

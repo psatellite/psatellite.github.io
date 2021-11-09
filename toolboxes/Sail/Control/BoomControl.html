@@ -1,0 +1,830 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate gimballed boom control.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="BoomControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate gimballed boom control.</h1><!--introduction--><pre class="language-matlab">This <span class="string">demo</span> <span class="string">uses</span> <span class="string">the</span> <span class="string">PlateWithBoom</span> <span class="string">CAD</span> <span class="string">model.</span> <span class="string">The</span> <span class="string">gimbals</span> <span class="string">have</span> <span class="string">a</span>
+1-2 sequence, first <span class="string">around</span> <span class="string">the</span> <span class="string">X</span> <span class="string">axis</span> <span class="string">and</span> <span class="string">then</span> <span class="string">around</span> <span class="string">the</span> <span class="string">Y</span> <span class="string">axis.</span>
+The <span class="string">control</span> <span class="string">law</span> <span class="string">is</span> <span class="string">designed</span> <span class="string">using</span> <span class="string">PIDMIMO.</span> <span class="string">There</span> <span class="string">is</span> <span class="string">no</span> <span class="string">roll</span>
+actuation <span class="string">and</span> <span class="string">therefore</span> <span class="string">the</span> <span class="string">attitude</span> <span class="string">trajectory</span> <span class="string">must</span> <span class="string">use</span>
+only <span class="string">Y</span> <span class="string">and</span> <span class="string">Z</span> <span class="string">torques.</span>
+</pre><pre class="language-matlab">The <span class="string">attitude</span> <span class="string">dynamics</span> <span class="string">assume</span> <span class="string">fixed</span> <span class="string">gimbal</span> <span class="string">rates.</span>
+The <span class="string">CAD</span> <span class="string">model</span> <span class="string">is</span> <span class="string">a</span> <span class="string">perfectly</span> <span class="string">specular</span> <span class="string">plate</span> <span class="string">with</span> <span class="string">a</span> <span class="string">control</span> <span class="string">boom.</span>
+</pre><pre class="language-matlab">Functions <span class="string">demonstrated:</span>
+    PIDMIMO
+    ConeClockToQConstrained
+    HGimballedBoom
+    TwoBodyRateModel
+    SailDisturbance
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">BoomActuation</span>, which <span class="string">rotates</span> <span class="string">the</span> <span class="string">gimbals</span> <span class="string">without</span> <span class="string">following</span>   <span class="string">a</span>
+specific <span class="string">control</span> <span class="string">law.</span>, AC, ACPlot, CrossSection, DrawSCPlanPlugIn,
+PIDMIMO, QForm, QMult, QPose, QTForm, Constant, WaitBarManager, Plot2D,
+TimeLabl, Mag, RK4, Unit, JD2000, El2RV, Accel, GimbalRates,
+HGimballedBoom, ConeClockToQConstrained, QSail, QToConeClock,
+HingeRotationMatrix, ProfileStruct, SailDisturbance, SailEnvironment
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Clean up workspace</a></li><li><a href="#3">Load the control boom sail model</a></li><li><a href="#4">Sim timing</a></li><li><a href="#5">Control parameters - use PIDMIMO to design control loops</a></li><li><a href="#6">Sail physical parameters</a></li><li><a href="#7">Create the disturbance profile</a></li><li><a href="#8">Initial Julian date</a></li><li><a href="#9">We are creating a circular heliocentric orbit.</a></li><li><a href="#10">Orbit state</a></li><li><a href="#11">Initial Quaternion (inertial to body frame)</a></li><li><a href="#12">core and the boom. The core is defined as body 1 in the CAD file.</a></li><li><a href="#13">Create the data structure</a></li><li><a href="#14">field models or atmospheric density models.</a></li><li><a href="#15">Initial state</a></li><li><a href="#16">Commanded quaternion, inertial to body frame, constant</a></li><li><a href="#17">Located at the center of the body frame.</a></li><li><a href="#18">Environment - model as constant over this time period.</a></li><li><a href="#19">Simulation loop</a></li><li><a href="#20">Prepare data for plotting</a></li><li><a href="#21">Try plotting cone/clock angles</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2005,2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% User Parameters</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Change these to explore the system dynamics.</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Commanded cone and clock angles (rad)</span>
+coneCommand = 0; <span class="comment">%0.5;</span>
+clockCommand = 0; <span class="comment">%0.1;</span>
+<span class="comment">% Initial cone and clock angles (rad)</span>
+cone0 = 0.1; <span class="comment">%0.5;</span>
+clock0 = 0.0;
+<span class="comment">% Nominal gimbal rate (rad/s)</span>
+aRateNom = 0.3;
+<span class="comment">% Controller natural frequency (rad/sec)</span>
+wn = 0.0001;
+<span class="comment">% Maximum angular change for new target (rad)</span>
+deltaAngle = 0.2;
+<span class="comment">% Duration for sim (s)</span>
+tDuration = 12000;
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2 id="2">Clean up workspace</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+clear <span class="string">SailDisturbance</span>
+
+<span class="comment">%---------------------------------</span>
+</pre><h2 id="3">Load the control boom sail model</h2><pre class="codeinput"><span class="comment">%---------------------------------</span>
+g = load(<span class="string">'PlateWithBoom.mat'</span>);
+<span class="comment">%g.mass.inertia(1,1) = g.mass.inertia(2,2);</span>
+<span class="comment">% To view the model, run: DrawSCPlanPlugIn( 'initialize', g );</span>
+</pre><h2 id="4">Sim timing</h2><pre class="codeinput"><span class="comment">%-----------</span>
+dTo  = floor(2*pi/wn/100); <span class="comment">% sec, outer dT for ACS</span>
+dTi  = dTo/10;              <span class="comment">% sec, inner dT for boom control via gimbals</span>
+nSim = floor(tDuration/dTi);
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2 id="5">Control parameters - use PIDMIMO to design control loops</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+aNom         = aRateNom*ones(2,1);
+xN           = zeros(6,1);      <span class="comment">% Controller state</span>
+inr          = diag([1 1 1]);   <span class="comment">% Unit inertia</span>
+zeta         = 3;               <span class="comment">% Damping ratio</span>
+tauInt       = 2*pi/zeta/wn;            <span class="comment">% Integrator time constant</span>
+omegaR       = 5*wn;           <span class="comment">% Rate filter frequency</span>
+sType        = <span class="string">'z'</span>;             <span class="comment">% Type of equations</span>
+[aC, bC, cC, dC] = PIDMIMO( inr, zeta*ones(1,3), wn*ones(1,3), tauInt*ones(1,3), <span class="keyword">...</span>
+                            omegaR*ones(1,3), dTo, sType );
+<span class="comment">% Resulting control values are accelerations (due to unit inertia input).</span>
+<span class="comment">% Will multiply by full inertia to compute torque.</span>
+</pre><h2 id="6">Sail physical parameters</h2><pre class="codeinput"><span class="comment">%-------------------------</span>
+aSail = CrossSection(g);
+Ps    = 1367/3e8;
+fSail = 2*Ps*aSail*[-1;0;0];       <span class="comment">% Specular reflective force in body frame, N</span>
+aBoom(:,1) = Cross([0;1;0],fSail); <span class="comment">% Boom control axes</span>
+aBoom(:,2) = Cross([0;0;1],fSail);
+mC      = g.body(1).mass.mass;     <span class="comment">% Core is body 1</span>
+mB      = g.body(2).mass.mass;     <span class="comment">% Boom is body 2</span>
+rBoomCM = Mag(g.body(2).mass.cM);  <span class="comment">% Distance to boom center-of-mass</span>
+
+<span class="comment">%-------------------------------</span>
+</pre><h2 id="7">Create the disturbance profile</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+</pre><h2 id="8">Initial Julian date</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+p          = ProfileStruct;
+p.jD       = JD2000;
+
+<span class="comment">% Parameters for the orbit.</span>
+</pre><h2 id="9">We are creating a circular heliocentric orbit.</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------</span>
+r   = Constant(<span class="string">'au'</span>); <span class="comment">% Radius in km</span>
+mu  = Constant(<span class="string">'mu sun'</span>);
+el  = [r 0 0 0 0 0];
+</pre><h2 id="10">Orbit state</h2><pre class="codeinput"><span class="comment">%------------</span>
+[p.r,p.v]  = El2RV(el,[],mu);
+</pre><h2 id="11">Initial Quaternion (inertial to body frame)</h2><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+q0  = ConeClockToQConstrained(cone0,clock0,p.r,p.v,-Unit(p.r));
+p.q = q0;
+
+<span class="comment">% Gimbal angles. The sail is two body with a gimbaled boom.</span>
+<span class="comment">% The first angle is the one nearest the core.</span>
+<span class="comment">% The axes correspond to the angles.</span>
+<span class="comment">% The body array says each gimbal is at the joint between the</span>
+</pre><h2 id="12">core and the boom. The core is defined as body 1 in the CAD file.</h2><pre class="codeinput"><span class="comment">%------------------------------------------------------------------</span>
+p.angle    = [0;0];
+p.axis     = [1 0;0 1;0 0];
+p.body     = [2 2];
+
+<span class="comment">%--------------------------</span>
+</pre><h2 id="13">Create the data structure</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+d          = [];
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.solarOn  = 1.0;
+d.magOn    = 0;
+d.radOn    = 0;
+d.ggOn     = 1.0;
+
+<span class="comment">% Orbiting the sun. SailDisturbance can handle any planet or</span>
+<span class="comment">% a heliocentric orbit. However, not all planets have magnetic</span>
+</pre><h2 id="14">field models or atmospheric density models.</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------------</span>
+d.planet   = <span class="string">'sun'</span>;
+</pre><h2 id="15">Initial state</h2><pre class="codeinput"><span class="comment">%--------------</span>
+t     = 0;       <span class="comment">% time</span>
+tO    = dTo;     <span class="comment">% Outer timer</span>
+w     = [0;0;0]; <span class="comment">% body rates</span>
+angle = [0;0];   <span class="comment">% boom gimbal angles</span>
+aDot  = [0;0];   <span class="comment">% boom gimbal rates</span>
+x     = [p.q;w;angle;aDot];
+hW    = [0;0;0]; <span class="comment">% stored momentum</span>
+alpha = 0;       <span class="comment">% initial gimbal angle command</span>
+beta  = 0;       <span class="comment">% initial gimbal angle command</span>
+cM    = [0;0];   <span class="comment">% Commanded CM for boom</span>
+
+tPlot  = zeros(1,nSim);
+xPlot  = zeros(length(x),nSim);
+hPlot  = zeros(3,nSim);  <span class="comment">% angular momentum</span>
+tqPlot = zeros(6,nSim);  <span class="comment">% commanded and achieved torque, stacked</span>
+aCPlot = zeros(2,nSim);  <span class="comment">% Commanded gimbal angles</span>
+aEPlot = zeros(4,nSim);  <span class="comment">% Euler angle errors</span>
+qSPlot = zeros(4,nSim);  <span class="comment">% Quaternion in rotating sail frame</span>
+cMPlot = zeros(2,nSim);
+</pre><h2 id="16">Commanded quaternion, inertial to body frame, constant</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------</span>
+qC   = ConeClockToQConstrained(coneCommand,clockCommand,p.r,p.v,-Unit(p.r));
+uI   = QTForm( qC, [1;0;0] );
+sN   = sin(coneCommand);
+cN   = cos(coneCommand);
+qOld = p.q;
+
+<span class="comment">% Quaternion from inertial to the local sail rotating frame, which has:</span>
+<span class="comment">%    x is towards the sun</span>
+<span class="comment">%    z is as close to the orbit normal as possible</span>
+<span class="comment">%    y completes the set</span>
+</pre><h2 id="17">Located at the center of the body frame.</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------------------</span>
+qIToSail = QSail( -Unit(p.r), p.r, p.v );
+</pre><h2 id="18">Environment - model as constant over this time period.</h2><pre class="codeinput"><span class="comment">%-------------------------------------------------------</span>
+e = SailEnvironment( <span class="string">'sun'</span>, p, d );
+</pre><h2 id="19">Simulation loop</h2><pre class="codeinput"><span class="comment">%----------------</span>
+WaitBarManager( <span class="string">'initialize'</span>, struct(<span class="string">'nSamp'</span>,nSim,<span class="string">'name'</span>,<span class="string">'Boom Control Demo'</span>) );
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Store data in plots</span>
+  <span class="comment">%--------------------</span>
+  tPlot(k)    = t;
+  xPlot(:,k)  = x;
+  <span class="comment">% Sail to body quaternion</span>
+  qSPlot(:,k) = QMult(QPose(qIToSail),x(1:4));
+  <span class="keyword">if</span>( qSPlot(1,k) &lt; 0 )
+    qSPlot(:,k) = -qSPlot(:,k);
+  <span class="keyword">end</span>
+
+  <span class="comment">%--------------------------</span>
+  <span class="comment">% Compute the disturbances.</span>
+  <span class="comment">%--------------------------</span>
+  [f,tq] = SailDisturbance( g, p, e, d );
+  tqPlot(4:6,k) = tq.total;
+
+  <span class="comment">%-----------------</span>
+  <span class="comment">% Boom control</span>
+  <span class="comment">%-----------------</span>
+
+  <span class="comment">% Sign conventions</span>
+  <span class="comment">%-----------------</span>
+  <span class="comment">% Keep scalar component of quaternion positive</span>
+  <span class="keyword">if</span>( qC(1) &lt; 0 )
+    qC = -qC;
+  <span class="keyword">end</span>
+  <span class="comment">% Inertial to body quaternion</span>
+  qIToB = x(1:4);
+  <span class="keyword">if</span>( qIToB(1) &lt; 0 )
+    qIToB = -qIToB;
+    xPlot(1:4,k) = qIToB;
+  <span class="keyword">end</span>
+
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  <span class="comment">% Euler angle error in body frame. We are only considering Y and Z errors.</span>
+  <span class="comment">% Determine from commanded normal in body frame.</span>
+  <span class="comment">%-------------------------------------------------------------------------</span>
+  uSailB = QForm( qIToB, uI );
+  errY   = uSailB(3);
+  errZ   = -uSailB(2);
+  eulErr = [errY;errZ];
+
+  <span class="comment">%-----------------------------------------------------</span>
+  <span class="comment">% Outer loop: Update the boom command at dTo intervals</span>
+  <span class="comment">%-----------------------------------------------------</span>
+  <span class="keyword">if</span> (tO &gt;= dTo)
+    <span class="comment">% Small angle convention</span>
+    <span class="comment">%-----------------------</span>
+    angleError = [0;eulErr];
+    <span class="keyword">if</span> (Mag(angleError) &gt; deltaAngle)
+      angleError = sign(angleError).*min([abs(angleError) [0;[1;1]*deltaAngle]],[],2);
+    <span class="keyword">end</span>
+
+    <span class="comment">% Control law and torque</span>
+    <span class="comment">%-----------------------</span>
+    <span class="comment">% first compute body acceleration</span>
+    accel = cC*xN + dC*angleError;
+    <span class="comment">% controller state update</span>
+    xN    = aC*xN + bC*angleError;
+    <span class="comment">% convert acceleration to control torque using actual vehicle inertia</span>
+    tExt  = -g.mass.inertia*accel;
+
+    <span class="comment">% Cp/Cm offset</span>
+    <span class="comment">%-------------</span>
+    <span class="comment">% use pinv to allocate torque to controllable axes (Y/Z).</span>
+    <span class="comment">% assume Cp is at center and compute new Cm from torque and masses.</span>
+    cM  = -pinv(aBoom)/cos(cone0)^2*tExt/(mB/(mC+mB));
+    mCM = Mag(cM);
+    <span class="keyword">if</span> (mCM &gt;= rBoomCM)
+      <span class="comment">% requesting CM beyond reach of boom</span>
+      <span class="comment">% may update to different constraint in future (i.e. angles)</span>
+      hB = 0;
+    <span class="keyword">else</span>
+      <span class="comment">% Boom unit vector component along normal</span>
+      hB = sqrt(rBoomCM^2 - mCM^2);
+    <span class="keyword">end</span>
+    <span class="comment">% New boom unit vector in body frame</span>
+    uB = Unit([hB;cM]);
+
+    <span class="comment">% Gimbal angles (12 sequence)</span>
+    <span class="comment">%----------------------------</span>
+    <span class="comment">% Rotations are defined as:</span>
+    <span class="comment">% uB = C1(alpha)*C2(beta)*[1;0;0], or</span>
+    <span class="comment">% uB = Eul2Mat([alpha;beta;0])*[1;0;0]</span>
+    alpha = atan2(uB(2),-uB(3));
+    beta  = acos(uB(1));
+
+    <span class="comment">% Reset outer timer</span>
+    <span class="comment">%------------------</span>
+    tO = 0;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Inner loop: drive gimbals to commanded location</span>
+  <span class="comment">%------------------------------------------------</span>
+  [aDot,angleCommand] = GimbalRates( x(8:9), [alpha;beta], aNom, dTi );
+
+  <span class="comment">% Store commanded torque and angles</span>
+  <span class="comment">%----------------------------------</span>
+  aEPlot(1:2,k) = eulErr;          <span class="comment">% store actual Euler errors</span>
+  aEPlot(3:4,k) = angleError(2:3); <span class="comment">% limited angle error</span>
+  aCPlot(:,k)   = angleCommand;
+  tqPlot(1:3,k) = tExt;
+  cMPlot(:,k)   = cM;
+
+  <span class="comment">%-------------</span>
+  <span class="comment">% RHS</span>
+  <span class="comment">%-------------</span>
+  <span class="comment">% x = [q;omega;gimbal angles;gimbal rates]</span>
+  <span class="comment">% Use zeros as placeholders for orbit state (not used)</span>
+  [hPlot(:,k), hW] = HGimballedBoom( [zeros(6,1);x], g, p.axis, aDot, hW );
+  x(10:11) = aDot;
+
+  <span class="comment">% Integrate</span>
+  <span class="comment">%----------</span>
+  x = RK4( <span class="string">'TwoBodyRateModel'</span>, x, dTi, t, f, tq, g, p, hW );
+
+  <span class="comment">% Update profiles</span>
+  <span class="comment">%----------------</span>
+  t    = t + dTi;
+  tO   = tO + dTi;
+  p.jD = p.jD + dTi/86400;
+  p.q  = x(1:4,:);
+  p.angle = x(8:9);
+
+  WaitBarManager( <span class="string">'update'</span>, k ); drawnow;
+
+<span class="keyword">end</span>
+WaitBarManager( <span class="string">'close'</span> );
+</pre><h2 id="20">Prepare data for plotting</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+<span class="comment">%Plot2D(tPlot,hPlot,[],[],'Inertial Angular Momentum')</span>
+<span class="comment">% Commanded sail to body quaternion</span>
+qSC = QMult(QPose(qIToSail),qC);
+<span class="keyword">if</span> qSC(1) &lt; 0
+  qSC = -qSC;
+<span class="keyword">end</span>
+qCPlot = repmat(qSC,1,nSim);
+[coneP,clockP] = QToConeClock(xPlot(1:4,:),repmat(p.r,1,nSim),repmat(p.v,1,nSim),<span class="keyword">...</span>
+  -repmat(Unit(p.r),1,nSim));
+[tPlot2, tLabl] = TimeLabl( tPlot );
+
+h = [];
+h(1) = Plot2D(tPlot,[xPlot(1:4,:);repmat(qC,1,nSim)],<span class="string">'Time (s)'</span>,{<span class="string">'qS'</span>,<span class="string">'qX'</span>,<span class="string">'qY'</span>,<span class="string">'qZ'</span>},<span class="string">'Inertial Quaternion'</span>,[],[1 5; 2 6; 3 7; 4 8]);
+legend(<span class="string">'Actual'</span>,<span class="string">'Command'</span>)
+Plot2D(tPlot,[qSPlot;qCPlot],<span class="string">'Time (s)'</span>,{<span class="string">'qS'</span>,<span class="string">'qX'</span>,<span class="string">'qY'</span>,<span class="string">'qZ'</span>},<span class="string">'Sail to Body Quaternion'</span>,[],[1 5; 2 6; 3 7; 4 8]);
+legend(<span class="string">'Actual'</span>,<span class="string">'Command'</span>)
+h(2) = Plot2D(tPlot,xPlot(5:7,:),<span class="string">'Time (s)'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Body Rates'</span>);
+h(3) = Plot2D(tPlot,[aCPlot;xPlot(8:9,:)],<span class="string">'Time (s)'</span>,{<span class="string">'\alpha'</span>,<span class="string">'\beta'</span>},<span class="string">'Commanded and Actual Gimbal Angles'</span>,[],{[1 3],[2 4]});
+legend(<span class="string">'Command'</span>,<span class="string">'Actual'</span>)
+h(4) = Plot2D(tPlot,tqPlot,<span class="string">'Time (s)'</span>,{<span class="string">'Ty'</span>,<span class="string">'Tz'</span>},<span class="string">'Commanded and Actual Torque (Nm)'</span>,<span class="keyword">...</span>
+           [],{[2 5],[3 6]});
+legend(<span class="string">'Command'</span>,<span class="string">'Actual'</span>)
+Plot2D(tPlot,aEPlot,<span class="string">'Time (s)'</span>,{<span class="string">'Y'</span>,<span class="string">'Z'</span>},<span class="string">'Euler Angle Error'</span>,<span class="string">'lin'</span>,{[1 3] [2 4]});
+
+<span class="comment">% Commanded boom CM control</span>
+Plot2D(cMPlot(1,:),cMPlot(2,:),<span class="string">'Y'</span>,<span class="string">'Z'</span>,<span class="string">'Commanded CM of Sailcraft'</span>);
+hold <span class="string">on</span>
+plot(cMPlot(1,1),cMPlot(2,1),<span class="string">'bo'</span>);
+plot(cMPlot(1,end),cMPlot(2,end),<span class="string">'bx'</span>);
+plot(cMPlot(1,:),cMPlot(2,:),<span class="string">'c.'</span>);
+</pre><img vspace="5" hspace="5" src="BoomControl_01.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_02.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_03.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_04.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_05.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_06.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_07.png" alt=""> <h2 id="21">Try plotting cone/clock angles</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+Plot2D(tPlot2,[coneP;clockP], tLabl, {<span class="string">'Cone'</span>,<span class="string">'Clock'</span>}, <span class="string">'Actual Cone and Clock Angles (rad)'</span>)
+
+<span class="keyword">if</span> (0)
+  <span class="comment">% Save plots for use in user's guide.</span>
+  c   = cd;
+  dBC = fileparts(which(<span class="string">'BoomControl'</span>));
+  cd(dBC)
+  print(h(1),<span class="string">'-depsc2'</span>,<span class="string">'BCQuaternion'</span>)
+  print(h(2),<span class="string">'-depsc2'</span>,<span class="string">'BCRates'</span>)
+  print(h(3),<span class="string">'-depsc2'</span>,<span class="string">'BCAngles'</span>)
+  print(h(4),<span class="string">'-depsc2'</span>,<span class="string">'BCTorque'</span>)
+<span class="keyword">end</span>
+
+<span class="comment">% Animate resulting sail and boom motion</span>
+tag = DrawSCPlanPlugIn( <span class="string">'initialize'</span>, g );
+nO = floor(dTo/dTi);
+nAnim = floor(0.5*nSim/nO);
+kAnim = 1:nAnim:nSim;
+u = uicontrol(<span class="string">'style'</span>,<span class="string">'text'</span>,<span class="string">'string'</span>,<span class="string">'0 s'</span>,<span class="string">'position'</span>,[380 10 60 20]);
+yA = g.radius*[-1 1 -1 1 -1 1];
+<span class="keyword">for</span> k = kAnim
+  g.body(1).bHinge.q = qSPlot(1:4,k);
+  <span class="comment">% TBD: add boom motion (bHinge of inner body)</span>
+  bBoomToCore = HingeRotationMatrix( xPlot(8:9,k), [1 0;0 1;0 0] )';
+  g.body(2).bHinge.b = bBoomToCore;
+  DrawSCPlanPlugIn( <span class="string">'update'</span>, tag, g );
+  axis(yA);
+  set(u,<span class="string">'string'</span>,[num2str(k*dTi) <span class="string">' s'</span>])
+  drawnow;
+  pause(0.2);
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BoomControl_08.png" alt=""> <img vspace="5" hspace="5" src="BoomControl_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate gimballed boom control.
+%   This demo uses the PlateWithBoom CAD model. The gimbals have a 
+%   1-2 sequence, first around the X axis and then around the Y axis. 
+%   The control law is designed using PIDMIMO. There is no roll 
+%   actuation and therefore the attitude trajectory must use 
+%   only Y and Z torques.
+%
+%   The attitude dynamics assume fixed gimbal rates. 
+%   The CAD model is a perfectly specular plate with a control boom.
+%
+%   Functions demonstrated:
+%       PIDMIMO
+%       ConeClockToQConstrained
+%       HGimballedBoom
+%       TwoBodyRateModel
+%       SailDisturbance
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BoomActuation, which rotates the gimbals without following   a 
+%  specific control law., AC, ACPlot, CrossSection, DrawSCPlanPlugIn, 
+%  PIDMIMO, QForm, QMult, QPose, QTForm, Constant, WaitBarManager, Plot2D, 
+%  TimeLabl, Mag, RK4, Unit, JD2000, El2RV, Accel, GimbalRates, 
+%  HGimballedBoom, ConeClockToQConstrained, QSail, QToConeClock, 
+%  HingeRotationMatrix, ProfileStruct, SailDisturbance, SailEnvironment
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2005,2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% User Parameters
+%%%%%%%%%%%%%%%%%%
+% Change these to explore the system dynamics.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commanded cone and clock angles (rad)
+coneCommand = 0; %0.5;
+clockCommand = 0; %0.1;
+% Initial cone and clock angles (rad)
+cone0 = 0.1; %0.5;
+clock0 = 0.0;
+% Nominal gimbal rate (rad/s)
+aRateNom = 0.3;
+% Controller natural frequency (rad/sec)
+wn = 0.0001;
+% Maximum angular change for new target (rad)
+deltaAngle = 0.2; 
+% Duration for sim (s)
+tDuration = 12000;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Clean up workspace
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+clear SailDisturbance
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Load the control boom sail model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('PlateWithBoom.mat');
+%g.mass.inertia(1,1) = g.mass.inertia(2,2);
+% To view the model, run: DrawSCPlanPlugIn( 'initialize', g );
+
+%% Sim timing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dTo  = floor(2*pi/wn/100); % sec, outer dT for ACS
+dTi  = dTo/10;              % sec, inner dT for boom control via gimbals
+nSim = floor(tDuration/dTi);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Control parameters - use PIDMIMO to design control loops
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aNom         = aRateNom*ones(2,1);
+xN           = zeros(6,1);      % Controller state
+inr          = diag([1 1 1]);   % Unit inertia
+zeta         = 3;               % Damping ratio
+tauInt       = 2*pi/zeta/wn;            % Integrator time constant
+omegaR       = 5*wn;           % Rate filter frequency
+sType        = 'z';             % Type of equations
+[aC, bC, cC, dC] = PIDMIMO( inr, zeta*ones(1,3), wn*ones(1,3), tauInt*ones(1,3), ...
+                            omegaR*ones(1,3), dTo, sType );
+% Resulting control values are accelerations (due to unit inertia input).
+% Will multiply by full inertia to compute torque.
+                          
+%% Sail physical parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aSail = CrossSection(g);
+Ps    = 1367/3e8;
+fSail = 2*Ps*aSail*[-1;0;0];       % Specular reflective force in body frame, N
+aBoom(:,1) = Cross([0;1;0],fSail); % Boom control axes
+aBoom(:,2) = Cross([0;0;1],fSail); 
+mC      = g.body(1).mass.mass;     % Core is body 1
+mB      = g.body(2).mass.mass;     % Boom is body 2
+rBoomCM = Mag(g.body(2).mass.cM);  % Distance to boom center-of-mass
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Create the disturbance profile
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Initial Julian date
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p          = ProfileStruct;
+p.jD       = JD2000;
+
+% Parameters for the orbit. 
+%% We are creating a circular heliocentric orbit.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r   = Constant('au'); % Radius in km
+mu  = Constant('mu sun');
+el  = [r 0 0 0 0 0];
+
+%% Orbit state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[p.r,p.v]  = El2RV(el,[],mu);
+
+%% Initial Quaternion (inertial to body frame)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+q0  = ConeClockToQConstrained(cone0,clock0,p.r,p.v,-Unit(p.r));
+p.q = q0;
+
+% Gimbal angles. The sail is two body with a gimbaled boom.
+% The first angle is the one nearest the core.
+% The axes correspond to the angles.
+% The body array says each gimbal is at the joint between the 
+%% core and the boom. The core is defined as body 1 in the CAD file.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p.angle    = [0;0];
+p.axis     = [1 0;0 1;0 0];
+p.body     = [2 2];
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% Create the data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d          = [];
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.solarOn  = 1.0;
+d.magOn    = 0;
+d.radOn    = 0;
+d.ggOn     = 1.0;
+
+% Orbiting the sun. SailDisturbance can handle any planet or
+% a heliocentric orbit. However, not all planets have magnetic
+%% field models or atmospheric density models.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.planet   = 'sun';
+
+%% Initial state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t     = 0;       % time
+tO    = dTo;     % Outer timer
+w     = [0;0;0]; % body rates
+angle = [0;0];   % boom gimbal angles
+aDot  = [0;0];   % boom gimbal rates
+x     = [p.q;w;angle;aDot];
+hW    = [0;0;0]; % stored momentum
+alpha = 0;       % initial gimbal angle command
+beta  = 0;       % initial gimbal angle command
+cM    = [0;0];   % Commanded CM for boom
+
+tPlot  = zeros(1,nSim);
+xPlot  = zeros(length(x),nSim);
+hPlot  = zeros(3,nSim);  % angular momentum
+tqPlot = zeros(6,nSim);  % commanded and achieved torque, stacked
+aCPlot = zeros(2,nSim);  % Commanded gimbal angles
+aEPlot = zeros(4,nSim);  % Euler angle errors
+qSPlot = zeros(4,nSim);  % Quaternion in rotating sail frame
+cMPlot = zeros(2,nSim);
+
+%% Commanded quaternion, inertial to body frame, constant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qC   = ConeClockToQConstrained(coneCommand,clockCommand,p.r,p.v,-Unit(p.r));
+uI   = QTForm( qC, [1;0;0] );
+sN   = sin(coneCommand);
+cN   = cos(coneCommand);
+qOld = p.q;
+
+% Quaternion from inertial to the local sail rotating frame, which has:
+%    x is towards the sun
+%    z is as close to the orbit normal as possible
+%    y completes the set
+%% Located at the center of the body frame.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+qIToSail = QSail( -Unit(p.r), p.r, p.v );
+
+%% Environment - model as constant over this time period.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+e = SailEnvironment( 'sun', p, d );
+
+
+%% Simulation loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+WaitBarManager( 'initialize', struct('nSamp',nSim,'name','Boom Control Demo') );
+for k = 1:nSim
+  
+  % Store data in plots
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  tPlot(k)    = t;
+  xPlot(:,k)  = x;
+  % Sail to body quaternion
+  qSPlot(:,k) = QMult(QPose(qIToSail),x(1:4));
+  if( qSPlot(1,k) < 0 )
+    qSPlot(:,k) = -qSPlot(:,k);
+  end
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  % Compute the disturbances. 
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [f,tq] = SailDisturbance( g, p, e, d );
+  tqPlot(4:6,k) = tq.total;
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Boom control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+  % Sign conventions
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Keep scalar component of quaternion positive
+  if( qC(1) < 0 )
+    qC = -qC;
+  end
+  % Inertial to body quaternion
+  qIToB = x(1:4);
+  if( qIToB(1) < 0 )
+    qIToB = -qIToB;
+    xPlot(1:4,k) = qIToB;
+  end
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Euler angle error in body frame. We are only considering Y and Z errors.
+  % Determine from commanded normal in body frame.
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  uSailB = QForm( qIToB, uI );
+  errY   = uSailB(3);
+  errZ   = -uSailB(2);
+  eulErr = [errY;errZ];
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % Outer loop: Update the boom command at dTo intervals
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if (tO >= dTo)
+    % Small angle convention
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    angleError = [0;eulErr];
+    if (Mag(angleError) > deltaAngle)
+      angleError = sign(angleError).*min([abs(angleError) [0;[1;1]*deltaAngle]],[],2);
+    end
+
+    % Control law and torque
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    % first compute body acceleration
+    accel = cC*xN + dC*angleError; 
+    % controller state update
+    xN    = aC*xN + bC*angleError; 
+    % convert acceleration to control torque using actual vehicle inertia
+    tExt  = -g.mass.inertia*accel; 
+
+    % Cp/Cm offset
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    % use pinv to allocate torque to controllable axes (Y/Z).
+    % assume Cp is at center and compute new Cm from torque and masses.
+    cM  = -pinv(aBoom)/cos(cone0)^2*tExt/(mB/(mC+mB));
+    mCM = Mag(cM);
+    if (mCM >= rBoomCM)
+      % requesting CM beyond reach of boom
+      % may update to different constraint in future (i.e. angles)
+      hB = 0;
+    else
+      % Boom unit vector component along normal
+      hB = sqrt(rBoomCM^2 - mCM^2);
+    end
+    % New boom unit vector in body frame
+    uB = Unit([hB;cM]);
+    
+    % Gimbal angles (12 sequence)
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    % Rotations are defined as:
+    % uB = C1(alpha)*C2(beta)*[1;0;0], or
+    % uB = Eul2Mat([alpha;beta;0])*[1;0;0]
+    alpha = atan2(uB(2),-uB(3));
+    beta  = acos(uB(1));
+    
+    % Reset outer timer
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    tO = 0;
+  end
+  
+  % Inner loop: drive gimbals to commanded location
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH 
+  [aDot,angleCommand] = GimbalRates( x(8:9), [alpha;beta], aNom, dTi );
+  
+  % Store commanded torque and angles
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  aEPlot(1:2,k) = eulErr;          % store actual Euler errors
+  aEPlot(3:4,k) = angleError(2:3); % limited angle error
+  aCPlot(:,k)   = angleCommand;
+  tqPlot(1:3,k) = tExt;
+  cMPlot(:,k)   = cM;
+  
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  % x = [q;omega;gimbal angles;gimbal rates]
+  % Use zeros as placeholders for orbit state (not used)
+  [hPlot(:,k), hW] = HGimballedBoom( [zeros(6,1);x], g, p.axis, aDot, hW );
+  x(10:11) = aDot;
+ 
+  % Integrate
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4( 'TwoBodyRateModel', x, dTi, t, f, tq, g, p, hW );
+  
+  % Update profiles
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t    = t + dTi;
+  tO   = tO + dTi;
+  p.jD = p.jD + dTi/86400;
+  p.q  = x(1:4,:);
+  p.angle = x(8:9);
+  
+  WaitBarManager( 'update', k ); drawnow;
+  
+end
+WaitBarManager( 'close' );
+
+%% Prepare data for plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%Plot2D(tPlot,hPlot,[],[],'Inertial Angular Momentum')
+% Commanded sail to body quaternion
+qSC = QMult(QPose(qIToSail),qC);
+if qSC(1) < 0
+  qSC = -qSC;
+end
+qCPlot = repmat(qSC,1,nSim);
+[coneP,clockP] = QToConeClock(xPlot(1:4,:),repmat(p.r,1,nSim),repmat(p.v,1,nSim),...
+  -repmat(Unit(p.r),1,nSim));
+[tPlot2, tLabl] = TimeLabl( tPlot );
+
+h = [];
+h(1) = Plot2D(tPlot,[xPlot(1:4,:);repmat(qC,1,nSim)],'Time (s)',{'qS','qX','qY','qZ'},'Inertial Quaternion',[],[1 5; 2 6; 3 7; 4 8]);
+legend('Actual','Command')
+Plot2D(tPlot,[qSPlot;qCPlot],'Time (s)',{'qS','qX','qY','qZ'},'Sail to Body Quaternion',[],[1 5; 2 6; 3 7; 4 8]);
+legend('Actual','Command')
+h(2) = Plot2D(tPlot,xPlot(5:7,:),'Time (s)',{'x','y','z'},'Body Rates');
+h(3) = Plot2D(tPlot,[aCPlot;xPlot(8:9,:)],'Time (s)',{'\alpha','\beta'},'Commanded and Actual Gimbal Angles',[],{[1 3],[2 4]});
+legend('Command','Actual')
+h(4) = Plot2D(tPlot,tqPlot,'Time (s)',{'Ty','Tz'},'Commanded and Actual Torque (Nm)',...
+           [],{[2 5],[3 6]});
+legend('Command','Actual')
+Plot2D(tPlot,aEPlot,'Time (s)',{'Y','Z'},'Euler Angle Error','lin',{[1 3] [2 4]});
+
+% Commanded boom CM control
+Plot2D(cMPlot(1,:),cMPlot(2,:),'Y','Z','Commanded CM of Sailcraft');
+hold on
+plot(cMPlot(1,1),cMPlot(2,1),'bo');
+plot(cMPlot(1,end),cMPlot(2,end),'bx');
+plot(cMPlot(1,:),cMPlot(2,:),'c.');
+
+%% Try plotting cone/clock angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D(tPlot2,[coneP;clockP], tLabl, {'Cone','Clock'}, 'Actual Cone and Clock Angles (rad)')
+
+if (0)
+  % Save plots for use in user's guide.
+  c   = cd;
+  dBC = fileparts(which('BoomControl'));
+  cd(dBC)
+  print(h(1),'-depsc2','BCQuaternion')
+  print(h(2),'-depsc2','BCRates')
+  print(h(3),'-depsc2','BCAngles')
+  print(h(4),'-depsc2','BCTorque')
+end
+
+% Animate resulting sail and boom motion
+tag = DrawSCPlanPlugIn( 'initialize', g );
+nO = floor(dTo/dTi);
+nAnim = floor(0.5*nSim/nO);
+kAnim = 1:nAnim:nSim;
+u = uicontrol('style','text','string','0 s','position',[380 10 60 20]);
+yA = g.radius*[-1 1 -1 1 -1 1];
+for k = kAnim
+  g.body(1).bHinge.q = qSPlot(1:4,k);
+  % TBD: add boom motion (bHinge of inner body)
+  bBoomToCore = HingeRotationMatrix( xPlot(8:9,k), [1 0;0 1;0 0] )';
+  g.body(2).bHinge.b = bBoomToCore;
+  DrawSCPlanPlugIn( 'update', tag, g );
+  axis(yA);
+  set(u,'string',[num2str(k*dTi) ' s'])
+  drawnow;
+  pause(0.2);
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

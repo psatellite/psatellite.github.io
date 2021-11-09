@@ -1,0 +1,338 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Link analysis for an earth orbiting spacecraft.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="LinkAnalysis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Link analysis for an earth orbiting spacecraft.</h1><!--introduction--><p>Includes noise analysis. Computes the link with and without rain. -------------------------------------------------------------------------</p><pre>Reference: Maral, G. and M. Bousquet. (1998.) Satellite Communications
+           Systems, Third Edition. John Wiley.
+-------------------------------------------------------------------------
+See also DBSignal, AntennaGain, Beamwidth3dB, Gain3dB,
+LossAtmosphericGas, LossDepointing, LossFreeSpace, LossPrecipitation,
+TAntennaGround, TAttenuator, TReceiver, TSky
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">2.5.8 and 2.5.9 Example 1 and 2 pp. 42-46.</a></li><li><a href="#3">Spacecraft</a></li><li><a href="#4">EIRP Satellite - Effective Isotropic Radiated Power</a></li><li><a href="#5">Downlink attenuation</a></li><li><a href="#6">Ground station</a></li><li><a href="#7">Downlink system noise temperature</a></li><li><a href="#8">Pointing loss</a></li><li><a href="#9">With rain</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2001 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">2.5.8 and 2.5.9 Example 1 and 2 pp. 42-46.</h2><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="3">Spacecraft</h2><pre class="codeinput"><span class="comment">%-----------</span>
+<span class="comment">% diameter of transmit antenna (m)</span>
+dT =  4;
+<span class="comment">% transmit frequency (GHz)</span>
+fD = 12;
+<span class="comment">% transmitted power (dBW)</span>
+pT = DBSignal(10);
+<span class="comment">% loss between the amplifier on the satellite and the antenna (dB)</span>
+lFTX = 1;
+<span class="comment">% Depointing angle (deg)</span>
+thetaT = 0.1;
+<span class="comment">% 3 dB Angle (deg)</span>
+theta3DB = 2;
+<span class="comment">% efficiency</span>
+effT = 0.55;
+<span class="comment">% distance for free space loss (km)</span>
+r = 40000;
+<span class="comment">% Elevation angle (deg)</span>
+E = 10;
+<span class="comment">%  link attenuation due to the atmosphere (dB)</span>
+lA = LossAtmosphericGas( fD, E );
+<span class="comment">% Illumination factor (deg)</span>
+fIllumination = 70;
+<span class="comment">% loss being at the 3dB edge of the beam contour (dB)</span>
+lEdge = 3;
+</pre><h2 id="4">EIRP Satellite - Effective Isotropic Radiated Power</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+gT            = Gain3dB( theta3DB, fIllumination, effT );
+eIRPSL        = pT + gT - lEdge - lFTX;
+</pre><h2 id="5">Downlink attenuation</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+lFS           = LossFreeSpace( fD, r );
+lD            = lA + lFS;
+</pre><h2 id="6">Ground station</h2><pre class="codeinput"><span class="comment">%---------------</span>
+f             = 1;
+<span class="comment">% loss between the feed and the antenna (dB)</span>
+lFRX          = 0.5;
+<span class="comment">% temperature of the feed</span>
+tF            = 290;
+<span class="comment">% diameter of the receiving antenna (m)</span>
+dR            = 4;
+<span class="comment">% receiver efficiency</span>
+effR          = 0.6;
+<span class="comment">% ambient temperature of the ground</span>
+tGround       = 45;
+</pre><h2 id="7">Downlink system noise temperature</h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+tSky          = TSky( 12, 10 );
+tA            = TAntennaGround( tSky, 0, tGround );
+tERX          = TAttenuator( tF, f );
+<span class="comment">% downlink system noise temperature (K)</span>
+tD            = TReceiver( tA, lFRX, tF, tERX );
+gR            = AntennaGain(struct(<span class="string">'type'</span>,<span class="string">'circular aperture'</span>,<span class="string">'area'</span>,pi*dT^2/4,<span class="string">'eff'</span>,effR),fD);
+</pre><h2 id="8">Pointing loss</h2><pre class="codeinput"><span class="comment">%--------------</span>
+theta3DB      = Beamwidth3dB( dR, fD, fIllumination );
+lP            = LossDepointing( thetaT, theta3DB );
+
+gOverT        = gR - lP - lFRX - DBSignal(tD);
+cOverN0       = eIRPSL - lD + gOverT - DBSignal(1.381e-23);
+
+fprintf(<span class="string">'\n\n2.5.8 Example 1 and 2.5.9 Example 2: Downlink\n-------------------------------------------\n'</span>)
+fprintf(<span class="string">'Gain Transmit Antenna             = %10.2f (dBW)\n'</span>,gT);
+fprintf(<span class="string">'Transmitter Loss                  = %10.2f (dB)\n'</span>,lFTX);
+fprintf(<span class="string">'Theta 3 dB                        = %10.2f (dB)\n'</span>,theta3DB);
+fprintf(<span class="string">'EIRP SL                           = %10.2f (dBW)\n'</span>,eIRPSL);
+fprintf(<span class="string">'Free Space Loss                   = %10.2f (dB)\n'</span>,lFS);
+fprintf(<span class="string">'Atmospheric Loss                  = %10.2f (dB)\n'</span>,lA);
+fprintf(<span class="string">'Downward Path Loss                = %10.2f (dB)\n'</span>,lD);
+fprintf(<span class="string">'Gain Receive Antenna              = %10.2f (dB)\n'</span>,gR);
+fprintf(<span class="string">'Receiver Loss                     = %10.2f (dB)\n'</span>,lFRX);
+fprintf(<span class="string">'Noise Temperature Receiver        = %10.2f (deg-K)\n'</span>,tERX);
+fprintf(<span class="string">'Pointing Loss                     = %10.2f (dB)\n'</span>,lP);
+
+disp(<span class="string">'---- Clear Sky ----'</span>)
+fprintf(<span class="string">'Noise Temperature Ground Antenna  = %10.2f (deg-K)\n'</span>,tA);
+fprintf(<span class="string">'Noise Temperature Downlink        = %10.2f (deg-K)\n'</span>,tD);
+fprintf(<span class="string">'(G/T)ES  Clear Sky                = %10.2f (dB)\n'</span>,gOverT);
+fprintf(<span class="string">'C/N0 Clear Sky                    = %10.2f (dB)\n'</span>,cOverN0);
+</pre><pre class="codeoutput">
+
+2.5.8 Example 1 and 2.5.9 Example 2: Downlink
+-------------------------------------------
+Gain Transmit Antenna             =      38.23 (dBW)
+Transmitter Loss                  =       1.00 (dB)
+Theta 3 dB                        =       0.44 (dB)
+EIRP SL                           =      44.23 (dBW)
+Free Space Loss                   =     206.07 (dB)
+Atmospheric Loss                  =       0.29 (dB)
+Downward Path Loss                =     206.36 (dB)
+Gain Receive Antenna              =      51.81 (dB)
+Receiver Loss                     =       0.50 (dB)
+Noise Temperature Receiver        =      75.09 (deg-K)
+Pointing Loss                     =       0.63 (dB)
+---- Clear Sky ----
+Noise Temperature Ground Antenna  =      65.02 (deg-K)
+Noise Temperature Downlink        =     164.57 (deg-K)
+(G/T)ES  Clear Sky                =      28.52 (dB)
+C/N0 Clear Sky                    =      94.99 (dB)
+</pre><h2 id="9">With rain</h2><pre class="codeinput"><span class="comment">%----------</span>
+disp(<span class="string">'---- Rain ----'</span>)
+lRain         = LossPrecipitation( fD, <span class="string">'e'</span>, 0.01, 45, 0, 0, [40000;0;0], 0 );
+tA            = TAntennaGround( tSky, lRain, tGround );
+tD            = TReceiver( tA, lFRX, tF, tERX );
+lD            = lA + lFS + lRain;
+
+gOverT        = gR - lP - lFRX - DBSignal(tD);
+cOverN0       = eIRPSL - lD + gOverT - DBSignal(1.381e-23);
+
+fprintf(<span class="string">'Rain Loss                         = %10.2f (dB)\n'</span>,lRain);
+fprintf(<span class="string">'Downward Path Loss                = %10.2f (dB)\n'</span>,lD);
+fprintf(<span class="string">'Noise Temperature Ground Antenna  = %10.2f (deg-K)\n'</span>,tA);
+fprintf(<span class="string">'Noise Temperature Downlink        = %10.2f (deg-K)\n'</span>,tD);
+fprintf(<span class="string">'(G/T)ES                           = %10.2f (dB)\n'</span>,gOverT);
+fprintf(<span class="string">'C/N0                              = %10.2f (dB)\n'</span>,cOverN0);
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">---- Rain ----
+Rain Loss                         =       3.63 (dB)
+Downward Path Loss                =     209.99 (dB)
+Noise Temperature Ground Antenna  =     209.44 (deg-K)
+Noise Temperature Downlink        =     293.29 (deg-K)
+(G/T)ES                           =      26.01 (dB)
+C/N0                              =      88.85 (dB)
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Link analysis for an earth orbiting spacecraft.
+% Includes noise analysis. Computes the link with and without rain.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%
+%  Reference: Maral, G. and M. Bousquet. (1998.) Satellite Communications
+%             Systems, Third Edition. John Wiley. 
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also DBSignal, AntennaGain, Beamwidth3dB, Gain3dB, 
+%  LossAtmosphericGas, LossDepointing, LossFreeSpace, LossPrecipitation, 
+%  TAntennaGround, TAttenuator, TReceiver, TSky
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2001 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% 2.5.8 and 2.5.9 Example 1 and 2 pp. 42-46.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Spacecraft
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% diameter of transmit antenna (m)
+dT =  4; 
+% transmit frequency (GHz)
+fD = 12; 
+% transmitted power (dBW)
+pT = DBSignal(10); 
+% loss between the amplifier on the satellite and the antenna (dB)
+lFTX = 1; 
+% Depointing angle (deg)
+thetaT = 0.1; 
+% 3 dB Angle (deg)
+theta3DB = 2;
+% efficiency
+effT = 0.55;
+% distance for free space loss (km)
+r = 40000;
+% Elevation angle (deg)
+E = 10; 
+%  link attenuation due to the atmosphere (dB)
+lA = LossAtmosphericGas( fD, E );
+% Illumination factor (deg)
+fIllumination = 70; 
+% loss being at the 3dB edge of the beam contour (dB)
+lEdge = 3;
+
+%% EIRP Satellite - Effective Isotropic Radiated Power
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+gT            = Gain3dB( theta3DB, fIllumination, effT );
+eIRPSL        = pT + gT - lEdge - lFTX;
+
+%% Downlink attenuation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+lFS           = LossFreeSpace( fD, r );
+lD            = lA + lFS;
+
+%% Ground station
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+f             = 1;
+% loss between the feed and the antenna (dB)
+lFRX          = 0.5;
+% temperature of the feed
+tF            = 290;
+% diameter of the receiving antenna (m)
+dR            = 4;
+% receiver efficiency
+effR          = 0.6;
+% ambient temperature of the ground
+tGround       = 45;
+
+
+%% Downlink system noise temperature
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tSky          = TSky( 12, 10 );
+tA            = TAntennaGround( tSky, 0, tGround );
+tERX          = TAttenuator( tF, f );
+% downlink system noise temperature (K)
+tD            = TReceiver( tA, lFRX, tF, tERX );
+gR            = AntennaGain(struct('type','circular aperture','area',pi*dT^2/4,'eff',effR),fD);
+
+%% Pointing loss
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+theta3DB      = Beamwidth3dB( dR, fD, fIllumination );
+lP            = LossDepointing( thetaT, theta3DB );
+
+gOverT        = gR - lP - lFRX - DBSignal(tD);
+cOverN0       = eIRPSL - lD + gOverT - DBSignal(1.381e-23);
+
+fprintf('\n\n2.5.8 Example 1 and 2.5.9 Example 2: Downlink\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n')
+fprintf('Gain Transmit Antenna             = %10.2f (dBW)\n',gT);
+fprintf('Transmitter Loss                  = %10.2f (dB)\n',lFTX);
+fprintf('Theta 3 dB                        = %10.2f (dB)\n',theta3DB);
+fprintf('EIRP SL                           = %10.2f (dBW)\n',eIRPSL);
+fprintf('Free Space Loss                   = %10.2f (dB)\n',lFS);
+fprintf('Atmospheric Loss                  = %10.2f (dB)\n',lA);
+fprintf('Downward Path Loss                = %10.2f (dB)\n',lD);
+fprintf('Gain Receive Antenna              = %10.2f (dB)\n',gR);
+fprintf('Receiver Loss                     = %10.2f (dB)\n',lFRX);
+fprintf('Noise Temperature Receiver        = %10.2f (deg-K)\n',tERX);
+fprintf('Pointing Loss                     = %10.2f (dB)\n',lP);
+
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH Clear Sky REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf('Noise Temperature Ground Antenna  = %10.2f (deg-K)\n',tA);
+fprintf('Noise Temperature Downlink        = %10.2f (deg-K)\n',tD);
+fprintf('(G/T)ES  Clear Sky                = %10.2f (dB)\n',gOverT);
+fprintf('C/N0 Clear Sky                    = %10.2f (dB)\n',cOverN0);
+
+%% With rain
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH Rain REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+lRain         = LossPrecipitation( fD, 'e', 0.01, 45, 0, 0, [40000;0;0], 0 );
+tA            = TAntennaGround( tSky, lRain, tGround );
+tD            = TReceiver( tA, lFRX, tF, tERX );
+lD            = lA + lFS + lRain;
+
+gOverT        = gR - lP - lFRX - DBSignal(tD);
+cOverN0       = eIRPSL - lD + gOverT - DBSignal(1.381e-23);
+
+fprintf('Rain Loss                         = %10.2f (dB)\n',lRain);
+fprintf('Downward Path Loss                = %10.2f (dB)\n',lD);
+fprintf('Noise Temperature Ground Antenna  = %10.2f (deg-K)\n',tA);
+fprintf('Noise Temperature Downlink        = %10.2f (deg-K)\n',tD);
+fprintf('(G/T)ES                           = %10.2f (dB)\n',gOverT);
+fprintf('C/N0                              = %10.2f (dB)\n',cOverN0);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-10-18 16:43:14 -0400 (Fri, 18 Oct 2019) $
+% $Revision: 50079 $
+
+##### SOURCE END #####
+--></body></html>

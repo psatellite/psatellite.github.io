@@ -1,0 +1,312 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate a non-Keplerian orbit in a cylindrical planet-centered frame.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="NKPlanetSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate a non-Keplerian orbit in a cylindrical planet-centered frame.</h1><!--introduction--><p>The sail enables an orbit about a point in the anti-sun direction. The orbit period is chosen to be the same as a Kepler orbit of radius r.</p><p>The initial orbit is unstable. A quadratic regulator in pitch is the added to control the orbit.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+Reference: Colin R. McInnes, <span class="untermstring">"Solar Sailing: Technology, Dynamics and Mission</span>
+           Applications<span class="untermstring">", Springer-Praxis, London, 1999, Fig. 5.18 on p. 207</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">NonKeplerianPlanet.</span>, QCR, S2Damp, Constant, InformDlg, Plot2D,
+Plot3D, TimeLabl, Accel, FPlanetControl, FRotatingPlanet, VarEqSailPlanet,
+Cyl2Cart
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initially sail attitude is fixed in rotating frame</a></li><li><a href="#3">Generate a pitch controller using QCR (wil be PD control)</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+rho0 = 10;
+z0   = 40;
+
+R0   = sqrt(10^2+40^2);
+w0   = R0^(-3/2);
+
+<span class="comment">% Initial conditions</span>
+r0 = [rho0;pi/2;z0];
+dR = 0.01*r0;
+
+<span class="comment">% Target period is 15.51 days</span>
+[pitch0,accel] = NonKeplerianPlanet( rho0, z0, w0 );
+
+<span class="comment">% Orbit period in dimensionless units</span>
+mu = Constant(<span class="string">'mu earth'</span>);
+rE = Constant(<span class="string">'equatorial radius earth'</span>);
+wP = sqrt(mu/rE^3);
+P  = 2*pi/w0;
+P0 = 2*pi/wP;
+accel0 = accel*mu/rE^2;
+fprintf(<span class="string">'Sail acceleration is %0.5f mm/s2\n'</span>,accel0*1e6);
+
+<span class="comment">% ODE options</span>
+opts = odeset(<span class="string">'abstol'</span>,1e-12,<span class="string">'reltol'</span>,1e-8);
+
+<span class="comment">% Verify time units with sail off</span>
+<span class="keyword">if</span> 0
+  [tOut,z] = ode113( @FRotatingPlanet, linspace(0,2*pi,100), [1;0;0;0;1;0], opts, pitch0, 0 );
+  Plot2D(tOut',z(:,1:3)',<span class="string">'Time'</span>,{<span class="string">'Rho'</span>,<span class="string">'Theta'</span>,<span class="string">'Z'</span>},<span class="string">'Circular Orbit'</span>);
+  Plot3D(Cyl2Cart(z(:,1:3)'));
+  <span class="keyword">return</span>;
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Sail acceleration is 5.59160 mm/s2
+</pre><h2 id="2">Initially sail attitude is fixed in rotating frame</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+<span class="comment">% Time, 1/2pi radius orbits</span>
+nOrb = 0.5;
+t = linspace(0,nOrb*P,100);
+
+hDlg = InformDlg( <span class="string">'Integrating...'</span>, <span class="string">'NKPlanetSim'</span> );
+[tOut,z] = ode113( @FRotatingPlanet, t, [r0+dR;0;-w0;0], opts, pitch0, accel );
+close(hDlg);
+
+[tPlot,tL] = TimeLabl(tOut'*P0/2/pi);
+Plot2D(tPlot,z(:,1:3)',tL,{<span class="string">'Rho'</span>,<span class="string">'Theta'</span>,<span class="string">'Z'</span>},<span class="string">'Unstable Cylindrical Orbit Coordinates'</span>);
+
+<span class="comment">% View in 3D (Cartesian)</span>
+xCart = Cyl2Cart( z(:,1:3)' );
+Plot3D(xCart([3 1 2],:),<span class="string">'Z'</span>,<span class="string">'X'</span>,<span class="string">'Y'</span>,<span class="string">'Unstable Orbit, \rho = 10 and z = 40'</span>,1)
+axis <span class="string">tight</span>
+view(3)
+</pre><img vspace="5" hspace="5" src="NKPlanetSim_01.png" alt=""> <img vspace="5" hspace="5" src="NKPlanetSim_02.png" alt=""> <h2 id="3">Generate a pitch controller using QCR (wil be PD control)</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------</span>
+<span class="comment">% Compute state space plant</span>
+a = VarEqSailPlanet( rho0, z0, w0 );
+
+<span class="comment">% Compute input matrix for pitch control</span>
+K1 = accel*cos(pitch0)^3*(1-2*tan(pitch0)^2);
+K2 = -3*accel*cos(pitch0)^2*sin(pitch0);
+
+A = [zeros(2,2) eye(2); -a zeros(2,2)];
+B = [0;0;K1;K2];
+kR = QCR( A, B, diag([4 4 1 1]), 1 );
+
+<span class="comment">% compute eigenvalues of a - b*k</span>
+e = eig( A - B*kR )
+<span class="comment">% verify damping ratio</span>
+[zeta, w] = S2Damp( e )
+
+<span class="comment">% Initial cut (q = I, r = 1), less damped position and more damped velocity</span>
+<span class="comment">% (over critical damping). After experimentation choose [4 4 1 1].</span>
+
+nOrb = 1;
+t = linspace(0,nOrb*P,100);
+[tOut,z] = ode113( @FPlanetControl, t, [r0+dR;0;-w0;0], opts, pitch0, accel, [rho0;z0], kR );
+
+[tPlot,tL] = TimeLabl(tOut'*P0/2/pi);
+Plot2D(tPlot,z(:,1:3)',tL,{<span class="string">'Rho'</span>,<span class="string">'Theta'</span>,<span class="string">'Z'</span>},<span class="string">'Controlled Cylindrical Orbit Coordinates'</span>);
+xCart = Cyl2Cart( z(:,1:3)' );
+Plot3D(xCart([3 1 2],:),<span class="string">'Z'</span>,<span class="string">'X'</span>,<span class="string">'Y'</span>,<span class="string">'Controlled Orbit, \rho = 10 and z = 40'</span>,1)
+axis <span class="string">tight</span>
+view(3)
+
+<span class="comment">% Compute applied control</span>
+thetaC = zeros(1,length(tOut));
+<span class="keyword">for</span> k = 1:length(tOut)
+  dX = z(k,[1 3 4 6])' - [rho0;z0;0;0];
+  thetaC(k) = -kR*dX;
+<span class="keyword">end</span>
+
+Plot2D(tPlot, thetaC*180/pi, tL, <span class="string">'Control Angle (deg)'</span> )
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">e =
+ -0.023325054347733 + 0.024463387328433i
+ -0.023325054347733 - 0.024463387328433i
+ -0.005192717752450 + 0.000967433742656i
+ -0.005192717752450 - 0.000967433742656i
+zeta =
+   0.690067569645679
+   0.690067569645679
+   0.983084171017330
+   0.983084171017330
+w =
+   0.033801116548209
+   0.033801116548209
+   0.005282068316772
+   0.005282068316772
+</pre><img vspace="5" hspace="5" src="NKPlanetSim_03.png" alt=""> <img vspace="5" hspace="5" src="NKPlanetSim_04.png" alt=""> <img vspace="5" hspace="5" src="NKPlanetSim_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate a non-Keplerian orbit in a cylindrical planet-centered frame.
+% The sail enables an orbit about a point in the anti-sun direction.
+% The orbit period is chosen to be the same as a Kepler orbit of radius r.
+%
+% The initial orbit is unstable. A quadratic regulator in pitch is the added
+% to control the orbit.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Reference: Colin R. McInnes, "Solar Sailing: Technology, Dynamics and Mission  
+%              Applications", Springer-Praxis, London, 1999, Fig. 5.18 on p. 207
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also NonKeplerianPlanet., QCR, S2Damp, Constant, InformDlg, Plot2D, 
+%  Plot3D, TimeLabl, Accel, FPlanetControl, FRotatingPlanet, VarEqSailPlanet, 
+%  Cyl2Cart
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%    Copyright (c) 2007 Princeton Satellite Systems, Inc.
+%    All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+rho0 = 10;
+z0   = 40;
+
+R0   = sqrt(10^2+40^2);
+w0   = R0^(-3/2);
+
+% Initial conditions
+r0 = [rho0;pi/2;z0];
+dR = 0.01*r0;
+
+% Target period is 15.51 days
+[pitch0,accel] = NonKeplerianPlanet( rho0, z0, w0 );
+
+% Orbit period in dimensionless units
+mu = Constant('mu earth');
+rE = Constant('equatorial radius earth');
+wP = sqrt(mu/rE^3);
+P  = 2*pi/w0;
+P0 = 2*pi/wP;
+accel0 = accel*mu/rE^2;
+fprintf('Sail acceleration is %0.5f mm/s2\n',accel0*1e6);
+
+% ODE options
+opts = odeset('abstol',1e-12,'reltol',1e-8);
+
+% Verify time units with sail off
+if 0
+  [tOut,z] = ode113( @FRotatingPlanet, linspace(0,2*pi,100), [1;0;0;0;1;0], opts, pitch0, 0 );
+  Plot2D(tOut',z(:,1:3)','Time',{'Rho','Theta','Z'},'Circular Orbit');
+  Plot3D(Cyl2Cart(z(:,1:3)'));
+  return;
+end
+
+%% Initially sail attitude is fixed in rotating frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Time, 1/2pi radius orbits
+nOrb = 0.5;
+t = linspace(0,nOrb*P,100);
+
+hDlg = InformDlg( 'Integrating...', 'NKPlanetSim' );
+[tOut,z] = ode113( @FRotatingPlanet, t, [r0+dR;0;-w0;0], opts, pitch0, accel );
+close(hDlg);
+
+[tPlot,tL] = TimeLabl(tOut'*P0/2/pi);
+Plot2D(tPlot,z(:,1:3)',tL,{'Rho','Theta','Z'},'Unstable Cylindrical Orbit Coordinates');
+
+% View in 3D (Cartesian)
+xCart = Cyl2Cart( z(:,1:3)' );
+Plot3D(xCart([3 1 2],:),'Z','X','Y','Unstable Orbit, \rho = 10 and z = 40',1)
+axis tight
+view(3)
+
+
+%% Generate a pitch controller using QCR (wil be PD control)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Compute state space plant
+a = VarEqSailPlanet( rho0, z0, w0 );
+
+% Compute input matrix for pitch control
+K1 = accel*cos(pitch0)^3*(1-2*tan(pitch0)^2);
+K2 = -3*accel*cos(pitch0)^2*sin(pitch0);
+
+A = [zeros(2,2) eye(2); -a zeros(2,2)];
+B = [0;0;K1;K2];
+kR = QCR( A, B, diag([4 4 1 1]), 1 );
+
+% compute eigenvalues of a - b*k
+e = eig( A - B*kR )
+% verify damping ratio
+[zeta, w] = S2Damp( e )
+
+% Initial cut (q = I, r = 1), less damped position and more damped velocity 
+% (over critical damping). After experimentation choose [4 4 1 1].
+
+nOrb = 1;
+t = linspace(0,nOrb*P,100);
+[tOut,z] = ode113( @FPlanetControl, t, [r0+dR;0;-w0;0], opts, pitch0, accel, [rho0;z0], kR );
+
+[tPlot,tL] = TimeLabl(tOut'*P0/2/pi);
+Plot2D(tPlot,z(:,1:3)',tL,{'Rho','Theta','Z'},'Controlled Cylindrical Orbit Coordinates');
+xCart = Cyl2Cart( z(:,1:3)' );
+Plot3D(xCart([3 1 2],:),'Z','X','Y','Controlled Orbit, \rho = 10 and z = 40',1)
+axis tight
+view(3)
+
+% Compute applied control
+thetaC = zeros(1,length(tOut));
+for k = 1:length(tOut)
+  dX = z(k,[1 3 4 6])' - [rho0;z0;0;0];
+  thetaC(k) = -kR*dX;
+end
+
+Plot2D(tPlot, thetaC*180/pi, tL, 'Control Angle (deg)' )
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

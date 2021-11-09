@@ -1,0 +1,795 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>ALASA</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="ALASA.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Three stage to orbit launch vehicle.</span>
+<span class="comment">%   Employs air launch.</span>
+<span class="comment">%</span>
+<span class="comment">%   The numbers for this example were created by hand. They are generally</span>
+<span class="comment">%   representative, but are not based on any actual vehicle.</span>
+<span class="comment">%</span>
+<span class="comment">%   See also OptimalPayloadRatio, SS2O, EP2M, WingSizingForPullUp,</span>
+<span class="comment">%   WingAreaToTaper, WingFromParameters, BuildCADModel</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2012 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%	All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">x</span>
+
+<span class="comment">% Parameters</span>
+<span class="comment">%-----------</span>
+mPayload        = 100/2.205;
+sigmaUS         = 0.1;
+iSpECAPS        = 235;
+dVU             = 0.3;
+dBooster        = 0.8;
+rBooster        = dBooster/2;
+lNoseCone       = 1.0;
+rhoSolidF       = 1350;
+rhoECAPS        = 1000;
+rhoAl           = 2700;
+lGulfStream     = 27.23;
+tShell          = 4e-3;
+lNozzle         = 0.5;
+thrust0         = 30000;
+pullUpAccel     = 3; <span class="comment">% g</span>
+alphaPullUp     = 4; <span class="comment">% deg</span>
+sweepAngle      = 45;
+wingSpan        = 2.0;
+rootChord       = 1.0;
+thicknessRatio	= 0.1;
+tailSpan        = 0.8;
+tailChord       = 0.5;
+shellColor      = [0.32 0.32 0.32];
+skinThickness   = 0.002;
+
+
+<span class="comment">% Star 48 http://www.spaceandtech.com/spacedata/motors/star48_specs.shtml</span>
+<span class="comment">%------------------------------------------------------------------------</span>
+iSpSolid    = 294;
+sigma       = 111.3/2134.3;
+
+<span class="comment">% Compute the fuel for the ECAPS stage</span>
+<span class="comment">%-------------------------------------</span>
+[mF, mT]    = SS2O( iSpECAPS, mPayload, sigmaUS, dVU );
+mPayload 	  = mPayload + mT;
+
+h           = 25000*12*.0254/1000;
+m           = 0.8;
+
+a           = StdAtm(h);
+rEarth      = 6378.165;
+
+v           = a.speedOfSound*m/1000;
+
+mI          = 2858;
+
+hOrbit      = 350;
+rOrbit      = hOrbit + rEarth;
+vOrbit      = sqrt(3.98600436e5/rOrbit);
+vEarth      = (2*pi/86400)*(rEarth+h);
+vDrag       = 1;
+
+deltaV      = vOrbit + vDrag - vEarth - v;
+
+uE          = iSpSolid*ones(1,3)*9.806/1000;
+e           = [sigma sigma sigma];
+
+[pR,pRTot]  = OptimalPayloadRatio( deltaV, uE, e );
+
+[m0, mf]    = EP2M( e, pR, mPayload  );
+
+mMargin     = mI - m0(1);
+
+aBooster    = pi*dBooster^2/4;
+
+mFuel       = m0 - mF;
+massSolid   = mFuel.*(1+sigma);
+
+lS          = mFuel./(rhoSolidF*aBooster);
+lU          = 0.5+mF /(rhoECAPS* aBooster);
+thrust      = thrust0*lS(1:3)/lS(1);
+
+mDot        = thrust/(9.806*iSpSolid);
+
+tBurn       = mFuel./mDot;
+
+lTotal      = lU + lNoseCone + sum(lS);
+
+lS          = [lS+lNozzle lU];
+
+lMax        = max(lS);
+yZLim       = [-dBooster-wingSpan/2 dBooster+wingSpan/2];
+
+mS          = m0 - mf;
+cM          = sum([mS mPayload].*lS)/m0(1);
+
+iSP         = [iSpSolid iSpSolid iSpSolid iSpECAPS 0 0];
+mFuel       = [mFuel mF 0 0];
+
+
+<span class="comment">% Size the wing</span>
+<span class="comment">%--------------</span>
+wingArea               = WingSizingForPullUp( pullUpAccel, m, h, 2*pi, alphaPullUp*pi/180, thrust(1), m0(1), sweepAngle*pi/180 );
+tailArea               = 0.2*wingArea;
+wingArea               = 0.8*wingArea;
+                         WingAreaToTaper( rootChord, wingArea, wingSpan, sweepAngle*pi/180 );
+[taper, sweepTrailing] = WingAreaToTaper( rootChord, wingArea, wingSpan, sweepAngle*pi/180 );
+[vWing, fWing]         = WingFromParameters( rootChord, wingArea, wingSpan, sweepAngle*pi/180, thicknessRatio );
+                         WingAreaToTaper( tailChord, tailArea, tailSpan, sweepAngle*pi/180 );
+[vTail, fTail]         = WingFromParameters( tailChord, tailArea, tailSpan, sweepAngle*pi/180, thicknessRatio );
+[vRudd, fRudd]         = WingFromParameters( 1.4*tailChord, 1.2*tailArea, tailSpan, sweepAngle*pi/180, thicknessRatio );
+
+
+k = 1;
+x{k,1} = <span class="string">'Gulfstream 350 length'</span>;       x{k,2} = sprintf(<span class="string">'%8.2f m'</span>,                 lGulfStream);           k = k + 1;
+x{k,1} = <span class="string">'Gulfstream 350 payload'</span>;      x{k,2} = sprintf(<span class="string">'%8.2f kg'</span>,                mI);                    k = k + 1;
+x{k,1} = <span class="string">'Booster mass'</span>;                x{k,2} = sprintf(<span class="string">'%8.2f kg'</span>,                m0(1));                 k = k + 1;
+x{k,1} = <span class="string">'Booster margin'</span>;              x{k,2} = sprintf(<span class="string">'%8.2f kg'</span>,                mMargin);               k = k + 1;
+x{k,1} = <span class="string">'Booster length'</span>;              x{k,2} = sprintf(<span class="string">'%8.2f m'</span>,                 lTotal);                k = k + 1;
+x{k,1} = <span class="string">'Booster diameter'</span>;            x{k,2} = sprintf(<span class="string">'%8.2f m'</span>,                 dBooster);              k = k + 1;
+x{k,1} = <span class="string">'Delta V'</span>;                     x{k,2} = sprintf(<span class="string">'%8.2f km/s'</span>,              deltaV);                k = k + 1;
+x{k,1} = <span class="string">'Solid Isp'</span>;                   x{k,2} = sprintf(<span class="string">'%8.2f s'</span>,                 iSpSolid);              k = k + 1;
+x{k,1} = <span class="string">'ECAPS Isp'</span>;                   x{k,2} = sprintf(<span class="string">'%8.2f s'</span>,                 iSpECAPS);              k = k + 1;
+x{k,1} = <span class="string">'Mach separation'</span>;             x{k,2} = sprintf(<span class="string">'%8.2f '</span>,                  m);                     k = k + 1;
+x{k,1} = <span class="string">'Velocity separation'</span>;         x{k,2} = sprintf(<span class="string">'%8.2f km/s'</span>,              v);                     k = k + 1;
+x{k,1} = <span class="string">'Altitude separation'</span>;         x{k,2} = sprintf(<span class="string">'%8.2f km'</span>,                h);                     k = k + 1;
+x{k,1} = <span class="string">'Drag loss'</span>;                   x{k,2} = sprintf(<span class="string">'%8.2f km/s'</span>,              vDrag);                 k = k + 1;
+x{k,1} = <span class="string">'Orbit altitude'</span>;              x{k,2} = sprintf(<span class="string">'%8.2f km'</span>,                hOrbit);                k = k + 1;
+x{k,1} = <span class="string">'Density solid fuel'</span>;          x{k,2} = sprintf(<span class="string">'%8.2f kg/m^3'</span>,            rhoSolidF);             k = k + 1;
+x{k,1} = <span class="string">'Density ECAPS fuel'</span>;          x{k,2} = sprintf(<span class="string">'%8.2f kg/m^3'</span>,            rhoECAPS);              k = k + 1;
+x{k,1} = <span class="string">'ECAPS correction'</span>;            x{k,2} = sprintf(<span class="string">'%8.2f km/s'</span>,              dVU);                   k = k + 1;
+x{k,1} = <span class="string">'Burn times'</span>;                  x{k,2} = sprintf(<span class="string">'[%8.2f %8.2f %8.2f] s'</span>,	tBurn);                 k = k + 1;
+x{k,1} = <span class="string">'Thrust'</span>;                      x{k,2} = sprintf(<span class="string">'[%8.1f %8.1f %8.1f] N'</span>,   thrust);                k = k + 1;
+x{k,1} = <span class="string">'Solid stage lengths'</span>;         x{k,2} = sprintf(<span class="string">'[%8.1f %8.1f %8.1f] m'</span>,   lS(1:3));               k = k + 1;
+x{k,1} = <span class="string">'Pull up'</span>;                     x{k,2} = sprintf(<span class="string">'%8.1f g'</span>,                 pullUpAccel);           k = k + 1;
+x{k,1} = <span class="string">'Angle of attack'</span>;             x{k,2} = sprintf(<span class="string">'%8.1f deg'</span>,               alphaPullUp);           k = k + 1;
+x{k,1} = <span class="string">'Wing sweep angle'</span>;            x{k,2} = sprintf(<span class="string">'%8.1f deg'</span>,               sweepAngle);            k = k + 1;
+x{k,1} = <span class="string">'Wing area'</span>;                   x{k,2} = sprintf(<span class="string">'%8.2f m^2'</span>,               wingArea);              k = k + 1;
+x{k,1} = <span class="string">'Wing trailing sweep angle'</span>;	x{k,2} = sprintf(<span class="string">'%8.2f deg'</span>,               sweepTrailing*180/pi);	k = k + 1;
+x{k,1} = <span class="string">'Wing taper'</span>;                  x{k,2} = sprintf(<span class="string">'%8.2f '</span>,                  taper);                 k = k + 1;
+x{k,1} = <span class="string">'Wing root chord'</span>;             x{k,2} = sprintf(<span class="string">'%8.2f m'</span>,                 rootChord);             k = k + 1;
+x{k,1} = <span class="string">'Wing span'</span>;                   x{k,2} = sprintf(<span class="string">'%8.2f m '</span>,                wingSpan);              k = k + 1;
+x{k,1} = <span class="string">'Center of mass'</span>;              x{k,2} = sprintf(<span class="string">'%8.2f m '</span>,                cM);                    k = k + 1;
+
+x
+
+name = {<span class="string">'Stage1'</span> <span class="string">'Stage2'</span> <span class="string">'Stage3'</span> <span class="string">'Stage4'</span> <span class="string">'ConeR'</span> <span class="string">'ConeL'</span>};
+type = [2 1 1 5 3 4];
+
+<span class="keyword">for</span> k = 1:length(name)
+
+    <span class="comment">% Initialize</span>
+    <span class="comment">%-----------</span>
+    BuildCADModel( <span class="string">'initialize'</span>         );
+    BuildCADModel( <span class="string">'set name'</span> , name{k} );
+    BuildCADModel( <span class="string">'set units'</span>, <span class="string">'mks'</span>   );
+
+    <span class="comment">% Core</span>
+    <span class="comment">%-----</span>
+    m              = [];
+    m.name         = <span class="string">'Core'</span>;
+    m.rHinge       = [0;0;0];
+    m.bHinge.b     = eye(3);
+    m.previousBody = [];
+    BuildCADModel(<span class="string">'add body'</span>, m );
+
+	<span class="comment">% This creates the connections between the bodies</span>
+    <span class="comment">%------------------------------------------------</span>
+    BuildCADModel( <span class="string">'compute paths'</span> );
+
+    b = [0 0 1;0 1 0;-1 0 0];
+
+    rNoseCone = (0.4/0.25)*[0.25 0.2 0.125 0];
+
+    <span class="keyword">switch</span> type(k)
+        <span class="keyword">case</span> 1
+            mass = massSolid(k);
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rBooster, <span class="string">'rLower'</span>, rBooster, <span class="string">'h'</span>, lS(k),<span class="string">'n'</span>,20, <span class="string">'rA'</span>,[0;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Shell'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            [v, f] = NoseCone( rNoseCone, lNozzle, 20, 0 );
+            massNozzle = 2*pi*mean(rNoseCone)*lNozzle*rhoAl*skinThickness;
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'rA'</span>,[-lNozzle;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Nozzle'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, massNozzle, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, <span class="string">'black'</span>, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], <span class="string">'cylinder'</span>,1 );
+
+            mass = mass + massNozzle;
+
+
+         <span class="keyword">case</span> 2
+            <span class="comment">% Shell</span>
+            <span class="comment">%------</span>
+            mass = massSolid(k);
+            m    = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rBooster, <span class="string">'rLower'</span>, rBooster, <span class="string">'h'</span>, lS(k),<span class="string">'n'</span>,20, <span class="string">'rA'</span>,[0;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Shell'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            [v, f] = NoseCone( rNoseCone, lNozzle, 20, 0 );
+            massNozzle = 2*pi*mean(rNoseCone)*lNozzle*rhoAl*skinThickness;
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'rA'</span>,[-lNozzle;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Nozzle'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, massNozzle, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, <span class="string">'black'</span>, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            <span class="comment">% Wing</span>
+            <span class="comment">%-----</span>
+            massWing = 2*wingArea*rhoAl*skinThickness;
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, vWing, <span class="string">'face'</span>, fWing, <span class="string">'rA'</span>,[cM-rootChord/2;rBooster;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Wing1'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, massWing, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, vWing, <span class="string">'face'</span>, fWing, <span class="string">'rA'</span>,[cM-rootChord/2;-rBooster;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Wing2'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, massWing, <span class="string">'b'</span>, [1 0 0;0 -1 0;0 0 1], <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>,shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            <span class="comment">% tail</span>
+            <span class="comment">%-----</span>
+            massTail = 2*tailArea*rhoAl*skinThickness;
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, vTail, <span class="string">'face'</span>, fTail, <span class="string">'rA'</span>,[0;rBooster;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Tail1'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, massTail, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, vTail, <span class="string">'face'</span>, fTail, <span class="string">'rA'</span>,[0;-rBooster;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Tail2'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="string">'b'</span>, [1 0 0;0 -1 0;0 0 1], <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, vRudd, <span class="string">'face'</span>, fRudd, <span class="string">'rA'</span>,[0;0;rBooster],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Rudder'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="string">'b'</span>, [1 0 0;0 0 -1;0 1 0], <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+
+            mass = mass + 2*massWing + massTail + massNozzle;
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], <span class="string">'cylinder'</span>,1 );
+
+
+
+        <span class="keyword">case</span> 5
+            <span class="comment">% Shell</span>
+            <span class="comment">%------</span>
+            mass = mPayload;
+            m    = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>, <span class="string">'rUpper'</span>, rBooster, <span class="string">'rLower'</span>, rBooster, <span class="string">'h'</span>, lS(k),<span class="string">'n'</span>,20, <span class="string">'rA'</span>,[0;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Shell'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, 1, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+            BuildCADModel( <span class="string">'add component'</span>, m );
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], <span class="string">'cylinder'</span>,1 );
+
+
+
+         <span class="keyword">case</span> {3 4}
+            [v, f] = NoseCone( rNoseCone, lNoseCone, 20, 1 );
+            <span class="keyword">if</span>( type(k) == 4 )
+                b = [1 0 0;0 -1 0;0 0 1]*b;
+            <span class="keyword">end</span>
+            mass = 2*pi*mean(rNoseCone)*lNoseCone*rhoAl*skinThickness;
+            m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'rA'</span>,[0;0;0],<span class="keyword">...</span>
+                                 <span class="string">'name'</span>, <span class="string">'Nose Cone'</span>, <span class="string">'body'</span>, 1, <span class="string">'mass'</span>, mass, <span class="string">'b'</span>, b, <span class="keyword">...</span>
+                                 <span class="string">'faceColor'</span>, shellColor, <span class="string">'inside'</span>, 0);
+
+            BuildCADModel( <span class="string">'add component'</span>, m );
+            centerOfMass = [lNoseCone/2;0;0];
+            inertia      = Inertias( mass, [rBooster lNoseCone], <span class="string">'cylinder'</span>, 1 );
+
+    <span class="keyword">end</span>
+
+    <span class="comment">% Export</span>
+    <span class="comment">%-------</span>
+
+    g = BuildCADModel( <span class="string">'get model'</span>);
+
+    stageName = sprintf(<span class="string">'ALASA%s'</span>,name{k});
+
+    ExportOBJ(g,stageName);
+
+    LoadCAD(sprintf(<span class="string">'ALASA%s.obj'</span>,name{k}));
+
+    set(gca,<span class="string">'xlim'</span>,[-1 lMax], <span class="string">'ylim'</span>, yZLim, <span class="string">'zlim'</span>, yZLim );
+
+    j = 1;
+    z      = cell(6,2);
+    z{j,1} = stageName; j = j + 1;
+    z{j,1} = <span class="string">'Inertia'</span>;        z{j,2} = sprintf(<span class="string">'[%8.2f %8.2f %8.2f; %8.2f %8.2f %8.2f; %8.2f %8.2f %8.2f]'</span>,inertia); j = j + 1;
+    z{j,1} = <span class="string">'Mass'</span>;           z{j,2} = sprintf(<span class="string">'%12.2f'</span>,mass);j = j + 1;
+    z{j,1} = <span class="string">'Center of Mass'</span>; z{j,2} = sprintf(<span class="string">'[%8.2f %8.2f %8.2f]'</span>,centerOfMass);j = j + 1;
+    z{j,1} = <span class="string">'Fuel Mass'</span>;      z{j,2} = sprintf(<span class="string">'%8.2f'</span>,mFuel(k));j = j + 1;
+    z{j,1} = <span class="string">'iSp'</span>;            z{j,2} = sprintf(<span class="string">'%8.2f'</span>,iSP(k));
+
+    fprintf(1,<span class="string">'\n---------------------------------------------------------------\n'</span>);
+    <span class="keyword">for</span> j = 1:6
+        fprintf(1,<span class="string">'%14s %s\n'</span>,z{j,1},z{j,2});
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">x =
+  29&times;2 cell array
+    {'Gulfstream 350 length'    }    {'   27.23 m'                    }
+    {'Gulfstream 350 payload'   }    {' 2858.00 kg'                   }
+    {'Booster mass'             }    {' 2005.60 kg'                   }
+    {'Booster margin'           }    {'  852.40 kg'                   }
+    {'Booster length'           }    {'    5.91 m'                    }
+    {'Booster diameter'         }    {'    0.80 m'                    }
+    {'Delta V'                  }    {'    7.96 km/s'                 }
+    {'Solid Isp'                }    {'  294.00 s'                    }
+    {'ECAPS Isp'                }    {'  235.00 s'                    }
+    {'Mach separation'          }    {'    0.80 '                     }
+    {'Velocity separation'      }    {'    0.27 km/s'                 }
+    {'Altitude separation'      }    {'    7.62 km'                   }
+    {'Drag loss'                }    {'    1.00 km/s'                 }
+    {'Orbit altitude'           }    {'  350.00 km'                   }
+    {'Density solid fuel'       }    {' 1350.00 kg/m^3'               }
+    {'Density ECAPS fuel'       }    {' 1000.00 kg/m^3'               }
+    {'ECAPS correction'         }    {'    0.30 km/s'                 }
+    {'Burn times'               }    {'[  192.12   192.12   192.12] s'}
+    {'Thrust'                   }    {'[ 30000.0  10896.9   3919.3] N'}
+    {'Solid stage lengths'      }    {'[     3.4      1.6      0.9] m'}
+    {'Pull up'                  }    {'     3.0 g'                    }
+    {'Angle of attack'          }    {'     4.0 deg'                  }
+    {'Wing sweep angle'         }    {'    45.0 deg'                  }
+    {'Wing area'                }    {'    1.34 m^2'                  }
+    {'Wing trailing sweep angle'}    {'   18.86 deg'                  }
+    {'Wing taper'               }    {'    0.34 '                     }
+    {'Wing root chord'          }    {'    1.00 m'                    }
+    {'Wing span'                }    {'    2.00 m '                   }
+    {'Center of mass'           }    {'    2.51 m '                   }
+
+---------------------------------------------------------------
+   ALASAStage1 
+       Inertia [ 2203.44     0.00     0.00;     0.00  2203.44     0.00;     0.00     0.00   171.20]
+          Mass      2139.97
+Center of Mass [    1.72     0.00     0.00]
+     Fuel Mass  1999.21
+           iSp   294.00
+
+---------------------------------------------------------------
+   ALASAStage2 
+       Inertia [  187.53     0.00     0.00;     0.00   187.53     0.00;     0.00     0.00    61.12]
+          Mass       767.95
+Center of Mass [    0.79     0.00     0.00]
+     Fuel Mass   726.17
+           iSp   294.00
+
+---------------------------------------------------------------
+   ALASAStage3 
+       Inertia [   28.92     0.00     0.00;     0.00    28.92     0.00;     0.00     0.00    21.98]
+          Mass       278.71
+Center of Mass [    0.44     0.00     0.00]
+     Fuel Mass   261.19
+           iSp   294.00
+
+---------------------------------------------------------------
+   ALASAStage4 
+       Inertia [    6.05     0.00     0.00;     0.00     6.05     0.00;     0.00     0.00     7.82]
+          Mass        97.74
+Center of Mass [    0.26     0.00     0.00]
+     Fuel Mass     6.39
+           iSp   235.00
+
+---------------------------------------------------------------
+    ALASAConeR 
+       Inertia [    0.96     0.00     0.00;     0.00     0.96     0.00;     0.00     0.00     0.62]
+          Mass         7.80
+Center of Mass [    0.50     0.00     0.00]
+     Fuel Mass     0.00
+           iSp     0.00
+
+---------------------------------------------------------------
+    ALASAConeL 
+       Inertia [    0.96     0.00     0.00;     0.00     0.96     0.00;     0.00     0.00     0.62]
+          Mass         7.80
+Center of Mass [    0.50     0.00     0.00]
+     Fuel Mass     0.00
+           iSp     0.00
+</pre><img vspace="5" hspace="5" src="ALASA_01.png" alt=""> <img vspace="5" hspace="5" src="ALASA_02.png" alt=""> <img vspace="5" hspace="5" src="ALASA_03.png" alt=""> <img vspace="5" hspace="5" src="ALASA_04.png" alt=""> <img vspace="5" hspace="5" src="ALASA_05.png" alt=""> <img vspace="5" hspace="5" src="ALASA_06.png" alt=""> <img vspace="5" hspace="5" src="ALASA_07.png" alt=""> <img vspace="5" hspace="5" src="ALASA_08.png" alt=""> <img vspace="5" hspace="5" src="ALASA_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Three stage to orbit launch vehicle.
+%   Employs air launch.
+%   
+%   The numbers for this example were created by hand. They are generally 
+%   representative, but are not based on any actual vehicle.
+%
+%   See also OptimalPayloadRatio, SS2O, EP2M, WingSizingForPullUp,
+%   WingAreaToTaper, WingFromParameters, BuildCADModel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2012 Princeton Satellite Systems, Inc.
+%	All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear x
+
+% Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mPayload        = 100/2.205;
+sigmaUS         = 0.1;
+iSpECAPS        = 235;
+dVU             = 0.3;
+dBooster        = 0.8;
+rBooster        = dBooster/2;
+lNoseCone       = 1.0;
+rhoSolidF       = 1350;
+rhoECAPS        = 1000;
+rhoAl           = 2700;
+lGulfStream     = 27.23;
+tShell          = 4e-3;
+lNozzle         = 0.5;
+thrust0         = 30000;
+pullUpAccel     = 3; % g
+alphaPullUp     = 4; % deg
+sweepAngle      = 45;
+wingSpan        = 2.0;
+rootChord       = 1.0;
+thicknessRatio	= 0.1;
+tailSpan        = 0.8;
+tailChord       = 0.5;
+shellColor      = [0.32 0.32 0.32];
+skinThickness   = 0.002;
+
+
+% Star 48 http://www.spaceandtech.com/spacedata/motors/star48_specs.shtml
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+iSpSolid    = 294;
+sigma       = 111.3/2134.3; 
+
+% Compute the fuel for the ECAPS stage
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[mF, mT]    = SS2O( iSpECAPS, mPayload, sigmaUS, dVU );
+mPayload 	  = mPayload + mT;
+
+h           = 25000*12*.0254/1000;
+m           = 0.8;
+
+a           = StdAtm(h);
+rEarth      = 6378.165;
+
+v           = a.speedOfSound*m/1000;
+
+mI          = 2858;
+
+hOrbit      = 350;
+rOrbit      = hOrbit + rEarth;
+vOrbit      = sqrt(3.98600436e5/rOrbit);
+vEarth      = (2*pi/86400)*(rEarth+h);
+vDrag       = 1;
+
+deltaV      = vOrbit + vDrag - vEarth - v;
+
+uE          = iSpSolid*ones(1,3)*9.806/1000;
+e           = [sigma sigma sigma];
+
+[pR,pRTot]  = OptimalPayloadRatio( deltaV, uE, e );
+
+[m0, mf]    = EP2M( e, pR, mPayload  );
+
+mMargin     = mI - m0(1);
+
+aBooster    = pi*dBooster^2/4;
+
+mFuel       = m0 - mF;
+massSolid   = mFuel.*(1+sigma);
+
+lS          = mFuel./(rhoSolidF*aBooster);
+lU          = 0.5+mF /(rhoECAPS* aBooster);
+thrust      = thrust0*lS(1:3)/lS(1);
+
+mDot        = thrust/(9.806*iSpSolid);
+
+tBurn       = mFuel./mDot;
+
+lTotal      = lU + lNoseCone + sum(lS);
+
+lS          = [lS+lNozzle lU];
+
+lMax        = max(lS);
+yZLim       = [-dBooster-wingSpan/2 dBooster+wingSpan/2];
+
+mS          = m0 - mf;
+cM          = sum([mS mPayload].*lS)/m0(1);
+
+iSP         = [iSpSolid iSpSolid iSpSolid iSpECAPS 0 0];
+mFuel       = [mFuel mF 0 0];
+
+
+% Size the wing
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+wingArea               = WingSizingForPullUp( pullUpAccel, m, h, 2*pi, alphaPullUp*pi/180, thrust(1), m0(1), sweepAngle*pi/180 );
+tailArea               = 0.2*wingArea;
+wingArea               = 0.8*wingArea;
+                         WingAreaToTaper( rootChord, wingArea, wingSpan, sweepAngle*pi/180 );
+[taper, sweepTrailing] = WingAreaToTaper( rootChord, wingArea, wingSpan, sweepAngle*pi/180 );
+[vWing, fWing]         = WingFromParameters( rootChord, wingArea, wingSpan, sweepAngle*pi/180, thicknessRatio );
+                         WingAreaToTaper( tailChord, tailArea, tailSpan, sweepAngle*pi/180 );
+[vTail, fTail]         = WingFromParameters( tailChord, tailArea, tailSpan, sweepAngle*pi/180, thicknessRatio );
+[vRudd, fRudd]         = WingFromParameters( 1.4*tailChord, 1.2*tailArea, tailSpan, sweepAngle*pi/180, thicknessRatio );
+
+
+k = 1;
+x{k,1} = 'Gulfstream 350 length';       x{k,2} = sprintf('%8.2f m',                 lGulfStream);           k = k + 1;
+x{k,1} = 'Gulfstream 350 payload';      x{k,2} = sprintf('%8.2f kg',                mI);                    k = k + 1;
+x{k,1} = 'Booster mass';                x{k,2} = sprintf('%8.2f kg',                m0(1));                 k = k + 1;
+x{k,1} = 'Booster margin';              x{k,2} = sprintf('%8.2f kg',                mMargin);               k = k + 1;
+x{k,1} = 'Booster length';              x{k,2} = sprintf('%8.2f m',                 lTotal);                k = k + 1;
+x{k,1} = 'Booster diameter';            x{k,2} = sprintf('%8.2f m',                 dBooster);              k = k + 1;
+x{k,1} = 'Delta V';                     x{k,2} = sprintf('%8.2f km/s',              deltaV);                k = k + 1;
+x{k,1} = 'Solid Isp';                   x{k,2} = sprintf('%8.2f s',                 iSpSolid);              k = k + 1;
+x{k,1} = 'ECAPS Isp';                   x{k,2} = sprintf('%8.2f s',                 iSpECAPS);              k = k + 1;
+x{k,1} = 'Mach separation';             x{k,2} = sprintf('%8.2f ',                  m);                     k = k + 1;
+x{k,1} = 'Velocity separation';         x{k,2} = sprintf('%8.2f km/s',              v);                     k = k + 1;
+x{k,1} = 'Altitude separation';         x{k,2} = sprintf('%8.2f km',                h);                     k = k + 1;
+x{k,1} = 'Drag loss';                   x{k,2} = sprintf('%8.2f km/s',              vDrag);                 k = k + 1;
+x{k,1} = 'Orbit altitude';              x{k,2} = sprintf('%8.2f km',                hOrbit);                k = k + 1;
+x{k,1} = 'Density solid fuel';          x{k,2} = sprintf('%8.2f kg/m^3',            rhoSolidF);             k = k + 1;
+x{k,1} = 'Density ECAPS fuel';          x{k,2} = sprintf('%8.2f kg/m^3',            rhoECAPS);              k = k + 1;
+x{k,1} = 'ECAPS correction';            x{k,2} = sprintf('%8.2f km/s',              dVU);                   k = k + 1;
+x{k,1} = 'Burn times';                  x{k,2} = sprintf('[%8.2f %8.2f %8.2f] s',	tBurn);                 k = k + 1;
+x{k,1} = 'Thrust';                      x{k,2} = sprintf('[%8.1f %8.1f %8.1f] N',   thrust);                k = k + 1;
+x{k,1} = 'Solid stage lengths';         x{k,2} = sprintf('[%8.1f %8.1f %8.1f] m',   lS(1:3));               k = k + 1;
+x{k,1} = 'Pull up';                     x{k,2} = sprintf('%8.1f g',                 pullUpAccel);           k = k + 1;
+x{k,1} = 'Angle of attack';             x{k,2} = sprintf('%8.1f deg',               alphaPullUp);           k = k + 1;
+x{k,1} = 'Wing sweep angle';            x{k,2} = sprintf('%8.1f deg',               sweepAngle);            k = k + 1;
+x{k,1} = 'Wing area';                   x{k,2} = sprintf('%8.2f m^2',               wingArea);              k = k + 1;
+x{k,1} = 'Wing trailing sweep angle';	x{k,2} = sprintf('%8.2f deg',               sweepTrailing*180/pi);	k = k + 1;
+x{k,1} = 'Wing taper';                  x{k,2} = sprintf('%8.2f ',                  taper);                 k = k + 1;
+x{k,1} = 'Wing root chord';             x{k,2} = sprintf('%8.2f m',                 rootChord);             k = k + 1;
+x{k,1} = 'Wing span';                   x{k,2} = sprintf('%8.2f m ',                wingSpan);              k = k + 1;
+x{k,1} = 'Center of mass';              x{k,2} = sprintf('%8.2f m ',                cM);                    k = k + 1;
+    
+x
+
+name = {'Stage1' 'Stage2' 'Stage3' 'Stage4' 'ConeR' 'ConeL'};
+type = [2 1 1 5 3 4];
+
+for k = 1:length(name)
+
+    % Initialize
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    BuildCADModel( 'initialize'         );
+    BuildCADModel( 'set name' , name{k} );
+    BuildCADModel( 'set units', 'mks'   );
+
+    % Core
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    m              = [];
+    m.name         = 'Core';
+    m.rHinge       = [0;0;0];
+    m.bHinge.b     = eye(3);
+    m.previousBody = [];
+    BuildCADModel('add body', m );
+
+	% This creates the connections between the bodies
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    BuildCADModel( 'compute paths' );
+    
+    b = [0 0 1;0 1 0;-1 0 0];
+    
+    rNoseCone = (0.4/0.25)*[0.25 0.2 0.125 0];
+
+    switch type(k)
+        case 1
+            mass = massSolid(k);
+            m = CreateComponent( 'make', 'cylinder', 'rUpper', rBooster, 'rLower', rBooster, 'h', lS(k),'n',20, 'rA',[0;0;0],...
+                                 'name', 'Shell', 'body', 1, 'mass', mass, 'b', b, ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            [v, f] = NoseCone( rNoseCone, lNozzle, 20, 0 );
+            massNozzle = 2*pi*mean(rNoseCone)*lNozzle*rhoAl*skinThickness;
+            m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'rA',[-lNozzle;0;0],...
+                                 'name', 'Nozzle', 'body', 1, 'mass', massNozzle, 'b', b, ...
+                                 'faceColor', 'black', 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], 'cylinder',1 );
+            
+            mass = mass + massNozzle;
+
+            
+         case 2
+            % Shell
+            %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+            mass = massSolid(k);
+            m    = CreateComponent( 'make', 'cylinder', 'rUpper', rBooster, 'rLower', rBooster, 'h', lS(k),'n',20, 'rA',[0;0;0],...
+                                 'name', 'Shell', 'body', 1, 'mass', mass, 'b', b, ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            [v, f] = NoseCone( rNoseCone, lNozzle, 20, 0 );
+            massNozzle = 2*pi*mean(rNoseCone)*lNozzle*rhoAl*skinThickness;
+            m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'rA',[-lNozzle;0;0],...
+                                 'name', 'Nozzle', 'body', 1, 'mass', massNozzle, 'b', b, ...
+                                 'faceColor', 'black', 'inside', 0);
+            BuildCADModel( 'add component', m );
+                          
+            % Wing
+            %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+            massWing = 2*wingArea*rhoAl*skinThickness;
+            m = CreateComponent( 'make', 'generic', 'vertex', vWing, 'face', fWing, 'rA',[cM-rootChord/2;rBooster;0],...
+                                 'name', 'Wing1', 'body', 1, 'mass', massWing, ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            m = CreateComponent( 'make', 'generic', 'vertex', vWing, 'face', fWing, 'rA',[cM-rootChord/2;-rBooster;0],...
+                                 'name', 'Wing2', 'body', 1, 'mass', massWing, 'b', [1 0 0;0 -1 0;0 0 1], ...
+                                 'faceColor',shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+ 
+            % tail
+            %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+            massTail = 2*tailArea*rhoAl*skinThickness;
+            m = CreateComponent( 'make', 'generic', 'vertex', vTail, 'face', fTail, 'rA',[0;rBooster;0],...
+                                 'name', 'Tail1', 'body', 1, 'mass', massTail, ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            m = CreateComponent( 'make', 'generic', 'vertex', vTail, 'face', fTail, 'rA',[0;-rBooster;0],...
+                                 'name', 'Tail2', 'body', 1, 'mass', mass, 'b', [1 0 0;0 -1 0;0 0 1], ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            m = CreateComponent( 'make', 'generic', 'vertex', vRudd, 'face', fRudd, 'rA',[0;0;rBooster],...
+                                 'name', 'Rudder', 'body', 1, 'mass', mass, 'b', [1 0 0;0 0 -1;0 1 0], ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            
+            mass = mass + 2*massWing + massTail + massNozzle;
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], 'cylinder',1 );
+
+
+           
+        case 5
+            % Shell
+            %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+            mass = mPayload;
+            m    = CreateComponent( 'make', 'cylinder', 'rUpper', rBooster, 'rLower', rBooster, 'h', lS(k),'n',20, 'rA',[0;0;0],...
+                                 'name', 'Shell', 'body', 1, 'mass', 1, 'b', b, ...
+                                 'faceColor', shellColor, 'inside', 0);
+            BuildCADModel( 'add component', m );
+            centerOfMass = [lS(k)/2;0;0];
+            inertia      = Inertias( mass, [rBooster lS(k)], 'cylinder',1 );
+
+
+
+         case {3 4}
+            [v, f] = NoseCone( rNoseCone, lNoseCone, 20, 1 );
+            if( type(k) == 4 )
+                b = [1 0 0;0 -1 0;0 0 1]*b;
+            end
+            mass = 2*pi*mean(rNoseCone)*lNoseCone*rhoAl*skinThickness;
+            m = CreateComponent( 'make', 'generic', 'vertex', v, 'face', f, 'rA',[0;0;0],...
+                                 'name', 'Nose Cone', 'body', 1, 'mass', mass, 'b', b, ...
+                                 'faceColor', shellColor, 'inside', 0);
+                             
+            BuildCADModel( 'add component', m );
+            centerOfMass = [lNoseCone/2;0;0];
+            inertia      = Inertias( mass, [rBooster lNoseCone], 'cylinder', 1 );
+
+    end
+   
+    % Export
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+    g = BuildCADModel( 'get model');
+    
+    stageName = sprintf('ALASA%s',name{k});
+
+    ExportOBJ(g,stageName);
+    
+    LoadCAD(sprintf('ALASA%s.obj',name{k}));
+    
+    set(gca,'xlim',[-1 lMax], 'ylim', yZLim, 'zlim', yZLim );
+    
+    j = 1;
+    z      = cell(6,2);
+    z{j,1} = stageName; j = j + 1;
+    z{j,1} = 'Inertia';        z{j,2} = sprintf('[%8.2f %8.2f %8.2f; %8.2f %8.2f %8.2f; %8.2f %8.2f %8.2f]',inertia); j = j + 1;
+    z{j,1} = 'Mass';           z{j,2} = sprintf('%12.2f',mass);j = j + 1;
+    z{j,1} = 'Center of Mass'; z{j,2} = sprintf('[%8.2f %8.2f %8.2f]',centerOfMass);j = j + 1;
+    z{j,1} = 'Fuel Mass';      z{j,2} = sprintf('%8.2f',mFuel(k));j = j + 1;
+    z{j,1} = 'iSp';            z{j,2} = sprintf('%8.2f',iSP(k));
+    
+    fprintf(1,'\nREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-\n');
+    for j = 1:6
+        fprintf(1,'%14s %s\n',z{j,1},z{j,2});
+    end
+   
+end
+
+
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-10-01 18:23:52 -0400 (Mon, 01 Oct 2018) $
+% $Revision: 47221 $
+
+
+##### SOURCE END #####
+--></body></html>

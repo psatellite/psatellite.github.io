@@ -1,0 +1,283 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Point at an earth target and spin about the pointing vector.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="EarthTargetPointingSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Point at an earth target and spin about the pointing vector.</h1><!--introduction--><p>Performs an animation around the earth.</p><pre>See also ECIToEF, LatLonAltToEF, RVOrbGen, Period, LoadEarthMap,
+XLabelS, YLabelS, ZLabelS, AU2Q, Mat2Q, QForm, QMult, QPose, U2Q, Date2JD,
+JD2T, Unit
+-------------------------------------------------------------------------</pre><!--/introduction--><p>-------------------------------------------------------------------------   Copyright (c) 2012 Princeton Satellite Systems, Inc.   All rights reserved. -------------------------------------------------------------------------  Since version 10. -------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">% Spacecraft</span>
+<span class="comment">%-----------</span>
+omega       = 2*pi/40;
+uSpin       = [0;0;-1];
+
+<span class="comment">% Taywarah, Afghanistan</span>
+<span class="comment">%----------------------</span>
+lat       = 33.51987810*pi/180;
+lon       = 64.41708930*pi/180;
+alt       = 2.2; <span class="comment">% km</span>
+rTargetEF	= LatLonAltToEF([lat;lon;alt]);
+
+<span class="comment">% Julian date for sim start</span>
+<span class="comment">%--------------------------</span>
+jD0 = Date2JD([2015 5 3 0 0 0]);
+
+<span class="comment">% Spacecraft orbit</span>
+<span class="comment">%-----------------</span>
+el = [10000 0 0 0 0 0];
+p  = Period(el(1));
+n  = 200;
+t  = linspace(1,2*p,n);
+r  = RVOrbGen(el,t);
+
+<span class="comment">% Find the target vector in the ECI frame</span>
+<span class="comment">%----------------------------------------</span>
+jD         = jD0 + t/86400;
+rTargetECI = zeros(3,n);
+g          = cell(n);
+<span class="keyword">for</span> k = 1:n
+  g{k}            = ECIToEF( JD2T(jD(k)) );
+  rTargetECI(:,k) = g{k}'*rTargetEF - r(:,k);
+<span class="keyword">end</span>
+
+<span class="comment">% Angle about spin axis</span>
+<span class="comment">%----------------------</span>
+angle           = omega*t;
+qBodyToRotated  = AU2Q( angle, uSpin );
+qECIToBody      = U2Q( Unit(rTargetECI), uSpin );
+qECIToBody      = QMult(  qECIToBody, qBodyToRotated );
+
+<span class="comment">% Animate the body axes</span>
+<span class="comment">%----------------------</span>
+h = LoadEarthMap;
+xL = get(gca,<span class="string">'xlim'</span>);
+yL = get(gca,<span class="string">'ylim'</span>);
+zL = get(gca,<span class="string">'zlim'</span>);
+
+axis <span class="string">on</span>
+set(gca,<span class="string">'color'</span>,<span class="string">'k'</span>,<span class="string">'xcolor'</span>,<span class="string">'w'</span>,<span class="string">'ycolor'</span>,<span class="string">'w'</span>,<span class="string">'zcolor'</span>,<span class="string">'w'</span>,<span class="string">'xlim'</span>, xL, <span class="string">'ylim'</span>, yL, <span class="string">'zlim'</span>, zL)
+grid <span class="string">on</span>
+XLabelS(<span class="string">'x'</span>)
+YLabelS(<span class="string">'y'</span>)
+ZLabelS(<span class="string">'z'</span>);
+
+hX = 0;
+<span class="keyword">for</span> k = 1:n
+
+    <span class="keyword">if</span>( hX &gt; 0 )
+        delete(hX);
+        delete(hY);
+        delete(hZ);
+        delete(hL);
+    <span class="keyword">end</span>
+
+    rEF = (g{k}*r(:,k))';
+
+    x   = [0 0 0;1400 0 0];
+    y   = [0 0 0;0 1400 0];
+    z   = [0 0 0;0 0 1400];
+
+    qEFToECI = Mat2Q( g{k}' );
+
+    qBodyToEF = QPose( QMult( qEFToECI, qECIToBody(:,k) ) );
+
+    x   = QForm( qBodyToEF, x' )';
+	  y   = QForm( qBodyToEF, y' )';
+    z   = QForm( qBodyToEF, z' )';
+
+    x   = x + [rEF;rEF];
+    y   = y + [rEF;rEF];
+    z   = z + [rEF;rEF];
+
+    l   = [rTargetEF';rEF];
+
+	  hL = patch(<span class="string">'vertices'</span>,l,<span class="string">'faces'</span>,[1 2],<span class="string">'edgecolor'</span>,[0.5 0.0 0.5],<span class="string">'linewidth'</span>,2);
+    hX = patch(<span class="string">'vertices'</span>,x,<span class="string">'faces'</span>,[1 2],<span class="string">'edgecolor'</span>,[0.5 0.0 0.0],<span class="string">'linewidth'</span>,2);
+    hY = patch(<span class="string">'vertices'</span>,y,<span class="string">'faces'</span>,[1 2],<span class="string">'edgecolor'</span>,[0.0 0.5 0.0],<span class="string">'linewidth'</span>,2);
+    hZ = patch(<span class="string">'vertices'</span>,z,<span class="string">'faces'</span>,[1 2],<span class="string">'edgecolor'</span>,[0.5 0.5 0.0],<span class="string">'linewidth'</span>,2);
+
+    pause(0.1)
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="EarthTargetPointingSim_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Point at an earth target and spin about the pointing vector.
+% Performs an animation around the earth.
+%
+%  See also ECIToEF, LatLonAltToEF, RVOrbGen, Period, LoadEarthMap, 
+%  XLabelS, YLabelS, ZLabelS, AU2Q, Mat2Q, QForm, QMult, QPose, U2Q, Date2JD, 
+%  JD2T, Unit
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2012 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  Since version 10.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Spacecraft
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+omega       = 2*pi/40; 
+uSpin       = [0;0;-1];
+
+% Taywarah, Afghanistan
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+lat       = 33.51987810*pi/180;
+lon       = 64.41708930*pi/180;
+alt       = 2.2; % km
+rTargetEF	= LatLonAltToEF([lat;lon;alt]);
+
+% Julian date for sim start
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD0 = Date2JD([2015 5 3 0 0 0]);
+
+% Spacecraft orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+el = [10000 0 0 0 0 0];
+p  = Period(el(1));
+n  = 200;
+t  = linspace(1,2*p,n);
+r  = RVOrbGen(el,t);
+
+% Find the target vector in the ECI frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD         = jD0 + t/86400;
+rTargetECI = zeros(3,n);
+g          = cell(n);
+for k = 1:n
+  g{k}            = ECIToEF( JD2T(jD(k)) );
+  rTargetECI(:,k) = g{k}'*rTargetEF - r(:,k);
+end
+
+% Angle about spin axis
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+angle           = omega*t;
+qBodyToRotated  = AU2Q( angle, uSpin );
+qECIToBody      = U2Q( Unit(rTargetECI), uSpin );
+qECIToBody      = QMult(  qECIToBody, qBodyToRotated );
+
+% Animate the body axes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+h = LoadEarthMap;
+xL = get(gca,'xlim');
+yL = get(gca,'ylim');
+zL = get(gca,'zlim');
+
+axis on
+set(gca,'color','k','xcolor','w','ycolor','w','zcolor','w','xlim', xL, 'ylim', yL, 'zlim', zL)
+grid on
+XLabelS('x')
+YLabelS('y')
+ZLabelS('z');
+
+hX = 0;
+for k = 1:n
+    	 
+    if( hX > 0 )
+        delete(hX);
+        delete(hY);
+        delete(hZ);
+        delete(hL);
+    end
+    
+    rEF = (g{k}*r(:,k))';
+    
+    x   = [0 0 0;1400 0 0];
+    y   = [0 0 0;0 1400 0];
+    z   = [0 0 0;0 0 1400];
+    
+    qEFToECI = Mat2Q( g{k}' );
+    
+    qBodyToEF = QPose( QMult( qEFToECI, qECIToBody(:,k) ) );
+    
+    x   = QForm( qBodyToEF, x' )';
+	  y   = QForm( qBodyToEF, y' )';
+    z   = QForm( qBodyToEF, z' )';
+    
+    x   = x + [rEF;rEF];
+    y   = y + [rEF;rEF];
+    z   = z + [rEF;rEF];
+    
+    l   = [rTargetEF';rEF];
+    
+	  hL = patch('vertices',l,'faces',[1 2],'edgecolor',[0.5 0.0 0.5],'linewidth',2);
+    hX = patch('vertices',x,'faces',[1 2],'edgecolor',[0.5 0.0 0.0],'linewidth',2);
+    hY = patch('vertices',y,'faces',[1 2],'edgecolor',[0.0 0.5 0.0],'linewidth',2);
+    hZ = patch('vertices',z,'faces',[1 2],'edgecolor',[0.5 0.5 0.0],'linewidth',2);
+    
+    pause(0.1)
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-28 11:43:33 -0400 (Thu, 28 May 2020) $
+% $Revision: 52504 $
+
+##### SOURCE END #####
+--></body></html>

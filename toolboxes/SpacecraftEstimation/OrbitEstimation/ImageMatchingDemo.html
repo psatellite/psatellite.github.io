@@ -1,0 +1,383 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates the image matching algorithm.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="ImageMatchingDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates the image matching algorithm.</h1><!--introduction--><pre class="language-matlab">Since <span class="string">version</span> <span class="string">8.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">FImage</span>, QForm, QLVLH, QMult, QPose, QUnit, Mag,
+FindSolsticeOrEquinox, RVFromKepler, SunV1, CameraDatabase, SpaceCamera
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Ephemeris</a></li><li><a href="#3">Camera</a></li><li><a href="#4">Initialize the picture</a></li><li><a href="#5">Earth vector</a></li><li><a href="#6">CAD body structure</a></li><li><a href="#7">Draw the picture</a></li><li><a href="#8">Create the data structure</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+clear <span class="string">g</span>; clear <span class="string">d</span>; clear <span class="string">w</span>;
+test = <span class="string">'ry'</span>;
+
+g = load(<span class="string">'SCForImaging'</span>);
+</pre><h2>Ephemeris<a name="2"></a></h2><pre class="codeinput"><span class="comment">%----------</span>
+jD                     = FindSolsticeOrEquinox(<span class="string">'spring equinox'</span>,2002);
+[rECI, vECI]           = RVFromKepler( [42167 0 0 0 0 0], 0 );
+
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+</pre><h2>Camera<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-------</span>
+d.camera                  = CameraDatabase(<span class="string">'256 square'</span>);
+d.camera.up               = [0;-1;0];
+d.camera.focalLength      = 0.1;
+d.camera.aperture         = 0.1;
+d.camera.rho              = 0.03;
+</pre><h2>Initialize the picture<a name="4"></a></h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+qLVLH                   = QLVLH( rECI, vECI);
+g.body(1).bHinge.q      = QPose(qLVLH);
+g.rECI                  = rECI;
+g.qLVLH                 = qLVLH;
+g.name                  = <span class="string">'Satellite'</span>;
+d.position              = [];
+d.planetName            = <span class="string">'Earth'</span>;
+tagVisibleCameraWindow  = SpaceCamera( <span class="string">'initialize'</span>, d, g, jD(1) );
+
+d.s                     = 1358*SunV1(jD(1)); <span class="comment">% Watts/m^2</span>
+d.tSamp                 = 10;
+d.shadow                = 0;
+d.showScans             = 0;
+d.nScanLines            = 10;
+d.units                 = <span class="string">'m'</span>;
+d.planet                = <span class="string">'earth'</span>;
+d.planetRadius          = 6378.165;
+
+[uSun, rSun]            = SunV1(jD);
+d.s                     = 1358*uSun;
+d.r                     = rECI;
+d.v                     = vECI;
+d.rSun                  = rSun*uSun;
+</pre><img vspace="5" hspace="5" src="ImageMatchingDemo_01.png" alt=""> <h2>Earth vector<a name="5"></a></h2><pre class="codeinput"><span class="comment">%-------------</span>
+qLVLH    = QLVLH( rECI, vECI );
+uSunLVLH = QForm( qLVLH, uSun );
+theta    = atan2( uSunLVLH(1), uSunLVLH(3) );
+</pre><h2>CAD body structure<a name="6"></a></h2><pre class="codeinput"><span class="comment">%-------------------</span>
+g.body(1).bHinge.q     = QPose(qLVLH);
+g.body(2).bHinge.angle = theta + pi;
+g.body(3).bHinge.angle = theta + pi;
+g.rECI                 = rECI;
+g.qLVLH                = qLVLH;
+</pre><h2>Draw the picture<a name="7"></a></h2><pre class="codeinput"><span class="comment">%-----------------</span>
+d.camera.rBody    = 1.000002*g(1).rECI*1000;
+d.camera.distance = 0.000002*Mag(g(1).rECI)*1000;
+qBodyToECI        = g(1).body(1).bHinge.q;
+d.camera.qBody    = QPose( qBodyToECI );
+
+SpaceCamera( <span class="string">'update camera'</span>,     tagVisibleCameraWindow,  d.camera, jD );
+SpaceCamera( <span class="string">'update spacecraft'</span>, tagVisibleCameraWindow,  g,      jD );
+</pre><img vspace="5" hspace="5" src="ImageMatchingDemo_02.png" alt=""> <h2>Create the data structure<a name="8"></a></h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+w.image  = SpaceCamera( <span class="string">'get frame'</span>, tagVisibleCameraWindow );
+w.g      = g;
+
+tol = 1e-4;
+<span class="keyword">switch</span> test
+  <span class="keyword">case</span> <span class="string">'ry'</span>
+    w.rECI0 = rECI + [0;.001;0]; <span class="comment">% Example 1</span>
+    w.q0    = g.body(1).bHinge.q;
+
+  <span class="keyword">case</span> <span class="string">'rz'</span>
+    w.rECI0 = rECI + [0.0;0;.001];<span class="comment">% Example 2</span>
+    w.q0    = g.body(1).bHinge.q;
+
+  <span class="keyword">case</span> <span class="string">'rx'</span>
+    tol = 1e-6;
+    w.rECI0 = rECI + [0.001;0;0]; <span class="comment">% Example 3</span>
+    w.q0    = g.body(1).bHinge.q;
+
+  <span class="keyword">case</span> <span class="string">'qx'</span>
+    w.rECI0 = rECI;
+    dQ      = QUnit([1;0.1;0;0]);
+    w.q0    = QMult( g.body(1).bHinge.q, dQ );
+<span class="keyword">end</span>
+
+opts = optimset(<span class="string">'tolfun'</span>,1,<span class="string">'tolx'</span>,tol,<span class="string">'MaxFunEvals'</span>,200*6);
+opts = optimset(<span class="string">'tolfun'</span>,1,<span class="string">'tolx'</span>,tol,<span class="string">'MaxFunEvals'</span>,100,<span class="string">'display'</span>,<span class="string">'iter'</span>);
+w.tag    = SpaceCamera( <span class="string">'initialize'</span>, d, g, jD );
+w.jD     = jD;
+w.camera = d.camera;
+
+x0      = [0;0;0;0;0;0];
+
+disp(<span class="string">'Begin fminsearch. This can take a few minutes.'</span>)
+
+[xNew, fval, exitflag, output] = fminsearch( <span class="string">'FImage'</span>, x0, opts, w );
+
+disp(<span class="string">'Number of steps'</span>);
+disp(output.iterations);
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Begin fminsearch. This can take a few minutes.
+ 
+ Iteration   Func-count     min f(x)         Procedure
+     0            1            58489         
+     1            7            58418         initial simplex
+     2            9            34258         expand
+     3           10            34258         reflect
+     4           11            34258         reflect
+     5           12            34258         reflect
+     6           13            34258         reflect
+     7           15            16385         expand
+     8           17            14525         expand
+     9           19             7558         reflect
+    10           20             7558         reflect
+    11           21             7558         reflect
+    12           22             7558         reflect
+    13           24             7558         contract inside
+    14           26             7558         contract outside
+    15           28             7558         contract inside
+    16           30             7558         contract outside
+    17           32             5059         contract inside
+    18           34             5059         contract inside
+    19           36             4500         contract inside
+    20           37             4500         reflect
+    21           39             4500         contract inside
+    22           41             4500         contract inside
+    23           42             4500         reflect
+    24           44             3415         contract inside
+    25           46             2986         contract inside
+    26           48             2905         contract inside
+    27           50             2038         contract inside
+    28           51             2038         reflect
+    29           53             2038         contract inside
+    30           54             2038         reflect
+    31           56             1909         contract inside
+    32           58             1909         contract inside
+    33           60             1852         contract inside
+    34           62             1468         contract inside
+    35           64             1468         contract inside
+    36           66             1468         contract inside
+    37           68             1301         contract inside
+    38           70             1301         contract inside
+    39           72             1301         contract inside
+    40           73             1301         reflect
+    41           75             1301         contract inside
+    42           77             1232         contract inside
+    43           79             1232         contract inside
+    44           81             1184         reflect
+    45           83             1183         contract inside
+    46           85             1163         contract inside
+    47           87             1117         contract outside
+    48           89             1117         contract inside
+    49           91             1117         contract inside
+    50           92             1117         reflect
+    51           94             1107         reflect
+    52           96             1107         contract inside
+    53           98             1107         contract inside
+    54          100             1107         contract inside
+ 
+Exiting: Maximum number of function evaluations has been exceeded
+         - increase MaxFunEvals option.
+         Current function value: 1107.000000 
+
+Number of steps
+    54
+</pre><img vspace="5" hspace="5" src="ImageMatchingDemo_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates the image matching algorithm.
+%
+%   Since version 8.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also FImage, QForm, QLVLH, QMult, QPose, QUnit, Mag, 
+%  FindSolsticeOrEquinox, RVFromKepler, SunV1, CameraDatabase, SpaceCamera
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+clear g; clear d; clear w;
+test = 'ry';
+
+g = load('SCForImaging');
+
+%% Ephemeris
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD                     = FindSolsticeOrEquinox('spring equinox',2002);
+[rECI, vECI]           = RVFromKepler( [42167 0 0 0 0 0], 0 );
+
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+
+%% Camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.camera                  = CameraDatabase('256 square');
+d.camera.up               = [0;-1;0];
+d.camera.focalLength      = 0.1;
+d.camera.aperture         = 0.1;
+d.camera.rho              = 0.03;
+
+%% Initialize the picture
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qLVLH                   = QLVLH( rECI, vECI);
+g.body(1).bHinge.q      = QPose(qLVLH);
+g.rECI                  = rECI;
+g.qLVLH                 = qLVLH;
+g.name                  = 'Satellite';
+d.position              = [];
+d.planetName            = 'Earth';
+tagVisibleCameraWindow  = SpaceCamera( 'initialize', d, g, jD(1) );
+
+d.s                     = 1358*SunV1(jD(1)); % Watts/m^2
+d.tSamp                 = 10;
+d.shadow                = 0;
+d.showScans             = 0;
+d.nScanLines            = 10;
+d.units                 = 'm';
+d.planet                = 'earth';
+d.planetRadius          = 6378.165;
+
+[uSun, rSun]            = SunV1(jD);
+d.s                     = 1358*uSun;
+d.r                     = rECI;
+d.v                     = vECI;
+d.rSun                  = rSun*uSun;
+
+%% Earth vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qLVLH    = QLVLH( rECI, vECI );
+uSunLVLH = QForm( qLVLH, uSun );
+theta    = atan2( uSunLVLH(1), uSunLVLH(3) );
+
+%% CAD body structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g.body(1).bHinge.q     = QPose(qLVLH);
+g.body(2).bHinge.angle = theta + pi;
+g.body(3).bHinge.angle = theta + pi;
+g.rECI                 = rECI;
+g.qLVLH                = qLVLH;
+  
+%% Draw the picture
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.camera.rBody    = 1.000002*g(1).rECI*1000;
+d.camera.distance = 0.000002*Mag(g(1).rECI)*1000;
+qBodyToECI        = g(1).body(1).bHinge.q;
+d.camera.qBody    = QPose( qBodyToECI );
+  
+SpaceCamera( 'update camera',     tagVisibleCameraWindow,  d.camera, jD );
+SpaceCamera( 'update spacecraft', tagVisibleCameraWindow,  g,      jD );
+
+%% Create the data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w.image  = SpaceCamera( 'get frame', tagVisibleCameraWindow );
+w.g      = g;
+
+tol = 1e-4;
+switch test
+  case 'ry'
+    w.rECI0 = rECI + [0;.001;0]; % Example 1
+    w.q0    = g.body(1).bHinge.q;
+    
+  case 'rz'
+    w.rECI0 = rECI + [0.0;0;.001];% Example 2
+    w.q0    = g.body(1).bHinge.q;
+    
+  case 'rx'
+    tol = 1e-6;
+    w.rECI0 = rECI + [0.001;0;0]; % Example 3
+    w.q0    = g.body(1).bHinge.q;
+    
+  case 'qx'
+    w.rECI0 = rECI;
+    dQ      = QUnit([1;0.1;0;0]);
+    w.q0    = QMult( g.body(1).bHinge.q, dQ );
+end
+
+opts = optimset('tolfun',1,'tolx',tol,'MaxFunEvals',200*6);
+opts = optimset('tolfun',1,'tolx',tol,'MaxFunEvals',100,'display','iter');
+w.tag    = SpaceCamera( 'initialize', d, g, jD );
+w.jD     = jD;
+w.camera = d.camera;
+
+x0      = [0;0;0;0;0;0];
+
+disp('Begin fminsearch. This can take a few minutes.')
+
+[xNew, fval, exitflag, output] = fminsearch( 'FImage', x0, opts, w );
+
+disp('Number of steps');
+disp(output.iterations);
+
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 14:40:37 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39870 $
+
+##### SOURCE END #####
+--></body></html>

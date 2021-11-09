@@ -1,0 +1,345 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test a star sensor attitude determination system with gyros.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-05-12"><meta name="DC.source" content="AttDetEKFSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test a star sensor attitude determination system with gyros.</h1><!--introduction--><p>dT is the time step for the attitude determination system. You can numerically integrate with a smaller time step by setting nInt &gt; 1.</p><p>-------------------------------------------------------------------------  See also StellarAttDetEKF, StarDataGeneration, StarSensor and RandSC -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Always have the same random numbers</a></li><li><a href="#3">Initial state</a></li><li><a href="#4">Run the simulation</a></li><li><a href="#5">Plot results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2017.1</span>
+<span class="comment">%   Version 2018.1 Added RIG noise to the simulation.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Always have the same random numbers</h2><p>Comment this out to test with different numbers each run</p><pre class="codeinput">rng(0);
+
+<span class="comment">% Constants</span>
+degToRad	            = pi/180;
+
+<span class="comment">% User inputs</span>
+fOV     	            = 30*degToRad;
+fScale   	            = 1;
+nStars   	            = 1000;
+rIGNoise1Sigma        = 0.001; <span class="comment">% rad</span>
+qBToS                 = [cos(pi/4); 0; sin(pi/4); 0];
+uS                    = [0 0 1]';
+nPixels               = 1024;
+angRes                = 5*fOV/nPixels;
+options               = StarIDPyramid;
+options.pixelMapScale = fScale;
+nInt                  = 2;    <span class="comment">% The number of integration steps per estimation step</span>
+inr                   = [1000 0 0;0 2000 0; 0 0 2000];
+invInr                = inv(inr);
+torque                = zeros(3,1);
+uRIG                  = eye(3); <span class="comment">% Rate integrating gyro vectors</span>
+nSim                  = 100;
+dT                    = 0.5; <span class="comment">% Time step (sec)</span>
+
+<span class="comment">% Attitude determination system initialization</span>
+b                     = zeros(3,1);   <span class="comment">% Initial bias estimate</span>
+p                     = diag([0.01 0.01 0.01 0.001 0.001 0.001]);       <span class="comment">% Covariance matrix</span>
+Q                     = 0.01*eye(6);       <span class="comment">% Plant noise matrix</span>
+r                     = 0.0001;       <span class="comment">% Noise for a star measurement</span>
+q                     = QUnit([1;0.1;0.2;0.2]); <span class="comment">% Initial estimate</span>
+</pre><h2 id="3">Initial state</h2><pre class="codeinput">q0      = [1;0;0;0];
+bias    = [0.01; 0.03; -0.04];
+wo      = 0; <span class="comment">% 0.01</span>
+omega   = [wo;0;0];
+intRate = dT*(omega + bias);
+x       = [q0;omega;intRate;bias]; <span class="comment">% True state</span>
+nRWRIG	= zeros(3,1);
+nBRIG   = zeros(3,1);
+nORIG   = zeros(3,1);
+betaRIG = zeros(3,1);
+xRIGOld	= zeros(3,1);
+
+<span class="comment">% Set up the simulation</span>
+t       = 0;
+x(1:4)  = QUnit(x(1:4));
+
+<span class="comment">% Set up arrays for plotting</span>
+angInc    = zeros(3,1);
+xPlot     = zeros(13,nSim);
+qPlot     = zeros( 4,nSim);
+bPlot     = zeros( 3,nSim);
+aPlot     = zeros( 3,nSim);
+tPlot     = zeros( 1,nSim);
+qEPlot    = zeros( 4,nSim);
+sDPlot    = zeros( 1,nSim);
+qErrPlot	= zeros( 4,nSim);
+
+<span class="comment">% Create a random star catalog</span>
+[starMatrix,starCatalog]	= RandSC(nStars,2);
+dStarData                 = StarDataGeneration( starCatalog, fOV*sqrt(2), angRes );
+starData                  = struct(<span class="string">'starMatrix'</span>,dStarData.starMatrix,<span class="string">'starID'</span>,[],<span class="string">'uMeas'</span>,[],<span class="string">'uCatalog'</span>,[]);
+</pre><pre class="codeoutput">
+StarDataGeneration: Eliminating stars that cannot be separated based on the input angular resolution.
+
+StarDataGeneration:     2 stars will be eliminated that are too close to other stars.
+                      998 stars will be in the reduced catalog.
+</pre><h2 id="4">Run the simulation</h2><pre class="codeinput">dTInt = dT/nInt;
+<span class="keyword">for</span> i = 1:nSim
+
+  <span class="comment">% Attitude Determination</span>
+  starSensorData    = StarSensor( x(1:4), qBToS, uS, starMatrix, fOV, fScale );
+  [angInc, xRIGOld] = RIGOut( x(8:10), xRIGOld, nORIG );
+
+  angInc = angInc + rIGNoise1Sigma*randn(3,1);
+
+  <span class="comment">% Star identification</span>
+  <span class="keyword">if</span>( ~isempty(starSensorData) )
+    starMeas.pixelIntensity = starSensorData(1,:);
+    starMeas.pixelLocation  = starSensorData(2:3,:);
+    [starData.starID,starData.uMeas,starData.uCatalog]	= StarIDPyramid( starMeas, dStarData, options );
+  <span class="keyword">else</span>
+    starData.starID   = [];
+    starData.uMeas    = [];
+    starData.uCatalog	= [];
+  <span class="keyword">end</span>
+
+  <span class="comment">% Plotting</span>
+  bPlot(:,i)    = b;
+  xPlot(:,i)    = x;
+  aPlot(:,i)    = angInc;
+  tPlot(i)      = t;
+  qEPlot(:,i)   = q;
+	sDPlot(:,i)   = length(starData.starID);
+	qErrPlot(:,i)	= QMult(QPose(q),x(1:4));
+
+  <span class="comment">% The extended Kalman Filter</span>
+	[q, b, p] = StellarAttDetEKF(angInc,q,dT,b,p,Q,r,qBToS,starSensorData,starData,fScale);
+
+  <span class="comment">% Simulation</span>
+  <span class="keyword">for</span> k = 1:nInt
+    x      = RK4( @FRBwRIG, x, dTInt, t, inr, invInr, torque, uRIG, nRWRIG, nBRIG, betaRIG );
+    t      = t + dTInt;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><h2 id="5">Plot results</h2><pre class="codeinput">[tPlot, tLbl] = TimeLabl(tPlot);
+
+yLbl = {<span class="string">'True'</span>  <span class="string">'Estimated'</span>};
+Plot2D( tPlot, [xPlot(1:4,:);qEPlot],tLbl,yLbl,<span class="string">'EKF: Quaternion'</span>, <span class="string">'lin'</span>,{<span class="string">'1:4'</span> <span class="string">'5:8'</span>})
+
+yLbl = {<span class="string">'x (rad/s)'</span> <span class="string">'y (rad/s)'</span> <span class="string">'z (rad/s)'</span>};
+Plot2D( tPlot, [xPlot(11:13,:);bPlot],tLbl,yLbl,<span class="string">'EKF: Bias'</span>,<span class="string">'lin'</span>, {<span class="string">'[1 4]'</span> <span class="string">'[2 5]'</span> <span class="string">'[3 6]'</span>})
+legend(<span class="string">'True'</span>, <span class="string">'Estimated'</span>)
+
+yLbl = {<span class="string">'Rates'</span> <span class="string">'Integrated Rates'</span> <span class="string">'Biases'</span> <span class="string">'Ang Increments'</span>};
+Plot2D( tPlot, [xPlot(5:13,:);aPlot],tLbl,yLbl,<span class="string">'EKF: Rate States'</span>, <span class="string">'lin'</span>,{<span class="string">'1:3'</span> <span class="string">'4:6'</span> <span class="string">'7:9'</span> <span class="string">'10:12'</span>})
+
+yLbl = {<span class="string">'Bias Error'</span> <span class="string">'Q Error'</span> <span class="string">'# Stars'</span>};
+Plot2D( tPlot, [xPlot(11:13,:)-bPlot;qErrPlot;sDPlot],tLbl,yLbl,<span class="string">'EKF: Estimation Errors'</span>,<span class="string">'lin'</span>,{<span class="string">'1:3'</span> <span class="string">'5:7'</span> <span class="string">'8'</span>})
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="AttDetEKFSim_01.png" alt=""> <img vspace="5" hspace="5" src="AttDetEKFSim_02.png" alt=""> <img vspace="5" hspace="5" src="AttDetEKFSim_03.png" alt=""> <img vspace="5" hspace="5" src="AttDetEKFSim_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test a star sensor attitude determination system with gyros. 
+% dT is the time step for the attitude determination system. You can 
+% numerically integrate with a smaller time step by setting nInt > 1.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also StellarAttDetEKF, StarDataGeneration, StarSensor and RandSC
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2016 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2017.1
+%   Version 2018.1 Added RIG noise to the simulation.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Always have the same random numbers
+% Comment this out to test with different numbers each run
+rng(0);
+
+% Constants
+degToRad	            = pi/180;
+
+% User inputs
+fOV     	            = 30*degToRad;
+fScale   	            = 1;
+nStars   	            = 1000;
+rIGNoise1Sigma        = 0.001; % rad
+qBToS                 = [cos(pi/4); 0; sin(pi/4); 0];
+uS                    = [0 0 1]';
+nPixels               = 1024;
+angRes                = 5*fOV/nPixels;
+options               = StarIDPyramid;
+options.pixelMapScale = fScale;
+nInt                  = 2;    % The number of integration steps per estimation step
+inr                   = [1000 0 0;0 2000 0; 0 0 2000];
+invInr                = inv(inr);
+torque                = zeros(3,1);
+uRIG                  = eye(3); % Rate integrating gyro vectors
+nSim                  = 100;
+dT                    = 0.5; % Time step (sec)
+
+% Attitude determination system initialization
+b                     = zeros(3,1);   % Initial bias estimate
+p                     = diag([0.01 0.01 0.01 0.001 0.001 0.001]);       % Covariance matrix
+Q                     = 0.01*eye(6);       % Plant noise matrix
+r                     = 0.0001;       % Noise for a star measurement
+q                     = QUnit([1;0.1;0.2;0.2]); % Initial estimate
+
+
+%% Initial state
+q0      = [1;0;0;0];
+bias    = [0.01; 0.03; -0.04];
+wo      = 0; % 0.01
+omega   = [wo;0;0];
+intRate = dT*(omega + bias);
+x       = [q0;omega;intRate;bias]; % True state
+nRWRIG	= zeros(3,1);
+nBRIG   = zeros(3,1);
+nORIG   = zeros(3,1);
+betaRIG = zeros(3,1);
+xRIGOld	= zeros(3,1);
+
+% Set up the simulation
+t       = 0;
+x(1:4)  = QUnit(x(1:4));
+
+% Set up arrays for plotting
+angInc    = zeros(3,1);
+xPlot     = zeros(13,nSim);
+qPlot     = zeros( 4,nSim);
+bPlot     = zeros( 3,nSim);
+aPlot     = zeros( 3,nSim);
+tPlot     = zeros( 1,nSim);
+qEPlot    = zeros( 4,nSim);
+sDPlot    = zeros( 1,nSim);
+qErrPlot	= zeros( 4,nSim);
+
+% Create a random star catalog
+[starMatrix,starCatalog]	= RandSC(nStars,2);
+dStarData                 = StarDataGeneration( starCatalog, fOV*sqrt(2), angRes );
+starData                  = struct('starMatrix',dStarData.starMatrix,'starID',[],'uMeas',[],'uCatalog',[]);
+
+%% Run the simulation
+dTInt = dT/nInt;
+for i = 1:nSim
+  
+  % Attitude Determination
+  starSensorData    = StarSensor( x(1:4), qBToS, uS, starMatrix, fOV, fScale );
+  [angInc, xRIGOld] = RIGOut( x(8:10), xRIGOld, nORIG );
+  
+  angInc = angInc + rIGNoise1Sigma*randn(3,1);
+  
+  % Star identification
+  if( ~isempty(starSensorData) )
+    starMeas.pixelIntensity = starSensorData(1,:);
+    starMeas.pixelLocation  = starSensorData(2:3,:);
+    [starData.starID,starData.uMeas,starData.uCatalog]	= StarIDPyramid( starMeas, dStarData, options );
+  else
+    starData.starID   = [];
+    starData.uMeas    = [];
+    starData.uCatalog	= [];
+  end
+ 
+  % Plotting
+  bPlot(:,i)    = b;
+  xPlot(:,i)    = x;
+  aPlot(:,i)    = angInc;
+  tPlot(i)      = t;
+  qEPlot(:,i)   = q;
+	sDPlot(:,i)   = length(starData.starID);
+	qErrPlot(:,i)	= QMult(QPose(q),x(1:4));
+
+  % The extended Kalman Filter
+	[q, b, p] = StellarAttDetEKF(angInc,q,dT,b,p,Q,r,qBToS,starSensorData,starData,fScale);
+
+  % Simulation
+  for k = 1:nInt
+    x      = RK4( @FRBwRIG, x, dTInt, t, inr, invInr, torque, uRIG, nRWRIG, nBRIG, betaRIG );
+    t      = t + dTInt;
+  end
+       
+end
+
+%% Plot results
+
+[tPlot, tLbl] = TimeLabl(tPlot);
+
+yLbl = {'True'  'Estimated'};
+Plot2D( tPlot, [xPlot(1:4,:);qEPlot],tLbl,yLbl,'EKF: Quaternion', 'lin',{'1:4' '5:8'})
+
+yLbl = {'x (rad/s)' 'y (rad/s)' 'z (rad/s)'};
+Plot2D( tPlot, [xPlot(11:13,:);bPlot],tLbl,yLbl,'EKF: Bias','lin', {'[1 4]' '[2 5]' '[3 6]'})
+legend('True', 'Estimated')
+
+yLbl = {'Rates' 'Integrated Rates' 'Biases' 'Ang Increments'};
+Plot2D( tPlot, [xPlot(5:13,:);aPlot],tLbl,yLbl,'EKF: Rate States', 'lin',{'1:3' '4:6' '7:9' '10:12'})
+
+yLbl = {'Bias Error' 'Q Error' '# Stars'};
+Plot2D( tPlot, [xPlot(11:13,:)-bPlot;qErrPlot;sDPlot],tLbl,yLbl,'EKF: Estimation Errors','lin',{'1:3' '5:7' '8'})
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-04-23 11:34:44 -0400 (Thu, 23 Apr 2020) $
+% $Revision: 51927 $
+
+##### SOURCE END #####
+--></body></html>

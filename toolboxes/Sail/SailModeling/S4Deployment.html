@@ -1,0 +1,319 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>S4 (ATK's scalable sail) deployment demo.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-03"><meta name="DC.source" content="S4Deployment.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>S4 (ATK's scalable sail) deployment demo.</h1><!--introduction--><pre>Notes:
+   Unable to replicate steepness of curve in roll rate plots.
+   Otherwise behavior of plots similar for full RHS and simplified version
+   from paper.</pre><pre>Functions demonstrated:
+   S4Deploy, CAD model
+   IDotS4, inertia derivative function
+   FTimeVaryingI, attitude dynamics
+   S4DeployTorque, disturbance model</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+Reference: LeFevre and <span class="string">Jha</span>, (Student Paper) Attitude <span class="string">Dynamics</span> <span class="string">and</span> <span class="string">Stability</span>
+of <span class="string">Solar</span> <span class="string">Sails</span> <span class="string">During</span> <span class="string">Deployment.</span>  <span class="string">AIAA-2006-1704</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">DrawSCPlanPlugIn</span>, Q2Eul, QZero, InformDlg, Plot2D, Rename,
+FTimeVaryingI, FS4Deployment, FSailCombined, IDotS4, S4DeployTorque
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Load and draw the model</a></li><li><a href="#3">Deployment data</a></li><li><a href="#4">Apply a fixed torque for cp/cm offset</a></li><li><a href="#5">Set tolerances</a></li><li><a href="#6">Assemble the state vector. Inertia is last.</a></li><li><a href="#7">Propagator</a></li><li><a href="#8">Obtain Idot post-integration</a></li><li><a href="#9">Plot inertia</a></li><li><a href="#10">Plot rates and angles</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+clear <span class="string">force</span>; clear <span class="string">torque</span>; clear <span class="string">d</span>;
+
+<span class="comment">%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% User options</span>
+<span class="comment">% Choose model from student paper or full model (same results)</span>
+model = <span class="string">'full'</span>;  <span class="comment">% 'student' or 'full'</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%</span>
+
+d = FSailCombined;
+</pre><h2 id="2">Load and draw the model</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+d.g = load(<span class="string">'S4PreDeploy.mat'</span>);
+g2  = load(<span class="string">'S4Deployed.mat'</span>);
+DrawSCPlanPlugIn( <span class="string">'initialize'</span>, d.g );
+view(120,20)
+drawnow
+Rename(<span class="string">'Pre-Deployment Model'</span>)
+DrawSCPlanPlugIn( <span class="string">'initialize'</span>, g2 );
+view(120,20)
+drawnow
+Rename(<span class="string">'Deployed Model'</span>)
+</pre><img vspace="5" hspace="5" src="S4Deployment_01.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_02.png" alt=""> <h2 id="3">Deployment data</h2><pre class="codeinput"><span class="comment">%----------------</span>
+d.Ldot = 0.025;        <span class="comment">% m/s, rate of mast extension</span>
+d.fInertia = @IDotS4;  <span class="comment">% inertia derivative function</span>
+</pre><h2 id="4">Apply a fixed torque for cp/cm offset</h2><pre class="codeinput"><span class="comment">%--------------------------------------</span>
+eps = 0.1;    <span class="comment">% m (0.25% uncertainty on 40 m sail)</span>
+d.F = 0.01;   <span class="comment">% N</span>
+Tz  = eps*d.F;
+</pre><h2 id="5">Set tolerances</h2><pre class="codeinput"><span class="comment">%---------------</span>
+xODEOptions = odeset( <span class="string">'AbsTol'</span>, 1e-8, <span class="string">'RelTol'</span>, 1e-5 );
+</pre><h2 id="6">Assemble the state vector. Inertia is last.</h2><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+x0  = [zeros(6,1);QZero;[45*pi/180;0;0];reshape(d.g.mass.inertia,9,1)];
+</pre><h2 id="7">Propagator</h2><pre class="codeinput"><span class="comment">%-----------</span>
+force.total = [d.F;0;0];
+torque.total = [0;0;Tz];
+
+hDlg = InformDlg( <span class="string">'Integrating...'</span>, <span class="string">'S4Deployment'</span> );
+<span class="keyword">switch</span> model
+  <span class="keyword">case</span> <span class="string">'full'</span>
+    <span class="comment">% assume a constant torque</span>
+    d.ephemeris   = <span class="string">'NoEphemeris'</span>;
+    d.disturbance = @S4DeployTorque;
+    d.attitude    = @FTimeVaryingI;
+    d.environment = <span class="string">'NoEnvironment'</span>;
+    d.orbit       = <span class="string">'NoOrbit'</span>;
+    [z, x] = ode113( @FSailCombined, [0 1100], x0, xODEOptions, [], d );
+  <span class="keyword">case</span> <span class="string">'student'</span>
+    <span class="comment">% scales the torque with deployment (embedded)</span>
+    [z, x] = ode113( @FS4Deployment, [0 1100], x0, xODEOptions, force, torque, d );
+<span class="keyword">end</span>
+close(hDlg);
+
+x      = x';
+t      = z';
+nSim   = length(t);
+</pre><h2 id="8">Obtain Idot post-integration</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+Idot = IDotS4( t, d );
+</pre><h2 id="9">Plot inertia</h2><pre class="codeinput"><span class="comment">%-------------</span>
+Plot2D(t,Idot,<span class="string">'Time (s)'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Inertia Derivative'</span>)
+I = x([14 18 22],:);
+Plot2D(t,I,<span class="string">'Time (s)'</span>,{<span class="string">'I11'</span>,<span class="string">'I22'</span>,<span class="string">'I33'</span>},<span class="string">'Principal moments of inertia'</span>)
+subplot(3,1,1)
+hold <span class="string">on</span>; plot(t(end),g2.mass.inertia(1,1),<span class="string">'*'</span>);
+subplot(3,1,2)
+hold <span class="string">on</span>; plot(t(end),g2.mass.inertia(2,2),<span class="string">'*'</span>);
+subplot(3,1,3)
+hold <span class="string">on</span>; plot(t(end),g2.mass.inertia(3,3),<span class="string">'*'</span>);
+</pre><img vspace="5" hspace="5" src="S4Deployment_03.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_04.png" alt=""> <h2 id="10">Plot rates and angles</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+w = x(11:13,:)*180/pi;
+Plot2D(t,w,<span class="string">'Time (s)'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Body rates (deg/s)'</span>)
+eul = zeros(3,nSim);
+<span class="keyword">for</span> k = 1:nSim
+  eul(:,k) = Q2Eul(x(7:10,k));
+<span class="keyword">end</span>
+eul(1,:) = unwrap(eul(1,:));
+eul = eul*180/pi;
+Plot2D(t,eul,<span class="string">'Time (s)'</span>,{<span class="string">'\theta_1'</span>,<span class="string">'\theta_2'</span>,<span class="string">'\theta_3'</span>},<span class="string">'Euler angles (deg)'</span>)
+
+Plot2D(w(2,:),w(3,:),<span class="string">'\omega_2 (deg/sec)'</span>,<span class="string">'\omega_3 (deg/sec)'</span>,<span class="string">' '</span>)
+Plot2D(eul(2,:),eul(3,:),<span class="string">'Pitch \theta_2 (deg)'</span>,<span class="string">'Yaw \theta_3 (deg)'</span>,<span class="string">' '</span>)
+
+<span class="comment">% summary plot page</span>
+Plot2D(t,[w;Idot(1:2,:);I(1:2,:)],<span class="string">'Time (s)'</span>,{<span class="string">'Body rates, \omega_x'</span>,<span class="string">'\omega_y and \omega_z'</span>,<span class="keyword">...</span>
+  <span class="string">'Idot, 11 and 22'</span>,<span class="string">'Inertia, 11 and 22'</span>},<span class="keyword">...</span>
+  <span class="string">'S4 Deployment Summary'</span>,[],{1, [2 3],[4 5],[6 7]},[],2)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="S4Deployment_05.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_06.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_07.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_08.png" alt=""> <img vspace="5" hspace="5" src="S4Deployment_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% S4 (ATK's scalable sail) deployment demo.
+%  Notes:
+%     Unable to replicate steepness of curve in roll rate plots.
+%     Otherwise behavior of plots similar for full RHS and simplified version
+%     from paper.
+%
+%  Functions demonstrated:
+%     S4Deploy, CAD model
+%     IDotS4, inertia derivative function
+%     FTimeVaryingI, attitude dynamics
+%     S4DeployTorque, disturbance model
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  Reference: LeFevre and Jha, (Student Paper) Attitude Dynamics and Stability 
+%  of Solar Sails During Deployment.  AIAA-2006-1704
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also DrawSCPlanPlugIn, Q2Eul, QZero, InformDlg, Plot2D, Rename, 
+%  FTimeVaryingI, FS4Deployment, FSailCombined, IDotS4, S4DeployTorque
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+clear force; clear torque; clear d;
+
+%%%%%%%%%%%%%%%%%%
+% User options
+% Choose model from student paper or full model (same results)
+model = 'full';  % 'student' or 'full'
+%%%%%%%%%%%%%%%%%%
+
+d = FSailCombined;
+
+%% Load and draw the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.g = load('S4PreDeploy.mat');
+g2  = load('S4Deployed.mat');
+DrawSCPlanPlugIn( 'initialize', d.g );
+view(120,20)
+drawnow
+Rename('Pre-Deployment Model')
+DrawSCPlanPlugIn( 'initialize', g2 );
+view(120,20)
+drawnow
+Rename('Deployed Model')
+
+%% Deployment data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.Ldot = 0.025;        % m/s, rate of mast extension
+d.fInertia = @IDotS4;  % inertia derivative function
+
+%% Apply a fixed torque for cp/cm offset
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+eps = 0.1;    % m (0.25% uncertainty on 40 m sail)
+d.F = 0.01;   % N
+Tz  = eps*d.F;
+
+%% Set tolerances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xODEOptions = odeset( 'AbsTol', 1e-8, 'RelTol', 1e-5 );
+
+%% Assemble the state vector. Inertia is last.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x0  = [zeros(6,1);QZero;[45*pi/180;0;0];reshape(d.g.mass.inertia,9,1)];
+
+%% Propagator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+force.total = [d.F;0;0];
+torque.total = [0;0;Tz];
+
+hDlg = InformDlg( 'Integrating...', 'S4Deployment' );
+switch model
+  case 'full'
+    % assume a constant torque
+    d.ephemeris   = 'NoEphemeris';
+    d.disturbance = @S4DeployTorque;
+    d.attitude    = @FTimeVaryingI;
+    d.environment = 'NoEnvironment';
+    d.orbit       = 'NoOrbit';
+    [z, x] = ode113( @FSailCombined, [0 1100], x0, xODEOptions, [], d );
+  case 'student'
+    % scales the torque with deployment (embedded)
+    [z, x] = ode113( @FS4Deployment, [0 1100], x0, xODEOptions, force, torque, d );
+end
+close(hDlg);
+
+x      = x';
+t      = z';
+nSim   = length(t);
+
+%% Obtain Idot post-integration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Idot = IDotS4( t, d );
+
+%% Plot inertia
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D(t,Idot,'Time (s)',{'x','y','z'},'Inertia Derivative')
+I = x([14 18 22],:);
+Plot2D(t,I,'Time (s)',{'I11','I22','I33'},'Principal moments of inertia')
+subplot(3,1,1)
+hold on; plot(t(end),g2.mass.inertia(1,1),'*');
+subplot(3,1,2)
+hold on; plot(t(end),g2.mass.inertia(2,2),'*');
+subplot(3,1,3)
+hold on; plot(t(end),g2.mass.inertia(3,3),'*');
+
+%% Plot rates and angles
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+w = x(11:13,:)*180/pi;
+Plot2D(t,w,'Time (s)',{'x','y','z'},'Body rates (deg/s)')
+eul = zeros(3,nSim);
+for k = 1:nSim
+  eul(:,k) = Q2Eul(x(7:10,k));
+end
+eul(1,:) = unwrap(eul(1,:));
+eul = eul*180/pi;
+Plot2D(t,eul,'Time (s)',{'\theta_1','\theta_2','\theta_3'},'Euler angles (deg)')
+
+Plot2D(w(2,:),w(3,:),'\omega_2 (deg/sec)','\omega_3 (deg/sec)',' ')
+Plot2D(eul(2,:),eul(3,:),'Pitch \theta_2 (deg)','Yaw \theta_3 (deg)',' ')
+
+% summary plot page
+Plot2D(t,[w;Idot(1:2,:);I(1:2,:)],'Time (s)',{'Body rates, \omega_x','\omega_y and \omega_z',...
+  'Idot, 11 and 22','Inertia, 11 and 22'},...
+  'S4 Deployment Summary',[],{1, [2 3],[4 5],[6 7]},[],2)
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+
+##### SOURCE END #####
+--></body></html>

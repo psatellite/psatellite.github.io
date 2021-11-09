@@ -1,0 +1,335 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simple demo to compute drag over one orbit</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="EarthOrbitDragDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simple demo to compute drag over one orbit</h1><!--introduction--><pre>Assumes point mass s/c, two body propagation. The only perturbing
+acceleration considered is due to drag. Mass is assumed to be constant,
+fixed cross-sectional area and drag coefficient. Demo produces plots of
+spacecraft position and velocity (in ECI frame) and drag force (N) (in
+ECI frame). DV due to drag perturbation is displayed.</pre><pre>Since version 11
+-------------------------------------------------------------------------
+See also:    Constant, Date2JD, Period, RVFromKepler,
+SolarFluxPrediction, AtmJ70, EarthRte, Skew, ECIToEF, FOrbCart, Mag,
+TimeLabl,Plot2D,
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">System Constants</a></li><li><a href="#3">Time Constants</a></li><li><a href="#4">Vehicle parameters</a></li><li><a href="#5">Select start date</a></li><li><a href="#6">Define orbital elements</a></li><li><a href="#7">Assign time vector</a></li><li><a href="#8">Define Initial State</a></li><li><a href="#9">Solar flux</a></li><li><a href="#10">Set up EF to ECI rotations</a></li><li><a href="#11">Set up plotting array</a></li><li><a href="#12">Total Delta V (due to drag perturbation)</a></li><li><a href="#13">Plotting</a></li></ul></div><p>-------------------------------------------------------------------------   Copyright (c) 2013 Princeton Satellite Systems, Inc.   All rights reserved. -------------------------------------------------------------------------</p><h2 id="2">System Constants</h2><pre class="codeinput"><span class="comment">%------------------</span>
+mu     = Constant(<span class="string">'mu'</span>);   <span class="comment">% Earth gravitational constant</span>
+</pre><h2 id="3">Time Constants</h2><p>Enter the number of orbits to propagate for and the number of time steps per orbit</p><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+nStep      = 100;    <span class="comment">% number of time steps over one orbit</span>
+nOrb       = 2;    	<span class="comment">% number of orbit revs</span>
+</pre><h2 id="4">Vehicle parameters</h2><p>Change the vehicle parameters to meet your s/c requirements</p><pre class="codeinput"><span class="comment">%-------------------------------------------------------------</span>
+area       = 2;      <span class="comment">% vehicle area (for use in drag computation) [m^2]</span>
+mass       = 100;    <span class="comment">% vehicle mass [kg]</span>
+cD         = 2.7;    <span class="comment">% drag coefficient</span>
+</pre><h2 id="5">Select start date</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+jD0 = Date2JD([2012 3 22 0 0 0]);   <span class="comment">% select simulation start date</span>
+</pre><h2 id="6">Define orbital elements</h2><p>[semi-major axis, inclination, argument of perigee, ascending node, eccentricity, mean anomaly]</p><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+el     = [7000 0 0 0 0 0];          <span class="comment">% units - [km, rad, rad, rad, - , rad]</span>
+</pre><h2 id="7">Assign time vector</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nSim      = nStep*nOrb;                            <span class="comment">% total simulation steps</span>
+t         = linspace(0,nOrb*Period(el(1)),nSim);   <span class="comment">% time vector</span>
+dTSim     = t(2)-t(1);                             <span class="comment">% integration time [s]</span>
+</pre><h2 id="8">Define Initial State</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+[r0, v0] = RVFromKepler( el, 0, mu);      <span class="comment">% initial position, velocity</span>
+x = [r0; v0];                             <span class="comment">% state vector</span>
+</pre><h2 id="9">Solar flux</h2><p>Get the solar flux predictions for the atmospheric density model.  The atmospheric density model used is Jacchia's 1970 model.  See the function AtmJ70 for more information.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+[aP, f, fHat, fHat400] = SolarFluxPrediction( jD0, <span class="string">'nominal'</span> );
+dAtm.aP      = aP(1);
+dAtm.f       = f(1);
+dAtm.fHat    = fHat(1);
+dAtm.fHat400 = fHat400(1);
+</pre><h2 id="10">Set up EF to ECI rotations</h2><p>Use relative velocity between earth and s/c</p><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+earthRate        = EarthRte( jD0 );  <span class="comment">% mean Earth rate</span>
+omegaEarth       = [0;0;earthRate];
+skewOmegaEarth   = Skew( omegaEarth );
+</pre><h2 id="11">Set up plotting array</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+xPlot = zeros(6,nSim);
+dragPlot = zeros(3,nSim);
+total_dv = 0;
+
+<span class="keyword">for</span> k = 1:nSim
+
+   <span class="comment">% Extract position, velocity</span>
+   <span class="comment">%---------------------------</span>
+   r           = x(1:3);    <span class="comment">% [km]</span>
+   v           = x(4:6);    <span class="comment">% [km/s]</span>
+
+   <span class="comment">% Julian date</span>
+   <span class="comment">%------------</span>
+   jD          = jD0 + t(k)/(60*60*24);   <span class="comment">% Update the jD</span>
+
+   <span class="comment">% Find the perturbing acceleration due the atmosphere</span>
+   <span class="comment">%----------------------------------------------------</span>
+   dAtm.rECI   = r;
+   dAtm.jD     = jD;
+   rho         = AtmJ70( dAtm )*1000;     <span class="comment">%scale from g/cm^3 to kg/m^3</span>
+
+   <span class="comment">% Find the ECI to EF matrix</span>
+	<span class="comment">%--------------------------</span>
+	cECIToEF    = ECIToEF( JD2T(jD) );
+
+   <span class="comment">% Find the position vector in EF</span>
+   <span class="comment">%-------------------------------</span>
+   rEF         = cECIToEF*r;
+
+   <span class="comment">% Account for earth rotation</span>
+   <span class="comment">%---------------------------</span>
+   vRel        = v - cECIToEF'*skewOmegaEarth*rEF;
+
+   <span class="comment">% Acceleration perturbation due to drag</span>
+   <span class="comment">%--------------------------------------</span>
+   fDrag       = -0.5*area*cD*rho*Mag(vRel)*vRel*1000;   <span class="comment">% convert to kN</span>
+   aDrag       = fDrag/(mass);                           <span class="comment">% km/s^2</span>
+
+   <span class="comment">% Propagate the orbit</span>
+   <span class="comment">%--------------------</span>
+   x           = RK4( <span class="string">'FOrbCart'</span>, x, dTSim, t(k), aDrag, mu );
+
+   <span class="comment">% Store data for plotting</span>
+   <span class="comment">%------------------------</span>
+   xPlot(:,k)        = x;              <span class="comment">% state</span>
+   dragPlot(:,k)     = fDrag*1000;     <span class="comment">% drag force in N</span>
+
+   total_dv          = total_dv + Mag(aDrag)*dTSim;  <span class="comment">% total delta v (km/s)</span>
+
+<span class="keyword">end</span>
+</pre><h2 id="12">Total Delta V (due to drag perturbation)</h2><pre class="codeinput"><span class="comment">%------------------------------------------</span>
+fprintf(<span class="string">'\n The total delta v due to drag is %0.3s km/s, over %i orbit(s). \n \n'</span>,total_dv,nOrb)
+</pre><pre class="codeoutput">
+ The total delta v due to drag is 3.602e-06 km/s, over 2 orbit(s). 
+ 
+</pre><h2 id="13">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+[t, tL] = TimeLabl(t);
+
+<span class="comment">% Y-axis labels</span>
+<span class="comment">%--------------</span>
+yL = {<span class="string">'r_x (km)'</span> <span class="string">'r_y (km)'</span> <span class="string">'r_z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="keyword">...</span>
+   <span class="string">'v_z (km/s)'</span> <span class="string">'F_x (N)'</span>, <span class="string">'F_y (N)'</span>, <span class="string">'F_z (N)'</span>};
+
+Plot2D( t, xPlot( 1: 3,:), tL, (yL( 1: 3)), <span class="string">'S/C Position - ECI Frame'</span> );
+Plot2D( t, xPlot( 4: 6,:), tL, (yL( 4: 6)), <span class="string">'S/C Velocity - ECI Frame'</span> );
+Plot2D( t, dragPlot, tL,  (yL( 7: 9)), <span class="string">'Drag Force (N)'</span> );
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="EarthOrbitDragDemo_01.png" alt=""> <img vspace="5" hspace="5" src="EarthOrbitDragDemo_02.png" alt=""> <img vspace="5" hspace="5" src="EarthOrbitDragDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simple demo to compute drag over one orbit 
+%  Assumes point mass s/c, two body propagation. The only perturbing 
+%  acceleration considered is due to drag. Mass is assumed to be constant, 
+%  fixed cross-sectional area and drag coefficient. Demo produces plots of
+%  spacecraft position and velocity (in ECI frame) and drag force (N) (in 
+%  ECI frame). DV due to drag perturbation is displayed.
+%
+%  Since version 11
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also:    Constant, Date2JD, Period, RVFromKepler,
+%  SolarFluxPrediction, AtmJ70, EarthRte, Skew, ECIToEF, FOrbCart, Mag,
+%  TimeLabl,Plot2D, 
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2013 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% System Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+mu     = Constant('mu');   % Earth gravitational constant
+
+%% Time Constants 
+% Enter the number of orbits to propagate for
+% and the number of time steps per orbit
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nStep      = 100;    % number of time steps over one orbit
+nOrb       = 2;    	% number of orbit revs
+
+%% Vehicle parameters
+% Change the vehicle parameters to meet your s/c requirements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+area       = 2;      % vehicle area (for use in drag computation) [m^2]
+mass       = 100;    % vehicle mass [kg]
+cD         = 2.7;    % drag coefficient
+
+%% Select start date  
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+jD0 = Date2JD([2012 3 22 0 0 0]);   % select simulation start date
+
+%% Define orbital elements
+% [semi-major axis, inclination, argument of perigee, ascending node,
+% eccentricity, mean anomaly]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+el     = [7000 0 0 0 0 0];          % units - [km, rad, rad, rad, - , rad]
+
+%% Assign time vector 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim      = nStep*nOrb;                            % total simulation steps
+t         = linspace(0,nOrb*Period(el(1)),nSim);   % time vector
+dTSim     = t(2)-t(1);                             % integration time [s]
+
+%% Define Initial State 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[r0, v0] = RVFromKepler( el, 0, mu);      % initial position, velocity 
+x = [r0; v0];                             % state vector
+
+%% Solar flux
+% Get the solar flux predictions for the atmospheric density model.  The
+% atmospheric density model used is Jacchia's 1970 model.  See the function 
+% AtmJ70 for more information.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[aP, f, fHat, fHat400] = SolarFluxPrediction( jD0, 'nominal' );
+dAtm.aP      = aP(1); 
+dAtm.f       = f(1); 
+dAtm.fHat    = fHat(1); 
+dAtm.fHat400 = fHat400(1);
+
+%% Set up EF to ECI rotations
+% Use relative velocity between earth and s/c 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+earthRate        = EarthRte( jD0 );  % mean Earth rate
+omegaEarth       = [0;0;earthRate];  
+skewOmegaEarth   = Skew( omegaEarth );
+
+%% Set up plotting array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xPlot = zeros(6,nSim);
+dragPlot = zeros(3,nSim);
+total_dv = 0;
+
+for k = 1:nSim
+   
+   % Extract position, velocity
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   r           = x(1:3);    % [km]
+   v           = x(4:6);    % [km/s]
+   
+   % Julian date
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   jD          = jD0 + t(k)/(60*60*24);   % Update the jD
+   
+   % Find the perturbing acceleration due the atmosphere
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   dAtm.rECI   = r;
+   dAtm.jD     = jD;
+   rho         = AtmJ70( dAtm )*1000;     %scale from g/cm^3 to kg/m^3
+
+   % Find the ECI to EF matrix
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	cECIToEF    = ECIToEF( JD2T(jD) ); 
+
+   % Find the position vector in EF 
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   rEF         = cECIToEF*r;
+   
+   % Account for earth rotation
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   vRel        = v - cECIToEF'*skewOmegaEarth*rEF; 
+   
+   % Acceleration perturbation due to drag
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   fDrag       = -0.5*area*cD*rho*Mag(vRel)*vRel*1000;   % convert to kN
+   aDrag       = fDrag/(mass);                           % km/s^2
+   
+   % Propagate the orbit
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   x           = RK4( 'FOrbCart', x, dTSim, t(k), aDrag, mu );
+  
+   % Store data for plotting
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   xPlot(:,k)        = x;              % state
+   dragPlot(:,k)     = fDrag*1000;     % drag force in N
+
+   total_dv          = total_dv + Mag(aDrag)*dTSim;  % total delta v (km/s)
+   
+end
+
+%% Total Delta V (due to drag perturbation)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+fprintf('\n The total delta v due to drag is %0.3s km/s, over %i orbit(s). \n \n',total_dv,nOrb)
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, tL] = TimeLabl(t);
+
+% Y-axis labels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yL = {'r_x (km)' 'r_y (km)' 'r_z (km)' 'v_x (km/s)' 'v_y (km/s)' ...
+   'v_z (km/s)' 'F_x (N)', 'F_y (N)', 'F_z (N)'};
+
+Plot2D( t, xPlot( 1: 3,:), tL, (yL( 1: 3)), 'S/C Position - ECI Frame' );
+Plot2D( t, xPlot( 4: 6,:), tL, (yL( 4: 6)), 'S/C Velocity - ECI Frame' );
+Plot2D( t, dragPlot, tL,  (yL( 7: 9)), 'Drag Force (N)' );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-02-16 $
+% $Revision: de72d935f4d6228730ebe49716dd67143969e61f $
+
+##### SOURCE END #####
+--></body></html>

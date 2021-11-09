@@ -1,0 +1,354 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate a pointing budget for a typical satellite.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="ComStarPBudget.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate a pointing budget for a typical satellite.</h1><!--introduction--><p>A pointing budget must account for all misalignments and attitude errors.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">2.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">PBudget.</span>
+-------------------------------------------------------------------------
+</pre><!--/introduction--><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 1994, 2007 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+errors      = [];
+desc        = {};
+categ       = {};
+
+k           = 1;
+desc{k}     = <span class="string">'ESA temperature effects'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'ESA optics w.r.t. cube'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0250 0.0250 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'ESA cube to MRC'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0250 0.0250 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Antenna B.S. w.r.t. antenna RC'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0180 0.0180 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Antenna RC w.r.t. MRC'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'MWA spin axis w.r.t. mirror'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0060 0.0060 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'MWA mirror w.r.t. MRC'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0170 0.0170 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Attitude sensing (earth radiance)'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0012 0.0012 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'East/west position'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Attitude sensing (earth radiance)'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Orbit inclination'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0100 0.000 0.0100];
+
+k           = k + 1;
+desc{k}     = <span class="string">'S/C disturbance torque'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0080 0.0000 0.1470];
+
+k           = k + 1;
+desc{k}     = <span class="string">'S/C disturbance torque'</span>;
+categ{k}    = <span class="string">'Bias'</span>;
+errors(k,:) = [0.0031 0.00761 0.0000];
+kSK1        = k;
+
+k           = k + 1;
+desc{k}     = <span class="string">'Antenna thermal distortion w.r.t. ESA RC'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Thermal distortion MWA w.r.t. ESA RC'</span>;
+categ{k}    = <span class="string">'Diurnal'</span>;
+errors(k,:) = [0.0200 0.0500 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'Attitude sensor &amp; actuator noise/resolution'</span>;
+categ{k}    = <span class="string">'Short Term'</span>;
+errors(k,:) = [0.0200 0.0200 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'SA stepping transients'</span>;
+categ{k}    = <span class="string">'Short Term'</span>;
+errors(k,:) = [0.0000 0.0500 0.0000];
+
+k           = k + 1;
+desc{k}     = <span class="string">'S/C disturbance torques'</span>;
+categ{k}    = <span class="string">'Short Term'</span>;
+errors(k,:) = [0.0000 0.0000 0.0000];
+
+fPath       = fileparts(which(mfilename));
+[cep,r,s,t] = PBudget(errors,desc,categ,0,0,<span class="keyword">...</span>
+                      fullfile(fPath,<span class="string">'NormalBudget.txt'</span>));
+
+DispWithTitle(cep,<span class="string">'CEP'</span>);
+DispWithTitle(r,<span class="string">'Azimuth and elevation errors'</span>);
+DispWithTitle(s,<span class="string">'Summary by category'</span>);
+DispWithTitle(t,<span class="string">'Totals'</span>);
+
+
+errors(k,:) = [0.0180 0.0032 0.0140];
+
+[cep,r,s,t] = PBudget(errors,desc,categ,0,0,<span class="keyword">...</span>
+                      fullfile(fPath,<span class="string">'StationkeepingBudget.txt'</span>));
+
+DispWithTitle(cep,<span class="string">'CEP'</span>);
+DispWithTitle(r,<span class="string">'Azimuth and elevation errors'</span>);
+DispWithTitle(s,<span class="string">'Summary by category'</span>);
+DispWithTitle(t,<span class="string">'Totals'</span>);
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">CEP
+         0.306793044721658
+Azimuth and elevation errors
+         0.155841638378207
+        0.0979742227334929
+Summary by category
+        0.0485803458200948        0.0490749640855702                         0
+        0.0293938769133981        0.0529150262212918         0.147339743450299
+                      0.02         0.053851648071345                         0
+Totals
+        0.0979742227334929         0.155841638378207         0.147339743450299
+CEP
+         0.313203125776406
+Azimuth and elevation errors
+         0.155936630610036
+          0.10488147082764
+Summary by category
+        0.0485803458200948        0.0490749640855702                         0
+        0.0293938769133981        0.0529150262212918         0.147339743450299
+        0.0269072480941474        0.0539466403031737                     0.014
+Totals
+          0.10488147082764         0.155936630610036         0.161339743450299
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate a pointing budget for a typical satellite. 
+% A pointing budget must account for all misalignments and attitude errors.
+%
+%   Since version 2.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also PBudget.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 1994, 2007 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+errors      = [];
+desc        = {};
+categ       = {};
+
+k           = 1;		  
+desc{k}     = 'ESA temperature effects';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc{k}     = 'ESA optics w.r.t. cube';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0250 0.0250 0.0000];
+		  
+k           = k + 1;
+desc{k}     = 'ESA cube to MRC';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0250 0.0250 0.0000];
+		  
+k           = k + 1;
+desc{k}     = 'Antenna B.S. w.r.t. antenna RC';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0180 0.0180 0.0000];
+		  
+k           = k + 1;
+desc{k}     = 'Antenna RC w.r.t. MRC';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0150 0.0150 0.0000];
+
+k           = k + 1;
+desc{k}     = 'MWA spin axis w.r.t. mirror';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0060 0.0060 0.0000];
+
+k           = k + 1;
+desc{k}     = 'MWA mirror w.r.t. MRC';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0170 0.0170 0.0000];
+
+k           = k + 1;
+desc{k}     = 'Attitude sensing (earth radiance)';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0012 0.0012 0.0000];
+
+k           = k + 1;
+desc{k}     = 'East/west position';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = 'Attitude sensing (earth radiance)';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = 'Orbit inclination';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0100 0.000 0.0100];
+
+k           = k + 1;
+desc{k}     = 'S/C disturbance torque';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0080 0.0000 0.1470];
+
+k           = k + 1;
+desc{k}     = 'S/C disturbance torque';
+categ{k}    = 'Bias';
+errors(k,:) = [0.0031 0.00761 0.0000];
+kSK1        = k;
+
+k           = k + 1;
+desc{k}     = 'Antenna thermal distortion w.r.t. ESA RC';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0100 0.0100 0.0000];
+
+k           = k + 1;
+desc{k}     = 'Thermal distortion MWA w.r.t. ESA RC';
+categ{k}    = 'Diurnal';
+errors(k,:) = [0.0200 0.0500 0.0000];
+
+k           = k + 1;
+desc{k}     = 'Attitude sensor & actuator noise/resolution';
+categ{k}    = 'Short Term';
+errors(k,:) = [0.0200 0.0200 0.0000];
+
+k           = k + 1;
+desc{k}     = 'SA stepping transients';
+categ{k}    = 'Short Term';
+errors(k,:) = [0.0000 0.0500 0.0000];
+
+k           = k + 1;
+desc{k}     = 'S/C disturbance torques';
+categ{k}    = 'Short Term';
+errors(k,:) = [0.0000 0.0000 0.0000];
+
+fPath       = fileparts(which(mfilename));
+[cep,r,s,t] = PBudget(errors,desc,categ,0,0,...
+                      fullfile(fPath,'NormalBudget.txt'));
+                    
+DispWithTitle(cep,'CEP');
+DispWithTitle(r,'Azimuth and elevation errors');
+DispWithTitle(s,'Summary by category');
+DispWithTitle(t,'Totals');
+
+
+errors(k,:) = [0.0180 0.0032 0.0140];
+
+[cep,r,s,t] = PBudget(errors,desc,categ,0,0,...
+                      fullfile(fPath,'StationkeepingBudget.txt')); 
+
+DispWithTitle(cep,'CEP');
+DispWithTitle(r,'Azimuth and elevation errors');
+DispWithTitle(s,'Summary by category');
+DispWithTitle(t,'Totals');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-06 14:30:31 -0500 (Fri, 06 Mar 2015) $
+% $Revision: 39783 $
+
+
+##### SOURCE END #####
+--></body></html>

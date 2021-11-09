@@ -1,0 +1,628 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate feedback control of an airship.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="AirshipControlDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate feedback control of an airship.</h1><!--introduction--><p>Trim controls are at zero alpha, zero beta.</p><p>Initial non-zero values for alpha, beta, angular rates are corrected via feedback control.</p><p>Computes a data structure with time histories of states and controls.</p><pre>-------------------------------------------------------------------------------
+See also QECI, AC, ACInit, ACPlot, HUD, HUDCntrl, @acstate/acstate.m,
+LatLon, AirshipTrim, AirshipCV, BuildAirshipModel, C2DZOH, Limit,
+CoordinateTransform, Plot2D, TimeGUI, Cross, JD2000
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">Global for the HUD</a></li><li><a href="#4">Airship database</a></li><li><a href="#5">Trim Controls</a></li><li><a href="#6">initial position</a></li><li><a href="#7">initial velocity</a></li><li><a href="#8">initial orientation</a></li><li><a href="#9">adjust r0 to account for non-CG location of origin</a></li><li><a href="#10">not used</a></li><li><a href="#11">time info</a></li><li><a href="#12">Initialize the state and model</a></li><li><a href="#13">Set up the HUD</a></li><li><a href="#14">Set up the aircraft display</a></li><li><a href="#15">Initialize the plots</a></li><li><a href="#16">Initialize the time display</a></li><li><a href="#17">Set up discrete controllers</a></li><li><a href="#18">actuator limits</a></li><li><a href="#19">Create the plots</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright 2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">% Initial angle of attack             [rad]</span>
+alpha = 2*pi/180;
+
+<span class="comment">% Initial linear velocity magnitude   [m/s]</span>
+beta  = 1*pi/180;
+
+<span class="comment">% Initial angular velocity vector     [rad/s]</span>
+V     = 24;
+
+<span class="comment">% Initial angular velocity vector     [rad/s]</span>
+w0    = [0;0;0];
+
+<span class="comment">% Initial altitude                    [m]</span>
+alt   = 21336;
+
+<span class="comment">% Simulation time                     [sec]</span>
+T     = 100;
+
+<span class="comment">% Plotting flag (1 plot, 0 do not)</span>
+doPlot= [];
+
+Vd = V + 5; <span class="comment">% desired velocity</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="3">Global for the HUD</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="keyword">global</span> hUDOutput
+hUDOutput = struct(<span class="string">'pushbutton1'</span>,0,<span class="string">'pushbutton2'</span>,0,<span class="string">'checkbox1'</span>,0,<span class="keyword">...</span>
+<span class="string">'checkbox2'</span>,0,<span class="string">'checkbox3'</span>,0);
+</pre><h2 id="4">Airship database</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+d = BuildAirshipModel(<span class="string">'ASM1'</span>,AirshipCV(250/3,250*2/3));
+</pre><h2 id="5">Trim Controls</h2><pre class="codeinput"><span class="comment">%--------------</span>
+[trimThrust,trimMu,trimDElv]   = AirshipTrim( d, alt, 0, 0, Vd );
+trimThrottle       = trimThrust/(2*d.engine.thrustMax);
+d.control.throttle = trimThrottle;
+d.control.mu       = trimMu;
+d.control.dELVL    = trimDElv;
+d.control.dELVR    = trimDElv;
+d.control.dRUDB    = 0;
+d.control.dRUDT    = 0;
+</pre><h2 id="6">initial position</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+jD        = JD2000;
+[lat,lon] = LatLon(<span class="string">'new york city'</span>);
+latLonAlt = [lat*pi/180;lon*pi/180;alt*1e-3];
+rCG       = CoordinateTransform( <span class="string">'llr'</span>, <span class="string">'eci'</span>, latLonAlt, jD );
+rCG       = rCG*1e3;
+</pre><h2 id="7">initial velocity</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+vy        = V*sin(beta);
+vx        = sqrt( V^2 - vy^2 )*cos(alpha);
+vz        = vx*tan(alpha);
+vCG       = [vx;vy;vz];  <span class="comment">% initial body-frame velocity of airship CG</span>
+v0        = vCG - Cross(w0,d.cG);
+</pre><h2 id="8">initial orientation</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+eulInit   = [0;0;0];                <span class="comment">% initial orientation (aligned x-north, y-east, z-down)</span>
+q0        = QECI( rCG, eulInit );   <span class="comment">% initial ECI to body quaternion</span>
+</pre><h2 id="9">adjust r0 to account for non-CG location of origin</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+r0        = rCG - d.cG;
+</pre><h2 id="10">not used</h2><pre class="codeinput"><span class="comment">%---------</span>
+wR        = [];
+engine    = [];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+</pre><h2 id="11">time info</h2><pre class="codeinput"><span class="comment">%----------</span>
+<span class="comment">%T    = 300;</span>
+t    = 0;
+dT   = .5;
+nSim = T/dT;
+</pre><h2 id="12">Initialize the state and model</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+x  = acstate( r0, q0, w0, v0, wR, d.mass, d.inertia, d.cG, engine, actuator, sensor, flex, disturb );
+d  = ACInit( x, d );
+</pre><h2 id="13">Set up the HUD</h2><pre class="codeinput"><span class="comment">%---------------</span>
+dHUD.atmData     = d.atmData ;
+dHUD.atmUnits    = <span class="string">'si'</span>;
+
+cHUD.control.rudder   = 0;
+cHUD.control.aileron  = 0;
+cHUD.control.elevator = d.control.dELVL*180/pi;
+cHUD.control.throttle = d.control.throttle;
+cHUD.elevatorMax      = 60;
+cHUD.aileronMax       = 60;
+cHUD.rudderMax        = 60;
+cHUD.dT               = dT;
+hHUD = HUD( <span class="string">'init'</span>, dHUD, x, [], cHUD );
+</pre><img vspace="5" hspace="5" src="AirshipControlDemo_01.png" alt=""> <h2 id="14">Set up the aircraft display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+<span class="comment">%gHAA = load( 'gHAA' )</span>
+<span class="comment">%hHAA = DrawAC( 'init', gHAA, x, [], d.atmUnits  );</span>
+</pre><h2 id="15">Initialize the plots</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+plots = [ <span class="string">'Euler angles       '</span>;<span class="keyword">...</span>
+<span class="string">'Quaternion         '</span>;<span class="keyword">...</span>
+<span class="string">'Quaternion NED To B'</span>;<span class="keyword">...</span>
+<span class="string">'Angular rate       '</span>;<span class="keyword">...</span>
+<span class="string">'Position ECI       '</span>;<span class="keyword">...</span>
+<span class="string">'Velocity           '</span>;<span class="keyword">...</span>
+<span class="string">'Alpha              '</span>;<span class="keyword">...</span>
+<span class="string">'Rudder             '</span>;<span class="keyword">...</span>
+<span class="string">'Throttle           '</span>;<span class="keyword">...</span>
+<span class="string">'Aileron            '</span>;<span class="keyword">...</span>
+<span class="string">'Elevator           '</span>];
+
+dPlot  = ACPlot( x, <span class="string">'init'</span>, plots, d, nSim, dT, nSim );
+muPlot = zeros(1,nSim);
+</pre><h2 id="16">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'Airship Simulation'</span> );
+</pre><img vspace="5" hspace="5" src="AirshipControlDemo_02.png" alt=""> <h2 id="17">Set up discrete controllers</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+con               = load(<span class="string">'AirshipControllers'</span>);
+[~,~,cktu,dktu] = getabcd(con.k_tu);    <span class="comment">% controller: u-to-throttle</span>
+[~,~,ckmu,dkmu] = getabcd(con.k_mu);    <span class="comment">% controller: u-to-mu</span>
+[~,~,ckdq,dkdq] = getabcd(con.k_dq);    <span class="comment">% controller: q-to-dELV</span>
+[~,~,ckdw,dkdw] = getabcd(con.k_dw);    <span class="comment">% controller: w-to-dELV</span>
+[~,~,ckrr,dkrr] = getabcd(con.k_rr);    <span class="comment">% controller: u-to-mu</span>
+[~,~,ckrv,dkrv] = getabcd(con.k_rv);    <span class="comment">% controller: q-to-dELV</span>
+[ak,bk,ckap,dkap] = getabcd(con.k_ap);    <span class="comment">% controller: w-to-dELV</span>
+[ak, bk]          = C2DZOH( ak, bk, dT );
+xktu              = zeros(2,1);
+xkmu              = zeros(2,1);
+xkdq              = zeros(2,1);
+xkdw              = zeros(2,1);
+xkrr              = zeros(2,1);
+xkrv              = zeros(2,1);
+xkap              = zeros(2,1);
+
+mu = 0;
+</pre><h2 id="18">actuator limits</h2><pre class="codeinput"><span class="comment">%----------------</span>
+flapLim = [60 -60]*pi/180;
+muLim   = [45 -45]*pi/180;
+
+<span class="keyword">for</span> k = 1:nSim
+
+   <span class="comment">% Display the status message</span>
+   <span class="comment">%---------------------------</span>
+   [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+   <span class="comment">% HUD information</span>
+   <span class="comment">%----------------</span>
+   hHUD = HUD( <span class="string">'run'</span>, dHUD, x, hHUD, cHUD );
+
+   w = get(x,<span class="string">'w'</span>);
+   v = get(x,<span class="string">'v'</span>);
+   r = w(3);
+
+   <span class="comment">% Compute errors</span>
+   <span class="comment">%---------------</span>
+   ue   = Vd - v(1);             <span class="comment">% axial velocity error</span>
+   ve   = 0 - v(2);              <span class="comment">% lateral velocity error</span>
+   we   = 0 - v(3);              <span class="comment">% normal velocity error</span>
+   pe   = 0 - w(1);              <span class="comment">% roll rate error</span>
+   qe   = 0 - w(2);              <span class="comment">% pitch rate error</span>
+   re   = ve/5 - w(3);           <span class="comment">% yaw rate error</span>
+
+   <span class="comment">% Controls</span>
+   <span class="comment">%---------</span>
+
+   <span class="comment">% u to throttle</span>
+   xktu = ak*xktu + bk*ue;
+   th   = cktu*xktu + dktu*ue;
+
+   <span class="comment">% w to dELV</span>
+   xkdw = ak*xkdw + bk*we;
+   dew  = ckdw*xkdw + dkdw*we;
+
+   <span class="comment">% q to dELV</span>
+   xkdq = ak*xkdq + bk*qe;
+   deq  = ckdq*xkdq + dkdq*qe;
+
+   <span class="comment">% r to dRUD</span>
+   xkrr = ak*xkrr + bk*re;
+   drr  = ckrr*xkrr + dkrr*re;
+
+   <span class="comment">% v to dRUD</span>
+   xkrv = ak*xkrv + bk*ve;
+   drv  = ckrv*xkrv + dkrv*ve;
+
+   <span class="comment">% p to dAIL</span>
+   xkap = ak*xkap + bk*pe;
+   da   = ckap*xkap + dkap*pe;
+
+   d.control.dELVL    = trimDElv + dew + deq + .25*da;
+   d.control.dELVR    = trimDElv + dew + deq - .25*da;
+   d.control.dRUDB    = drr + drv + .25*da;
+   d.control.dRUDT    = drr + drv - .25*da;
+   d.control.throttle = trimThrottle + th;
+   d.control.mu       = trimMu;
+
+   d.control.dELVL    = Limit( d.control.dELVL,    flapLim );
+   d.control.dELVR    = Limit( d.control.dELVR,    flapLim );
+   d.control.dRUDB    = Limit( d.control.dRUDB,    flapLim );
+   d.control.dRUDT    = Limit( d.control.dRUDT,    flapLim );
+   d.control.throttle = Limit( d.control.throttle, [1 0] );
+   d.control.mu       = Limit( d.control.mu,       muLim );
+
+   hHUD.control.throttle = d.control.throttle;
+   hHUD.control.elevator = .5*(d.control.dELVL+d.control.dELVR)*180/pi;
+   hHUD.control.aileron  = (d.control.dELVL-d.control.dELVR+d.control.dRUDB-d.control.dRUDT)*180/pi;
+   hHUD.control.rudder   = .5*(d.control.dRUDB+d.control.dRUDT)*180/pi;
+
+   <span class="comment">% Plotting</span>
+   <span class="comment">%---------</span>
+   dPlot = ACPlot( x, <span class="string">'store'</span>, dPlot, hHUD.control );
+
+   muPlot(k) = trimMu + mu;
+
+   <span class="comment">% 3D Display</span>
+   <span class="comment">%-----------</span>
+   <span class="comment">%hHAA = DrawAC( 'run', gHAA, x, hHAA, d.atmUnits );</span>
+
+   <span class="comment">% The simulation</span>
+   <span class="comment">%---------------</span>
+   x     = AC( x, t, dT, d );
+   t     = t + dT;
+
+   <span class="comment">% Time control</span>
+   <span class="comment">%-------------</span>
+   <span class="keyword">switch</span> simulationAction
+   <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+   <span class="keyword">case</span> <span class="string">'stop'</span>
+      TimeGUI(<span class="string">'close'</span>);
+      <span class="keyword">return</span>;
+   <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+   <span class="keyword">end</span>
+
+   HUDCntrl;
+
+<span class="keyword">end</span>
+TimeGUI(<span class="string">'close'</span>);
+</pre><img vspace="5" hspace="5" src="AirshipControlDemo_03.png" alt=""> <h2 id="19">Create the plots</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+<span class="keyword">if</span>( length(dPlot.t) &lt; dPlot.kPlot )
+   dPlot.kPlot = length(dPlot.t);
+<span class="keyword">end</span>
+ACPlot( x, <span class="string">'plot'</span>, dPlot );
+
+Plot2D( (1:k)*dT, muPlot(1:k)*180/pi, <span class="string">'Time [sec]'</span>, <span class="string">'prop pitch angle'</span> );
+
+out = dPlot;
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="AirshipControlDemo_04.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_05.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_06.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_07.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_08.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_09.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_10.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_11.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_12.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_13.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_14.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_15.png" alt=""> <img vspace="5" hspace="5" src="AirshipControlDemo_16.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate feedback control of an airship.
+%
+% Trim controls are at zero alpha, zero beta.
+%
+% Initial non-zero values for alpha, beta, angular rates are corrected via 
+% feedback control.
+%
+% Computes a data structure with time histories of states and controls.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also QECI, AC, ACInit, ACPlot, HUD, HUDCntrl, @acstate/acstate.m, 
+%  LatLon, AirshipTrim, AirshipCV, BuildAirshipModel, C2DZOH, Limit, 
+%  CoordinateTransform, Plot2D, TimeGUI, Cross, JD2000
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%    Copyright 2003 Princeton Satellite Systems, Inc.
+%    All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Initial angle of attack             [rad]
+alpha = 2*pi/180;
+
+% Initial linear velocity magnitude   [m/s]
+beta  = 1*pi/180;
+
+% Initial angular velocity vector     [rad/s]
+V     = 24;
+
+% Initial angular velocity vector     [rad/s]
+w0    = [0;0;0];
+
+% Initial altitude                    [m]
+alt   = 21336;
+
+% Simulation time                     [sec]
+T     = 100;
+
+% Plotting flag (1 plot, 0 do not)
+doPlot= [];
+
+Vd = V + 5; % desired velocity
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Global for the HUD
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+global hUDOutput
+hUDOutput = struct('pushbutton1',0,'pushbutton2',0,'checkbox1',0,...
+'checkbox2',0,'checkbox3',0);
+
+%% Airship database
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = BuildAirshipModel('ASM1',AirshipCV(250/3,250*2/3));
+
+%% Trim Controls
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[trimThrust,trimMu,trimDElv]   = AirshipTrim( d, alt, 0, 0, Vd );
+trimThrottle       = trimThrust/(2*d.engine.thrustMax);
+d.control.throttle = trimThrottle;
+d.control.mu       = trimMu;
+d.control.dELVL    = trimDElv;
+d.control.dELVR    = trimDElv;
+d.control.dRUDB    = 0;
+d.control.dRUDT    = 0;
+
+%% initial position
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+jD        = JD2000;
+[lat,lon] = LatLon('new york city');
+latLonAlt = [lat*pi/180;lon*pi/180;alt*1e-3];
+rCG       = CoordinateTransform( 'llr', 'eci', latLonAlt, jD );
+rCG       = rCG*1e3;
+
+%% initial velocity
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+vy        = V*sin(beta);
+vx        = sqrt( V^2 - vy^2 )*cos(alpha);
+vz        = vx*tan(alpha);
+vCG       = [vx;vy;vz];  % initial body-frame velocity of airship CG
+v0        = vCG - Cross(w0,d.cG);
+
+%% initial orientation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+eulInit   = [0;0;0];                % initial orientation (aligned x-north, y-east, z-down)
+q0        = QECI( rCG, eulInit );   % initial ECI to body quaternion
+
+%% adjust r0 to account for non-CG location of origin
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r0        = rCG - d.cG;
+
+%% not used
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+wR        = [];
+engine    = [];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+
+%% time info
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%T    = 300;
+t    = 0;
+dT   = .5;
+nSim = T/dT;
+
+%% Initialize the state and model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x  = acstate( r0, q0, w0, v0, wR, d.mass, d.inertia, d.cG, engine, actuator, sensor, flex, disturb );
+d  = ACInit( x, d );
+
+%% Set up the HUD
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dHUD.atmData     = d.atmData ;
+dHUD.atmUnits    = 'si';
+
+cHUD.control.rudder   = 0;
+cHUD.control.aileron  = 0;
+cHUD.control.elevator = d.control.dELVL*180/pi;
+cHUD.control.throttle = d.control.throttle;
+cHUD.elevatorMax      = 60;
+cHUD.aileronMax       = 60;
+cHUD.rudderMax        = 60;
+cHUD.dT               = dT;
+hHUD = HUD( 'init', dHUD, x, [], cHUD );
+
+%% Set up the aircraft display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%gHAA = load( 'gHAA' )
+%hHAA = DrawAC( 'init', gHAA, x, [], d.atmUnits  );
+
+%% Initialize the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+plots = [ 'Euler angles       ';...
+'Quaternion         ';...
+'Quaternion NED To B';...
+'Angular rate       ';...
+'Position ECI       ';...
+'Velocity           ';...
+'Alpha              ';...
+'Rudder             ';...
+'Throttle           ';...
+'Aileron            ';...
+'Elevator           ']; 
+
+dPlot  = ACPlot( x, 'init', plots, d, nSim, dT, nSim );
+muPlot = zeros(1,nSim);
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'Airship Simulation' );
+
+%% Set up discrete controllers
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+con               = load('AirshipControllers');
+[~,~,cktu,dktu] = getabcd(con.k_tu);    % controller: u-to-throttle
+[~,~,ckmu,dkmu] = getabcd(con.k_mu);    % controller: u-to-mu
+[~,~,ckdq,dkdq] = getabcd(con.k_dq);    % controller: q-to-dELV
+[~,~,ckdw,dkdw] = getabcd(con.k_dw);    % controller: w-to-dELV
+[~,~,ckrr,dkrr] = getabcd(con.k_rr);    % controller: u-to-mu
+[~,~,ckrv,dkrv] = getabcd(con.k_rv);    % controller: q-to-dELV
+[ak,bk,ckap,dkap] = getabcd(con.k_ap);    % controller: w-to-dELV
+[ak, bk]          = C2DZOH( ak, bk, dT );
+xktu              = zeros(2,1);
+xkmu              = zeros(2,1);
+xkdq              = zeros(2,1);
+xkdw              = zeros(2,1);
+xkrr              = zeros(2,1);
+xkrv              = zeros(2,1);
+xkap              = zeros(2,1);
+
+mu = 0;
+
+%% actuator limits
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+flapLim = [60 -60]*pi/180;
+muLim   = [45 -45]*pi/180;
+
+for k = 1:nSim
+   
+   % Display the status message
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+   
+   % HUD information
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   hHUD = HUD( 'run', dHUD, x, hHUD, cHUD );
+   
+   w = get(x,'w');
+   v = get(x,'v');
+   r = w(3);
+   
+   % Compute errors
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   ue   = Vd - v(1);             % axial velocity error
+   ve   = 0 - v(2);              % lateral velocity error
+   we   = 0 - v(3);              % normal velocity error
+   pe   = 0 - w(1);              % roll rate error   
+   qe   = 0 - w(2);              % pitch rate error
+   re   = ve/5 - w(3);           % yaw rate error
+   
+   % Controls
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+      
+   % u to throttle
+   xktu = ak*xktu + bk*ue;
+   th   = cktu*xktu + dktu*ue;
+   
+   % w to dELV
+   xkdw = ak*xkdw + bk*we;
+   dew  = ckdw*xkdw + dkdw*we;
+
+   % q to dELV
+   xkdq = ak*xkdq + bk*qe;
+   deq  = ckdq*xkdq + dkdq*qe;
+   
+   % r to dRUD
+   xkrr = ak*xkrr + bk*re;
+   drr  = ckrr*xkrr + dkrr*re;
+      
+   % v to dRUD
+   xkrv = ak*xkrv + bk*ve;
+   drv  = ckrv*xkrv + dkrv*ve;
+   
+   % p to dAIL
+   xkap = ak*xkap + bk*pe;
+   da   = ckap*xkap + dkap*pe;
+   
+   d.control.dELVL    = trimDElv + dew + deq + .25*da;
+   d.control.dELVR    = trimDElv + dew + deq - .25*da;
+   d.control.dRUDB    = drr + drv + .25*da;
+   d.control.dRUDT    = drr + drv - .25*da;
+   d.control.throttle = trimThrottle + th;
+   d.control.mu       = trimMu;
+   
+   d.control.dELVL    = Limit( d.control.dELVL,    flapLim );
+   d.control.dELVR    = Limit( d.control.dELVR,    flapLim );
+   d.control.dRUDB    = Limit( d.control.dRUDB,    flapLim );
+   d.control.dRUDT    = Limit( d.control.dRUDT,    flapLim );
+   d.control.throttle = Limit( d.control.throttle, [1 0] );
+   d.control.mu       = Limit( d.control.mu,       muLim );
+   
+   hHUD.control.throttle = d.control.throttle;
+   hHUD.control.elevator = .5*(d.control.dELVL+d.control.dELVR)*180/pi;
+   hHUD.control.aileron  = (d.control.dELVL-d.control.dELVR+d.control.dRUDB-d.control.dRUDT)*180/pi;
+   hHUD.control.rudder   = .5*(d.control.dRUDB+d.control.dRUDT)*180/pi;
+   
+   % Plotting
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   dPlot = ACPlot( x, 'store', dPlot, hHUD.control );
+   
+   muPlot(k) = trimMu + mu;
+   
+   % 3D Display
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   %hHAA = DrawAC( 'run', gHAA, x, hHAA, d.atmUnits );
+   
+   % The simulation
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   x     = AC( x, t, dT, d );
+   t     = t + dT;
+   
+   % Time control
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   switch simulationAction
+   case 'pause'
+      pause
+      simulationAction = ' ';
+   case 'stop'
+      TimeGUI('close');
+      return;
+   case 'plot'
+      break;
+   end
+
+   HUDCntrl;
+   
+end
+TimeGUI('close');
+
+%% Create the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( length(dPlot.t) < dPlot.kPlot )
+   dPlot.kPlot = length(dPlot.t);
+end
+ACPlot( x, 'plot', dPlot );
+
+Plot2D( (1:k)*dT, muPlot(1:k)*180/pi, 'Time [sec]', 'prop pitch angle' );
+
+out = dPlot;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-05 08:57:28 -0400 (Thu, 05 Sep 2019) $
+% $Revision: 49710 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,177 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate thruster design</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="DesignThruster.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate thruster design</h1><pre class="language-matlab">Since <span class="string">version</span> <span class="string">10.</span>
+</pre><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2012 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+Nm2ToPSI        = Constant(<span class="string">'N/m^2 to PSI'</span>);
+pressure        = 350/Nm2ToPSI;
+thrust          = 0.1;
+pressureRatio	= inf;
+areaRatio       = 100;
+
+<span class="comment">%                 [ADN Methanol Ammonia]</span>
+<span class="comment">%---------------------------------------</span>
+gammaParts      = [1.3 1.2 1.31]; <span class="comment">% Gamma for ADN is assumed to be near that for ammonia</span>
+frac            = [0.6 0.2 0.2];
+gamma           = sum(frac.*gammaParts);
+fuel            = <span class="string">'LMP-103S'</span>;
+
+[cT,pRatio]     = TCoeff( gamma, areaRatio, pressureRatio);
+aStar           = thrust/(pressure*cT);
+divergenceAng	= 28;
+rNozzle         = sqrt(areaRatio*aStar/pi)*1000;
+lNozzle         = rNozzle/TanD(divergenceAng);
+
+clear <span class="string">x</span>;
+
+k = 1;
+x{k,1} = <span class="string">'Pressure'</span>;                x{k,2} = sprintf(<span class="string">'%8.2f'</span>,pressure);     x{k,3} = <span class="string">'N/m$^2$'</span>;	k = k + 1;
+x{k,1} = <span class="string">'Area ratio'</span>;              x{k,2} = sprintf(<span class="string">'%8.2f'</span>,areaRatio);    x{k,3} = <span class="string">''</span>;        k = k + 1;
+x{k,1} = <span class="string">'Thrust coefficient'</span>;      x{k,2} = sprintf(<span class="string">'%8.2f'</span>,cT);           x{k,3} = <span class="string">''</span>;        k = k + 1;
+x{k,1} = <span class="string">'Fuel'</span>;                    x{k,2} = fuel;                          x{k,3} = <span class="string">''</span>;        k = k + 1;
+x{k,1} = <span class="string">'Heat capacity ratio'</span>;	    x{k,2} = sprintf(<span class="string">'%8.2f'</span>,gamma);        x{k,3} = <span class="string">''</span>;        k = k + 1;
+x{k,1} = <span class="string">'A*'</span>;                      x{k,2} = sprintf(<span class="string">'%8.4f'</span>,aStar*1e6);	x{k,3} = <span class="string">'mm$^2$'</span>;  k = k + 1;
+x{k,1} = <span class="string">'Divergence angle'</span>;        x{k,2} = sprintf(<span class="string">'%8.2f'</span>,divergenceAng);x{k,3} = <span class="string">'deg'</span>;     k = k + 1;
+x{k,1} = <span class="string">'Radius nozzle'</span>;           x{k,2} = sprintf(<span class="string">'%8.2f'</span>,rNozzle );     x{k,3} = <span class="string">'mm'</span>;      k = k + 1;
+x{k,1} = <span class="string">'Length nozzle'</span>;           x{k,2} = sprintf(<span class="string">'%8.2f'</span>,lNozzle );     x{k,3} = <span class="string">'mm'</span>;      k = k + 1;
+
+disp(x)
+
+CreateLatexTable(x,<span class="string">'Thruster'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">    'Pressure'               '2413165.02'    'N/m$^2$'
+    'Area ratio'             '  100.00'      ''       
+    'Thrust coefficient'     '    1.81'      ''       
+    'Fuel'                   'LMP-103S'      ''       
+    'Heat capacity ratio'    '    1.28'      ''       
+    'A*'                     '  0.0229'      'mm$^2$' 
+    'Divergence angle'       '   28.00'      'deg'    
+    'Radius nozzle'          '    0.85'      'mm'     
+    'Length nozzle'          '    1.61'      'mm'     
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate thruster design
+%   
+%   Since version 10.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2012 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+Nm2ToPSI        = Constant('N/m^2 to PSI');
+pressure        = 350/Nm2ToPSI;
+thrust          = 0.1;
+pressureRatio	= inf; 
+areaRatio       = 100;
+
+%                 [ADN Methanol Ammonia]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+gammaParts      = [1.3 1.2 1.31]; % Gamma for ADN is assumed to be near that for ammonia
+frac            = [0.6 0.2 0.2];
+gamma           = sum(frac.*gammaParts); 
+fuel            = 'LMP-103S';
+
+[cT,pRatio]     = TCoeff( gamma, areaRatio, pressureRatio);
+aStar           = thrust/(pressure*cT);
+divergenceAng	= 28;
+rNozzle         = sqrt(areaRatio*aStar/pi)*1000;
+lNozzle         = rNozzle/TanD(divergenceAng);
+
+clear x;
+
+k = 1;
+x{k,1} = 'Pressure';                x{k,2} = sprintf('%8.2f',pressure);     x{k,3} = 'N/m$^2$';	k = k + 1;
+x{k,1} = 'Area ratio';              x{k,2} = sprintf('%8.2f',areaRatio);    x{k,3} = '';        k = k + 1;
+x{k,1} = 'Thrust coefficient';      x{k,2} = sprintf('%8.2f',cT);           x{k,3} = '';        k = k + 1;
+x{k,1} = 'Fuel';                    x{k,2} = fuel;                          x{k,3} = '';        k = k + 1;
+x{k,1} = 'Heat capacity ratio';	    x{k,2} = sprintf('%8.2f',gamma);        x{k,3} = '';        k = k + 1;
+x{k,1} = 'A*';                      x{k,2} = sprintf('%8.4f',aStar*1e6);	x{k,3} = 'mm$^2$';  k = k + 1;
+x{k,1} = 'Divergence angle';        x{k,2} = sprintf('%8.2f',divergenceAng);x{k,3} = 'deg';     k = k + 1;
+x{k,1} = 'Radius nozzle';           x{k,2} = sprintf('%8.2f',rNozzle );     x{k,3} = 'mm';      k = k + 1;
+x{k,1} = 'Length nozzle';           x{k,2} = sprintf('%8.2f',lNozzle );     x{k,3} = 'mm';      k = k + 1;
+
+disp(x)
+
+CreateLatexTable(x,'Thruster');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

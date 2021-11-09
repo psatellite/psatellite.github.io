@@ -1,0 +1,1980 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate boom dynamics and control using TBModel/FTB functions.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="BoomQCRDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate boom dynamics and control using TBModel/FTB functions.</h1><!--introduction--><pre class="language-matlab">Uses <span class="string">a</span> <span class="string">simple</span> <span class="string">external</span> <span class="string">force</span> <span class="string">and</span> <span class="string">torque</span> <span class="string">model</span> <span class="string">to</span> <span class="string">examine</span> <span class="string">the</span> <span class="string">effect</span> <span class="string">of</span>
+the <span class="string">boom</span> <span class="string">hinge</span> <span class="string">torque.</span> <span class="string">A</span> <span class="string">state-space</span> <span class="string">controller</span> <span class="string">is</span> <span class="string">designed</span> <span class="string">using</span> <span class="string">QCR.</span>
+The <span class="string">boom</span> <span class="string">is</span> <span class="string">nominally</span> <span class="string">aligned</span> <span class="string">with</span> <span class="string">the</span> <span class="string">body</span> <span class="string">X</span> <span class="string">axis.</span>
+</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+xDot = FTB( x, t, r0, r1, lam1, iner0, iner1, m0, m1, torque, force, iAxis )
+[wDot, h, iner] = TBModel( w0, w1, q0to1, r0, r1, lam1, iner0, iner1,
+                           m0, m1, torque, force, iAxis )
+------------------------------------------------------------------------
+Cases:
+1. boom <span class="string">x</span> <span class="string">rotation</span> <span class="string">-</span> <span class="string">no</span> <span class="string">torque</span> <span class="string">on</span> <span class="string">sail</span>, as <span class="string">expected</span>
+2. boom <span class="string">y</span> <span class="string">torque</span> <span class="string">step</span> <span class="string">response</span>
+3. boom <span class="string">z</span> <span class="string">torque</span> <span class="string">step</span> <span class="string">response</span>
+4. state <span class="string">space</span> <span class="string">controller.</span> <span class="string">includes</span> <span class="string">a</span> <span class="string">sinusoidal</span> <span class="string">disturbance</span> <span class="string">on</span> <span class="string">sail.</span>
+------------------------------------------------------------------------
+See <span class="string">also:</span> <span class="string">Jacobian</span>, TBModel, FTB, and <span class="string">QCR</span>, all <span class="string">from</span> <span class="string">the</span> <span class="string">SCT</span> <span class="string">Core</span>,
+CrossSection, AU2Q, QTForm, QZero, Plot2D, RK4
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Load the CAD model</a></li><li><a href="#3">Two-body parameters for FTB derived from CAD model</a></li><li><a href="#4">sim time step</a></li><li><a href="#5">sail force in core body frame (N), model as constant</a></li><li><a href="#6">Initial state; the quaternions and rates are stacked</a></li><li><a href="#7">Initial boom torque or controller</a></li><li><a href="#8">Preallocate arrays</a></li><li><a href="#9">Initialize time</a></li><li><a href="#10">Create plots</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Select a demo to run</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+demo = 4;
+</pre><h2>Load the CAD model<a name="2"></a></h2><pre class="codeinput"><span class="comment">%-------------------</span>
+g = load(<span class="string">'PlateWithBoom.mat'</span>);
+A = CrossSection(g);
+</pre><h2>Two-body parameters for FTB derived from CAD model<a name="3"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------</span>
+r0    = g.body(1).mass.cM;
+r1    = g.body(2).rHinge;
+lam1  = g.body(2).mass.cM;
+iner0 = g.body(1).mass.inertia;
+iner1 = g.body(2).mass.inertia;
+m0    = g.body(1).mass.mass;
+m1    = g.body(2).mass.mass;
+<span class="comment">% 3 DOF hinge</span>
+iAxis = [1 2 3];
+</pre><h2>sim time step<a name="4"></a></h2><pre class="codeinput"><span class="comment">%--------------</span>
+dT = 10;
+nP = 200;
+</pre><h2>sail force in core body frame (N), model as constant<a name="5"></a></h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------</span>
+F0 = 2*1367/3e8*A;  <span class="comment">% specular model</span>
+F  = [-F0;0;0];
+</pre><h2>Initial state; the quaternions and rates are stacked<a name="6"></a></h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------</span>
+x  = [QZero;QZero;[0;0;0];[0;0;0]];
+</pre><h2>Initial boom torque or controller<a name="7"></a></h2><pre class="codeinput"><span class="comment">%----------------------------------</span>
+tH = [0;0;0];
+tD = 0;
+<span class="keyword">switch</span> demo
+  <span class="keyword">case</span> 1
+    <span class="comment">% X-axis torque</span>
+    tH = [1e-6;0;0];
+  <span class="keyword">case</span> 2
+    <span class="comment">% Y-axis torque</span>
+    tH = [0;1e-6;0];
+  <span class="keyword">case</span> 3
+    <span class="comment">% Z-axis torque</span>
+    tH = [0;0;1e-6];
+  <span class="keyword">case</span> 4
+    <span class="comment">% Design a state space controller using QCR</span>
+    <span class="comment">%------------------------------------------</span>
+    <span class="comment">% Operating point</span>
+    xOP = x;
+    tOP = 0;
+    tExt = [0;0;0];
+    <span class="comment">% Plant</span>
+    [Acon,feq] = Jacobian(<span class="string">'FTB'</span>,xOP,tOP, r0, r1, lam1, iner0, iner1, m0, m1,<span class="keyword">...</span>
+                                         zeros(6,1), [F;0;0;0], iAxis);
+    [wDotSt, hInSt, inerSt] = TBModel(x(9 :11), x(12 :14), x(5:8), r0, r1, lam1,<span class="keyword">...</span>
+                             iner0, iner1, m0, m1, zeros(6,1), [F;0;0;0], iAxis);
+    inerInvSt = inv(inerSt);
+    Bcon = [zeros(6,3);inerInvSt(:,4:6)];
+    <span class="comment">% Controller</span>
+    kStates  = [2:4 6:14];
+    qControl    = diag([1 1 1 0.8 0.8 0.8 0.9 0.9 0.9 1 1 1]); <span class="comment">%state cost matrix</span>
+    rControl    = diag([1e6 1e-1 1e-1]); <span class="comment">%input cost matrix</span>
+    [Kcon,sinf] = QCR(Acon(kStates,kStates),Bcon,qControl,rControl);
+    <span class="comment">% Provide some  offsets in initial conditions</span>
+    x(13)      = 0;
+    x(5:8)     = AU2Q(0.01,[0;1;0]);
+    tD         = 0; <span class="comment">% 1e-2;</span>
+
+  <span class="keyword">otherwise</span>
+    error(<span class="string">'Please choose from demos 1-4'</span>)
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Warning: Matrix is close to singular or badly scaled. Results may be inaccurate.
+RCOND =  4.199262e-20. 
+</pre><h2>Preallocate arrays<a name="8"></a></h2><pre class="codeinput"><span class="comment">%-------------------</span>
+xPlot  = zeros(14,nP);
+tPlot  = dT*[0:nP-1];
+tCPlot = zeros(3,nP);
+tDPlot = zeros(3,nP);
+tHPlot = zeros(3,nP);
+cmPlot = zeros(2,nP);
+</pre><h2>Initialize time<a name="9"></a></h2><pre class="codeinput"><span class="comment">%----------------</span>
+t = 0;
+
+<span class="keyword">for</span> k = 1:nP
+  <span class="comment">% Rename variables for clarity</span>
+  <span class="comment">%-----------------------------</span>
+  qCore = x(1:4);
+  qBoom = x(5:8);
+  wCore = x(9:11);
+  wBoom = x(12:14);
+
+  <span class="comment">% External torque modeled from sail force and CM</span>
+  <span class="comment">% Center of pressure is modeled at the origin</span>
+  <span class="comment">%   T = (Cp - Cm) x F</span>
+  <span class="comment">%------------------------------------------------</span>
+  CM    = m1/(m0+m1)*(r1 + QTForm( qBoom, lam1 ));
+  tC    = cross(-CM,F);
+  tDist = tD*[0;sin(0.005*t);0];
+  tExt  = tC + tDist;
+
+  <span class="comment">% Hinge torque on boom</span>
+  <span class="comment">%---------------------</span>
+  <span class="keyword">switch</span> demo
+    <span class="keyword">case</span> 1
+      <span class="comment">% Negate torque halfway through</span>
+      <span class="keyword">if</span> k == floor(nP/2);
+        tH = -tH;
+      <span class="keyword">end</span>
+    <span class="keyword">case</span> {2, 3}
+      <span class="comment">% End torque after two steps</span>
+      <span class="keyword">if</span> k == 3
+        tH = [0;0;0];
+      <span class="keyword">end</span>
+    <span class="keyword">case</span> 4
+      tH = -Kcon*(x(kStates)-xOP(kStates));
+  <span class="keyword">end</span>
+
+  <span class="comment">% Store data for plotting</span>
+  <span class="comment">%------------------------</span>
+  xPlot(:,k)  = x;
+  tCPlot(:,k) = tC;
+  tDPlot(:,k) = tDist;
+  cmPlot(:,k) = CM(2:3);
+  tHPlot(:,k) = tH;
+
+  <span class="comment">% Integrate</span>
+  <span class="comment">%----------</span>
+  x = RK4( @FTB, x, dT, t, r0, r1, lam1, iner0, iner1, m0, m1, [tExt;tH], [F;0;0;0], iAxis );
+  t = t + dT;
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Warning: Matrix is close to singular or badly scaled. Results may be inaccurate.
+RCOND =  7.689384e-32. 
+Warning: Matrix is close to singular or badly scaled. Results may be inaccurate.
+RCOND =  3.096724e-95. 
+Warning: Matrix is close to singular or badly scaled. Results may be inaccurate.
+RCOND = 1.557437e-300. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+</pre><h2>Create plots<a name="10"></a></h2><pre class="codeinput"><span class="comment">%-------------</span>
+Plot2D(tPlot,xPlot,<span class="string">'Time'</span>,{<span class="string">'qCore X-Z'</span>,<span class="string">'wCore'</span>,<span class="string">'qBoom X-Z'</span>,<span class="string">'wBoom'</span>},<span class="string">'Vehicle Attitude'</span>,<span class="keyword">...</span>
+  <span class="string">'lin'</span>,{[2:4] [9:11] [6:8] [12:14]},[],2)
+Plot2D(tPlot,[tDPlot;tCPlot],<span class="string">'Time'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'External SRP Torque, Disturbance and Control'</span>,<span class="keyword">...</span>
+       [], {[1 4],[2 5],[3 6]})
+Plot2D(tPlot,tHPlot,<span class="string">'Time'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Internal Hinge Torque'</span>)
+Plot2D(tPlot,cmPlot,<span class="string">'Time'</span>,{<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Center of Mass in Sail Plane'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BoomQCRDemo_01.png" alt=""> <img vspace="5" hspace="5" src="BoomQCRDemo_02.png" alt=""> <img vspace="5" hspace="5" src="BoomQCRDemo_03.png" alt=""> <img vspace="5" hspace="5" src="BoomQCRDemo_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate boom dynamics and control using TBModel/FTB functions.
+%   Uses a simple external force and torque model to examine the effect of 
+%   the boom hinge torque. A state-space controller is designed using QCR.
+%   The boom is nominally aligned with the body X axis.
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   xDot = FTB( x, t, r0, r1, lam1, iner0, iner1, m0, m1, torque, force, iAxis )
+%   [wDot, h, iner] = TBModel( w0, w1, q0to1, r0, r1, lam1, iner0, iner1,
+%                              m0, m1, torque, force, iAxis )
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Cases:
+%   1. boom x rotation - no torque on sail, as expected
+%   2. boom y torque step response
+%   3. boom z torque step response
+%   4. state space controller. includes a sinusoidal disturbance on sail.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also: Jacobian, TBModel, FTB, and QCR, all from the SCT Core, 
+%  CrossSection, AU2Q, QTForm, QZero, Plot2D, RK4
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Select a demo to run
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+demo = 4;
+
+%% Load the CAD model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('PlateWithBoom.mat');
+A = CrossSection(g);
+
+%% Two-body parameters for FTB derived from CAD model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r0    = g.body(1).mass.cM;
+r1    = g.body(2).rHinge;
+lam1  = g.body(2).mass.cM;
+iner0 = g.body(1).mass.inertia;
+iner1 = g.body(2).mass.inertia;
+m0    = g.body(1).mass.mass;
+m1    = g.body(2).mass.mass;
+% 3 DOF hinge
+iAxis = [1 2 3];
+
+%% sim time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT = 10;
+nP = 200;
+
+%% sail force in core body frame (N), model as constant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+F0 = 2*1367/3e8*A;  % specular model
+F  = [-F0;0;0];
+
+%% Initial state; the quaternions and rates are stacked
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x  = [QZero;QZero;[0;0;0];[0;0;0]];
+
+%% Initial boom torque or controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tH = [0;0;0];
+tD = 0;
+switch demo
+  case 1
+    % X-axis torque
+    tH = [1e-6;0;0];
+  case 2
+    % Y-axis torque
+    tH = [0;1e-6;0];
+  case 3
+    % Z-axis torque
+    tH = [0;0;1e-6];
+  case 4
+    % Design a state space controller using QCR
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    % Operating point
+    xOP = x;
+    tOP = 0;
+    tExt = [0;0;0];
+    % Plant
+    [Acon,feq] = Jacobian('FTB',xOP,tOP, r0, r1, lam1, iner0, iner1, m0, m1,...
+                                         zeros(6,1), [F;0;0;0], iAxis);
+    [wDotSt, hInSt, inerSt] = TBModel(x(9 :11), x(12 :14), x(5:8), r0, r1, lam1,...
+                             iner0, iner1, m0, m1, zeros(6,1), [F;0;0;0], iAxis);
+    inerInvSt = inv(inerSt);
+    Bcon = [zeros(6,3);inerInvSt(:,4:6)];
+    % Controller
+    kStates  = [2:4 6:14];
+    qControl    = diag([1 1 1 0.8 0.8 0.8 0.9 0.9 0.9 1 1 1]); %state cost matrix
+    rControl    = diag([1e6 1e-1 1e-1]); %input cost matrix
+    [Kcon,sinf] = QCR(Acon(kStates,kStates),Bcon,qControl,rControl);
+    % Provide some  offsets in initial conditions
+    x(13)      = 0;
+    x(5:8)     = AU2Q(0.01,[0;1;0]); 
+    tD         = 0; % 1e-2;
+
+  otherwise
+    error('Please choose from demos 1-4')
+end
+
+%% Preallocate arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xPlot  = zeros(14,nP);
+tPlot  = dT*[0:nP-1];
+tCPlot = zeros(3,nP);
+tDPlot = zeros(3,nP);
+tHPlot = zeros(3,nP);
+cmPlot = zeros(2,nP);
+
+%% Initialize time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t = 0;
+
+for k = 1:nP
+  % Rename variables for clarity
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qCore = x(1:4);
+  qBoom = x(5:8);
+  wCore = x(9:11);
+  wBoom = x(12:14);
+  
+  % External torque modeled from sail force and CM
+  % Center of pressure is modeled at the origin
+  %   T = (Cp - Cm) x F
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  CM    = m1/(m0+m1)*(r1 + QTForm( qBoom, lam1 ));
+  tC    = cross(-CM,F);
+  tDist = tD*[0;sin(0.005*t);0];
+  tExt  = tC + tDist;
+  
+  % Hinge torque on boom
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch demo
+    case 1
+      % Negate torque halfway through
+      if k == floor(nP/2);
+        tH = -tH;
+      end
+    case {2, 3}
+      % End torque after two steps
+      if k == 3
+        tH = [0;0;0];
+      end
+    case 4
+      tH = -Kcon*(x(kStates)-xOP(kStates));
+  end
+
+  % Store data for plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  xPlot(:,k)  = x;
+  tCPlot(:,k) = tC;
+  tDPlot(:,k) = tDist;
+  cmPlot(:,k) = CM(2:3);
+  tHPlot(:,k) = tH;
+  
+  % Integrate
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4( @FTB, x, dT, t, r0, r1, lam1, iner0, iner1, m0, m1, [tExt;tH], [F;0;0;0], iAxis );
+  t = t + dT;
+end
+  
+%% Create plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D(tPlot,xPlot,'Time',{'qCore X-Z','wCore','qBoom X-Z','wBoom'},'Vehicle Attitude',...
+  'lin',{[2:4] [9:11] [6:8] [12:14]},[],2)
+Plot2D(tPlot,[tDPlot;tCPlot],'Time',{'x','y','z'},'External SRP Torque, Disturbance and Control',...
+       [], {[1 4],[2 5],[3 6]})
+Plot2D(tPlot,tHPlot,'Time',{'x','y','z'},'Internal Hinge Torque')
+Plot2D(tPlot,cmPlot,'Time',{'y','z'},'Center of Mass in Sail Plane')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 11:56:16 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39867 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,246 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate GPS navigation message model.</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="GPSNavDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate GPS navigation message model.</h1><!--introduction--><p>This routine runs the receiver model using the navigation message and GPSOrbit. The satellites in view of the receiver are plotted at each step. -------------------------------------------------------------------------  See also GPSReceiverNav., Map, TimeGUI, Date2JD, RVFromKepler -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Each point type is a different GPS satellite</a></li><li><a href="#3">Plot Earth</a></li><li><a href="#4">Plot the GPS orbital planes</a></li><li><a href="#5">Plot the receiver orbit plane</a></li><li><a href="#6">Step through model updates</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2003 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+GPSReceiverNav( <span class="string">'initialize'</span> );
+
+dT    = 600;
+t     = 0:dT:6*3600;
+jD0   = Date2JD;
+el    = [7000 0.1 0 0 0 0];
+[r,v] = RVFromKepler( el, t );
+steps = length(t);
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ rRT, tToGoMem ] = TimeGUI( steps, 0, tToGoMem, 1, dT, <span class="string">'GPSNavDemo'</span> );
+h = NewFig(<span class="string">'GPS Satellites in View'</span>,<span class="string">'renderer'</span>,<span class="string">'zbuffer'</span>);
+axis <span class="string">equal</span>;
+</pre><img vspace="5" hspace="5" src="GPSNavDemo_01.png" alt=""> <img vspace="5" hspace="5" src="GPSNavDemo_02.png" alt=""> <h2 id="2">Each point type is a different GPS satellite</h2><pre class="codeinput"><span class="comment">%----------------------------------------------</span>
+point = {<span class="string">'bo'</span> <span class="string">'b*'</span> <span class="string">'bs'</span> <span class="string">'b+'</span>,<span class="keyword">...</span>
+         <span class="string">'ro'</span> <span class="string">'r*'</span> <span class="string">'rs'</span> <span class="string">'r+'</span>,<span class="keyword">...</span>
+         <span class="string">'go'</span> <span class="string">'g*'</span> <span class="string">'gs'</span> <span class="string">'g+'</span>,<span class="keyword">...</span>
+         <span class="string">'yo'</span> <span class="string">'y*'</span> <span class="string">'ys'</span> <span class="string">'y+'</span>,<span class="keyword">...</span>
+         <span class="string">'co'</span> <span class="string">'c*'</span> <span class="string">'cs'</span> <span class="string">'c+'</span>,<span class="keyword">...</span>
+         <span class="string">'mo'</span> <span class="string">'m*'</span> <span class="string">'ms'</span> <span class="string">'m+'</span>};
+</pre><h2 id="3">Plot Earth</h2><pre class="codeinput"><span class="comment">%------------</span>
+p       = Map(<span class="string">'Earth'</span>);
+[x,y,z] = sphere(24);
+hSurf   = surface(p.radius*x,p.radius*y,p.radius*z);
+<span class="comment">% PSS note: using zbuffer renderer for figure is workaround for crash</span>
+<span class="comment">% caused by the Earth texture applied below</span>
+set(hSurf,<span class="string">'CData'</span>,double(flipud(p.planetMap)),<span class="string">'FaceColor'</span>,<span class="string">'texturemap'</span>,<span class="keyword">...</span>
+    <span class="string">'edgecolor'</span>,<span class="string">'none'</span>,<span class="string">'EdgeLighting'</span>, <span class="string">'none'</span>,<span class="string">'FaceLighting'</span>, <span class="string">'none'</span>)
+colormap( p.planetColorMap );
+view(3);
+title(<span class="string">'GPS satellites in view of receiver'</span>)
+</pre><img vspace="5" hspace="5" src="GPSNavDemo_03.png" alt=""> <h2 id="4">Plot the GPS orbital planes</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+hold <span class="string">on</span>; grid <span class="string">on</span>;
+W = [272.847 332.847 32.847 92.847 152.847 212.847]*pi/180;
+<span class="keyword">for</span> k = 1:6
+  z = RVFromKepler( [26559.8;55*pi/180;W(k);0;0;0] );
+  plot3( z(1,:), z(2,:), z(3,:), point{k*4}(1) )
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="GPSNavDemo_04.png" alt=""> <h2 id="5">Plot the receiver orbit plane</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+plot3( r(1,1:12), r(2,1:12), r(3,1:12), <span class="string">'k'</span> )
+</pre><img vspace="5" hspace="5" src="GPSNavDemo_05.png" alt=""> <h2 id="6">Step through model updates</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+d = [];
+p = [];
+<span class="keyword">for</span> k = 1:steps
+  [ rRT, tToGoMem ] = TimeGUI( steps, k, tToGoMem, rRT, dT );
+  d.jD = jD0 + t(k)/86400;
+  d.r  = r(:,k);
+  d.v  = v(:,k);
+  d.clockError = [1e-8; 1e-11]*randn;
+  GPSReceiverNav( <span class="string">'update'</span>, d );
+  gPS = GPSReceiverNav( <span class="string">'get output'</span> );
+
+  <span class="comment">% Plot satellites in view</span>
+  <span class="comment">%------------------------</span>
+  figure(h);
+  delete(p);
+  p = [];
+  <span class="keyword">for</span> j = 1:gPS.nSatellites
+    iD = gPS.id(j);
+    p(j) = plot3(gPS.rGPS(1,j),gPS.rGPS(2,j),gPS.rGPS(3,j),point{iD},<span class="string">'linewidth'</span>,2);
+  <span class="keyword">end</span>
+  p(j+1) = plot3(d.r(1),d.r(2),d.r(3),<span class="string">'k*'</span>);
+<span class="keyword">end</span>
+rotate3d;
+
+TimeGUI(<span class="string">'close'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="GPSNavDemo_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate GPS navigation message model. 
+% This routine runs the receiver model using the navigation message and 
+% GPSOrbit. The satellites in view of the receiver are plotted at each 
+% step.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also GPSReceiverNav., Map, TimeGUI, Date2JD, RVFromKepler
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 2003 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+GPSReceiverNav( 'initialize' );
+
+dT    = 600;
+t     = 0:dT:6*3600;
+jD0   = Date2JD;
+el    = [7000 0.1 0 0 0 0];
+[r,v] = RVFromKepler( el, t );
+steps = length(t);
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ rRT, tToGoMem ] = TimeGUI( steps, 0, tToGoMem, 1, dT, 'GPSNavDemo' );
+h = NewFig('GPS Satellites in View','renderer','zbuffer');
+axis equal;
+
+%% Each point type is a different GPS satellite
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+point = {'bo' 'b*' 'bs' 'b+',...
+         'ro' 'r*' 'rs' 'r+',...
+         'go' 'g*' 'gs' 'g+',...
+         'yo' 'y*' 'ys' 'y+',...
+         'co' 'c*' 'cs' 'c+',...
+         'mo' 'm*' 'ms' 'm+'};
+     
+%% Plot Earth
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p       = Map('Earth');
+[x,y,z] = sphere(24);
+hSurf   = surface(p.radius*x,p.radius*y,p.radius*z);
+% PSS note: using zbuffer renderer for figure is workaround for crash
+% caused by the Earth texture applied below
+set(hSurf,'CData',double(flipud(p.planetMap)),'FaceColor','texturemap',...
+    'edgecolor','none','EdgeLighting', 'none','FaceLighting', 'none')
+colormap( p.planetColorMap );
+view(3);
+title('GPS satellites in view of receiver')
+
+%% Plot the GPS orbital planes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+hold on; grid on;
+W = [272.847 332.847 32.847 92.847 152.847 212.847]*pi/180;
+for k = 1:6
+  z = RVFromKepler( [26559.8;55*pi/180;W(k);0;0;0] );
+  plot3( z(1,:), z(2,:), z(3,:), point{k*4}(1) )
+end
+
+%% Plot the receiver orbit plane
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+plot3( r(1,1:12), r(2,1:12), r(3,1:12), 'k' )
+
+%% Step through model updates
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d = [];
+p = [];
+for k = 1:steps
+  [ rRT, tToGoMem ] = TimeGUI( steps, k, tToGoMem, rRT, dT );
+  d.jD = jD0 + t(k)/86400;
+  d.r  = r(:,k);
+  d.v  = v(:,k);
+  d.clockError = [1e-8; 1e-11]*randn;
+  GPSReceiverNav( 'update', d );
+  gPS = GPSReceiverNav( 'get output' );
+
+  % Plot satellites in view
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  figure(h);
+  delete(p); 
+  p = [];
+  for j = 1:gPS.nSatellites
+    iD = gPS.id(j);
+    p(j) = plot3(gPS.rGPS(1,j),gPS.rGPS(2,j),gPS.rGPS(3,j),point{iD},'linewidth',2);
+  end
+  p(j+1) = plot3(d.r(1),d.r(2),d.r(3),'k*');
+end
+rotate3d;
+
+TimeGUI('close');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2015-01-15 $
+% $Revision: baf7a830f12cae4b8734895bbf101ebeca5b2124 $
+
+##### SOURCE END #####
+--></body></html>

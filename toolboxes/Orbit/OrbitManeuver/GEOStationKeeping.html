@@ -1,0 +1,240 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>GEO Stationkeeping Example</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-12-31"><meta name="DC.source" content="GEOStationKeeping.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>GEO Stationkeeping Example</h1><!--introduction--><p>Utilizes pause. -------------------------------------------------------------------------  See also NewFig, DVGeoTrx, DVIDrift -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">FIRST COMPUTE ANNUAL DELTA-V for NORTH-SOUTH STATION-KEEPING</a></li><li><a href="#3">NEXT COMPUTE ANNUAL DELTA-V for EAST-WEST STATION-KEEPING</a></li><li><a href="#4">NOW COMPUTE TOTAL DELTA-V REQUIREMENT</a></li><li><a href="#5">NOW COMPUTE PROPELLANT MASS</a></li><li><a href="#6">NOW double ISP and recompute</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%  Copyright 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">area</span>; <span class="comment">% area is often times a var, make sure its open for function</span>
+echo <span class="string">on</span>
+</pre><h2 id="2">FIRST COMPUTE ANNUAL DELTA-V for NORTH-SOUTH STATION-KEEPING</h2><pre class="codeinput"><span class="comment">% tracking tolerance</span>
+tol = 0.1;          <span class="comment">% deg</span>
+year = 2007:2016;   <span class="comment">% consider these years</span>
+
+<span class="comment">% north-south station-keeping</span>
+[dVNS,dTNS] = DVIDrift( .1, year ); <span class="comment">% Spacecraft Control Toolbox function</span>
+
+annualDV = 365./dTNS*dVNS;
+
+NewFig(<span class="string">'GEOStationKeeping'</span>);
+bar(year,annualDV)
+xlabel(<span class="string">'Year'</span>), ylabel(<span class="string">'Annual Delta-V (m/s)'</span>)
+title(<span class="string">'Delta-V Requirement for North-South GEO Stationkeeping'</span>)
+</pre><pre class="codeoutput">
+%% FIRST COMPUTE ANNUAL DELTA-V for NORTH-SOUTH STATION-KEEPING
+
+% tracking tolerance
+tol = 0.1;          % deg
+year = 2007:2016;   % consider these years
+
+% north-south station-keeping
+[dVNS,dTNS] = DVIDrift( .1, year ); % Spacecraft Control Toolbox function
+
+annualDV = 365./dTNS*dVNS;
+
+NewFig('GEOStationKeeping');
+bar(year,annualDV)
+xlabel('Year'), ylabel('Annual Delta-V (m/s)')
+title('Delta-V Requirement for North-South GEO Stationkeeping')
+</pre><img vspace="5" hspace="5" src="GEOStationKeeping_01.png" alt=""> <h2 id="3">NEXT COMPUTE ANNUAL DELTA-V for EAST-WEST STATION-KEEPING</h2><pre class="codeinput"><span class="comment">% east-west station-keeping</span>
+[dVEWy, acc, dTEW] = DVGeoTrx( 1:360, .1 ); <span class="comment">% Spacecraft Control Toolbox function</span>
+
+NewFig(<span class="string">'GEOStationKeeping'</span>);
+area(dVEWy)
+xlabel(<span class="string">'Longitude (deg)'</span>), ylabel(<span class="string">'Annual Delta-V (m/s)'</span>)
+title(<span class="string">'Delta-V Requirement for East-West GEO Stationkeeping'</span>)
+</pre><pre class="codeoutput">
+%% NEXT COMPUTE ANNUAL DELTA-V for EAST-WEST STATION-KEEPING
+
+% east-west station-keeping
+[dVEWy, acc, dTEW] = DVGeoTrx( 1:360, .1 ); % Spacecraft Control Toolbox function
+
+NewFig('GEOStationKeeping');
+area(dVEWy)
+xlabel('Longitude (deg)'), ylabel('Annual Delta-V (m/s)')
+title('Delta-V Requirement for East-West GEO Stationkeeping')
+</pre><img vspace="5" hspace="5" src="GEOStationKeeping_02.png" alt=""> <h2 id="4">NOW COMPUTE TOTAL DELTA-V REQUIREMENT</h2><pre class="codeinput"><span class="comment">% approximate total delta-v requirement</span>
+dVEWyMSP = DVGeoTrx( 267, .1 );
+dVTotal = sum(annualDV)+dVEWyMSP*length(year)
+</pre><pre class="codeoutput">
+%% NOW COMPUTE TOTAL DELTA-V REQUIREMENT
+
+% approximate total delta-v requirement
+dVEWyMSP = DVGeoTrx( 267, .1 );
+dVTotal = sum(annualDV)+dVEWyMSP*length(year)
+dVTotal =
+     4.492461011228953e+02
+</pre><h2 id="5">NOW COMPUTE PROPELLANT MASS</h2><pre class="codeinput"><span class="comment">% compute propellant mass</span>
+mf = 4000;
+ISP = 220;
+g = 9.81;
+mp = mf*( exp(dVTotal/g/ISP)-1 );
+</pre><pre class="codeoutput">
+%% NOW COMPUTE PROPELLANT MASS
+
+% compute propellant mass
+mf = 4000;
+ISP = 220;
+g = 9.81;
+mp = mf*( exp(dVTotal/g/ISP)-1 );
+</pre><h2 id="6">NOW double ISP and recompute</h2><pre class="codeinput">mp2 = mf*( exp(dVTotal/g/(2*ISP))-1 );
+
+echo <span class="string">off</span>
+
+fprintf(<span class="string">'Propellant Mass for ISP of %d sec: %4.2f kg,\n'</span>,ISP,mp);
+fprintf(<span class="string">'Propellant Mass for ISP of %d sec: %4.2f kg,\n'</span>,2*ISP,mp2);
+
+fprintf(<span class="string">'\nOnly %3.1f %% of the original propellant mass is needed.\n'</span>,100*mp2/mp);
+
+echo <span class="string">off</span>
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+%% NOW double ISP and recompute
+mp2 = mf*( exp(dVTotal/g/(2*ISP))-1 );
+
+echo off
+Propellant Mass for ISP of 220 sec: 925.63 kg,
+Propellant Mass for ISP of 440 sec: 438.75 kg,
+
+Only 47.4 % of the original propellant mass is needed.
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% GEO Stationkeeping Example
+% Utilizes pause.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also NewFig, DVGeoTrx, DVIDrift
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  Copyright 2007 Princeton Satellite Systems, Inc.
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear area; % area is often times a var, make sure its open for function
+echo on
+
+%% FIRST COMPUTE ANNUAL DELTA-V for NORTH-SOUTH STATION-KEEPING
+
+% tracking tolerance
+tol = 0.1;          % deg
+year = 2007:2016;   % consider these years
+
+% north-south station-keeping
+[dVNS,dTNS] = DVIDrift( .1, year ); % Spacecraft Control Toolbox function
+
+annualDV = 365./dTNS*dVNS;
+
+NewFig('GEOStationKeeping');
+bar(year,annualDV)
+xlabel('Year'), ylabel('Annual Delta-V (m/s)')
+title('Delta-V Requirement for North-South GEO Stationkeeping')
+
+%% NEXT COMPUTE ANNUAL DELTA-V for EAST-WEST STATION-KEEPING
+
+% east-west station-keeping
+[dVEWy, acc, dTEW] = DVGeoTrx( 1:360, .1 ); % Spacecraft Control Toolbox function
+
+NewFig('GEOStationKeeping');
+area(dVEWy)
+xlabel('Longitude (deg)'), ylabel('Annual Delta-V (m/s)')
+title('Delta-V Requirement for East-West GEO Stationkeeping')
+
+%% NOW COMPUTE TOTAL DELTA-V REQUIREMENT
+
+% approximate total delta-v requirement
+dVEWyMSP = DVGeoTrx( 267, .1 );
+dVTotal = sum(annualDV)+dVEWyMSP*length(year)
+
+%% NOW COMPUTE PROPELLANT MASS
+
+% compute propellant mass
+mf = 4000;
+ISP = 220;
+g = 9.81;
+mp = mf*( exp(dVTotal/g/ISP)-1 );
+
+%% NOW double ISP and recompute
+mp2 = mf*( exp(dVTotal/g/(2*ISP))-1 );
+
+echo off
+
+fprintf('Propellant Mass for ISP of %d sec: %4.2f kg,\n',ISP,mp);
+fprintf('Propellant Mass for ISP of %d sec: %4.2f kg,\n',2*ISP,mp2);
+
+fprintf('\nOnly %3.1f %% of the original propellant mass is needed.\n',100*mp2/mp);
+
+echo off
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-12-24 00:15:38 -0500 (Tue, 24 Dec 2019) $
+% $Revision: 50694 $
+
+##### SOURCE END #####
+--></body></html>

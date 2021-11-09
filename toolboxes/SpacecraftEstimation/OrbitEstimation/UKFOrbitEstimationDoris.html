@@ -1,0 +1,256 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>UKFOrbitEstimationDoris</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="UKFOrbitEstimationDoris.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Demonstrate orbit estimation using UKFPredict and UKFUpdate.</a></li><li><a href="#2">Simulation parameters</a></li><li><a href="#3">Simulate</a></li><li><a href="#4">Plot</a></li></ul></div><h2 id="1">Demonstrate orbit estimation using UKFPredict and UKFUpdate.</h2><p>The plots are the covariance, which goes to zero quickly, and the estimation errors. It uses GPS and single Doris range rate sensor.</p><p>See also KFInitialize, RK4, UKFPredict, UKFUpdate, RHSOrbitWithDisturbances, UKFWeight, MeasEarthTarget, MeasOrbitState</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since Version 2018.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Simulation parameters</h2><pre class="codeinput">nSim          = 400;
+xP            = zeros(19,nSim);
+rHSFunData    = RHSOrbit;
+r             = 7000;
+x             = [r;0;0;0;sqrt(rHSFunData.mu/r);0];
+dT            = 100;
+
+<span class="comment">% Position and velocity uncertainty</span>
+rU            = 10;
+vU            = sqrt(rHSFunData.mu/r) - sqrt(rHSFunData.mu/(r+rU));
+
+<span class="comment">% State estimate at start</span>
+m0            = [r+rU;0;0;0;sqrt(rHSFunData.mu/(r+rU));0];
+
+<span class="comment">% Covariance based on the uncertainty</span>
+p0            = [rU^2;rU^2;rU^2;vU^2;vU^2;vU^2];
+q0            = [0;0;0;1e-3;1e-3;1e-3]; <span class="comment">% Plant noise</span>
+noise1Sigma 	= 0.1*[1;1;1;1e-3;1e-3;1e-3];
+noise1SigmaET = 0.0001;
+r0            = diag(noise1Sigma.^2);
+rET0          = diag(noise1SigmaET.^2);
+
+<span class="comment">% Initialize the UKF</span>
+ukf           = KFInitialize( <span class="string">'ukf'</span>,<span class="string">'f'</span>,@RHSOrbit,<span class="string">'alpha'</span>,1,<span class="keyword">...</span>
+                              <span class="string">'kappa'</span>,0,<span class="string">'beta'</span>,2,<span class="string">'dT'</span>,dT,<span class="string">'fData'</span>,rHSFunData,<span class="keyword">...</span>
+                              <span class="string">'p'</span>,diag(p0),<span class="string">'q'</span>,diag(q0),<span class="string">'x'</span>,x,<span class="keyword">...</span>
+                              <span class="string">'m'</span>,m0);
+ukf           = UKFWeight( ukf );
+
+hData         = struct(<span class="string">'noise1Sigma'</span>,[0;0;0;0;0;0]);
+hDataSim      = struct(<span class="string">'noise1Sigma'</span>,noise1Sigma);
+
+hETData       = MeasDoris;
+hETDataSim    = hETData;
+hETDataSim.noise1Sigma = noise1SigmaET;
+
+[ukf.y(2).data, rT]= MeasDoris( x, hETDataSim );
+</pre><h2 id="3">Simulate</h2><pre class="codeinput">t = (0:(nSim-1))*dT;
+<span class="keyword">for</span> k = 1:nSim
+  <span class="comment">% Plotting</span>
+  dRho    = Mag(ukf.m(1:3) - rT) - Mag(x(1:3) - rT);
+  xP(:,k) = [ukf.m; x; diag(ukf.p); dRho];
+
+	<span class="comment">% Kalman Filter Prediction step</span>
+	ukf.t = t(k);
+	ukf   = UKFPredict( ukf );
+
+  <span class="comment">% Update the RHS</span>
+  x  = RK4( @RHSOrbit, x, dT, t(k), rHSFunData );
+
+	<span class="comment">% GPS sensor</span>
+	ukf.y(1).data        = MeasOrbitState( x, hDataSim );
+	ukf.y(1).param.hFun  = @MeasOrbitState;
+	ukf.y(1).param.hData = hData;
+	ukf.y(1).param.r     = r0;
+
+  <span class="comment">% Doris sensor</span>
+	[ukf.y(2).data, rT]  = MeasDoris( x, hETDataSim );
+	ukf.y(2).param.hFun  = @MeasDoris;
+	ukf.y(2).param.hData = hETData;
+	ukf.y(2).param.r     = rET0;
+
+  <span class="comment">% Filter update step</span>
+	ukf = UKFUpdate( ukf );
+<span class="keyword">end</span>
+</pre><h2 id="4">Plot</h2><pre class="codeinput">[t,tL] = TimeLabl(t);
+
+yL = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span> <span class="string">'\rho_T (km)'</span> };
+
+dX = xP(1:6,:) - xP(7:12,:);
+
+Plot2D( t, dX(4:6,:),             tL, yL(4:6),      <span class="string">'Orbit Velocity Estimation Error'</span> );
+Plot2D( t, sqrt(xP(13:18,:)),   	tL, yL(1:6),      <span class="string">'Orbit Covariance'</span> );
+l = 100:length(t);
+Plot2D( t(l), [dX(1:3,l);xP(19,l)],	tL, yL([1:3 7]),  <span class="string">'Orbit Errors'</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="UKFOrbitEstimationDoris_01.png" alt=""> <img vspace="5" hspace="5" src="UKFOrbitEstimationDoris_02.png" alt=""> <img vspace="5" hspace="5" src="UKFOrbitEstimationDoris_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate orbit estimation using UKFPredict and UKFUpdate.
+% The plots are the covariance, which goes to zero quickly, and the 
+% estimation errors. It uses GPS and single Doris range rate sensor.
+% 
+% See also KFInitialize, RK4, UKFPredict, UKFUpdate, 
+% RHSOrbitWithDisturbances, UKFWeight, MeasEarthTarget, MeasOrbitState
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 2018 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since Version 2018.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Simulation parameters
+nSim          = 400;
+xP            = zeros(19,nSim);
+rHSFunData    = RHSOrbit;
+r             = 7000;
+x             = [r;0;0;0;sqrt(rHSFunData.mu/r);0];
+dT            = 100;
+
+% Position and velocity uncertainty
+rU            = 10;
+vU            = sqrt(rHSFunData.mu/r) - sqrt(rHSFunData.mu/(r+rU));
+
+% State estimate at start
+m0            = [r+rU;0;0;0;sqrt(rHSFunData.mu/(r+rU));0];
+
+% Covariance based on the uncertainty
+p0            = [rU^2;rU^2;rU^2;vU^2;vU^2;vU^2];
+q0            = [0;0;0;1e-3;1e-3;1e-3]; % Plant noise
+noise1Sigma 	= 0.1*[1;1;1;1e-3;1e-3;1e-3];
+noise1SigmaET = 0.0001;
+r0            = diag(noise1Sigma.^2);
+rET0          = diag(noise1SigmaET.^2);
+
+% Initialize the UKF
+ukf           = KFInitialize( 'ukf','f',@RHSOrbit,'alpha',1,...
+                              'kappa',0,'beta',2,'dT',dT,'fData',rHSFunData,...
+                              'p',diag(p0),'q',diag(q0),'x',x,...
+                              'm',m0);
+ukf           = UKFWeight( ukf );
+
+hData         = struct('noise1Sigma',[0;0;0;0;0;0]);
+hDataSim      = struct('noise1Sigma',noise1Sigma);
+
+hETData       = MeasDoris;
+hETDataSim    = hETData;
+hETDataSim.noise1Sigma = noise1SigmaET;
+
+[ukf.y(2).data, rT]= MeasDoris( x, hETDataSim );
+
+%% Simulate
+t = (0:(nSim-1))*dT;
+for k = 1:nSim
+  % Plotting
+  dRho    = Mag(ukf.m(1:3) - rT) - Mag(x(1:3) - rT);
+  xP(:,k) = [ukf.m; x; diag(ukf.p); dRho];  
+  
+	% Kalman Filter Prediction step
+	ukf.t = t(k);   
+	ukf   = UKFPredict( ukf );   
+
+  % Update the RHS
+  x  = RK4( @RHSOrbit, x, dT, t(k), rHSFunData );
+    
+	% GPS sensor
+	ukf.y(1).data        = MeasOrbitState( x, hDataSim );
+	ukf.y(1).param.hFun  = @MeasOrbitState;
+	ukf.y(1).param.hData = hData;
+	ukf.y(1).param.r     = r0;
+  
+  % Doris sensor
+	[ukf.y(2).data, rT]  = MeasDoris( x, hETDataSim );
+	ukf.y(2).param.hFun  = @MeasDoris;
+	ukf.y(2).param.hData = hETData;
+	ukf.y(2).param.r     = rET0;
+
+  % Filter update step
+	ukf = UKFUpdate( ukf );
+end
+
+%% Plot
+[t,tL] = TimeLabl(t);
+
+yL = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)' '\rho_T (km)' };
+
+dX = xP(1:6,:) - xP(7:12,:);
+
+Plot2D( t, dX(4:6,:),             tL, yL(4:6),      'Orbit Velocity Estimation Error' );
+Plot2D( t, sqrt(xP(13:18,:)),   	tL, yL(1:6),      'Orbit Covariance' );
+l = 100:length(t);
+Plot2D( t(l), [dX(1:3,l);xP(19,l)],	tL, yL([1:3 7]),  'Orbit Errors' );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2018-12-21 12:51:26 -0500 (Fri, 21 Dec 2018) $
+% $Revision: 47676 $
+
+##### SOURCE END #####
+--></body></html>

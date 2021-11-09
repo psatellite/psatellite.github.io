@@ -1,0 +1,560 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate the airship dynamic model.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-18"><meta name="DC.source" content="AirshipDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate the airship dynamic model.</h1><!--introduction--><pre>------------------------------------------------------------------------</pre><pre>Runs a full nonlinear simulation of the specified airship model.
+The simulation is open loop.</pre><pre>Computes a data structure with fields:
+                    - t         Time
+                    - r         ECI position of origin
+                    - rCG       ECI position of CG
+                    - v         velocity of origin in body frame
+                    - vCG       velocity of CG in body frame
+                    - q         ECI to body quaternion
+                    - w         angular velocity of body frame
+                    - alpha     angle of attack
+                    - beta      sideslip
+                    - force     aerodynamic force
+                    - torque    aerodynamic torque</pre><pre>------------------------------------------------------------------------
+See also AlphBeta, QECI, RNEH, AC, ACInit, AirData, @acstate/acstate.m,
+AirshipTrim, BuildAirshipModel, AirshipAero, Altitude, IConv, QTForm,
+Plot2D, TimeGUI, Cross, Mag, SkewSymm
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Demo parameters</a></li><li><a href="#3">Global for the time GUI</a></li><li><a href="#4">Airship data</a></li><li><a href="#5">Trim</a></li><li><a href="#6">Added Flap Deflections</a></li><li><a href="#7">Initial time and state</a></li><li><a href="#8">Initialize the model</a></li><li><a href="#9">Initialize the time display</a></li><li><a href="#10">Compute the angular momentum of the body about the CG for both cases</a></li><li><a href="#11">compute the position and velocity of the CG</a></li><li><a href="#12">compute the angle of attack and sidelsip</a></li><li><a href="#13">save results in data structure</a></li><li><a href="#14">transform to the North-East-Up frame</a></li><li><a href="#15">Create the plots</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright 2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Demo parameters</h2><pre class="codeinput"><span class="comment">% Initial angle of attack             [rad]</span>
+alpha = 5*pi/180;
+
+<span class="comment">% Initial sideslip angle              [rad]</span>
+beta  = 0;
+
+<span class="comment">% Initial linear velocity magnitude   [m/s]</span>
+V     = 15;
+
+<span class="comment">% Initial angular velocity vector     [rad/s]</span>
+w0    = [0;0;0];
+
+<span class="comment">% Initial altitude                    [m]</span>
+alt   = 21336;
+
+<span class="comment">% Elevator deflection, positive down  [rad]</span>
+elv   = [0;0];
+
+<span class="comment">% Rudder deflection, positive right   [rad]</span>
+rud   = [0;0];
+
+<span class="comment">% Location of origin (from nose)      [m]</span>
+xo    = 100;
+
+<span class="comment">% Simulation time                     [sec]</span>
+T     = 100;
+
+<span class="comment">% Trimming flag (1 trim, 0 do not)</span>
+trim = 1;
+
+<span class="comment">% flag to generate plots</span>
+doPlot = 1;
+</pre><h2 id="3">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="4">Airship data</h2><pre class="codeinput"><span class="comment">%-------------</span>
+d = BuildAirshipModel(<span class="string">'ASM1'</span>,xo);
+</pre><h2 id="5">Trim</h2><pre class="codeinput"><span class="comment">%-----</span>
+<span class="keyword">if</span>( trim )
+   [Thrust,mu,dElv]   = AirshipTrim( d, alt, 0, alpha, V );
+   d.control.throttle = Thrust/(2*d.engine.thrustMax);
+   d.control.mu       = mu;
+   d.control.dELVL    = dElv;
+   d.control.dELVR    = dElv;
+<span class="keyword">else</span>
+   d.control.throttle = 0;
+   d.control.mu       = 0;
+   d.control.dELVL    = 0;
+   d.control.dELVR    = 0;
+<span class="keyword">end</span>
+</pre><h2 id="6">Added Flap Deflections</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+d.control.dELVL    = d.control.dELVL + elv(1);
+d.control.dELVR    = d.control.dELVR + elv(2);
+d.control.dRUDB    = rud(1);
+d.control.dRUDT    = rud(2);
+
+<span class="comment">% initial position</span>
+Re        = 6378.14 * 1e3;       <span class="comment">% equatorial radius of the earth</span>
+rCG       = [Re+alt;0;0];        <span class="comment">% initial ECI coordinates of airship CG</span>
+
+<span class="comment">% initial velocity</span>
+ta        = tan(alpha);
+vx        = V*cos(beta)/sqrt(1+ta^2);
+vy        = V*sin(beta);
+vz        = vx*ta;
+vCG       = [vx;vy;vz];
+v0        = vCG - Cross(w0,d.cG);
+
+<span class="comment">% initial angular velocity</span>
+ss        = SkewSymm(d.cG);      <span class="comment">% skew symmetric matrix</span>
+iCG       = IConv(d.inertiaCG);
+iOrigin   = IConv(d.inertia);
+HCG       = iCG*w0;                          <span class="comment">% angular momentum about CG</span>
+w0        = (iOrigin+ss*ss*d.mass)\(HCG);    <span class="comment">% angular velocity about origin (will not change if diagonal inertia)</span>
+
+<span class="comment">% initial orientation</span>
+eulInit   = [0;0;pi/2];                <span class="comment">% initial orientation (aligned x-north, y-east, z-down)</span>
+q         = QECI( rCG, eulInit );   <span class="comment">% initial ECI to body quaternion</span>
+
+<span class="comment">% adjust r0 to account for non-CG location of origin</span>
+r0        = rCG - d.cG;
+
+wR        = ones(length(d.rotor),1)*5;
+engine    = [];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+</pre><h2 id="7">Initial time and state</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+t = 0;
+x = acstate( r0, q, w0, v0, wR, d.mass, d.inertia, d.cG, engine, actuator, sensor, flex, disturb );
+</pre><h2 id="8">Initialize the model</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+dT   = 0.25;
+nSim = T/dT;
+
+d  = ACInit( x, d );
+
+r    = zeros(3,nSim);
+v    = zeros(3,nSim);
+q    = zeros(4,nSim);
+w    = zeros(3,nSim);
+f    = zeros(3,nSim);
+trq  = zeros(3,nSim);
+</pre><h2 id="9">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'Airship Simulation'</span> );
+
+<span class="keyword">for</span> k = 1:nSim
+
+   <span class="comment">% Display the status message</span>
+   <span class="comment">%---------------------------</span>
+   [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+   <span class="comment">% Store for Plotting</span>
+   <span class="comment">%-------------------</span>
+   r(:,k)    = get(x,<span class="string">'r'</span>);
+   v(:,k)    = get(x,<span class="string">'v'</span>);
+   q(:,k)    = get(x,<span class="string">'q'</span>);
+   w(:,k)    = get(x,<span class="string">'w'</span>);
+
+   <span class="comment">% Aero forces and moments</span>
+   <span class="comment">%------------------------</span>
+   vAero         = v(:,k) + Cross(w(:,k),d.cG);
+   altk          = Altitude(r(:,k),d.atmUnits);
+   [alphk,betak] = AlphBeta(vAero);
+   [mN,qBar,rho] = AirData( Mag( vAero ), altk, d.atmData, d.atmUnits );
+   aero          = AirshipAero( alphk, betak, x, d.aero, qBar, d.control, d.flex, rho );
+   f(:,k)        = aero.force;
+   trq(:,k)      = aero.torque;
+
+   <span class="comment">% The simulation</span>
+   <span class="comment">%---------------</span>
+   x = AC( x, t, dT, d  );
+   t = t + dT;
+
+   <span class="comment">% Time control</span>
+   <span class="comment">%-------------</span>
+   <span class="keyword">switch</span> simulationAction
+   <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+   <span class="keyword">case</span> <span class="string">'stop'</span>
+      doPlot = 0;
+      <span class="keyword">return</span>;
+   <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+   <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+TimeGUI(<span class="string">'close'</span>);
+t    = (1:k)*dT;
+r    = r(:,1:k);
+v    = v(:,1:k);
+q    = q(:,1:k);
+w    = w(:,1:k);
+f    = f(:,1:k);
+trq  = trq(:,1:k);
+</pre><h2 id="10">Compute the angular momentum of the body about the CG for both cases</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+H = IConv(d.inertia)*w - d.mass*Cross(d.cG,Cross(w,d.cG));
+</pre><h2 id="11">compute the position and velocity of the CG</h2><pre class="codeinput"><span class="comment">%--------------------------------------------</span>
+rCG = r + QTForm(q,d.cG);
+vCG = v + Cross(w,d.cG);
+</pre><h2 id="12">compute the angle of attack and sidelsip</h2><pre class="codeinput"><span class="comment">%-----------------------------------------</span>
+alpha = atan( vCG(3,:)./vCG(1,:) )*180/pi;
+beta  = asin( vCG(2,:)./Mag(vCG) )*180/pi;
+</pre><h2 id="13">save results in data structure</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+out.t      = t;
+out.x      = x;
+out.r      = r;
+out.rCG    = rCG;
+out.v      = v;
+out.vCG    = vCG;
+out.q      = q;
+out.w      = w*180/pi;
+out.alpha  = alpha;
+out.beta   = beta;
+out.force  = f;
+out.torque = trq;
+
+<span class="keyword">if</span>( ~doPlot )
+   <span class="keyword">return</span>;
+<span class="keyword">end</span>
+</pre><h2 id="14">transform to the North-East-Up frame</h2><pre class="codeinput"><span class="comment">%-------------------------------------</span>
+rneu = zeros(3,k);
+<span class="keyword">for</span> i=1:k
+   rneu(:,i) = RNEH(rCG(:,i),<span class="string">'si'</span>);
+<span class="keyword">end</span>
+</pre><h2 id="15">Create the plots</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+Plot2D( t, H,     <span class="string">'Time [sec]'</span>, <span class="string">'Ang Momentum'</span>,                      <span class="string">'Angular Momentum'</span> ), grid <span class="string">on</span>, zoom <span class="string">on</span>
+Plot2D( t, rCG,   <span class="string">'Time [sec]'</span>, {<span class="string">'x [m]'</span>;<span class="string">'y [m]'</span>;<span class="string">'z [m]'</span>},           <span class="string">'Position of CG - Inertial Frame'</span> )
+Plot2D( t, rneu,  <span class="string">'Time [sec]'</span>, {<span class="string">'North [m]'</span>;<span class="string">'East [m]'</span>;<span class="string">'Alt [m]'</span>},  <span class="string">'Position of CG - NEH Frame'</span>,<span class="string">'lin'</span> )
+Plot2D( t, vCG,   <span class="string">'Time [sec]'</span>, <span class="string">'CG Velocity [m/s]'</span>,                 <span class="string">'Velocity of CG - Body Frame'</span> )
+Plot2D( t, out.w, <span class="string">'Time [sec]'</span>, <span class="string">'Angular Velocity [deg/s]'</span>,          <span class="string">'Angular Velocity'</span> )
+Plot2D( t, alpha, <span class="string">'Time [sec]'</span>, <span class="string">'Alpha [deg]'</span>,                       <span class="string">'Angle of Attack'</span> )
+Plot2D( t, beta,  <span class="string">'Time [sec]'</span>, <span class="string">'Beta [deg]'</span>,                        <span class="string">'Sideslip'</span> )
+Plot2D( t, f,     <span class="string">'Time [sec]'</span>, <span class="string">'Force [N]'</span>,                         <span class="string">'Aerodynamic Force'</span> )
+Plot2D( t, trq,   <span class="string">'Time [sec]'</span>, <span class="string">'Torque [N]'</span>,                        <span class="string">'Aerodynamic Torque'</span> )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="AirshipDemo_01.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_02.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_03.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_04.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_05.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_06.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_07.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_08.png" alt=""> <img vspace="5" hspace="5" src="AirshipDemo_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate the airship dynamic model.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% 
+%  Runs a full nonlinear simulation of the specified airship model. 
+%  The simulation is open loop.
+% 
+%  Computes a data structure with fields:
+%                      - t         Time
+%                      - r         ECI position of origin
+%                      - rCG       ECI position of CG
+%                      - v         velocity of origin in body frame
+%                      - vCG       velocity of CG in body frame
+%                      - q         ECI to body quaternion
+%                      - w         angular velocity of body frame
+%                      - alpha     angle of attack
+%                      - beta      sideslip
+%                      - force     aerodynamic force
+%                      - torque    aerodynamic torque
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AlphBeta, QECI, RNEH, AC, ACInit, AirData, @acstate/acstate.m, 
+%  AirshipTrim, BuildAirshipModel, AirshipAero, Altitude, IConv, QTForm, 
+%  Plot2D, TimeGUI, Cross, Mag, SkewSymm
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright 2003 Princeton Satellite Systems, Inc.
+%    All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Demo parameters
+
+% Initial angle of attack             [rad]
+alpha = 5*pi/180;
+
+% Initial sideslip angle              [rad]
+beta  = 0;
+
+% Initial linear velocity magnitude   [m/s]
+V     = 15;
+
+% Initial angular velocity vector     [rad/s]
+w0    = [0;0;0];
+
+% Initial altitude                    [m]
+alt   = 21336;
+
+% Elevator deflection, positive down  [rad]
+elv   = [0;0];
+
+% Rudder deflection, positive right   [rad]
+rud   = [0;0];
+
+% Location of origin (from nose)      [m]
+xo    = 100;
+
+% Simulation time                     [sec]
+T     = 100;
+
+% Trimming flag (1 trim, 0 do not)
+trim = 1;
+
+% flag to generate plots
+doPlot = 1;
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Airship data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d = BuildAirshipModel('ASM1',xo);
+
+%% Trim
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( trim )
+   [Thrust,mu,dElv]   = AirshipTrim( d, alt, 0, alpha, V );
+   d.control.throttle = Thrust/(2*d.engine.thrustMax);
+   d.control.mu       = mu;
+   d.control.dELVL    = dElv;
+   d.control.dELVR    = dElv;
+else
+   d.control.throttle = 0;
+   d.control.mu       = 0;
+   d.control.dELVL    = 0;
+   d.control.dELVR    = 0;
+end
+
+%% Added Flap Deflections
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.control.dELVL    = d.control.dELVL + elv(1);
+d.control.dELVR    = d.control.dELVR + elv(2);
+d.control.dRUDB    = rud(1);
+d.control.dRUDT    = rud(2);
+
+% initial position
+Re        = 6378.14 * 1e3;       % equatorial radius of the earth
+rCG       = [Re+alt;0;0];        % initial ECI coordinates of airship CG
+
+% initial velocity
+ta        = tan(alpha);
+vx        = V*cos(beta)/sqrt(1+ta^2);
+vy        = V*sin(beta);
+vz        = vx*ta;
+vCG       = [vx;vy;vz];
+v0        = vCG - Cross(w0,d.cG);
+
+% initial angular velocity
+ss        = SkewSymm(d.cG);      % skew symmetric matrix
+iCG       = IConv(d.inertiaCG);
+iOrigin   = IConv(d.inertia);
+HCG       = iCG*w0;                          % angular momentum about CG
+w0        = (iOrigin+ss*ss*d.mass)\(HCG);    % angular velocity about origin (will not change if diagonal inertia)
+
+% initial orientation
+eulInit   = [0;0;pi/2];                % initial orientation (aligned x-north, y-east, z-down)
+q         = QECI( rCG, eulInit );   % initial ECI to body quaternion
+
+% adjust r0 to account for non-CG location of origin
+r0        = rCG - d.cG;
+
+wR        = ones(length(d.rotor),1)*5;
+engine    = [];
+actuator  = [];
+sensor    = [];
+flex      = [];
+disturb   = [];
+
+
+%% Initial time and state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t = 0;
+x = acstate( r0, q, w0, v0, wR, d.mass, d.inertia, d.cG, engine, actuator, sensor, flex, disturb );
+
+%% Initialize the model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = 0.25;
+nSim = T/dT;
+
+d  = ACInit( x, d );
+
+r    = zeros(3,nSim);
+v    = zeros(3,nSim);
+q    = zeros(4,nSim);
+w    = zeros(3,nSim);
+f    = zeros(3,nSim);
+trq  = zeros(3,nSim);
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'Airship Simulation' );
+
+for k = 1:nSim
+   
+   % Display the status message
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+   
+   % Store for Plotting
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   r(:,k)    = get(x,'r');
+   v(:,k)    = get(x,'v');
+   q(:,k)    = get(x,'q');
+   w(:,k)    = get(x,'w');
+   
+   % Aero forces and moments
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+   vAero         = v(:,k) + Cross(w(:,k),d.cG);
+   altk          = Altitude(r(:,k),d.atmUnits);
+   [alphk,betak] = AlphBeta(vAero);
+   [mN,qBar,rho] = AirData( Mag( vAero ), altk, d.atmData, d.atmUnits );
+   aero          = AirshipAero( alphk, betak, x, d.aero, qBar, d.control, d.flex, rho );
+   f(:,k)        = aero.force;
+   trq(:,k)      = aero.torque;
+   
+   % The simulation
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   x = AC( x, t, dT, d  );
+   t = t + dT;
+   
+   % Time control
+   %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+   switch simulationAction
+   case 'pause'
+      pause
+      simulationAction = ' ';
+   case 'stop'
+      doPlot = 0;
+      return;
+   case 'plot'
+      break;
+   end
+
+end
+
+TimeGUI('close');
+t    = (1:k)*dT;
+r    = r(:,1:k);
+v    = v(:,1:k);
+q    = q(:,1:k);
+w    = w(:,1:k);
+f    = f(:,1:k);
+trq  = trq(:,1:k);
+
+%% Compute the angular momentum of the body about the CG for both cases
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+H = IConv(d.inertia)*w - d.mass*Cross(d.cG,Cross(w,d.cG));
+
+%% compute the position and velocity of the CG
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rCG = r + QTForm(q,d.cG);
+vCG = v + Cross(w,d.cG);
+
+%% compute the angle of attack and sidelsip
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+alpha = atan( vCG(3,:)./vCG(1,:) )*180/pi;
+beta  = asin( vCG(2,:)./Mag(vCG) )*180/pi;
+
+%% save results in data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+out.t      = t;
+out.x      = x;
+out.r      = r;
+out.rCG    = rCG;
+out.v      = v;
+out.vCG    = vCG;
+out.q      = q;
+out.w      = w*180/pi;
+out.alpha  = alpha;
+out.beta   = beta;
+out.force  = f;
+out.torque = trq;
+
+if( ~doPlot )
+   return;
+end
+
+%% transform to the North-East-Up frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rneu = zeros(3,k);
+for i=1:k
+   rneu(:,i) = RNEH(rCG(:,i),'si');
+end
+
+%% Create the plots
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D( t, H,     'Time [sec]', 'Ang Momentum',                      'Angular Momentum' ), grid on, zoom on
+Plot2D( t, rCG,   'Time [sec]', {'x [m]';'y [m]';'z [m]'},           'Position of CG - Inertial Frame' )
+Plot2D( t, rneu,  'Time [sec]', {'North [m]';'East [m]';'Alt [m]'},  'Position of CG - NEH Frame','lin' )
+Plot2D( t, vCG,   'Time [sec]', 'CG Velocity [m/s]',                 'Velocity of CG - Body Frame' )
+Plot2D( t, out.w, 'Time [sec]', 'Angular Velocity [deg/s]',          'Angular Velocity' )
+Plot2D( t, alpha, 'Time [sec]', 'Alpha [deg]',                       'Angle of Attack' )
+Plot2D( t, beta,  'Time [sec]', 'Beta [deg]',                        'Sideslip' )
+Plot2D( t, f,     'Time [sec]', 'Force [N]',                         'Aerodynamic Force' )
+Plot2D( t, trq,   'Time [sec]', 'Torque [N]',                        'Aerodynamic Torque' )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-05 08:57:28 -0400 (Thu, 05 Sep 2019) $
+% $Revision: 49710 $
+
+##### SOURCE END #####
+--></body></html>

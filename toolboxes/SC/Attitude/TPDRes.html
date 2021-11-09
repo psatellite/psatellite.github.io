@@ -1,0 +1,369 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Study pulse resolution.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-03-09"><meta name="DC.source" content="TPDRes.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Study pulse resolution.</h1><!--introduction--><p>Demonstrates using a multirate system and dither to reduce the effect of minimum pulsewidths. This script shows the effect of (1) ideal response; (2) minimum pulsewidth, with no other compensation; (3) using a variable pulse period; and (4) the use of dither. The controller is a PD control with no other compensation. The minimum pulsewidth gives a large overshoot since no control is applied until the minimum pulsewidth is exceeded. The dither amplitude needs to be adjusted to get the best response if you change the minimum pulsewidth.</p><p>Things to try:</p><div><ul><li>Change the number of pulses</li><li>Change the magnitude and width of the dither</li></ul></div><p>Since version 2. -------------------------------------------------------------------------  See also C2DZOH, CButter, PDDesign, Series, Plot2D, TimeGUI,  TriangleWave -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the TimeGUI</a></li><li><a href="#3">Constants</a></li><li><a href="#4">System Parameters</a></li><li><a href="#5">Design the control loop</a></li><li><a href="#6">Use a double integrator plant</a></li><li><a href="#7">Simulate the loop</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1996, 2008, 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Global for the TimeGUI<a name="2"></a></h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2>Constants<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-----------</span>
+degToRad = pi/180;
+radToDeg = 180/pi;
+</pre><h2>System Parameters<a name="4"></a></h2><p>Design the dither wave magnitude and width.</p><pre class="codeinput"><span class="comment">%-------------------</span>
+nSim    = 600;
+inr      = 2000*eye(3);
+dT       = 0.5; <span class="comment">% This is the loop sampling time (sec)</span>
+minPw    = 20;  <span class="comment">% milliseconds</span>
+uTorque  = 0.5; <span class="comment">% torque for a unit pulsewidth (Nm)</span>
+nPulse   = 8;   <span class="comment">% number of control periods between thruster pulses</span>
+mDither  = 1.3*minPw; <span class="comment">% milliseconds</span>
+wDither  = 30;
+dither   = mDither*TriangleWave(linspace(0,2*pi*wDither,nSim));
+</pre><h2>Design the control loop<a name="5"></a></h2><p>Use a continuous Butterworth Filter with the PD control.</p><pre class="codeinput"><span class="comment">%-------------------------</span>
+zeta          = 0.7071;
+wN            = 0.1;
+wD            = 1.0;
+[aC,bC,cC,dC] = PDDesign(zeta,wN,wD,inr(2,2));
+[aN,bN,cN,dN] = CButter(2,1);
+[aC,bC,cC,dC] = Series(aC,bC,cC,dC,aN,bN,cN,dN);
+[aC,bC]       = C2DZOH( aC, bC, dT );
+</pre><h2>Use a double integrator plant<a name="6"></a></h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+aP = [0,1;0 0];   <span class="comment">% double integrator model of the spacecraft</span>
+bP = [0;1]/inr(2,2);
+cP = [1,0];
+dP = 0;
+[aP, bP] = C2DZOH( aP, bP, dT/500);
+</pre><h2>Simulate the loop<a name="7"></a></h2><p>Loop through the simulation four times: first without the effect of the minimum pulsewidth, i.e. the ideal response; second with the minimum pulsewidth; third with a variable pulsewidth; and fourth with the dither. A step input is applied to the system.</p><pre class="codeinput"><span class="comment">%-------------------</span>
+yPlot   = zeros(4,nSim);
+uPlot   = zeros(4,nSim);
+uStep   = 0.01;
+nPW     = 1000*dT;
+
+<span class="comment">% Initialize the time display</span>
+<span class="comment">%-----------------------------</span>
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, <span class="string">'TPDRes'</span> );
+
+<span class="comment">% Loop through four times</span>
+<span class="comment">%------------------------</span>
+<span class="keyword">for</span> j = 1:4
+  x      = zeros(2,1);
+  xC     = zeros(3,1);
+  kPulse = 0;
+  <span class="keyword">for</span> k = 1:nSim
+    <span class="comment">% Display the status message</span>
+    <span class="comment">%---------------------------</span>
+    [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+    <span class="comment">% Compute the control</span>
+    <span class="comment">%--------------------</span>
+    yPlot(j,k) = x(1);
+    uC = cC*xC + dC*x(1);
+    xC = aC*xC + bC*x(1);
+
+    <span class="comment">% Pulsewidth modulation -  calculate the pulsewidth in milliseconds</span>
+    <span class="comment">% from the ratio of the requested control torque to the unit torque</span>
+    <span class="comment">% (that produced by 1 second of firing time)</span>
+    <span class="comment">%----------------------</span>
+    pulsewidth = dT*abs(uC/uTorque)*1000;
+
+    <span class="keyword">if</span>( j == 3 )
+      <span class="comment">% variable pulsing period utilizes a counter.</span>
+      kPulse = kPulse + 1;
+      <span class="keyword">if</span>( kPulse &lt; nPulse )
+        pulsewidth = 0;
+      <span class="keyword">else</span>
+        pulsewidth = nPulse*pulsewidth;
+        kPulse     = 0;
+      <span class="keyword">end</span>
+    <span class="keyword">elseif</span>( j == 4 )
+      <span class="comment">% add the dither signal to the pulsewidth</span>
+      pulsewidth = pulsewidth + dither(k);
+    <span class="keyword">end</span>
+
+    <span class="comment">% Apply the minimum pulsewidth</span>
+    <span class="comment">%-----------------------------</span>
+    <span class="keyword">if</span>( (j &gt; 1) &amp;&amp; (pulsewidth &lt; minPw) )
+      pulsewidth = 0;
+    <span class="keyword">end</span>
+
+    uPlot(j,k) = abs(pulsewidth);
+
+    <span class="comment">% The plant</span>
+    <span class="comment">%----------</span>
+    nPulsewidth = floor(pulsewidth);
+    uCA = [uTorque*sign(uC)*ones(1,nPulsewidth),zeros(1,nPW-nPulsewidth)];
+    <span class="keyword">for</span> i = 1:nPW
+      x = aP*x + bP*(uStep - uCA(i));
+    <span class="keyword">end</span>
+
+    <span class="comment">% Time control</span>
+    <span class="comment">%-------------</span>
+    <span class="keyword">switch</span> simulationAction
+      <span class="keyword">case</span> <span class="string">'pause'</span>
+        pause
+        simulationAction = <span class="string">' '</span>;
+      <span class="keyword">case</span> <span class="string">'stop'</span>
+        <span class="keyword">return</span>;
+      <span class="keyword">case</span> <span class="string">'plot'</span>
+        <span class="keyword">break</span>;
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,<span class="string">'Time (sec)'</span>,<span class="string">'Pitch (deg)'</span>,<span class="string">' '</span>);
+legend(<span class="string">'No Minimum Pulsewidth'</span>,<span class="keyword">...</span>
+       <span class="string">'Minimum Pulsewidth'</span>,<span class="keyword">...</span>
+       <span class="string">'Variable Pulsing Period'</span>,<span class="keyword">...</span>
+       <span class="string">'Dither'</span>);
+
+Plot2D((0:(nSim-1))*dT,uPlot,<span class="string">'Time (sec)'</span>,<span class="string">'Pulsewidth (ms)'</span>,<span class="string">'Pulsewidth'</span>);
+legend(<span class="string">'No Minimum Pulsewidth'</span>,<span class="keyword">...</span>
+       <span class="string">'Minimum Pulsewidth'</span>,<span class="keyword">...</span>
+       <span class="string">'Variable Pulsing Period'</span>,<span class="keyword">...</span>
+       <span class="string">'Dither'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="TPDRes_01.png" alt=""> <img vspace="5" hspace="5" src="TPDRes_02.png" alt=""> <img vspace="5" hspace="5" src="TPDRes_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Study pulse resolution. 
+% Demonstrates using a multirate system and dither to reduce the effect of
+% minimum pulsewidths. This script shows the effect of (1) ideal response;
+% (2) minimum pulsewidth, with no other compensation; (3) using a variable
+% pulse period; and (4) the use of dither. The controller is a PD control
+% with no other compensation. The minimum pulsewidth gives a large
+% overshoot since no control is applied until the minimum pulsewidth is
+% exceeded. The dither amplitude needs to be adjusted to get the best
+% response if you change the minimum pulsewidth.
+%
+% Things to try:
+%
+% * Change the number of pulses
+% * Change the magnitude and width of the dither
+%
+% Since version 2.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also C2DZOH, CButter, PDDesign, Series, Plot2D, TimeGUI, 
+%  TriangleWave
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 1996, 2008, 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Global for the TimeGUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+degToRad = pi/180;
+radToDeg = 180/pi;
+			     
+%% System Parameters
+% Design the dither wave magnitude and width.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nSim    = 600;
+inr      = 2000*eye(3);
+dT       = 0.5; % This is the loop sampling time (sec)
+minPw    = 20;  % milliseconds
+uTorque  = 0.5; % torque for a unit pulsewidth (Nm)
+nPulse   = 8;   % number of control periods between thruster pulses
+mDither  = 1.3*minPw; % milliseconds
+wDither  = 30;
+dither   = mDither*TriangleWave(linspace(0,2*pi*wDither,nSim));
+ 
+%% Design the control loop
+% Use a continuous Butterworth Filter with the PD control.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zeta          = 0.7071;
+wN            = 0.1;
+wD            = 1.0;
+[aC,bC,cC,dC] = PDDesign(zeta,wN,wD,inr(2,2));
+[aN,bN,cN,dN] = CButter(2,1);   
+[aC,bC,cC,dC] = Series(aC,bC,cC,dC,aN,bN,cN,dN);
+[aC,bC]       = C2DZOH( aC, bC, dT );
+
+%% Use a double integrator plant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+aP = [0,1;0 0];   % double integrator model of the spacecraft
+bP = [0;1]/inr(2,2);
+cP = [1,0];
+dP = 0;
+[aP, bP] = C2DZOH( aP, bP, dT/500);
+
+%% Simulate the loop
+% Loop through the simulation four times: first without the effect of the
+% minimum pulsewidth, i.e. the ideal response; second with the minimum
+% pulsewidth; third with a variable pulsewidth; and fourth with the dither.
+% A step input is applied to the system.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+yPlot   = zeros(4,nSim);
+uPlot   = zeros(4,nSim);
+uStep   = 0.01;
+nPW     = 1000*dT;
+
+% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, [], 0, dT, 'TPDRes' );
+
+% Loop through four times
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for j = 1:4
+  x      = zeros(2,1);
+  xC     = zeros(3,1);
+  kPulse = 0;
+  for k = 1:nSim
+    % Display the status message
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+    
+    % Compute the control
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    yPlot(j,k) = x(1);
+    uC = cC*xC + dC*x(1);
+    xC = aC*xC + bC*x(1);
+    
+    % Pulsewidth modulation -  calculate the pulsewidth in milliseconds
+    % from the ratio of the requested control torque to the unit torque
+    % (that produced by 1 second of firing time)
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    pulsewidth = dT*abs(uC/uTorque)*1000;
+    
+    if( j == 3 )
+      % variable pulsing period utilizes a counter.
+      kPulse = kPulse + 1;
+      if( kPulse < nPulse )
+        pulsewidth = 0;
+      else
+        pulsewidth = nPulse*pulsewidth;
+        kPulse     = 0;
+      end
+    elseif( j == 4 )
+      % add the dither signal to the pulsewidth
+      pulsewidth = pulsewidth + dither(k);
+    end
+    
+    % Apply the minimum pulsewidth
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    if( (j > 1) && (pulsewidth < minPw) )
+      pulsewidth = 0;
+    end
+    
+    uPlot(j,k) = abs(pulsewidth);
+    
+    % The plant
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    nPulsewidth = floor(pulsewidth);
+    uCA = [uTorque*sign(uC)*ones(1,nPulsewidth),zeros(1,nPW-nPulsewidth)];
+    for i = 1:nPW
+      x = aP*x + bP*(uStep - uCA(i));
+    end
+
+    % Time control
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    switch simulationAction
+      case 'pause'
+        pause
+        simulationAction = ' ';
+      case 'stop'
+        return;
+      case 'plot'
+        break;
+    end
+  end
+end
+
+Plot2D((0:(nSim-1))*dT,yPlot*radToDeg,'Time (sec)','Pitch (deg)',' ');
+legend('No Minimum Pulsewidth',...
+       'Minimum Pulsewidth',... 
+       'Variable Pulsing Period',...
+       'Dither');
+	   
+Plot2D((0:(nSim-1))*dT,uPlot,'Time (sec)','Pulsewidth (ms)','Pulsewidth');
+legend('No Minimum Pulsewidth',...
+       'Minimum Pulsewidth',... 
+       'Variable Pulsing Period',...
+       'Dither');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-02-26 09:45:16 -0500 (Thu, 26 Feb 2015) $
+% $Revision: 39698 $
+
+
+##### SOURCE END #####
+--></body></html>

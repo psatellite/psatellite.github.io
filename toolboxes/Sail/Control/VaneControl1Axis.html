@@ -1,0 +1,440 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Attitude control of a sail using control vanes.</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="VaneControl1Axis.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Attitude control of a sail using control vanes.</h1><!--introduction--><pre>The attitude dynamics are rigid body. The vanes are assumed to reach
+the commanded location instanteously and inertia effects are neglected.</pre><pre>Functions demonstrated:
+     PlateWithVanes
+     PIDMIMO
+     SailDisturbance
+     FRB
+     VaneAngles</pre><pre class="language-matlab">Since <span class="string">version</span> <span class="string">7.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">AC</span>, PIDMIMO, Eul2Q, Q2Eul, QMult, QPose, QZero, Constant,
+Plot2D, RK4, Unit, JD2000, El2RV, FRB, VaneAngles, QSail,
+DisturbanceStruct, EnvironmentStruct, ProfileStruct, SailDisturbance,
+SailEnvironment
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">First, create suitable CAD model.</a></li><li><a href="#3">Second, design controller</a></li><li><a href="#4">Third, set up an attitude maneuver to simulate</a></li><li><a href="#5">Fourth, simulate maneuver</a></li><li><a href="#6">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   This file is referenced for listings in the User's Guide.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">%  User Parameters</span>
+rollStep = 0.01;  <span class="comment">% radians</span>
+specular = 1;     <span class="comment">% use ideal specular properties for sail and vanes</span>
+pitch    = 0;     <span class="comment">% initialize sail with nonzero pitch angle (sun angle)</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+clear <span class="string">SailDisturbance</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>First, create suitable CAD model.<a name="2"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+<span class="comment">% The sail is 100 m square.</span>
+g = load(<span class="string">'PlateWithVanes'</span>);
+lSail = 100;
+
+<span class="keyword">if</span> ~specular
+  <span class="comment">% overwrite sail and vane optical properties with nonideal values</span>
+  optical = g.component(2).optical;
+  optical.sigmaS = 0.9;
+  optical.sigmaA = 0.08;
+  optical.sigmaD = 0.02;
+  <span class="keyword">for</span> k = 1:3
+    g.component(k+1).optical = optical;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Second, design controller<a name="3"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+
+<span class="comment">% Control parameters - use PIDMIMO to design control loops</span>
+xN           = zeros(2,1);      <span class="comment">% Controller state</span>
+iner         = 1;               <span class="comment">% Unit inertia</span>
+zeta         = 2;               <span class="comment">% Damping ratio</span>
+wn           = 0.001;           <span class="comment">% Control frequency</span>
+tauInt       = 3000;            <span class="comment">% Integrator time constant</span>
+omegaR       = 5*wn;            <span class="comment">% Rate filter frequency</span>
+sType        = <span class="string">'z'</span>;             <span class="comment">% Type of equations</span>
+dT           = 50;
+<span class="comment">% Resulting control values will be accelerations (due to unit inertia input).</span>
+[aC, bC, cC, dC] = PIDMIMO( iner, zeta, wn, tauInt, omegaR, dT, sType );
+
+<span class="comment">% Actuator model, assume sail is 100 m and vane is 5%</span>
+areaVane = 0.05*lSail^2;
+lBoom    = lSail/sqrt(2);
+Ps       = 1367/Constant(<span class="string">'speed of light'</span>)/1000;
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Third, set up an attitude maneuver to simulate<a name="4"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+
+<span class="comment">% Need an epoch and orbit state to use full disturbance model</span>
+[r,v] = El2RV( [Constant(<span class="string">'au'</span>) 0 0 0 0 0], [], Constant(<span class="string">'mu sun'</span>) );
+jD    = JD2000;
+qS    = QSail( -Unit(r), r, v );
+<span class="keyword">if</span> pitch
+  qY = Eul2Q([0;5*pi/180;30*pi/180]);
+<span class="keyword">else</span>
+  qY = QZero;
+<span class="keyword">end</span>
+q0    = QMult(qS,qY);
+
+<span class="comment">% for integration will just use attitude states</span>
+x     = [q0;zeros(3,1)];
+
+<span class="comment">% New attitude command - step around roll</span>
+rollCommand = rollStep;
+
+<span class="comment">% Environment and disturbance models</span>
+d = struct;
+d = EnvironmentStruct( d );
+d = DisturbanceStruct( d );
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.magOn    = 0;
+d.radOn    = 0;
+
+<span class="comment">% Profile</span>
+p    = ProfileStruct;
+p.q  = qS;
+p.r  = r;
+p.v  = v;
+p.jD = jD;
+<span class="comment">% states for rotating vanes</span>
+p.body  = [2 3];
+p.angle = [0; 0];
+p.axis  = [0 0 1; 0 0 1]';
+
+<span class="comment">% Environment will be constant over this short period</span>
+env = SailEnvironment( <span class="string">'sun'</span>, p, d );
+
+<span class="comment">% inertia and inverse for rigid body model</span>
+inr    = g.mass.inertia;
+invInr = inv(inr);
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Fourth, simulate maneuver<a name="5"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+
+<span class="comment">% Number of simulation points</span>
+nSim = 100;
+
+<span class="comment">% Preallocate plotting arrays</span>
+xPlot  = zeros(size(x,1),nSim);
+tPlot  = zeros(1,nSim);
+aEPlot = zeros(1,nSim);
+thPlot = zeros(1,nSim);
+tqPlot = zeros(3,nSim);
+
+<span class="comment">% Simulation loop</span>
+<span class="keyword">for</span> k = 1:nSim
+  <span class="comment">% Euler angle error (small angles)</span>
+  qSB        = QMult( QPose( qS ), x(1:4) );
+  eulActual  = Q2Eul(qSB);
+  angleError = eulActual(1) - rollCommand;
+
+  <span class="comment">% Control</span>
+  yN = cC*xN + dC*angleError;
+  xN = aC*xN + bC*angleError;
+  Tcommand = -g.mass.inertia(1,1)*yN;
+
+  <span class="comment">% Actuation - vane angle</span>
+  p.angle  = VaneAngles( areaVane*cos(25*pi/180)*[1; 1], lBoom, Tcommand );
+
+  <span class="comment">% Disturbances</span>
+  [f, tq] = SailDisturbance( g, p, env, d );
+
+  <span class="comment">% Store</span>
+  xPlot(:,k)  = x;
+  tPlot(:,k)  = (k-1)*dT;
+  aEPlot(:,k) = angleError;
+  thPlot(:,k) = p.angle(1);
+  tqPlot(:,k) = tq.total;
+
+  <span class="comment">% Integrate</span>
+  x = RK4( @FRB, x, dT, 0, inr, invInr, tq.total );
+<span class="keyword">end</span>
+
+<span class="comment">%---------------------------------------------------------</span>
+</pre><h2>Plot<a name="6"></a></h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------</span>
+h = [];
+h(1) = Plot2D( tPlot, xPlot(1:4,:), <span class="string">'Time (sec)'</span>, {<span class="string">'qS'</span>,<span class="string">'qX'</span>,<span class="string">'qY'</span>,<span class="string">'qZ'</span>},<span class="string">'Inertial Quaternion'</span> );
+h(2) = Plot2D( tPlot, [aEPlot;xPlot(5,:)]*180/pi, <span class="string">'Time (sec)'</span>, {<span class="string">'\delta \theta_x'</span>,<span class="string">'\omega_x'</span>},<span class="keyword">...</span>
+               <span class="string">'Roll Error and Body Rate (deg)'</span> );
+h(3) = Plot2D( tPlot, thPlot*180/pi, <span class="string">'Time (sec)'</span>, <span class="string">'Angle (deg)'</span>, <span class="string">'Commanded Control Vane Angle'</span> );
+Plot2D( tPlot, tqPlot*180/pi, <span class="string">'Time (sec)'</span>, {<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>}, <span class="string">'Total External Torque (Nm)'</span> );
+
+<span class="keyword">if</span> 0
+  <span class="comment">% print figures for User's Guide.</span>
+  figure(h(3));
+  print <span class="string">-depsc2</span> <span class="string">VaneAngleV1Axis</span>
+  figure(h(2));
+  print <span class="string">-depsc2</span> <span class="string">RollErrorsV1Axis</span>
+  figure(h(1));
+  print <span class="string">-depsc2</span> <span class="string">QInertialV1Axis</span>
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="VaneControl1Axis_01.png" alt=""> <img vspace="5" hspace="5" src="VaneControl1Axis_02.png" alt=""> <img vspace="5" hspace="5" src="VaneControl1Axis_03.png" alt=""> <img vspace="5" hspace="5" src="VaneControl1Axis_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Attitude control of a sail using control vanes. 
+%  The attitude dynamics are rigid body. The vanes are assumed to reach 
+%  the commanded location instanteously and inertia effects are neglected.
+%
+%  Functions demonstrated:
+%       PlateWithVanes
+%       PIDMIMO
+%       SailDisturbance
+%       FRB
+%       VaneAngles
+%
+%   Since version 7.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AC, PIDMIMO, Eul2Q, Q2Eul, QMult, QPose, QZero, Constant, 
+%  Plot2D, RK4, Unit, JD2000, El2RV, FRB, VaneAngles, QSail, 
+%  DisturbanceStruct, EnvironmentStruct, ProfileStruct, SailDisturbance, 
+%  SailEnvironment
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2006 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%   This file is referenced for listings in the User's Guide.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  User Parameters
+rollStep = 0.01;  % radians
+specular = 1;     % use ideal specular properties for sail and vanes
+pitch    = 0;     % initialize sail with nonzero pitch angle (sun angle)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear SailDisturbance
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% First, create suitable CAD model. 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% The sail is 100 m square.
+g = load('PlateWithVanes');
+lSail = 100;
+
+if ~specular
+  % overwrite sail and vane optical properties with nonideal values
+  optical = g.component(2).optical;
+  optical.sigmaS = 0.9;
+  optical.sigmaA = 0.08;
+  optical.sigmaD = 0.02;
+  for k = 1:3
+    g.component(k+1).optical = optical;
+  end
+end
+  
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Second, design controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Control parameters - use PIDMIMO to design control loops
+xN           = zeros(2,1);      % Controller state
+iner         = 1;               % Unit inertia
+zeta         = 2;               % Damping ratio
+wn           = 0.001;           % Control frequency
+tauInt       = 3000;            % Integrator time constant
+omegaR       = 5*wn;            % Rate filter frequency
+sType        = 'z';             % Type of equations
+dT           = 50;
+% Resulting control values will be accelerations (due to unit inertia input).
+[aC, bC, cC, dC] = PIDMIMO( iner, zeta, wn, tauInt, omegaR, dT, sType );
+
+% Actuator model, assume sail is 100 m and vane is 5%
+areaVane = 0.05*lSail^2;
+lBoom    = lSail/sqrt(2);
+Ps       = 1367/Constant('speed of light')/1000;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Third, set up an attitude maneuver to simulate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Need an epoch and orbit state to use full disturbance model
+[r,v] = El2RV( [Constant('au') 0 0 0 0 0], [], Constant('mu sun') );
+jD    = JD2000;
+qS    = QSail( -Unit(r), r, v );
+if pitch
+  qY = Eul2Q([0;5*pi/180;30*pi/180]);
+else
+  qY = QZero;
+end
+q0    = QMult(qS,qY);
+
+% for integration will just use attitude states
+x     = [q0;zeros(3,1)];
+
+% New attitude command - step around roll
+rollCommand = rollStep;
+
+% Environment and disturbance models
+d = struct;
+d = EnvironmentStruct( d );
+d = DisturbanceStruct( d );
+d.aeroOn   = 0;
+d.albedoOn = 0;
+d.magOn    = 0;
+d.radOn    = 0;
+
+% Profile
+p    = ProfileStruct;
+p.q  = qS;
+p.r  = r;
+p.v  = v;
+p.jD = jD;
+% states for rotating vanes
+p.body  = [2 3];
+p.angle = [0; 0];
+p.axis  = [0 0 1; 0 0 1]';
+
+% Environment will be constant over this short period
+env = SailEnvironment( 'sun', p, d );
+
+% inertia and inverse for rigid body model
+inr    = g.mass.inertia;
+invInr = inv(inr);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Fourth, simulate maneuver
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Number of simulation points
+nSim = 100;
+
+% Preallocate plotting arrays
+xPlot  = zeros(size(x,1),nSim);
+tPlot  = zeros(1,nSim);
+aEPlot = zeros(1,nSim);
+thPlot = zeros(1,nSim);
+tqPlot = zeros(3,nSim);
+
+% Simulation loop
+for k = 1:nSim
+  % Euler angle error (small angles)
+  qSB        = QMult( QPose( qS ), x(1:4) );
+  eulActual  = Q2Eul(qSB);
+  angleError = eulActual(1) - rollCommand;
+
+  % Control
+  yN = cC*xN + dC*angleError;
+  xN = aC*xN + bC*angleError;
+  Tcommand = -g.mass.inertia(1,1)*yN;
+  
+  % Actuation - vane angle
+  p.angle  = VaneAngles( areaVane*cos(25*pi/180)*[1; 1], lBoom, Tcommand ); 
+
+  % Disturbances
+  [f, tq] = SailDisturbance( g, p, env, d );
+  
+  % Store
+  xPlot(:,k)  = x;
+  tPlot(:,k)  = (k-1)*dT;
+  aEPlot(:,k) = angleError;
+  thPlot(:,k) = p.angle(1);
+  tqPlot(:,k) = tq.total;
+
+  % Integrate
+  x = RK4( @FRB, x, dT, 0, inr, invInr, tq.total );
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h = [];
+h(1) = Plot2D( tPlot, xPlot(1:4,:), 'Time (sec)', {'qS','qX','qY','qZ'},'Inertial Quaternion' );
+h(2) = Plot2D( tPlot, [aEPlot;xPlot(5,:)]*180/pi, 'Time (sec)', {'\delta \theta_x','\omega_x'},...
+               'Roll Error and Body Rate (deg)' );
+h(3) = Plot2D( tPlot, thPlot*180/pi, 'Time (sec)', 'Angle (deg)', 'Commanded Control Vane Angle' );
+Plot2D( tPlot, tqPlot*180/pi, 'Time (sec)', {'x','y','z'}, 'Total External Torque (Nm)' );
+
+if 0
+  % print figures for User's Guide.
+  figure(h(3));
+  print -depsc2 VaneAngleV1Axis
+  figure(h(2));
+  print -depsc2 RollErrorsV1Axis
+  figure(h(1));
+  print -depsc2 QInertialV1Axis
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 11:56:16 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39867 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,493 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Build a model of the Microwave Anisotropy Probe.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-07-09"><meta name="DC.source" content="BuildMAP.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Build a model of the Microwave Anisotropy Probe.</h1><!--introduction--><p>The data is taken from web pictures so colors and dimensions are limited in accuracy. The position of the spacecraft relative to the moon and earth is fictional. This script makes use of the many CAD objects that BuildCADModel can use, including the reaction wheel object.</p><p>The thruster locations are based on our own design and are not the same ones that MAP actually uses. We used our optimal thruster distribution law to pick a minimal set of thrusters.</p><p>After the model is finished, it is displayed with DrawSCPlugIn. We show how to display the plumes individually and then together using the displayPlume field of the thruster deviceInfo.</p><pre>------------------------------------------------------------------------
+See also BuildCADModel, CreateComponent, DrawSC, Date2JD,  MoonV1, SunV1
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Create the CAD model</a></li><li><a href="#3">Initialize</a></li><li><a href="#4">Core body</a></li><li><a href="#5">Components</a></li><li><a href="#6">Draw the model using DrawSCPlugIn</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 2.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Create the CAD model</h2><h2 id="3">Initialize</h2><pre class="codeinput"><span class="comment">%-------------</span>
+BuildCADModel( <span class="string">'initialize'</span> );
+BuildCADModel( <span class="string">'set name'</span> , <span class="string">'MAP'</span> );
+BuildCADModel( <span class="string">'set units'</span>, <span class="string">'in'</span>     );
+</pre><h2 id="4">Core body</h2><pre class="codeinput"><span class="comment">%------------</span>
+m = CreateBody(<span class="string">'make'</span>,<span class="string">'name'</span>,<span class="string">'Core'</span>);
+BuildCADModel(<span class="string">'add body'</span>, m );
+BuildCADModel(<span class="string">'compute paths'</span>);
+</pre><h2 id="5">Components</h2><pre class="codeinput"><span class="comment">%-------------</span>
+
+<span class="comment">% The Base</span>
+<span class="comment">%---------</span>
+theta       = (0:1:5)*pi/3;
+s           =  sin(theta)';
+c           =  cos(theta)';
+mHex        = [s c zeros(6,1)];
+
+m.v         = 97.96*mHex;
+m.f         = [1:6;6:-1:1];
+
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'name'</span>, <span class="string">'Base'</span>, <span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The base plate</span>
+<span class="comment">%---------------</span>
+m.v         = 40.815*mHex;
+m.f         = [1:6;6:-1:1];
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f,<span class="keyword">...</span>
+                               <span class="string">'rA'</span>, [0 0 -32.37]', <span class="string">'name'</span>, <span class="string">'Base plate'</span>, <span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'solar cell'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The reaction wheels</span>
+<span class="comment">%--------------------</span>
+rwaA        = [0 2*pi/3 4*pi/3];
+sR          = sin([0 2*pi/3 4*pi/3]);
+
+<span class="keyword">for</span> k = 1:3
+  rA = [36*[sin(rwaA(k)); cos(rwaA(k))]; -8];
+  u  = [sin(rwaA(k))*cos(pi/4); cos(rwaA(k))*cos(pi/4); sin(pi/4)];
+  m  = CreateComponent( <span class="string">'make'</span>, <span class="string">'reaction wheel'</span>, <span class="string">'model'</span>, <span class="string">'hr60'</span>, <span class="string">'unitVector'</span>, u,<span class="keyword">...</span>
+ 					              <span class="string">'rA'</span>, rA, <span class="string">'mass'</span>, 1.5, <span class="string">'name'</span>, sprintf(<span class="string">'RWA %i'</span>,k),<span class="keyword">...</span>
+                        <span class="string">'body'</span>, 1, <span class="string">'inside'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'steel'</span> );
+  BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+<span class="comment">% The truss</span>
+<span class="comment">%----------</span>
+r      = [40.815*[s c] zeros(6,1);40.815*[s c] -32.37*ones(6,1); 16.32*[s c] zeros(6,1)];
+theta  = [-14 14 46 74 106 134 166 194 226 254 286 314]'*pi/180;
+r      = [r; 36.88*[sin(theta) cos(theta) zeros(12,1)]];
+c      = [1 7;2 8;3 9;4 10;5 11;6 12;7 13;8 14;9 15;10 16;11 17;12 18;<span class="keyword">...</span>
+          7 19;7 20; 8 21; 8 22;9 23;9 24;10 25; 10 26;11 27; 11 28; 12 29; 12 30];
+
+m      = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'vertex'</span>, r, <span class="string">'face'</span>, c,<span class="keyword">...</span>
+                          <span class="string">'inside'</span>,0,<span class="string">'name'</span>, <span class="string">'truss'</span>, <span class="keyword">...</span>
+                          <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum truss'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The box</span>
+<span class="comment">%--------</span>
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'rUpper'</span>, 16.32, <span class="string">'rLower'</span>, 16.32, <span class="string">'h'</span>, 30.14, <span class="string">'n'</span>, 6, <span class="keyword">...</span>
+                               <span class="string">'rA'</span>, [0 0 -30.14]', <span class="string">'name'</span>, <span class="string">'Box'</span>, <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The payload cylinder</span>
+<span class="comment">%--------------------</span>
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'cylinder'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'rUpper'</span>, 18.21, <span class="string">'rLower'</span>, 18.21, <span class="string">'h'</span>, 13.25, <span class="string">'n'</span>, 24, <span class="keyword">...</span>
+                               <span class="string">'rA'</span>, [0 0 -45.72]', <span class="string">'name'</span>, <span class="string">'Payload'</span>,<span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The antenna support structure</span>
+<span class="comment">%------------------------------</span>
+cF        = 89.17/71;
+v         = [12 -41 -12;12 41 -12;12 -35 0;12 35 0;-12 -41 -12;-12  41 -12;-12 -35 0;-12 35 0;
+             12  39  -8;-12 39 -8;12 -39 -8;-12 -39 -8]*cF;
+v(:,3)    = v(:,3) - 45.72;
+f         = [1 2 4 3;5 6 8 7;4 9 10 8;3 7 12 11;3 4 8 7; 3 4 2 1; 7 8 6 5; 8 10 9 4; 11 12 7 3; 7 8 4 3];
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                             <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'name'</span>, <span class="string">'antenna support'</span>, <span class="keyword">...</span>
+                             <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The radiators</span>
+<span class="comment">%--------------</span>
+cF          = 13.25/10;
+x           =  [0 19 19 25 25 19  0]';
+z           = -[0  0  6  6 28 52 52]';
+v           =  [x ones(7,1) z;x -ones(7,1) z]*cF;
+f           =  [1 2 6 7;3 4 5 6;8 9 13 14;10 11 12 13;1 2 9 8;2 3 10 9;3 4 11 10;4 5 12 11;5 6 13 12; 6 7 14 13];
+rA          = -[-7*cF 0 40*89.17/71]';
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'vertex'</span>, v, <span class="string">'face'</span>, f, <span class="string">'rA'</span>, rA, <span class="string">'name'</span>, <span class="string">'radiator 1'</span>, <span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'radiator'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+v(:,1)      = -v(:,1);
+rA(1)       = -rA(1);
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'vertex'</span>, m.v, <span class="string">'face'</span>, m.f, <span class="string">'rA'</span>, rA, <span class="string">'name'</span>, <span class="string">'radiator 2'</span>, <span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'radiator'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% The antennas</span>
+<span class="comment">%-------------</span>
+cF = 89.17/71;
+
+m            = CreateComponent( <span class="string">'make'</span>, <span class="string">'antenna'</span>, <span class="string">'x'</span>, 30, <span class="string">'y'</span>, 30, <span class="string">'d'</span>, 3, <span class="string">'theta'</span>, pi/6, <span class="keyword">...</span>
+                                <span class="string">'boresight'</span>, [0;cos(pi/8);sin(pi/8)], <span class="string">'xUnitVector'</span>, [1;0;0], <span class="string">'nFacets'</span>, 20, <span class="keyword">...</span>
+                                <span class="string">'rA'</span>,[0;17;-84]*cF, <span class="string">'name'</span>, <span class="string">'Dual Gregorian Reflector Big'</span>, <span class="keyword">...</span>
+                                <span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                                <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'antenna'</span>, <span class="string">'x'</span>, 30, <span class="string">'y'</span>, 30, <span class="string">'d'</span>, 3, <span class="string">'theta'</span>, pi/6,<span class="keyword">...</span>
+                               <span class="string">'boresight'</span>, [0;-cos(pi/8);sin(pi/8)], <span class="string">'xUnitVector'</span>, [1;0;0], <span class="string">'nFacets'</span>, 20, <span class="keyword">...</span>
+                               <span class="string">'rA'</span>,[0;-17;-84]*cF, <span class="string">'name'</span>, <span class="string">'Secondary Reflector Big'</span>, <span class="keyword">...</span>
+                               <span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'antenna'</span>, <span class="string">'x'</span>, 12, <span class="string">'y'</span>, 12, <span class="string">'d'</span>, 5, <span class="string">'theta'</span>, pi/3,<span class="keyword">...</span>
+                               <span class="string">'boresight'</span>, [0;-cos(pi/6);-sin(pi/6)], <span class="string">'xUnitVector'</span>, [1;0;0], <span class="string">'nFacets'</span>, 20, <span class="keyword">...</span>
+                               <span class="string">'rA'</span>,[0;35;-51]*cF, <span class="string">'name'</span>, <span class="string">'Secondary Reflector'</span>, <span class="keyword">...</span>
+                               <span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m           = CreateComponent( <span class="string">'make'</span>, <span class="string">'antenna'</span>, <span class="string">'x'</span>, 12, <span class="string">'y'</span>, 12, <span class="string">'d'</span>, 5, <span class="string">'theta'</span>, pi/3,<span class="keyword">...</span>
+                               <span class="string">'boresight'</span>, [0;cos(pi/6);-sin(pi/6)], <span class="string">'xUnitVector'</span>, [1;0;0], <span class="string">'nFacets'</span>, 20, <span class="keyword">...</span>
+                               <span class="string">'rA'</span>,[0;-35;-51]*cF, <span class="string">'name'</span>, <span class="string">'Dual Gregorian Small'</span>, <span class="keyword">...</span>
+                               <span class="string">'inside'</span>,0,<span class="keyword">...</span>
+                               <span class="string">'body'</span>, 1, <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Add thrusters</span>
+<span class="comment">%--------------</span>
+theta                    = (0:1:5)*pi/3;
+s                        =  sin(theta);
+c                        =  cos(theta);
+r                        = 40.815*[ s; c; zeros(1,6)];
+cX                       = cos(pi/3);
+sX                       = sin(pi/3);
+u                        = -[[cX;0;-sX],[cX*cX;sX*cX;-sX],[cX*cX;-sX*cX;-sX],[-cX;0;-sX],[-cX*cX;-sX*cX;-sX],[-cX*cX;cX*sX;-sX]] ;
+uECoefficient.iSP        = [120 110];
+uECoefficient.pulsewidth = 2;
+thrustCoefficient        = 0.2/350;
+kThruster                = zeros(1:6);
+<span class="keyword">for</span> k = 1:6
+    m = CreateComponent( <span class="string">'make'</span>, <span class="string">'hydrazine thruster'</span>, <span class="string">'model'</span>, <span class="string">'mr-103c'</span>, <span class="keyword">...</span>
+                         <span class="string">'name'</span>, sprintf(<span class="string">'Thruster %i'</span>,k), <span class="string">'body'</span>, 1,<span class="keyword">...</span>
+                         <span class="string">'unitVector'</span>, u(:,k), <span class="string">'rA'</span>, r(:,k), <span class="keyword">...</span>
+                         <span class="string">'uECoefficient'</span>, uECoefficient, <span class="string">'thrustCoefficient'</span>,thrustCoefficient,<span class="keyword">...</span>
+                         <span class="string">'positionVector'</span>, r(:,k), <span class="string">'minimumPulsewidth'</span>, 0.02, <span class="string">'valveHeaterPower'</span>, 8,<span class="keyword">...</span>
+                         <span class="string">'pressureNominal'</span>, 350*6895 );
+    kThruster(k) = BuildCADModel( <span class="string">'add component'</span>, m );
+<span class="keyword">end</span>
+
+g = BuildCADModel( <span class="string">'get cad model'</span>);
+</pre><img vspace="5" hspace="5" src="BuildMAP_01.png" alt=""> <h2 id="6">Draw the model using DrawSCPlugIn</h2><pre class="codeinput">jDToday = Date2JD;
+g   = SetCADState(g,[10000;0;0],[0;VOrbit(10000);0]);
+tag = DrawSCPlugIn(  <span class="string">'initialize'</span>, g, [], [], <span class="string">'Moon'</span>, jDToday );
+
+<span class="comment">% Cycle the thruster plumes</span>
+<span class="keyword">for</span> k = 1:6
+  g.component(kThruster(k)).deviceInfo.displayPlume = true;
+  DrawSCPlugIn( <span class="string">'update spacecraft'</span>, tag, g, jDToday );
+  pause(0.5)
+  g.component(kThruster(k)).deviceInfo.displayPlume = false;
+<span class="keyword">end</span>
+
+<span class="comment">% Display all plumes</span>
+<span class="keyword">for</span> k = 1:6
+  g.component(kThruster(k)).deviceInfo.displayPlume = true;
+<span class="keyword">end</span>
+DrawSCPlugIn( <span class="string">'update spacecraft'</span>, tag, g, jDToday );
+
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="BuildMAP_02.png" alt=""> <img vspace="5" hspace="5" src="BuildMAP_03.png" alt=""> <img vspace="5" hspace="5" src="BuildMAP_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Build a model of the Microwave Anisotropy Probe. 
+% The data is taken from web pictures so colors and dimensions are limited in
+% accuracy. The position of the spacecraft relative to the moon
+% and earth is fictional. This script makes use of the many
+% CAD objects that BuildCADModel can use, including the reaction wheel
+% object.
+%
+% The thruster locations are based on our own design and are not the
+% same ones that MAP actually uses. We used our optimal thruster
+% distribution law to pick a minimal set of thrusters.
+%
+% After the model is finished, it is displayed with DrawSCPlugIn. We show how to
+% display the plumes individually and then together using the displayPlume field
+% of the thruster deviceInfo.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also BuildCADModel, CreateComponent, DrawSC, Date2JD,  MoonV1, SunV1
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998-2003 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%   Since version 2.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Create the CAD model
+
+%%% Initialize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+BuildCADModel( 'initialize' );
+BuildCADModel( 'set name' , 'MAP' );
+BuildCADModel( 'set units', 'in'     );
+
+%%% Core body
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m = CreateBody('make','name','Core');
+BuildCADModel('add body', m );
+BuildCADModel('compute paths');
+
+%%% Components
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% The Base
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+theta       = (0:1:5)*pi/3;
+s           =  sin(theta)';
+c           =  cos(theta)';
+mHex        = [s c zeros(6,1)];
+
+m.v         = 97.96*mHex;
+m.f         = [1:6;6:-1:1];
+
+m           = CreateComponent( 'make', 'generic','inside',0,...
+                               'vertex', m.v, 'face', m.f, 'name', 'Base', ...
+                               'body', 1, 'faceColor', 'solar cell');
+BuildCADModel( 'add component', m );
+
+% The base plate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m.v         = 40.815*mHex;
+m.f         = [1:6;6:-1:1];
+m           = CreateComponent( 'make', 'generic','inside',0,...
+                               'vertex', m.v, 'face', m.f,...
+                               'rA', [0 0 -32.37]', 'name', 'Base plate', ...
+                               'body', 1, 'faceColor', 'solar cell');
+BuildCADModel( 'add component', m );
+
+% The reaction wheels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+rwaA        = [0 2*pi/3 4*pi/3];
+sR          = sin([0 2*pi/3 4*pi/3]);
+
+for k = 1:3
+  rA = [36*[sin(rwaA(k)); cos(rwaA(k))]; -8];
+  u  = [sin(rwaA(k))*cos(pi/4); cos(rwaA(k))*cos(pi/4); sin(pi/4)];
+  m  = CreateComponent( 'make', 'reaction wheel', 'model', 'hr60', 'unitVector', u,...
+ 					              'rA', rA, 'mass', 1.5, 'name', sprintf('RWA %i',k),...
+                        'body', 1, 'inside', 1, 'faceColor', 'steel' );
+  BuildCADModel( 'add component', m );
+end
+
+% The truss
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r      = [40.815*[s c] zeros(6,1);40.815*[s c] -32.37*ones(6,1); 16.32*[s c] zeros(6,1)];
+theta  = [-14 14 46 74 106 134 166 194 226 254 286 314]'*pi/180;
+r      = [r; 36.88*[sin(theta) cos(theta) zeros(12,1)]];
+c      = [1 7;2 8;3 9;4 10;5 11;6 12;7 13;8 14;9 15;10 16;11 17;12 18;...
+          7 19;7 20; 8 21; 8 22;9 23;9 24;10 25; 10 26;11 27; 11 28; 12 29; 12 30];
+			   
+m      = CreateComponent( 'make', 'generic', 'vertex', r, 'face', c,...
+                          'inside',0,'name', 'truss', ...
+                          'body', 1, 'faceColor', 'aluminum truss');
+BuildCADModel( 'add component', m );
+
+% The box
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m           = CreateComponent( 'make', 'cylinder','inside',0,...
+                               'rUpper', 16.32, 'rLower', 16.32, 'h', 30.14, 'n', 6, ...
+                               'rA', [0 0 -30.14]', 'name', 'Box', 'body', 1, 'faceColor', 'gold foil');
+BuildCADModel( 'add component', m );
+
+% The payload cylinder
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m           = CreateComponent( 'make', 'cylinder','inside',0,...
+                               'rUpper', 18.21, 'rLower', 18.21, 'h', 13.25, 'n', 24, ...
+                               'rA', [0 0 -45.72]', 'name', 'Payload',...
+                               'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+% The antenna support structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cF        = 89.17/71;
+v         = [12 -41 -12;12 41 -12;12 -35 0;12 35 0;-12 -41 -12;-12  41 -12;-12 -35 0;-12 35 0;
+             12  39  -8;-12 39 -8;12 -39 -8;-12 -39 -8]*cF;
+v(:,3)    = v(:,3) - 45.72;
+f         = [1 2 4 3;5 6 8 7;4 9 10 8;3 7 12 11;3 4 8 7; 3 4 2 1; 7 8 6 5; 8 10 9 4; 11 12 7 3; 7 8 4 3];
+m         = CreateComponent( 'make', 'generic','inside',0,...
+                             'vertex', v, 'face', f, 'name', 'antenna support', ...
+                             'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+% The radiators
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+cF          = 13.25/10;
+x           =  [0 19 19 25 25 19  0]';
+z           = -[0  0  6  6 28 52 52]';
+v           =  [x ones(7,1) z;x -ones(7,1) z]*cF;
+f           =  [1 2 6 7;3 4 5 6;8 9 13 14;10 11 12 13;1 2 9 8;2 3 10 9;3 4 11 10;4 5 12 11;5 6 13 12; 6 7 14 13];
+rA          = -[-7*cF 0 40*89.17/71]';
+m           = CreateComponent( 'make', 'generic','inside',0,...
+                               'vertex', v, 'face', f, 'rA', rA, 'name', 'radiator 1', ...
+                               'body', 1, 'faceColor', 'radiator');
+BuildCADModel( 'add component', m );
+
+v(:,1)      = -v(:,1);
+rA(1)       = -rA(1);
+m           = CreateComponent( 'make', 'generic','inside',0,...
+                               'vertex', m.v, 'face', m.f, 'rA', rA, 'name', 'radiator 2', ...
+                               'body', 1, 'faceColor', 'radiator');
+BuildCADModel( 'add component', m );
+
+% The antennas
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+cF = 89.17/71;
+
+m            = CreateComponent( 'make', 'antenna', 'x', 30, 'y', 30, 'd', 3, 'theta', pi/6, ...
+                                'boresight', [0;cos(pi/8);sin(pi/8)], 'xUnitVector', [1;0;0], 'nFacets', 20, ...
+                                'rA',[0;17;-84]*cF, 'name', 'Dual Gregorian Reflector Big', ...
+                                'inside',0,...
+                                'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+m           = CreateComponent( 'make', 'antenna', 'x', 30, 'y', 30, 'd', 3, 'theta', pi/6,...
+                               'boresight', [0;-cos(pi/8);sin(pi/8)], 'xUnitVector', [1;0;0], 'nFacets', 20, ...
+                               'rA',[0;-17;-84]*cF, 'name', 'Secondary Reflector Big', ...
+                               'inside',0,...
+                               'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+m           = CreateComponent( 'make', 'antenna', 'x', 12, 'y', 12, 'd', 5, 'theta', pi/3,...
+                               'boresight', [0;-cos(pi/6);-sin(pi/6)], 'xUnitVector', [1;0;0], 'nFacets', 20, ...
+                               'rA',[0;35;-51]*cF, 'name', 'Secondary Reflector', ...
+                               'inside',0,...
+                               'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+m           = CreateComponent( 'make', 'antenna', 'x', 12, 'y', 12, 'd', 5, 'theta', pi/3,...
+                               'boresight', [0;cos(pi/6);-sin(pi/6)], 'xUnitVector', [1;0;0], 'nFacets', 20, ...
+                               'rA',[0;-35;-51]*cF, 'name', 'Dual Gregorian Small', ...
+                               'inside',0,...
+                               'body', 1, 'faceColor', 'aluminum');
+BuildCADModel( 'add component', m );
+
+% Add thrusters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+theta                    = (0:1:5)*pi/3;
+s                        =  sin(theta);
+c                        =  cos(theta);
+r                        = 40.815*[ s; c; zeros(1,6)];
+cX                       = cos(pi/3);
+sX                       = sin(pi/3);
+u                        = -[[cX;0;-sX],[cX*cX;sX*cX;-sX],[cX*cX;-sX*cX;-sX],[-cX;0;-sX],[-cX*cX;-sX*cX;-sX],[-cX*cX;cX*sX;-sX]] ;
+uECoefficient.iSP        = [120 110];
+uECoefficient.pulsewidth = 2;
+thrustCoefficient        = 0.2/350;
+kThruster                = zeros(1:6);
+for k = 1:6
+    m = CreateComponent( 'make', 'hydrazine thruster', 'model', 'mr-103c', ...
+                         'name', sprintf('Thruster %i',k), 'body', 1,...
+                         'unitVector', u(:,k), 'rA', r(:,k), ...
+                         'uECoefficient', uECoefficient, 'thrustCoefficient',thrustCoefficient,...
+                         'positionVector', r(:,k), 'minimumPulsewidth', 0.02, 'valveHeaterPower', 8,...
+                         'pressureNominal', 350*6895 );
+    kThruster(k) = BuildCADModel( 'add component', m );
+end
+
+g = BuildCADModel( 'get cad model');
+
+%% Draw the model using DrawSCPlugIn
+
+jDToday = Date2JD;
+g   = SetCADState(g,[10000;0;0],[0;VOrbit(10000);0]);
+tag = DrawSCPlugIn(  'initialize', g, [], [], 'Moon', jDToday );
+
+% Cycle the thruster plumes
+for k = 1:6
+  g.component(kThruster(k)).deviceInfo.displayPlume = true;
+  DrawSCPlugIn( 'update spacecraft', tag, g, jDToday );
+  pause(0.5)
+  g.component(kThruster(k)).deviceInfo.displayPlume = false;
+end
+
+% Display all plumes
+for k = 1:6
+  g.component(kThruster(k)).deviceInfo.displayPlume = true;
+end
+DrawSCPlugIn( 'update spacecraft', tag, g, jDToday );
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-06-23 16:51:10 -0400 (Tue, 23 Jun 2020) $
+% $Revision: 52880 $
+
+##### SOURCE END #####
+--></body></html>

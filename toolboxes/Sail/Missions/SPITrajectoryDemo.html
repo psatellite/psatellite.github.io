@@ -1,0 +1,373 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Solar Polar Imager demo with JPL optimal trajectory data.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-10-28"><meta name="DC.source" content="SPITrajectoryDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Solar Polar Imager demo with JPL optimal trajectory data.</h1><!--introduction--><p>Verify clock conversions by comparing against McInnes format. Simple Sun gravity model suffices.</p><pre>------------------------------------------------------------------------
+See also FSailJPL and FSailGuidance., Cone, Constant, Plot2D, Plot3D,
+Cross, Mag, RK45, Unit, PlotOrbitPage, El2RV, Nu2M, RV2El,
+ClockConversion, delta, LocallyOptimalTraj
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Use only nonzero angle data points (from inspection)</a></li><li><a href="#3">JPL order: [a;e;i;W;w;f]</a></li><li><a href="#4">Convert clock to McInnes format</a></li><li><a href="#5">semi-major axis change: to point 440</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	  Copyright (c) 2005,2006 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 7.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% User Parameters</span>
+phase = 1;       <span class="comment">% Phase 1, points to 440. Phase 2, beyond.</span>
+integration = 2; <span class="comment">% 1, JPL angles. 2, McInnes conversion.</span>
+plotHistory = 0; <span class="comment">% 1, plot full trajectory. 0, don't.</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+d = load(<span class="string">'SPIData.mat'</span>);
+
+deg2rad = pi/180;
+muSun   = 132712440017.987;
+au      = Constant(<span class="string">'au'</span>);
+</pre><h2 id="2">Use only nonzero angle data points (from inspection)</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------------</span>
+nPts = 1292;
+jD   = d.data(2:(nPts+1),2)'+2450000.0;
+days = d.data(2:(nPts+1),1)';
+<span class="comment">% Elements are stored in AU and degrees</span>
+elJPL = d.data(2:(nPts+1),20+[1:6])';
+cone  = d.data(2:(nPts+1),9)';
+clock = d.data(2:(nPts+1),10)';
+acc   = d.data(2:(nPts+1),12)';
+
+<span class="comment">% Convert elements to km and radians and reorder</span>
+<span class="comment">% PSS format: [a;i;W;w;e;M]</span>
+</pre><h2 id="3">JPL order: [a;e;i;W;w;f]</h2><pre class="codeinput"><span class="comment">%------------------------------------------------</span>
+el      = zeros(size(elJPL));
+el(1,:) = elJPL(1,1:nPts)*au;               <span class="comment">% sma</span>
+el(2,:) = elJPL(3,1:nPts)*pi/180;           <span class="comment">% inc</span>
+el(3,:) = elJPL(4,1:nPts)*pi/180;           <span class="comment">% lan</span>
+el(4,:) = elJPL(5,1:nPts)*pi/180;           <span class="comment">% apf</span>
+el(5,:) = elJPL(2,1:nPts);                  <span class="comment">% ecc</span>
+el(6,:) = Nu2M( el(5,:), elJPL(6,:)*pi/180 ); <span class="comment">% M</span>
+[r,v]   = El2RV( el, [], muSun );
+
+<span class="comment">% Last elements of JPL output reversed???</span>
+<span class="comment">% Mean anomaly and |r| of last portion constant.</span>
+el(4,:) = elJPL(6,1:nPts)*pi/180;           <span class="comment">% apf</span>
+el(6,:) = Nu2M( el(5,:), elJPL(5,:)*pi/180 ); <span class="comment">% M</span>
+[r,v]   = El2RV( el, [], muSun );
+
+<span class="keyword">if</span> plotHistory
+  <span class="comment">% Plot trajectory data for confirmation</span>
+  <span class="comment">%--------------------------------------</span>
+  PlotOrbitPage(r/au,days(1:nPts),<span class="string">'SPI Trajectory (JPL)'</span>)
+  Plot2D(days,[cone;clock],<span class="string">'Time (days)'</span>,{<span class="string">'Cone'</span>,<span class="string">'Clock'</span>},<span class="string">'SPI Angles (JPL)'</span>)
+  Plot2D(days,el([1 2 5],:),<span class="string">'Time'</span>,{<span class="string">'SMA'</span>,<span class="string">'Inc'</span>,<span class="string">'Ecc'</span>})
+<span class="keyword">end</span>
+</pre><h2 id="4">Convert clock to McInnes format</h2><pre class="codeinput"><span class="comment">%--------------------------------</span>
+clockNew = zeros(1,nPts);
+alpha = zeros(1,nPts);
+delta = zeros(1,nPts);
+dCC = struct(<span class="string">'r'</span>,r,<span class="string">'v'</span>,v,<span class="string">'s'</span>,-Unit(r),<span class="string">'eciFlag'</span>,0);
+clockNew = ClockConversion( cone*deg2rad, clock*deg2rad, 3, 1, dCC )/deg2rad;
+<span class="comment">% Compare to locally optimal law (McInnes)</span>
+[alpha1, delta1] = LocallyOptimalTraj( <span class="string">'inclination'</span>, r(:,6:440), v(:,6:440), muSun, 1 );
+alpha(6:440) = alpha1;
+delta(6:440) = delta1;
+
+[alpha2, delta2] = LocallyOptimalTraj( <span class="string">'semi-major axis'</span>, r(:,441:end), v(:,441:end), muSun, 1 );
+alpha(441:end) = alpha2;
+delta(441:end) = delta2;
+Plot2D(days(6:nPts),[cone(6:nPts);clock(6:end);-clockNew(6:end);alpha(6:end)/deg2rad;delta(6:end)/deg2rad],<span class="keyword">...</span>
+  <span class="string">'Days'</span>,{<span class="string">'Cone'</span>,<span class="string">'Clock'</span>},<span class="string">''</span>,<span class="string">'lin'</span>,{<span class="string">'[1 4]'</span>,<span class="string">'[2 5 3]'</span>})
+legend(<span class="string">'JPL'</span>,<span class="string">'Optimal'</span>,<span class="string">'McInnes'</span>)
+<span class="comment">% Zoom in on cranking</span>
+nSelect = 475:625;
+Plot2D(nSelect,[clock(nSelect);-clockNew(nSelect);delta(nSelect)/deg2rad],<span class="keyword">...</span>
+  <span class="string">'Days'</span>,{<span class="string">'Clock'</span>},<span class="string">'Inclination Cranking Clock Angles'</span>)
+legend(<span class="string">'JPL'</span>,<span class="string">'Optimal'</span>,<span class="string">'McInnes'</span>)
+
+<span class="comment">% Try integrating with sail angles</span>
+</pre><pre class="codeoutput">Warning: Ignoring extra legend entries. 
+</pre><img vspace="5" hspace="5" src="SPITrajectoryDemo_01.png" alt=""> <img vspace="5" hspace="5" src="SPITrajectoryDemo_02.png" alt=""> <h2 id="5">semi-major axis change: to point 440</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------</span>
+<span class="keyword">switch</span> phase
+  <span class="keyword">case</span> 1
+    nMin = 6;
+    nMax = 440;
+  <span class="keyword">case</span> 2
+    nMin = 450;
+    nMax = 650;
+<span class="keyword">end</span>
+x = [r(:,nMin); v(:,nMin)];
+xPlot = zeros(6,nMax-nMin+1);
+aPlot = zeros(3,nMax-nMin+1);
+elPlot = zeros(6,nMax-nMin+1);
+xPlot(:,1) = x;
+elPlot(:,1) = RV2El(x(1:3),x(4:6),muSun);
+muSun = Constant(<span class="string">'mu sun'</span>);
+kP = 2;
+coneR = cone*deg2rad;
+clockR = clock*deg2rad;
+<span class="comment">% characteristic acceleration</span>
+a0     = acc(6)*Mag(r(:,6))^2/au^2/cos(cone(6)*pi/180)^2*1e-6;
+<span class="keyword">for</span> k = (nMin):(nMax-1)
+  cC = cos(coneR(k));
+  sC = sin(coneR(k));
+  cL = cos(clockR(k));
+  sL = sin(clockR(k));
+  <span class="comment">% heliocentric clock frame - sail normal</span>
+  xHat = -Unit(x(1:3));
+  zHat = Unit(Cross(xHat,[0;0;1]));
+  yHat = Unit(Cross(zHat,xHat)); <span class="comment">% Projection of North ecliptic</span>
+  nSail = cC*xHat + sC*cL*yHat + sC*sL*zHat;
+
+  dT = (days(k+1)-days(k))*86400;
+  <span class="keyword">if</span> dT~=0
+    <span class="keyword">switch</span> integration
+      <span class="keyword">case</span> 1
+        [x,hLast] = RK45( <span class="string">'FSailJPL'</span>, x, dT, dT, 8640, 1e-8, days(k), acc(k)*1e-6, coneR(k), clockR(k), muSun );
+      <span class="keyword">case</span> 2
+        <span class="comment">%[x,hLast] = RK45( 'FSailGuidance', x, dT, dT, 8640, 1e-6, 0, acc(k)*1e-6/cC^2, coneR(k), -clockNew(k)*deg2rad, muSun );</span>
+        [x,hLast] = RK45( <span class="string">'FSailGuidance'</span>, x, dT, dT, 8640, 1e-6, 0, a0, coneR(k), -clockNew(k)*deg2rad, muSun );
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+  xPlot(:,kP) = x;
+  aPlot(:,kP) = -acc(k)*nSail;
+  elPlot(:,kP) = RV2El(x(1:3),x(4:6),muSun);
+  kP = kP+1;
+<span class="keyword">end</span>
+Plot3D(xPlot(1:3,:)/au)
+hold <span class="string">on</span>
+plot3(xPlot(1,1)/au,xPlot(2,1)/au,xPlot(3,1)/au,<span class="string">'bo'</span>)
+Plot2D(days(nMin:nMax),[r(1:3,nMin:nMax);xPlot(1:3,:);Mag(r(1:3,nMin:nMax))/au;Mag(xPlot(1:3,:))/au],<span class="keyword">...</span>
+  <span class="string">'Days'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'R'</span>},<span class="string">'Comparison'</span>,<span class="string">'lin'</span>,{[1 4],[2 5],[3 6],[7 8]})
+Plot2D(days(nMin:nMax),aPlot,<span class="string">'Days'</span>,{<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>},<span class="string">'Acceleration (mm/s2)'</span>)
+Plot2D(days(nMin:nMax),[elPlot([1 2 5],:);el([1 2 5],nMin:nMax)],<span class="string">'Days'</span>,{<span class="string">'a'</span>,<span class="string">'i'</span>,<span class="string">'e'</span>},<span class="string">'Orbital Elements'</span>,[],<span class="keyword">...</span>
+  {[1 4],[2 5],[3 6]})
+legend(<span class="string">'PSS'</span>,<span class="string">'JPL'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SPITrajectoryDemo_03.png" alt=""> <img vspace="5" hspace="5" src="SPITrajectoryDemo_04.png" alt=""> <img vspace="5" hspace="5" src="SPITrajectoryDemo_05.png" alt=""> <img vspace="5" hspace="5" src="SPITrajectoryDemo_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Solar Polar Imager demo with JPL optimal trajectory data.
+% Verify clock conversions by comparing against McInnes format.
+% Simple Sun gravity model suffices.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also FSailJPL and FSailGuidance., Cone, Constant, Plot2D, Plot3D, 
+%  Cross, Mag, RK45, Unit, PlotOrbitPage, El2RV, Nu2M, RV2El, 
+%  ClockConversion, delta, LocallyOptimalTraj
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	  Copyright (c) 2005,2006 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%   Since version 7.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% User Parameters
+phase = 1;       % Phase 1, points to 440. Phase 2, beyond.
+integration = 2; % 1, JPL angles. 2, McInnes conversion.
+plotHistory = 0; % 1, plot full trajectory. 0, don't.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+d = load('SPIData.mat');
+
+deg2rad = pi/180;
+muSun   = 132712440017.987;
+au      = Constant('au');
+
+%% Use only nonzero angle data points (from inspection)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nPts = 1292; 
+jD   = d.data(2:(nPts+1),2)'+2450000.0;
+days = d.data(2:(nPts+1),1)';
+% Elements are stored in AU and degrees
+elJPL = d.data(2:(nPts+1),20+[1:6])';
+cone  = d.data(2:(nPts+1),9)';
+clock = d.data(2:(nPts+1),10)';
+acc   = d.data(2:(nPts+1),12)';
+
+% Convert elements to km and radians and reorder
+% PSS format: [a;i;W;w;e;M]
+%% JPL order: [a;e;i;W;w;f]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+el      = zeros(size(elJPL));
+el(1,:) = elJPL(1,1:nPts)*au;               % sma
+el(2,:) = elJPL(3,1:nPts)*pi/180;           % inc
+el(3,:) = elJPL(4,1:nPts)*pi/180;           % lan
+el(4,:) = elJPL(5,1:nPts)*pi/180;           % apf
+el(5,:) = elJPL(2,1:nPts);                  % ecc
+el(6,:) = Nu2M( el(5,:), elJPL(6,:)*pi/180 ); % M
+[r,v]   = El2RV( el, [], muSun );
+
+% Last elements of JPL output reversed???
+% Mean anomaly and |r| of last portion constant.
+el(4,:) = elJPL(6,1:nPts)*pi/180;           % apf
+el(6,:) = Nu2M( el(5,:), elJPL(5,:)*pi/180 ); % M
+[r,v]   = El2RV( el, [], muSun );
+
+if plotHistory
+  % Plot trajectory data for confirmation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  PlotOrbitPage(r/au,days(1:nPts),'SPI Trajectory (JPL)')
+  Plot2D(days,[cone;clock],'Time (days)',{'Cone','Clock'},'SPI Angles (JPL)')
+  Plot2D(days,el([1 2 5],:),'Time',{'SMA','Inc','Ecc'})
+end
+
+%% Convert clock to McInnes format
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clockNew = zeros(1,nPts);
+alpha = zeros(1,nPts);
+delta = zeros(1,nPts);
+dCC = struct('r',r,'v',v,'s',-Unit(r),'eciFlag',0);
+clockNew = ClockConversion( cone*deg2rad, clock*deg2rad, 3, 1, dCC )/deg2rad;
+% Compare to locally optimal law (McInnes)
+[alpha1, delta1] = LocallyOptimalTraj( 'inclination', r(:,6:440), v(:,6:440), muSun, 1 );
+alpha(6:440) = alpha1;
+delta(6:440) = delta1;
+
+[alpha2, delta2] = LocallyOptimalTraj( 'semi-major axis', r(:,441:end), v(:,441:end), muSun, 1 );
+alpha(441:end) = alpha2;
+delta(441:end) = delta2;
+Plot2D(days(6:nPts),[cone(6:nPts);clock(6:end);-clockNew(6:end);alpha(6:end)/deg2rad;delta(6:end)/deg2rad],...
+  'Days',{'Cone','Clock'},'','lin',{'[1 4]','[2 5 3]'})
+legend('JPL','Optimal','McInnes')
+% Zoom in on cranking
+nSelect = 475:625;
+Plot2D(nSelect,[clock(nSelect);-clockNew(nSelect);delta(nSelect)/deg2rad],...
+  'Days',{'Clock'},'Inclination Cranking Clock Angles')
+legend('JPL','Optimal','McInnes')
+
+% Try integrating with sail angles
+%% semi-major axis change: to point 440
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+switch phase
+  case 1
+    nMin = 6;
+    nMax = 440;
+  case 2
+    nMin = 450;
+    nMax = 650;
+end
+x = [r(:,nMin); v(:,nMin)];
+xPlot = zeros(6,nMax-nMin+1);
+aPlot = zeros(3,nMax-nMin+1);
+elPlot = zeros(6,nMax-nMin+1);
+xPlot(:,1) = x;
+elPlot(:,1) = RV2El(x(1:3),x(4:6),muSun);
+muSun = Constant('mu sun');
+kP = 2;
+coneR = cone*deg2rad;
+clockR = clock*deg2rad;
+% characteristic acceleration
+a0     = acc(6)*Mag(r(:,6))^2/au^2/cos(cone(6)*pi/180)^2*1e-6;
+for k = (nMin):(nMax-1)
+  cC = cos(coneR(k));
+  sC = sin(coneR(k));
+  cL = cos(clockR(k));
+  sL = sin(clockR(k));
+  % heliocentric clock frame - sail normal
+  xHat = -Unit(x(1:3));
+  zHat = Unit(Cross(xHat,[0;0;1]));
+  yHat = Unit(Cross(zHat,xHat)); % Projection of North ecliptic
+  nSail = cC*xHat + sC*cL*yHat + sC*sL*zHat;
+
+  dT = (days(k+1)-days(k))*86400;
+  if dT~=0
+    switch integration
+      case 1
+        [x,hLast] = RK45( 'FSailJPL', x, dT, dT, 8640, 1e-8, days(k), acc(k)*1e-6, coneR(k), clockR(k), muSun );
+      case 2
+        %[x,hLast] = RK45( 'FSailGuidance', x, dT, dT, 8640, 1e-6, 0, acc(k)*1e-6/cC^2, coneR(k), -clockNew(k)*deg2rad, muSun );
+        [x,hLast] = RK45( 'FSailGuidance', x, dT, dT, 8640, 1e-6, 0, a0, coneR(k), -clockNew(k)*deg2rad, muSun );
+    end
+  end
+  xPlot(:,kP) = x;
+  aPlot(:,kP) = -acc(k)*nSail;
+  elPlot(:,kP) = RV2El(x(1:3),x(4:6),muSun);
+  kP = kP+1;
+end
+Plot3D(xPlot(1:3,:)/au)
+hold on
+plot3(xPlot(1,1)/au,xPlot(2,1)/au,xPlot(3,1)/au,'bo')
+Plot2D(days(nMin:nMax),[r(1:3,nMin:nMax);xPlot(1:3,:);Mag(r(1:3,nMin:nMax))/au;Mag(xPlot(1:3,:))/au],...
+  'Days',{'x','y','z','R'},'Comparison','lin',{[1 4],[2 5],[3 6],[7 8]})
+Plot2D(days(nMin:nMax),aPlot,'Days',{'x','y','z'},'Acceleration (mm/s2)')
+Plot2D(days(nMin:nMax),[elPlot([1 2 5],:);el([1 2 5],nMin:nMax)],'Days',{'a','i','e'},'Orbital Elements',[],...
+  {[1 4],[2 5],[3 6]})
+legend('PSS','JPL')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-17 $
+% $Revision: bcbdd88fdd6e5cd823069592ed346ad7cdbe3f98 $
+
+##### SOURCE END #####
+--></body></html>

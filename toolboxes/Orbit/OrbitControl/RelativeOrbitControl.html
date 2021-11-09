@@ -1,0 +1,403 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulates two orbits and applies a relative controller.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="RelativeOrbitControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulates two orbits and applies a relative controller.</h1><!--introduction--><p>Plots the resulting relative positions. -------------------------------------------------------------------------  See also RelativeOrbitState and LQOrbitController., C2DZOH, QLVLH,  QPose, Plot2D, TimeGUI, RK4, JD2000, TOrbit, LinOrb, El2RV, Period,  DrawSCPlugIn -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Clean up the workspace</a></li><li><a href="#3">Global for the time GUI</a></li><li><a href="#4">View 3D graphics? Takes a lot of memory.</a></li><li><a href="#5">Constants</a></li><li><a href="#6">Convert to cartesian</a></li><li><a href="#7">Compute the orbit period and controller period</a></li><li><a href="#8">Compute the orbit controller</a></li><li><a href="#9">Initialize the time display</a></li><li><a href="#10">Initialize the arrays</a></li><li><a href="#11">Disturbances</a></li><li><a href="#12">Generate the two orbits using numerical integration</a></li><li><a href="#13">This is  necessary if the simulation is terminated early</a></li><li><a href="#14">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Clean up the workspace</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+clear <span class="string">g</span> <span class="string">x1Plot</span> <span class="string">x2Plot</span> <span class="string">x1</span> <span class="string">x2</span>
+</pre><h2 id="3">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+</pre><h2 id="4">View 3D graphics? Takes a lot of memory.</h2><pre class="codeinput"><span class="comment">%----------------------------------------</span>
+threeDOn = 0;
+</pre><h2 id="5">Constants</h2><pre class="codeinput"><span class="comment">%----------</span>
+degToRad  = pi/180;
+r         = 7000;
+p         = Period( r );
+n         = 2*pi/p;
+dT        = 50;
+nSim      = 4*p/dT + 1;
+</pre><h2 id="6">Convert to cartesian</h2><pre class="codeinput"><span class="comment">%---------------------</span>
+[r1, v1] = El2RV( [7000  0 0 0 0 0] );
+[r2, v2] = El2RV( [7000  3.571e-5 -1.57 -1.57 1.7857e-5 3.1416] );
+x1       = [r1;v1];
+x2       = [r2;v2];
+x0       = RelativeOrbitState( x1, x2 );
+
+t  = 0;
+jD = JD2000;
+</pre><h2 id="7">Compute the orbit period and controller period</h2><pre class="codeinput"><span class="comment">%-----------------------------------------------</span>
+dT   = p/20;
+nSim = ceil(4*p/dT) + 1;
+</pre><h2 id="8">Compute the orbit controller</h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+kOrbitControl = LQOrbitController( x1, [], [], dT );
+
+<span class="comment">% 3D</span>
+<span class="comment">%---</span>
+<span class="keyword">if</span>( threeDOn )
+  g(1)                  = load(<span class="string">'CubeSat.mat'</span>);
+  g(2)                  = g(1);
+  g(1).name             = <span class="string">'CubeSat #1'</span>;
+  g(2).name             = <span class="string">'CubeSat #2'</span>;
+  g(1).body(1).bHinge.q = QPose( QLVLH( x1(1:3), x1(4:6) ) );
+  g(2).body(1).bHinge.q = QPose( QLVLH( x2(1:3), x2(4:6) ) );
+  g(1).rECI             = r1;
+  g(1).qLVLH            = g(1).body(1).bHinge.q;
+  g(2).rECI             = r2;
+  g(2).qLVLH            = g(2).body(1).bHinge.q;
+  tag3DWindow           = DrawSCPlugIn( <span class="string">'initialize'</span>, g, [], [], <span class="string">'Earth'</span>, jD );
+<span class="keyword">end</span>
+</pre><h2 id="9">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'Relative Orbit Control'</span> );
+</pre><img vspace="5" hspace="5" src="RelativeOrbitControl_01.png" alt=""> <h2 id="10">Initialize the arrays</h2><pre class="codeinput"><span class="comment">%----------------------</span>
+x1Plot    = zeros(6,nSim);
+x2Plot    = zeros(6,nSim);
+x3Plot    = zeros(6,nSim);
+uPlot     = zeros(3,nSim);
+dPlot     = zeros(6,nSim);
+</pre><h2 id="11">Disturbances</h2><pre class="codeinput"><span class="comment">%-------------</span>
+a1            = [0;0;0];
+a2            = [0;0;0];
+n             = 2*pi/p;
+[a, bD, c, d] = LinOrb( [], n );
+b             = [0 0;0 0;0 0;0 0;1 0;0 1];
+[v, bD]       = C2DZOH( a, bD, dT );
+[a, b]        = C2DZOH( a, b,  dT );
+xL            = x0;
+</pre><h2 id="12">Generate the two orbits using numerical integration</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+
+  <span class="comment">% Control System. The measurements come from the controlling spacecraft</span>
+  <span class="comment">% and the target spacecraft. The control vector is in track and out-of</span>
+  <span class="comment">% track for the target orbit.</span>
+  <span class="comment">%----------------------------------------------------------------------</span>
+  [d, y, z]  = RelativeOrbitState( x1, x2 );
+  aControl   = -kOrbitControl*d;
+  uControl   = y*aControl(1) - z*aControl(2);
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  x1Plot(:,k) = x1;
+  x2Plot(:,k) = x2;
+  x3Plot(:,k) = xL;
+  dPlot(:,k)  = d;
+  uPlot(:,k)  = uControl;
+
+  <span class="comment">% 3D</span>
+  <span class="comment">%---</span>
+  <span class="keyword">if</span>( threeDOn )
+
+    <span class="comment">% Transformation matrices</span>
+    <span class="comment">%------------------------</span>
+    g(1).body(1).bHinge.q = QPose( QLVLH( x1(1:3), x1(4:6) ) );
+    g(2).body(1).bHinge.q = QPose( QLVLH( x2(1:3), x2(4:6) ) );
+    g(1).rECI             = x1(1:3);
+    g(2).rECI             = x2(1:3);
+    g(1).qLVLH            = QLVLH( x1(1:3), x1(4:6) );
+    g(2).qLVLH            = QLVLH( x2(1:3), x2(4:6) );
+    DrawSCPlugIn( <span class="string">'update spacecraft'</span>, tag3DWindow, g, jD );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Propagate the orbits</span>
+  <span class="comment">%---------------------</span>
+  x1 = RK4( <span class="string">'FOrb'</span>, x1, dT, t, <span class="string">'car'</span>, a1 );
+  x2 = RK4( <span class="string">'FOrb'</span>, x2, dT, t, <span class="string">'car'</span>, a2 + uControl );
+  xL = a*xL - b*kOrbitControl*xL;
+
+  <span class="comment">% Update the time</span>
+  <span class="comment">%----------------</span>
+  t  =  t + dT;
+  jD = jD + dT/86400;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="RelativeOrbitControl_02.png" alt=""> <h2 id="13">This is  necessary if the simulation is terminated early</h2><pre class="codeinput"><span class="comment">%----------------------------------------------------------</span>
+j      = 1:k;
+tOrbit = (0:(k-1))*dT/p;
+</pre><h2 id="14">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+xLbl  = <span class="string">'Orbits'</span>;
+yLbl  = [<span class="string">'x1 ECI'</span>;<span class="string">'y1 ECI'</span>;<span class="string">'z2 ECI'</span>;<span class="keyword">...</span>
+         <span class="string">'x2 ECI'</span>;<span class="string">'y2 ECI'</span>;<span class="string">'z2 ECI'</span>];
+yLbl2 = [<span class="string">'DX ECI'</span>;<span class="string">'DY ECI'</span>;<span class="string">'DZ ECI'</span>];
+
+Plot2D( tOrbit, [x1Plot(1:3,j);x2Plot(1:3,j)],      xLbl, yLbl, <span class="string">'Orbits'</span> )
+Plot2D( tOrbit, [x1Plot(1:3,j)-x2Plot(1:3,j)],      xLbl, yLbl2, <span class="string">'Delta Orbits'</span> )
+Plot2D( tOrbit,  uPlot(:,j),   xLbl, <span class="string">'Control (km/sec^2)'</span>, <span class="string">'Orbit Control'</span> )
+Plot2D( tOrbit,  [dPlot(1:3,j);x3Plot(1:3,j)], xLbl,  [<span class="string">'x (km)'</span>;<span class="string">'y (km)'</span>;<span class="string">'z (km)'</span>      ],<span class="keyword">...</span>
+    <span class="string">'Relative Position'</span>, <span class="string">'lin'</span>, [<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>] )
+Plot2D( tOrbit,  [dPlot(4:6,j);x3Plot(4:6,j)], xLbl,  [<span class="string">'x (km/s)'</span>;<span class="string">'y (km/s)'</span>;<span class="string">'z (km/s)'</span>],<span class="keyword">...</span>
+    <span class="string">'Relative Velocity'</span>, <span class="string">'lin'</span>, [<span class="string">'[1 4]'</span>;<span class="string">'[2 5]'</span>;<span class="string">'[3 6]'</span>] )
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="RelativeOrbitControl_03.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitControl_04.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitControl_05.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitControl_06.png" alt=""> <img vspace="5" hspace="5" src="RelativeOrbitControl_07.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulates two orbits and applies a relative controller.
+% Plots the resulting relative positions. 
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also RelativeOrbitState and LQOrbitController., C2DZOH, QLVLH, 
+%  QPose, Plot2D, TimeGUI, RK4, JD2000, TOrbit, LinOrb, El2RV, Period, 
+%  DrawSCPlugIn
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Clean up the workspace
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear g x1Plot x2Plot x1 x2
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+
+%% View 3D graphics? Takes a lot of memory.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+threeDOn = 0;
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+degToRad  = pi/180;
+r         = 7000;
+p         = Period( r );
+n         = 2*pi/p;
+dT        = 50;
+nSim      = 4*p/dT + 1;
+
+%% Convert to cartesian
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[r1, v1] = El2RV( [7000  0 0 0 0 0] );
+[r2, v2] = El2RV( [7000  3.571e-5 -1.57 -1.57 1.7857e-5 3.1416] );
+x1       = [r1;v1];
+x2       = [r2;v2];
+x0       = RelativeOrbitState( x1, x2 );
+
+t  = 0;
+jD = JD2000;
+
+%% Compute the orbit period and controller period
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT   = p/20;
+nSim = ceil(4*p/dT) + 1;
+
+%% Compute the orbit controller
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+kOrbitControl = LQOrbitController( x1, [], [], dT );
+  
+% 3D
+%REPLACE_WITH_DASH_DASH-
+if( threeDOn )
+  g(1)                  = load('CubeSat.mat');
+  g(2)                  = g(1);
+  g(1).name             = 'CubeSat #1';
+  g(2).name             = 'CubeSat #2';
+  g(1).body(1).bHinge.q = QPose( QLVLH( x1(1:3), x1(4:6) ) );
+  g(2).body(1).bHinge.q = QPose( QLVLH( x2(1:3), x2(4:6) ) );
+  g(1).rECI             = r1;
+  g(1).qLVLH            = g(1).body(1).bHinge.q;
+  g(2).rECI             = r2;
+  g(2).qLVLH            = g(2).body(1).bHinge.q;
+  tag3DWindow           = DrawSCPlugIn( 'initialize', g, [], [], 'Earth', jD );
+end
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'Relative Orbit Control' );
+
+%% Initialize the arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x1Plot    = zeros(6,nSim);
+x2Plot    = zeros(6,nSim);
+x3Plot    = zeros(6,nSim);
+uPlot     = zeros(3,nSim);
+dPlot     = zeros(6,nSim);
+
+%% Disturbances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+a1            = [0;0;0];
+a2            = [0;0;0];
+n             = 2*pi/p;
+[a, bD, c, d] = LinOrb( [], n );
+b             = [0 0;0 0;0 0;0 0;1 0;0 1];
+[v, bD]       = C2DZOH( a, bD, dT );
+[a, b]        = C2DZOH( a, b,  dT );
+xL            = x0;
+
+%% Generate the two orbits using numerical integration
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT );
+  
+  % Control System. The measurements come from the controlling spacecraft
+  % and the target spacecraft. The control vector is in track and out-of
+  % track for the target orbit.
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [d, y, z]  = RelativeOrbitState( x1, x2 );
+  aControl   = -kOrbitControl*d; 
+  uControl   = y*aControl(1) - z*aControl(2);
+  
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x1Plot(:,k) = x1;
+  x2Plot(:,k) = x2;
+  x3Plot(:,k) = xL;
+  dPlot(:,k)  = d;
+  uPlot(:,k)  = uControl;
+  
+  % 3D
+  %REPLACE_WITH_DASH_DASH-
+  if( threeDOn )
+
+    % Transformation matrices
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    g(1).body(1).bHinge.q = QPose( QLVLH( x1(1:3), x1(4:6) ) );
+    g(2).body(1).bHinge.q = QPose( QLVLH( x2(1:3), x2(4:6) ) );
+    g(1).rECI             = x1(1:3);
+    g(2).rECI             = x2(1:3);
+    g(1).qLVLH            = QLVLH( x1(1:3), x1(4:6) );
+    g(2).qLVLH            = QLVLH( x2(1:3), x2(4:6) );
+    DrawSCPlugIn( 'update spacecraft', tag3DWindow, g, jD );
+  end
+  
+  % Propagate the orbits
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x1 = RK4( 'FOrb', x1, dT, t, 'car', a1 );
+  x2 = RK4( 'FOrb', x2, dT, t, 'car', a2 + uControl );
+  xL = a*xL - b*kOrbitControl*xL;
+  
+  % Update the time
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  t  =  t + dT;
+  jD = jD + dT/86400;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+end
+
+%% This is  necessary if the simulation is terminated early
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+j      = 1:k;
+tOrbit = (0:(k-1))*dT/p;
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xLbl  = 'Orbits';
+yLbl  = ['x1 ECI';'y1 ECI';'z2 ECI';...
+         'x2 ECI';'y2 ECI';'z2 ECI'];
+yLbl2 = ['DX ECI';'DY ECI';'DZ ECI'];
+
+Plot2D( tOrbit, [x1Plot(1:3,j);x2Plot(1:3,j)],      xLbl, yLbl, 'Orbits' )
+Plot2D( tOrbit, [x1Plot(1:3,j)-x2Plot(1:3,j)],      xLbl, yLbl2, 'Delta Orbits' )
+Plot2D( tOrbit,  uPlot(:,j),   xLbl, 'Control (km/sec^2)', 'Orbit Control' )
+Plot2D( tOrbit,  [dPlot(1:3,j);x3Plot(1:3,j)], xLbl,  ['x (km)';'y (km)';'z (km)'      ],...
+    'Relative Position', 'lin', ['[1 4]';'[2 5]';'[3 6]'] )
+Plot2D( tOrbit,  [dPlot(4:6,j);x3Plot(4:6,j)], xLbl,  ['x (km/s)';'y (km/s)';'z (km/s)'],...
+    'Relative Velocity', 'lin', ['[1 4]';'[2 5]';'[3 6]'] )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-10-18 17:16:31 -0400 (Fri, 18 Oct 2019) $
+% $Revision: 50082 $
+
+##### SOURCE END #####
+--></body></html>

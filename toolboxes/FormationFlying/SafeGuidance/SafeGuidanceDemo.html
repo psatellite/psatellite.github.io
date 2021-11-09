@@ -1,0 +1,682 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate the performance of Safe Guidance Mode</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-03-24"><meta name="DC.source" content="SafeGuidanceDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate the performance of Safe Guidance Mode</h1><!--introduction--><p>A similar version of this safe guidance mode is used onboard the PRISMA formation flying spacecraft, Mango and Tango.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">10.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">SafeGuidanceSim</span>, PlotRun3D, DeltaVChart
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Print out key settings</a></li><li><a href="#3">RANDOM INITIAL CONDITIONS...</a></li><li><a href="#4">Initialize simulation variables</a></li><li><a href="#5">Run N cases of FFRelSim with random initial conditions</a></li><li><a href="#6">Display / plot results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2012 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--- BEGIN USER INPUT ---%</span>
+
+<span class="comment">% LOAD SIMULATION INPUT DATA</span>
+setup = SafeGuidanceSimInit(<span class="string">'prisma noise'</span>);
+setup.nSPO = 300;
+setup.nOrbits = 5;
+setup.params.minTimeBtwnIPDeltaVs=3600;
+setup.params.minTimeBtwnDeltaVs=300;
+setup.params.dTSeparation = 1500;
+setup.params.margin = 30;
+setup.params.dMin = 60;
+
+setup.noise(3:4) = [.05 .001];
+
+<span class="comment">% NUMBER OF SIMULATIONS</span>
+N = 10;
+
+<span class="comment">% SELECT ONE TYPE OF INITIAL CONDITIONS:</span>
+<span class="comment">%initCond = 'nominal plus error';</span>
+initCond = <span class="string">'collision course'</span>;
+<span class="comment">%initCond = 'inside avoidance region';</span>
+
+<span class="comment">% TO REPRODUCE SAME CONDITIONS EACH TIME, SET RANDN STATE</span>
+randn(<span class="string">'state'</span>,0);
+
+<span class="comment">% OPTIONS FOR "NOMINAL PLUS ERROR"</span>
+opts.dist = setup.params.dMin+setup.params.margin+10;
+opts.goals      = struct(<span class="string">'y0'</span>,0,<span class="string">'aE'</span>,setup.params.dMin+setup.params.margin+10,<span class="string">'beta'</span>,0,<span class="string">'zInc'</span>,opts.dist,<span class="string">'zLan'</span>,opts.dist);
+opts.posErrSize = .5;      <span class="comment">% m</span>
+opts.velErrSize = 1e-3;    <span class="comment">% m/s</span>
+
+<span class="comment">% OPTIONS FOR "COLLISION COURSE"</span>
+opts.R_init_max = 150;   <span class="comment">% maximum position boundary   (m)</span>
+opts.R_init_min =  75;   <span class="comment">% minimum position boundary   (m)</span>
+opts.T_collide  = 0.5;    <span class="comment">% time of collision (orbits)</span>
+
+<span class="comment">% OPTIONS FOR "INSIDE AVOIDANCE REGION"</span>
+opts.R_mean   = 10;     <span class="comment">% mean position boundary      (m)</span>
+opts.velScale = 1e-3;   <span class="comment">% relative velocity scale     (m/s)</span>
+
+<span class="comment">%--- END USER INPUT ---%</span>
+
+n  = OrbRate(setup.el0(1));
+T  = 2*pi/n;
+</pre><pre class="codeoutput">Warning: Using 'state' to set RANDN's internal state causes RAND, RANDI, and
+RANDN to use legacy random number generators.  This syntax will be removed in a
+future release.  See &lt;a href="matlab:helpview([docroot
+'\techdoc\math\math.map'],'update_random_number_generator')"&gt;Updating Your
+Random Number Generator Syntax&lt;/a&gt; to use RNG to replace the old syntax. 
+</pre><h2>Print out key settings<a name="2"></a></h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+disp(<span class="string">'**************************************************************'</span>)
+fprintf(<span class="string">'Run SafeGuidance %d times. Initial state: %s.\n'</span>,N,initCond)
+fprintf(<span class="string">'Safe distance:     %3.3g m\n'</span>,setup.params.dMin)
+fprintf(<span class="string">'Separation Time:   %3.3g s\n'</span>,setup.params.dTSeparation)
+fprintf(<span class="string">'Max Drift / Orbit: %3.3g m\n'</span>,setup.params.maxDriftPerOrbit)
+disp(<span class="string">'**************************************************************'</span>)
+
+d1 = setup.params.dMin;
+d2 = setup.params.dMin + setup.params.margin;
+
+[xc,yc]=Circle(setup.params.dMin,0,0,500);
+[xc2,yc2]=Circle(setup.params.dMin+setup.params.margin,0,0,500);
+</pre><pre class="codeoutput">**************************************************************
+Run SafeGuidance 10 times. Initial state: collision course.
+Safe distance:      60 m
+Separation Time:   1.5e+03 s
+Max Drift / Orbit: 100 m
+**************************************************************
+</pre><h2>RANDOM INITIAL CONDITIONS...<a name="3"></a></h2><pre class="codeinput"><span class="comment">%-----------------------------</span>
+xH0 = zeros(6,N);
+<span class="keyword">switch</span> initCond
+   <span class="keyword">case</span> <span class="string">'nominal plus error'</span>
+      <span class="comment">% nominal trajectory with random phase and random noise:</span>
+      beta  = UnwrapPhase(randn(1,N)*2*pi);  <span class="comment">% relative ellipse phase</span>
+      xHErr = [opts.posErrSize*randn(3,N); opts.velErrSize*randn(3,N)]; <span class="comment">% relative state error</span>
+      <span class="keyword">for</span> i=1:N
+         opts.goals.beta = beta(i);
+         xH0(:,i)   = Goals2Hills( setup.el0, opts.goals ) + xHErr(:,i);
+      <span class="keyword">end</span>
+
+   <span class="keyword">case</span> <span class="string">'collision course'</span>
+      <span class="comment">% generate a random Hills state</span>
+      <span class="comment">%  - initial position is bounded to be:</span>
+      <span class="comment">%        + within sphere of radius R_init_max, and</span>
+      <span class="comment">%        + outside a sphere of R_init_min</span>
+      <span class="comment">%  - initial velocity is computed to provide a collision at time T_collide</span>
+      collTime  = opts.T_collide*T;
+      rH0 = [randn(2,N);zeros(1,N)]*mean([opts.R_init_min,opts.R_init_max]);
+      vH0 = zeros(3,N); <span class="comment">% initialize here, computed below</span>
+      dH0 = Mag(rH0);
+      <span class="keyword">for</span> i=1:N
+         <span class="keyword">if</span>( dH0(i)&lt;opts.R_init_min )
+            rH0(:,i) = rH0(:,i)/dH0(i)*opts.R_init_min;
+         <span class="keyword">elseif</span>( dH0(i)&gt;opts.R_init_max )
+            rH0(:,i) = rH0(:,i)/dH0(i)*opts.R_init_max;
+         <span class="keyword">end</span>
+         vH0(:,i) = PositionDeltaV( rH0(:,i), zeros(3,1), zeros(3,1), n, collTime );
+      <span class="keyword">end</span>
+      xH0 = [rH0;vH0];
+
+   <span class="keyword">case</span> <span class="string">'inside avoidance region'</span>
+     <span class="comment">% In-plane</span>
+      rH0 = [randn(2,N);zeros(1,N)]*opts.R_mean;
+      vH0 = [randn(2,N);zeros(1,N)]*opts.velScale;
+      xH0 = [rH0;vH0];
+
+      <span class="comment">% ensure all initial positions are INSIDE region</span>
+      k = find( xH0(2,:).^2+4*xH0(1,:).^2 &gt;= .999*setup.params.dMin^2 );
+      <span class="keyword">if</span>( ~isempty(k) )
+         phase = atan2(xH0(2,k),-xH0(1,k));
+         xH0(2,k)=0.99*setup.params.dMin*sin(phase);
+         xH0(1,k)=-.5*0.99*setup.params.dMin*cos(phase);
+      <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre><h2>Initialize simulation variables<a name="4"></a></h2><pre class="codeinput">r0 = zeros(3,N);
+v0 = r0;
+mD = zeros(1,N);
+dV = zeros(1,N);
+xSet = cell(1,N);
+dVSet = cell(1,N);
+iSet = cell(1,N);
+minDist = 1e5; <span class="comment">% init to large number</span>
+maxDV   = 0;
+
+dT = T/setup.nSPO;
+
+vxmod = [];
+dvtt = [];
+hw = waitbar(0,sprintf(<span class="string">'Running %d simulations...'</span>,N));
+iMax = [];
+</pre><img vspace="5" hspace="5" src="SafeGuidanceDemo_01.png" alt=""> <h2>Run N cases of FFRelSim with random initial conditions<a name="5"></a></h2><pre class="codeinput"><span class="keyword">for</span> i=1:N
+
+   <span class="comment">% compute initial orbital element differences</span>
+   setup.xH0  = xH0(:,i);
+   setup.dEl0 = Hills2DeltaElem( setup.el0, setup.xH0*1e3 );
+
+   <span class="comment">% run simulation</span>
+   d = SafeGuidanceSim( setup );
+
+   <span class="comment">% compute min distance</span>
+   mD(i)  = min( Mag( d.xH(1:3,:) ) ); <span class="comment">%   actual min-distance</span>
+
+   <span class="comment">% compute total delta-v</span>
+   dV(i) = sum(Mag(d.aCont(:,2:end)).*diff(d.time)*T);   <span class="comment">% km/s</span>
+   dV(i) = sum(Mag(d.dVapp));   <span class="comment">% km/s</span>
+
+   <span class="comment">% store min dist case</span>
+   <span class="keyword">if</span>( mD(i) &lt; minDist )
+      minDist = mD(i);
+      sMin    = setup;
+      dMin    = d;
+      xHMinUA = HillsEqns( setup.xH0, n, dMin.time*T, 1 );
+      iMin    = i;
+   <span class="keyword">end</span>
+
+   <span class="comment">% store max dv case</span>
+   <span class="keyword">if</span>( dV(i) &gt; maxDV )
+      maxDV   = dV(i);
+      sMax    = setup;
+      dMax    = d;
+      xHMaxUA = HillsEqns( setup.xH0, n, dMax.time*T, 1 );
+      iMax    = i;
+   <span class="keyword">end</span>
+
+
+   <span class="comment">% store initial relative position and velocity</span>
+   r0(:,i) = setup.xH0(1:3);
+   v0(:,i) = setup.xH0(4:6);
+
+   <span class="comment">% store entire SLO frame trajectory and controls</span>
+   xSLO = d.xSLO;
+   xSet{i}  = xSLO;
+   dVSet{i}  = Hills2LVLH(d.aCont)*dT;
+   iSet{i}  = d.inside;
+
+   waitbar(i/N);
+
+<span class="keyword">end</span>
+
+close(hw);
+</pre><h2>Display / plot results<a name="6"></a></h2><pre class="codeinput">fprintf(<span class="string">'\n**************************************************************\n'</span>)
+fprintf(<span class="string">'Average Delta-V:      %3.3g m/s\n'</span>,mean(dV))
+fprintf(<span class="string">'Highest Delta-V:      %3.3g m/s\n'</span>,max(dV))
+fprintf(<span class="string">'Average Min-Distance: %3.3g m\n'</span>,mean(mD))
+fprintf(<span class="string">' Lowest Min-Distance: %3.3g m\n'</span>,min(mD))
+disp(<span class="string">'**************************************************************'</span>)
+
+k  = find( mD&lt;setup.params.dMin );
+
+[xcmin,zcmin] = Circle(opts.R_init_min,0,0,500);
+[xcmax,zcmax] = Circle(opts.R_init_max,0,0,500);
+
+f=[];
+f(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Initial States'</span>);
+plot(r0(2,:),r0(1,:),<span class="string">'*'</span>), set(gca,<span class="string">'fontsize'</span>,14), hold <span class="string">on</span>
+<span class="keyword">if</span>( strcmp(initCond,<span class="string">'collision course'</span>) )
+   plot(xcmin,zcmin,<span class="string">'m--'</span>,xcmax,zcmax,<span class="string">'m--'</span>)
+<span class="keyword">end</span>
+plot(xc,yc/2,<span class="string">'k--'</span>)
+axis <span class="string">equal</span>
+grid <span class="string">on</span>
+xlabel(<span class="string">'Along-Track [m]'</span>)
+ylabel(<span class="string">'Radial [m]'</span>)
+
+<span class="comment">%------------------------------------------</span>
+<span class="comment">% analysis plots for minimum distance case</span>
+SafeGuidanceSimPlots(dMin);
+
+<span class="comment">%------------------------------------------</span>
+<span class="comment">% MIN DIST CASE</span>
+fName = sprintf(<span class="string">'MIN DISTANCE Case (#%d, %4.1f m)'</span>, iMin, minDist );
+f(end+1)=PlotRun3D( xSet, dVSet, iSet, iMin, d1, d2 );
+set(f(end),<span class="string">'name'</span>,fName);
+
+<span class="comment">%------------------------------------------</span>
+<span class="comment">% MAX DV CASE</span>
+<span class="keyword">if</span>( ~isempty(iMax) )
+    fName = sprintf(<span class="string">'MAX DELTA-V Case (#%d, %1.4f m/s)'</span>, iMax, maxDV );
+    f(end+1)=PlotRun3D( xSet, dVSet, iSet, iMax, d1, d2 );
+    set(f(end),<span class="string">'name'</span>,fName);
+<span class="keyword">end</span>
+
+<span class="comment">%------------------------------------------</span>
+<span class="comment">% Minimum Distance Bar Chart</span>
+f(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Minimum Distance'</span>);
+bar( mD );
+set(gca,<span class="string">'fontsize'</span>,14),
+title(<span class="string">'Minimum Distance'</span>),
+xlabel(<span class="string">'Case #'</span>), ylabel(<span class="string">'Min Dist [m]'</span>)
+
+<span class="comment">%------------------------------------------</span>
+<span class="comment">% Delta-V Bar Chart</span>
+f(end+1) = figure(<span class="string">'name'</span>,<span class="string">'Delta-V'</span>);
+dVstack = zeros(N,3);
+maxSepBurns = 0;
+maxNomBurns = 0;
+maxCTBurns  = 0;
+<span class="keyword">for</span> i=1:N
+   [kSep,kNom,kCT] = SafeGuidanceBurnData( dVSet{i}, iSet{i} );
+   dVstack(i,1) = sum(Mag(dVSet{i}(:,kSep)));
+   dVstack(i,2) = sum(Mag(dVSet{i}(:,kNom))) - sum(Mag(dVSet{i}(:,kCT)));
+   dVstack(i,3) = sum(Mag(dVSet{i}(:,kCT)));
+   <span class="keyword">if</span>( length(kSep) == maxSepBurns &amp;&amp; ~isempty(kSep) )
+      maxSepBurnsCase(end+1) = i;
+   <span class="keyword">elseif</span>( length(kSep) &gt; maxSepBurns )
+      maxSepBurnsCase = i;
+      maxSepBurns = length(kSep);
+   <span class="keyword">end</span>
+   <span class="keyword">if</span>( length(kNom) == maxNomBurns &amp;&amp; ~isempty(kNom) )
+      maxNomBurnsCase(end+1) = i;
+   <span class="keyword">elseif</span>( length(kNom) &gt; maxNomBurns )
+      maxNomBurnsCase = i;
+      maxNomBurns = length(kNom);
+   <span class="keyword">end</span>
+   <span class="keyword">if</span>( length(kCT) == maxCTBurns &amp;&amp; ~isempty(kCT) )
+      maxCTBurnsCase(end+1) = i;
+   <span class="keyword">elseif</span>( length(kCT) &gt; maxCTBurns )
+      maxCTBurnsCase = i;
+      maxCTBurns = length(kCT);
+   <span class="keyword">end</span>
+<span class="keyword">end</span>
+bar( dVstack,<span class="string">'stacked'</span> );
+grid <span class="string">on</span>
+set(gca,<span class="string">'fontsize'</span>,14)
+title(<span class="string">'Delta-V'</span>),
+xlabel(<span class="string">'Case #'</span>), ylabel(<span class="string">'Delta-V [m/s]'</span>)
+legend(<span class="string">'Separation'</span>,<span class="string">'Nominal IP'</span>,<span class="string">'Nominal CT'</span>)
+
+<span class="comment">% delta-v chart for maximum delta-v case</span>
+DeltaVChart( d.time, dVSet, iMax );
+
+fprintf(<span class="string">'Maximum number of Separation burns: %d\n\tCases: %s\n'</span>,maxSepBurns,num2str(maxSepBurnsCase));
+fprintf(<span class="string">'------------------------------------------------\n'</span>)
+fprintf(<span class="string">'Maximum number of Nominal burns: %d\n\tCases: %s\n'</span>,maxNomBurns,num2str(maxNomBurnsCase));
+fprintf(<span class="string">'------------------------------------------------\n'</span>)
+fprintf(<span class="string">'Maximum number of Cross-Track burns: %d\n\tCases: %s\n'</span>,maxCTBurns,num2str(maxCTBurnsCase));
+fprintf(<span class="string">'**************************************************************\n'</span>)
+
+Figui;
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+**************************************************************
+Average Delta-V:      0.213 m/s
+Highest Delta-V:      0.26 m/s
+Average Min-Distance:  40 m
+ Lowest Min-Distance: 34.8 m
+**************************************************************
+Maximum number of Separation burns: 1
+	Cases: 1   2   3   4   5   6   7   8   9  10
+------------------------------------------------
+Maximum number of Nominal burns: 6
+	Cases: 2
+------------------------------------------------
+Maximum number of Cross-Track burns: 5
+	Cases: 2
+**************************************************************
+</pre><img vspace="5" hspace="5" src="SafeGuidanceDemo_02.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_03.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_04.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_05.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_06.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_07.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_08.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_09.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_10.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_11.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_12.png" alt=""> <img vspace="5" hspace="5" src="SafeGuidanceDemo_13.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate the performance of Safe Guidance Mode
+% A similar version of this safe guidance mode is used onboard the PRISMA
+% formation flying spacecraft, Mango and Tango.
+%
+%   Since version 10.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also SafeGuidanceSim, PlotRun3D, DeltaVChart
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2012 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASH- BEGIN USER INPUT REPLACE_WITH_DASH_DASH-%
+
+% LOAD SIMULATION INPUT DATA
+setup = SafeGuidanceSimInit('prisma noise');
+setup.nSPO = 300;
+setup.nOrbits = 5;
+setup.params.minTimeBtwnIPDeltaVs=3600;
+setup.params.minTimeBtwnDeltaVs=300;
+setup.params.dTSeparation = 1500;
+setup.params.margin = 30;
+setup.params.dMin = 60;
+
+setup.noise(3:4) = [.05 .001];
+
+% NUMBER OF SIMULATIONS
+N = 10;
+
+% SELECT ONE TYPE OF INITIAL CONDITIONS:
+%initCond = 'nominal plus error';
+initCond = 'collision course';
+%initCond = 'inside avoidance region';
+
+% TO REPRODUCE SAME CONDITIONS EACH TIME, SET RANDN STATE
+randn('state',0);
+
+% OPTIONS FOR "NOMINAL PLUS ERROR"
+opts.dist = setup.params.dMin+setup.params.margin+10;
+opts.goals      = struct('y0',0,'aE',setup.params.dMin+setup.params.margin+10,'beta',0,'zInc',opts.dist,'zLan',opts.dist);
+opts.posErrSize = .5;      % m 
+opts.velErrSize = 1e-3;    % m/s
+
+% OPTIONS FOR "COLLISION COURSE"
+opts.R_init_max = 150;   % maximum position boundary   (m)
+opts.R_init_min =  75;   % minimum position boundary   (m)
+opts.T_collide  = 0.5;    % time of collision (orbits)
+
+% OPTIONS FOR "INSIDE AVOIDANCE REGION"
+opts.R_mean   = 10;     % mean position boundary      (m)
+opts.velScale = 1e-3;   % relative velocity scale     (m/s)
+
+%REPLACE_WITH_DASH_DASH- END USER INPUT REPLACE_WITH_DASH_DASH-%
+
+n  = OrbRate(setup.el0(1));
+T  = 2*pi/n;
+
+%% Print out key settings
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+disp('**************************************************************')
+fprintf('Run SafeGuidance %d times. Initial state: %s.\n',N,initCond)
+fprintf('Safe distance:     %3.3g m\n',setup.params.dMin)
+fprintf('Separation Time:   %3.3g s\n',setup.params.dTSeparation)
+fprintf('Max Drift / Orbit: %3.3g m\n',setup.params.maxDriftPerOrbit)
+disp('**************************************************************')
+
+d1 = setup.params.dMin;
+d2 = setup.params.dMin + setup.params.margin;
+
+[xc,yc]=Circle(setup.params.dMin,0,0,500);
+[xc2,yc2]=Circle(setup.params.dMin+setup.params.margin,0,0,500);
+
+%% RANDOM INITIAL CONDITIONS...
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xH0 = zeros(6,N);
+switch initCond
+   case 'nominal plus error'
+      % nominal trajectory with random phase and random noise:
+      beta  = UnwrapPhase(randn(1,N)*2*pi);  % relative ellipse phase
+      xHErr = [opts.posErrSize*randn(3,N); opts.velErrSize*randn(3,N)]; % relative state error
+      for i=1:N
+         opts.goals.beta = beta(i);
+         xH0(:,i)   = Goals2Hills( setup.el0, opts.goals ) + xHErr(:,i);
+      end
+
+   case 'collision course'
+      % generate a random Hills state
+      %  - initial position is bounded to be:
+      %        + within sphere of radius R_init_max, and
+      %        + outside a sphere of R_init_min
+      %  - initial velocity is computed to provide a collision at time T_collide
+      collTime  = opts.T_collide*T;
+      rH0 = [randn(2,N);zeros(1,N)]*mean([opts.R_init_min,opts.R_init_max]);
+      vH0 = zeros(3,N); % initialize here, computed below
+      dH0 = Mag(rH0);
+      for i=1:N
+         if( dH0(i)<opts.R_init_min )
+            rH0(:,i) = rH0(:,i)/dH0(i)*opts.R_init_min;
+         elseif( dH0(i)>opts.R_init_max )
+            rH0(:,i) = rH0(:,i)/dH0(i)*opts.R_init_max;
+         end
+         vH0(:,i) = PositionDeltaV( rH0(:,i), zeros(3,1), zeros(3,1), n, collTime );
+      end
+      xH0 = [rH0;vH0];
+
+   case 'inside avoidance region'
+     % In-plane
+      rH0 = [randn(2,N);zeros(1,N)]*opts.R_mean;
+      vH0 = [randn(2,N);zeros(1,N)]*opts.velScale;
+      xH0 = [rH0;vH0];
+
+      % ensure all initial positions are INSIDE region
+      k = find( xH0(2,:).^2+4*xH0(1,:).^2 >= .999*setup.params.dMin^2 );
+      if( ~isempty(k) )
+         phase = atan2(xH0(2,k),-xH0(1,k));
+         xH0(2,k)=0.99*setup.params.dMin*sin(phase);
+         xH0(1,k)=-.5*0.99*setup.params.dMin*cos(phase);
+      end
+      
+end
+
+%% Initialize simulation variables
+r0 = zeros(3,N);
+v0 = r0;
+mD = zeros(1,N);
+dV = zeros(1,N);
+xSet = cell(1,N);
+dVSet = cell(1,N);
+iSet = cell(1,N);
+minDist = 1e5; % init to large number
+maxDV   = 0;   
+
+dT = T/setup.nSPO;
+
+vxmod = [];
+dvtt = [];
+hw = waitbar(0,sprintf('Running %d simulations...',N));
+iMax = [];
+
+%% Run N cases of FFRelSim with random initial conditions
+for i=1:N
+   
+   % compute initial orbital element differences
+   setup.xH0  = xH0(:,i);
+   setup.dEl0 = Hills2DeltaElem( setup.el0, setup.xH0*1e3 );
+   
+   % run simulation
+   d = SafeGuidanceSim( setup );
+   
+   % compute min distance
+   mD(i)  = min( Mag( d.xH(1:3,:) ) ); %   actual min-distance
+   
+   % compute total delta-v
+   dV(i) = sum(Mag(d.aCont(:,2:end)).*diff(d.time)*T);   % km/s
+   dV(i) = sum(Mag(d.dVapp));   % km/s
+     
+   % store min dist case
+   if( mD(i) < minDist )
+      minDist = mD(i);
+      sMin    = setup;
+      dMin    = d;
+      xHMinUA = HillsEqns( setup.xH0, n, dMin.time*T, 1 );
+      iMin    = i;
+   end
+   
+   % store max dv case
+   if( dV(i) > maxDV )
+      maxDV   = dV(i);
+      sMax    = setup;
+      dMax    = d;
+      xHMaxUA = HillsEqns( setup.xH0, n, dMax.time*T, 1 );
+      iMax    = i;
+   end
+   
+   
+   % store initial relative position and velocity
+   r0(:,i) = setup.xH0(1:3);
+   v0(:,i) = setup.xH0(4:6);
+   
+   % store entire SLO frame trajectory and controls
+   xSLO = d.xSLO;
+   xSet{i}  = xSLO;
+   dVSet{i}  = Hills2LVLH(d.aCont)*dT;
+   iSet{i}  = d.inside;
+   
+   waitbar(i/N);
+   
+end
+
+close(hw);
+
+%% Display / plot results
+
+fprintf('\n**************************************************************\n')
+fprintf('Average Delta-V:      %3.3g m/s\n',mean(dV))
+fprintf('Highest Delta-V:      %3.3g m/s\n',max(dV))
+fprintf('Average Min-Distance: %3.3g m\n',mean(mD))
+fprintf(' Lowest Min-Distance: %3.3g m\n',min(mD))
+disp('**************************************************************')
+
+k  = find( mD<setup.params.dMin );
+
+[xcmin,zcmin] = Circle(opts.R_init_min,0,0,500);
+[xcmax,zcmax] = Circle(opts.R_init_max,0,0,500);
+
+f=[];
+f(end+1) = figure('name','Initial States');
+plot(r0(2,:),r0(1,:),'*'), set(gca,'fontsize',14), hold on
+if( strcmp(initCond,'collision course') )
+   plot(xcmin,zcmin,'mREPLACE_WITH_DASH_DASH',xcmax,zcmax,'mREPLACE_WITH_DASH_DASH')
+end
+plot(xc,yc/2,'kREPLACE_WITH_DASH_DASH')
+axis equal
+grid on
+xlabel('Along-Track [m]')
+ylabel('Radial [m]')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% analysis plots for minimum distance case
+SafeGuidanceSimPlots(dMin);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% MIN DIST CASE
+fName = sprintf('MIN DISTANCE Case (#%d, %4.1f m)', iMin, minDist );
+f(end+1)=PlotRun3D( xSet, dVSet, iSet, iMin, d1, d2 );
+set(f(end),'name',fName);
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% MAX DV CASE
+if( ~isempty(iMax) )
+    fName = sprintf('MAX DELTA-V Case (#%d, %1.4f m/s)', iMax, maxDV );
+    f(end+1)=PlotRun3D( xSet, dVSet, iSet, iMax, d1, d2 );
+    set(f(end),'name',fName);
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Minimum Distance Bar Chart
+f(end+1) = figure('name','Minimum Distance');
+bar( mD );
+set(gca,'fontsize',14), 
+title('Minimum Distance'),
+xlabel('Case #'), ylabel('Min Dist [m]')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Delta-V Bar Chart
+f(end+1) = figure('name','Delta-V');
+dVstack = zeros(N,3);
+maxSepBurns = 0;
+maxNomBurns = 0;
+maxCTBurns  = 0;
+for i=1:N
+   [kSep,kNom,kCT] = SafeGuidanceBurnData( dVSet{i}, iSet{i} );
+   dVstack(i,1) = sum(Mag(dVSet{i}(:,kSep)));
+   dVstack(i,2) = sum(Mag(dVSet{i}(:,kNom))) - sum(Mag(dVSet{i}(:,kCT)));
+   dVstack(i,3) = sum(Mag(dVSet{i}(:,kCT)));
+   if( length(kSep) == maxSepBurns && ~isempty(kSep) )
+      maxSepBurnsCase(end+1) = i;
+   elseif( length(kSep) > maxSepBurns )
+      maxSepBurnsCase = i;
+      maxSepBurns = length(kSep);
+   end
+   if( length(kNom) == maxNomBurns && ~isempty(kNom) )
+      maxNomBurnsCase(end+1) = i;
+   elseif( length(kNom) > maxNomBurns )
+      maxNomBurnsCase = i;
+      maxNomBurns = length(kNom);
+   end
+   if( length(kCT) == maxCTBurns && ~isempty(kCT) )
+      maxCTBurnsCase(end+1) = i;
+   elseif( length(kCT) > maxCTBurns )
+      maxCTBurnsCase = i;
+      maxCTBurns = length(kCT);
+   end
+end
+bar( dVstack,'stacked' );
+grid on
+set(gca,'fontsize',14)
+title('Delta-V'),
+xlabel('Case #'), ylabel('Delta-V [m/s]')
+legend('Separation','Nominal IP','Nominal CT')
+
+% delta-v chart for maximum delta-v case
+DeltaVChart( d.time, dVSet, iMax );
+
+fprintf('Maximum number of Separation burns: %d\n\tCases: %s\n',maxSepBurns,num2str(maxSepBurnsCase));
+fprintf('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n')
+fprintf('Maximum number of Nominal burns: %d\n\tCases: %s\n',maxNomBurns,num2str(maxNomBurnsCase));
+fprintf('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH\n')
+fprintf('Maximum number of Cross-Track burns: %d\n\tCases: %s\n',maxCTBurns,num2str(maxCTBurnsCase));
+fprintf('**************************************************************\n')
+
+Figui;
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-03-12 14:50:40 -0400 (Thu, 12 Mar 2015) $
+% $Revision: 39873 $
+
+##### SOURCE END #####
+--></body></html>

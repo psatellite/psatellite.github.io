@@ -1,0 +1,257 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demo4XLEOtoGEO</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-11-07"><meta name="DC.source" content="Demo4XLEOtoGEO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Impulsive 4X optimization with interpolated inner laps</a></li><li><a href="#2">Choose key and tween laps. Minimum of 2 key laps for tweens to be inserted.</a></li><li><a href="#3">Optimize</a></li><li><a href="#4">Report</a></li></ul></div><h2 id="1">Impulsive 4X optimization with interpolated inner laps</h2><p>LEO to GEO with inclination change</p><pre class="codeinput"><span class="comment">% Notes: for 3 / 3, InitialGuess and InitialGuessConst have quite different DV</span>
+<span class="comment">% profiles although the masses are within 3 kg.</span>
+<span class="comment">% 3 / 3 mass that was initialized from a 3/1 solution is substantially lower,</span>
+<span class="comment">% although DVs look quite different.</span>
+
+<span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+</pre><h2 id="2">Choose key and tween laps. Minimum of 2 key laps for tweens to be inserted.</h2><p>A tween of "1" is the same as no tweens - only the key laps are used.</p><pre class="codeinput">nKey = 3;
+nTween = 50;
+restart = false;
+
+<span class="comment">% Initial conditions</span>
+wArg = 0; <span class="comment">% pi/2;</span>
+elInitial = [6700 28*pi/180 0 wArg 0.002 -0.1];
+elFinal   = [42000 0 0 0 0.001 0.1];
+
+<span class="comment">% Analytical solution</span>
+[dvT, dv1, dv2, et, Di1] = OptDVIncFromEl( elInitial, elFinal );
+fprintf(<span class="string">'Analytical impulsive DV: %g km/s\n'</span>,dvT)
+[dvL] = LTPlaneChange( elInitial(1), elFinal(1), elFinal(2)-elInitial(2) );
+fprintf(<span class="string">'Low thrust spiral DV: %g km/s\n'</span>,dvL)
+</pre><pre class="codeoutput">Analytical impulsive DV: 4.20786 km/s
+Low thrust spiral DV: 5.8981 km/s
+</pre><h2 id="3">Optimize</h2><pre class="codeinput">data = OptimizeImpulsive4X;
+data.keyLaps = nKey;
+data.tweenLaps = nTween; <span class="comment">% Total laps are (key - 1)*tween + 1</span>
+totalLaps = (data.keyLaps-1)*data.tweenLaps + 1;
+fprintf(<span class="string">'Total number of laps: %d\n'</span>,totalLaps);
+<span class="comment">%data.elementMask = [0 1 0 0 0 0 1 1]; % apses</span>
+data.elementMask = [1 1 0 0 1 0 0 0];
+data.W = [0.001 3 1 1 2]; <span class="comment">% [sma inc raan w ecc]</span>
+data.doInitial = true;
+<span class="keyword">if</span> restart
+  data.doInitial = false;
+<span class="keyword">end</span>
+data.funGuess = @InitialGuess4X;
+
+costData = MassCostLinearFun;
+data.costData.sigma = 350;
+
+<span class="keyword">if</span> restart
+  data.dvsPrev = out.keydVsF;
+<span class="keyword">end</span>
+
+[burns, elOutput, out]=OptimizeImpulsive4X(elInitial,elFinal,[],data);
+</pre><pre class="codeoutput">Total number of laps: 101
+  Calculating initial feasible solution.
+                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0      13    5.745456e+02    4.958e-07    3.904e+01
+    1      31    5.450219e+02    2.238e+00    5.682e+01    1.732e+00
+    2      46    5.402566e+02    3.885e+00    1.121e+09    8.660e-01
+    3      65    5.171601e+02    1.478e+01    2.733e+01    4.330e-01
+    4      81    5.176860e+02    8.197e+00    5.927e+01    1.604e-02
+    5      94    5.190952e+02    6.271e+00    2.448e+01    2.569e-02
+    6     107    5.216185e+02    5.261e+00    6.843e+01    2.619e-02
+    7     121    5.216972e+02    5.222e+00    2.024e+01    1.702e-02
+
+Converged to an infeasible point.
+
+fmincon stopped because the size of the current step is less than
+the value of the step size tolerance but constraints are not
+satisfied to within the value of the constraint tolerance.
+
+</pre><img vspace="5" hspace="5" src="Demo4XLEOtoGEO_01.png" alt=""> <h2 id="4">Report</h2><pre class="codeinput">OptimizerReport(out)
+
+PlotImpulsiveTrajectory(elInitial, burns, elFinal);
+PlotElementsImpulsive(elInitial, burns);
+dVs = reshape(out.tweendVsF,4,[])';
+[time,tlabl] = TimeLabl(out.absTimes');
+Plot2D(time,out.burns(:,1)',tlabl,<span class="string">'DV'</span>,<span class="string">'Delta-V Magnitude'</span>)
+
+Plot2D(1:size(dVs,1),dVs,<span class="string">'Index'</span>,<span class="string">'DV'</span>,<span class="string">'Interpolated Delta-Vs'</span>)
+legend(<span class="string">'bP'</span>,<span class="string">'bA'</span>,<span class="string">'bN1'</span>,<span class="string">'bN2'</span>)
+
+NewFig(<span class="string">'Initial and Final Key DVs'</span>);
+bar([out.dVs0;out.keydVsF]')
+ylabel(<span class="string">'DV (km/s)'</span>)
+legend(<span class="string">'Guess'</span>,<span class="string">'Final'</span>)
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Total Delta-V (km/s):
+          4.86579493195725
+Number of burns:
+   202
+Initial elements, target, achieved:
+  Columns 1 through 3
+                      6700         0.488692190558412                         0
+                     42000                         0                         0
+          48691.2929260388      0.000501470266914412          3.14159265358979
+  Columns 4 through 6
+                         0                     0.002                      -0.1
+                         0                     0.001                       0.1
+          3.14159265358979         0.417107698837399          3.14159265358979
+Mission duration:
+	44.8403 Time (days)
+Cost value:
+          521.697184119179
+Iterations:
+     8
+Constraint value:
+          5.22158311661262
+Elapsed Time:
+	47.8805 sec
+System mass:
+	521.697 kg
+Masses:
+          391.163723557149          31.2930978845719           99.240362677458
+</pre><img vspace="5" hspace="5" src="Demo4XLEOtoGEO_02.png" alt=""> <img vspace="5" hspace="5" src="Demo4XLEOtoGEO_03.png" alt=""> <img vspace="5" hspace="5" src="Demo4XLEOtoGEO_04.png" alt=""> <img vspace="5" hspace="5" src="Demo4XLEOtoGEO_05.png" alt=""> <img vspace="5" hspace="5" src="Demo4XLEOtoGEO_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Impulsive 4X optimization with interpolated inner laps
+% LEO to GEO with inclination change
+
+% Notes: for 3 / 3, InitialGuess and InitialGuessConst have quite different DV
+% profiles although the masses are within 3 kg.
+% 3 / 3 mass that was initialized from a 3/1 solution is substantially lower,
+% although DVs look quite different.
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Choose key and tween laps. Minimum of 2 key laps for tweens to be inserted.
+% A tween of "1" is the same as no tweens - only the key laps are used.
+nKey = 3;
+nTween = 50;
+restart = false;
+
+% Initial conditions
+wArg = 0; % pi/2;
+elInitial = [6700 28*pi/180 0 wArg 0.002 -0.1];
+elFinal   = [42000 0 0 0 0.001 0.1];
+
+% Analytical solution
+[dvT, dv1, dv2, et, Di1] = OptDVIncFromEl( elInitial, elFinal );
+fprintf('Analytical impulsive DV: %g km/s\n',dvT)
+[dvL] = LTPlaneChange( elInitial(1), elFinal(1), elFinal(2)-elInitial(2) );
+fprintf('Low thrust spiral DV: %g km/s\n',dvL)
+
+%% Optimize
+data = OptimizeImpulsive4X;
+data.keyLaps = nKey;
+data.tweenLaps = nTween; % Total laps are (key - 1)*tween + 1
+totalLaps = (data.keyLaps-1)*data.tweenLaps + 1;
+fprintf('Total number of laps: %d\n',totalLaps);
+%data.elementMask = [0 1 0 0 0 0 1 1]; % apses
+data.elementMask = [1 1 0 0 1 0 0 0];
+data.W = [0.001 3 1 1 2]; % [sma inc raan w ecc] 
+data.doInitial = true;
+if restart
+  data.doInitial = false;
+end
+data.funGuess = @InitialGuess4X;
+
+costData = MassCostLinearFun;
+data.costData.sigma = 350;
+
+if restart
+  data.dvsPrev = out.keydVsF;
+end
+
+[burns, elOutput, out]=OptimizeImpulsive4X(elInitial,elFinal,[],data);
+
+%% Report
+OptimizerReport(out)
+
+PlotImpulsiveTrajectory(elInitial, burns, elFinal);
+PlotElementsImpulsive(elInitial, burns);
+dVs = reshape(out.tweendVsF,4,[])';
+[time,tlabl] = TimeLabl(out.absTimes');
+Plot2D(time,out.burns(:,1)',tlabl,'DV','Delta-V Magnitude')
+
+Plot2D(1:size(dVs,1),dVs,'Index','DV','Interpolated Delta-Vs')
+legend('bP','bA','bN1','bN2')
+
+NewFig('Initial and Final Key DVs'); 
+bar([out.dVs0;out.keydVsF]')
+ylabel('DV (km/s)')
+legend('Guess','Final')
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-27 16:44:12 -0400 (Fri, 27 Sep 2019) $
+% $Revision: 49894 $
+
+##### SOURCE END #####
+--></body></html>
