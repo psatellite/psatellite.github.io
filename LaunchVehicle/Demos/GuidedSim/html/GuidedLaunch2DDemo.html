@@ -1,0 +1,223 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulation of a guided launch with GuidedLaunch2DSim</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-07-10"><meta name="DC.source" content="GuidedLaunch2DDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulation of a guided launch with GuidedLaunch2DSim</h1><!--introduction--><p>The simulation ends at burnout. This is the same simulation used by LaunchGUI. The simulation allows you to scale the last stage of the vehicle.</p><p>See also: RocketDatabase, LaunchRHSData, GuidedLaunch2DSim, GuidedLaunch2DRHS</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Demo of Pegasus air launch</a></li><li><a href="#3">First case: direct ascent</a></li><li><a href="#4">Second case: indirect launch</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	  Copyright 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Demo of Pegasus air launch<a name="2"></a></h2><pre class="codeinput">rocket = RocketDatabase(<span class="string">'pegasus'</span>);
+d = LaunchRHSData(2,rocket);
+d.rhsFun = @GuidedLaunch2DRHS;
+
+fpa0  = 0.95;  <span class="comment">% flight path angle (rad)</span>
+scale = 1;    <span class="comment">% scale of last stage</span>
+coast = 0.5;  <span class="comment">% minutes</span>
+angle = 3;    <span class="comment">% degrees</span>
+
+<span class="comment">% Desired mass and initial conditions</span>
+d.mDes = 400;
+d.h0   = 12;   <span class="comment">% km</span>
+d.v0   = 0.25; <span class="comment">% km</span>
+</pre><h2>First case: direct ascent<a name="3"></a></h2><pre class="codeinput">d.direct = 1;
+params   = [fpa0 scale coast];
+
+[time,xTraj,dD] = GuidedLaunch2DSim( params, d );
+
+h = NewFig( <span class="string">'Guided Launch: Direct'</span> );
+set(h,<span class="string">'position'</span>,[0,400,1120,420]);
+subplot(1,2,1)
+plot(xTraj(:,1),xTraj(:,2)), set(gca,<span class="string">'fontsize'</span>,14)
+xlabel(<span class="string">'Range [km]'</span>), ylabel(<span class="string">'Alt [km]'</span>)
+hold <span class="string">on</span>, axis <span class="string">equal</span>, grid <span class="string">on</span>
+title(sprintf(<span class="string">'FLIGHT TIME = %4.0f SEC'</span>,time(end)))
+subplot(1,2,2), set(gca,<span class="string">'fontsize'</span>,14)
+[ax,H1,H2] = plotyy(time',xTraj(:,3)',time',xTraj(:,4)');
+grid <span class="string">on</span>, hold <span class="string">on</span>
+axes(ax(1))
+xlabel(<span class="string">'Time [s]'</span>), ylabel(<span class="string">'V [km/sec]'</span>)
+axes(ax(2))
+ylabel(<span class="string">'Gamma [rad]'</span>)
+title(sprintf(<span class="string">'V_{BO} = %2.2f KM/SEC, GAMMA_{BO} = %2.1f DEG'</span>,xTraj(end,3),xTraj(end,4)*180/pi));
+
+Plot2D(time',xTraj(:,5:7)',<span class="string">'Time (s)'</span>,{<span class="string">'1'</span>,<span class="string">'2'</span>,<span class="string">'3'</span>},<span class="string">'Fuel Mass (kg)'</span>)
+</pre><img vspace="5" hspace="5" src="GuidedLaunch2DDemo_01.png" alt=""> <img vspace="5" hspace="5" src="GuidedLaunch2DDemo_02.png" alt=""> <h2>Second case: indirect launch<a name="4"></a></h2><pre class="codeinput">d.direct = 0;
+params   = [fpa0 scale angle*pi/180];
+
+[time,xTraj,dID] = GuidedLaunch2DSim( params, d );
+
+h = NewFig( <span class="string">'Guided Launch: Indirect'</span> );
+set(h,<span class="string">'position'</span>,[0,400,1120,420]);
+subplot(1,2,1)
+plot(xTraj(:,1),xTraj(:,2)), set(gca,<span class="string">'fontsize'</span>,14)
+xlabel(<span class="string">'Range [km]'</span>), ylabel(<span class="string">'Alt [km]'</span>)
+hold <span class="string">on</span>, axis <span class="string">equal</span>, grid <span class="string">on</span>
+title(sprintf(<span class="string">'FLIGHT TIME = %4.0f SEC'</span>,time(end)))
+subplot(1,2,2), set(gca,<span class="string">'fontsize'</span>,14)
+[ax,H1,H2] = plotyy(time',xTraj(:,3)',time',xTraj(:,4)');
+grid <span class="string">on</span>, hold <span class="string">on</span>
+axes(ax(1))
+xlabel(<span class="string">'Time [s]'</span>), ylabel(<span class="string">'V [km/sec]'</span>)
+axes(ax(2))
+ylabel(<span class="string">'Gamma [rad]'</span>)
+title(sprintf(<span class="string">'V_{BO} = %2.2f KM/SEC, GAMMA_{BO} = %2.1f DEG'</span>,xTraj(end,3),xTraj(end,4)*180/pi));
+
+Plot2D(time',[xTraj(:,end)';(xTraj(:,4)+xTraj(:,end))']*180/pi,<span class="string">'Time [s]'</span>,<span class="keyword">...</span>
+  {<span class="string">'Control (\alpha)'</span>,<span class="string">'Total Angle (\gamma + \alpha)'</span>},<span class="string">'Thrust Angle from Horizonal (deg)'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="GuidedLaunch2DDemo_03.png" alt=""> <img vspace="5" hspace="5" src="GuidedLaunch2DDemo_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulation of a guided launch with GuidedLaunch2DSim
+% The simulation ends at burnout. This is the same simulation used by
+% LaunchGUI. The simulation allows you to scale the last stage of the
+% vehicle.
+%
+% See also: RocketDatabase, LaunchRHSData, GuidedLaunch2DSim, GuidedLaunch2DRHS
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	  Copyright 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Demo of Pegasus air launch
+rocket = RocketDatabase('pegasus');
+d = LaunchRHSData(2,rocket);
+d.rhsFun = @GuidedLaunch2DRHS;
+
+fpa0  = 0.95;  % flight path angle (rad)
+scale = 1;    % scale of last stage
+coast = 0.5;  % minutes
+angle = 3;    % degrees
+
+% Desired mass and initial conditions
+d.mDes = 400;
+d.h0   = 12;   % km
+d.v0   = 0.25; % km
+
+%% First case: direct ascent
+d.direct = 1;
+params   = [fpa0 scale coast];
+
+[time,xTraj,dD] = GuidedLaunch2DSim( params, d );
+
+h = NewFig( 'Guided Launch: Direct' );
+set(h,'position',[0,400,1120,420]);
+subplot(1,2,1)
+plot(xTraj(:,1),xTraj(:,2)), set(gca,'fontsize',14)
+xlabel('Range [km]'), ylabel('Alt [km]')
+hold on, axis equal, grid on
+title(sprintf('FLIGHT TIME = %4.0f SEC',time(end)))
+subplot(1,2,2), set(gca,'fontsize',14)
+[ax,H1,H2] = plotyy(time',xTraj(:,3)',time',xTraj(:,4)');
+grid on, hold on
+axes(ax(1))
+xlabel('Time [s]'), ylabel('V [km/sec]')
+axes(ax(2))
+ylabel('Gamma [rad]')
+title(sprintf('V_{BO} = %2.2f KM/SEC, GAMMA_{BO} = %2.1f DEG',xTraj(end,3),xTraj(end,4)*180/pi));
+
+Plot2D(time',xTraj(:,5:7)','Time (s)',{'1','2','3'},'Fuel Mass (kg)')
+
+%% Second case: indirect launch
+d.direct = 0;
+params   = [fpa0 scale angle*pi/180];
+
+[time,xTraj,dID] = GuidedLaunch2DSim( params, d );
+
+h = NewFig( 'Guided Launch: Indirect' );
+set(h,'position',[0,400,1120,420]);
+subplot(1,2,1)
+plot(xTraj(:,1),xTraj(:,2)), set(gca,'fontsize',14)
+xlabel('Range [km]'), ylabel('Alt [km]')
+hold on, axis equal, grid on
+title(sprintf('FLIGHT TIME = %4.0f SEC',time(end)))
+subplot(1,2,2), set(gca,'fontsize',14)
+[ax,H1,H2] = plotyy(time',xTraj(:,3)',time',xTraj(:,4)');
+grid on, hold on
+axes(ax(1))
+xlabel('Time [s]'), ylabel('V [km/sec]')
+axes(ax(2))
+ylabel('Gamma [rad]')
+title(sprintf('V_{BO} = %2.2f KM/SEC, GAMMA_{BO} = %2.1f DEG',xTraj(end,3),xTraj(end,4)*180/pi));
+
+Plot2D(time',[xTraj(:,end)';(xTraj(:,4)+xTraj(:,end))']*180/pi,'Time [s]',...
+  {'Control (\alpha)','Total Angle (\gamma + \alpha)'},'Thrust Angle from Horizonal (deg)')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-07-10 11:46:19 -0400 (Fri, 10 Jul 2015) $
+% $Revision: 8612 $
+
+##### SOURCE END #####
+--></body></html>

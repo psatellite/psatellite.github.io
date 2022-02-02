@@ -1,0 +1,188 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Guided 3D simulation of an example 4 stage rocket</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-07-09"><meta name="DC.source" content="Guided3DSimDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Guided 3D simulation of an example 4 stage rocket</h1><!--introduction--><p>The rocket is simulated using a fixed-timestep integration. Pitchover occurs at a predetermined time.</p><p>See also GuidedLaunch3D, GuidedLaunch3DRHS.</p><!--/introduction--><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	 Copyright (c) 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%  All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Rocket</span>
+rocket = RocketDatabase(<span class="string">'examplerocket'</span>);
+
+<span class="comment">% Launch site - latitude, longitude, altitude</span>
+lla0   = [0;-pi/2;11];
+
+<span class="comment">% Initial velocity (km/s) and flight path angle (rad)</span>
+vg0    = [.237; 81*pi/180];
+
+<span class="comment">% Target conditions, altitude, inclination, right ascension.</span>
+altDes = 350;         <span class="comment">% km</span>
+incDes = 51.6*pi/180; <span class="comment">% rad</span>
+raDes  = 0;           <span class="comment">% rad</span>
+jD0 = JD2000;
+
+<span class="comment">% Parameters</span>
+<span class="comment">% Specify pitchover angle and time, and whether to use J2 perturbations</span>
+params = GuidedLaunch3D;
+params.fControl{1} = @ThrustControlGravityTurn;
+params.fControl{2} = @ThrustControlConstantAngle;
+params.fControl{3} = @ThrustControlConstantAngle;
+params.fControl{4} = @ThrustControlRaiseApogee;
+params.fParams{1} = struct(<span class="string">'minAlt'</span>,0);
+params.fParams{2} = struct(<span class="string">'minAlt'</span>,0,<span class="string">'angle'</span>,0);
+params.fParams{3} = struct(<span class="string">'minAlt'</span>,0,<span class="string">'angle'</span>,5*pi/180);
+params.fParams{4} = struct(<span class="string">'rA'</span>,6378+altDes);
+
+<span class="comment">% Simulation</span>
+sim = GuidedLaunch3D( rocket, lla0, vg0, altDes, incDes, raDes, jD0, params )
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Predicted burnout velocity: 9.174282 km/s, time: 480.189447 s
+Stage 1, Alt 11.0 km, Vel 0.536 km/s, FPA 81.000 deg, VBar 0.068
+Flight path angle after pitchover: 80.590901 deg, Alt 11.259 km, Vel 0.538 km/s
+Stage 2, Alt 62.4 km, Vel 2.027 km/s, FPA 36.998 deg, VBar 0.258
+Stage 3, Alt 124.6 km, Vel 4.397 km/s, FPA 5.671 deg, VBar 0.562
+Stage 4, Alt 152.6 km, Vel 7.744 km/s, FPA 2.201 deg, VBar 0.991
+Max altitude of 349.047318 km reached at 1341.300000 seconds.
+
+sim = 
+
+        input: [1x1 struct]
+          VBO: [2.03103518349312 4.40064593571958 7.74732312447597]
+      gammaBO: [0.575375139166721 0.09604583981044 0.0420481735909777]
+      thetaBO: [-0.0110590935642422 -0.0474921217499283 -0.12953976204687]
+        altBO: [62.4411271654208 124.63100089882 152.601326530009]
+      rangeBO: [-70.5364470258358 -302.911401418087 -826.222737901625]
+          kBO: [962 1796 2729]
+       timeBO: [96.0999999999988 179.499999999994 272.799999999994]
+        range: [1x27461 double]
+          alt: [1x27461 double]
+         time: [1x27461 double]
+           xs: [10x27461 double]
+          rOP: [3x27461 double]
+          rEF: [3x27461 double]
+        gamma: [1x27461 double]
+        mFuel: [4x27461 double]
+    thrustDir: [3x27461 double]
+    thrustMag: [1x27461 double]
+
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Guided 3D simulation of an example 4 stage rocket
+% The rocket is simulated using a fixed-timestep integration.
+% Pitchover occurs at a predetermined time.
+%
+% See also GuidedLaunch3D, GuidedLaunch3DRHS.
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	 Copyright (c) 2014 Princeton Satellite Systems, Inc. 
+%  All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Rocket
+rocket = RocketDatabase('examplerocket');
+
+% Launch site - latitude, longitude, altitude
+lla0   = [0;-pi/2;11];
+
+% Initial velocity (km/s) and flight path angle (rad)
+vg0    = [.237; 81*pi/180];
+
+% Target conditions, altitude, inclination, right ascension.
+altDes = 350;         % km
+incDes = 51.6*pi/180; % rad
+raDes  = 0;           % rad
+jD0 = JD2000;
+
+% Parameters
+% Specify pitchover angle and time, and whether to use J2 perturbations
+params = GuidedLaunch3D;
+params.fControl{1} = @ThrustControlGravityTurn;
+params.fControl{2} = @ThrustControlConstantAngle;
+params.fControl{3} = @ThrustControlConstantAngle;
+params.fControl{4} = @ThrustControlRaiseApogee;
+params.fParams{1} = struct('minAlt',0);
+params.fParams{2} = struct('minAlt',0,'angle',0);
+params.fParams{3} = struct('minAlt',0,'angle',5*pi/180);
+params.fParams{4} = struct('rA',6378+altDes);
+
+% Simulation
+sim = GuidedLaunch3D( rocket, lla0, vg0, altDes, incDes, raDes, jD0, params )
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-07-09 11:36:11 -0400 (Thu, 09 Jul 2015) $
+% $Revision: 8584 $
+
+##### SOURCE END #####
+--></body></html>

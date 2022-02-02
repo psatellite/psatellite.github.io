@@ -1,0 +1,256 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Launch vehicle simulation for single stage to orbit (SSTO) vertical launch</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-07-09"><meta name="DC.source" content="SSTOLaunchSimulation.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Launch vehicle simulation for single stage to orbit (SSTO) vertical launch</h1><!--introduction--><p>Simulates a gravity turn trajectory in 2D. The goal is to get the vehicle moving horizontally at orbital velocity. This demo performs a single simulation. See also SolveGravityTurn, which performs a numerical search for the desired initial flight path angle.</p><p>Uses RHSLaunchVehicle2D which has a 'flat' earth. The simulation can handle any number of sequential stages.</p><p>You vary the pitchover angle to get different trajectories. The number in the script gives the vehicle a horizontal trajectory (that begins to drop due to drag) at 68 km. The trajectory is very sensitive to gammaPitchover.</p><pre>------------------------------------------------------------------------
+See also RHSLaunchVehicle2D, Plot2D, TimeLabl, RK4, MSThrustModel
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Time and Control</a></li><li><a href="#3">Vehicle model and RHS data</a></li><li><a href="#4">Run the sim</a></li><li><a href="#5">Generate plots</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2>Time and Control<a name="2"></a></h2><pre class="codeinput"><span class="comment">%------------------</span>
+nSim           = 300;
+dT             = 1;      <span class="comment">% sec</span>
+gammaPitchover = 0.0035; <span class="comment">% rad</span>
+kPitch         = 10;     <span class="comment">% steps</span>
+</pre><h2>Vehicle model and RHS data<a name="3"></a></h2><pre class="codeinput">mSS    = [  5000]; <span class="comment">% Dry mass of each stage</span>
+mSP    = [100000]; <span class="comment">% Propellant mass of each stage</span>
+thrust = [1400];   <span class="comment">% Thrust of each stage (kN)</span>
+Isp    = [405];    <span class="comment">% Specific impulse (s)</span>
+lv     = CreateRocketModel( mSS, mSP, thrust, Isp, <span class="string">'demo'</span>, <span class="string">'s'</span> );
+d      = LaunchRHSData( 2, lv );
+d.cDA  = 0.35*2; <span class="comment">% Drag coefficient of each stage times area</span>
+
+<span class="comment">%-----------------------------------------</span>
+<span class="comment">% State: [x  h  v  gamma massFuel]</span>
+<span class="comment">%                x     Downrange distance</span>
+<span class="comment">%                h     Altitude</span>
+<span class="comment">%                v     Velocity</span>
+<span class="comment">%                gamma Flight path angle</span>
+<span class="comment">%-----------------------------------------</span>
+x              = [0; 0; 0; pi/2; lv.mSP'];
+
+<span class="comment">% Store plot points in x</span>
+<span class="comment">%-----------------------</span>
+x              = [x zeros(length(x),nSim)];
+</pre><h2>Run the sim<a name="4"></a></h2><pre class="codeinput"><span class="comment">%------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Initiate pitchover</span>
+  <span class="comment">%-------------------</span>
+  <span class="keyword">if</span>( k == kPitch )
+    x(4,k) = pi/2 - gammaPitchover;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Propagate one step</span>
+  <span class="comment">%-------------------</span>
+  x(:,k+1) = RK4( @RHSLaunchVehicle2D, x(:,k), dT, 0, d );
+
+  <span class="keyword">if</span>( x(2,k+1) &lt;= 0 ) <span class="keyword">break</span>; <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+nSim = k;
+x    = x(:,1:(nSim+1));
+</pre><h2>Generate plots<a name="5"></a></h2><pre class="codeinput"><span class="comment">% Plot the trajectory</span>
+<span class="comment">%--------------------</span>
+Plot2D( x(1,:), x(2,:), <span class="string">'X (km)'</span>, <span class="string">'H (km)'</span>, <span class="string">'LV Trajectory'</span>);
+
+<span class="comment">% Create the time array and label</span>
+<span class="comment">%--------------------------------</span>
+[t, tL] = TimeLabl( (0:nSim)*dT );
+
+<span class="comment">% Compute the mass</span>
+<span class="comment">%-----------------</span>
+m = x(5,:) + lv.mSS(1);
+
+yL = {<span class="string">'LV Mass (kg)'</span> <span class="string">'Fuel (kg)'</span> };
+
+<span class="comment">% Plot the mass</span>
+<span class="comment">%--------------</span>
+Plot2D( t, [m;x(5,:)], tL, yL, <span class="string">'LV Mass'</span>);
+
+<span class="comment">% Plot the states</span>
+<span class="comment">%----------------</span>
+yL = {<span class="string">'X (km)'</span> <span class="string">'H (km)'</span> <span class="string">'V (km/s)'</span> <span class="string">'\gamma (rad)'</span>};
+Plot2D( t, x(1:4,:), tL, yL, <span class="string">'LV States'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SSTOLaunchSimulation_01.png" alt=""> <img vspace="5" hspace="5" src="SSTOLaunchSimulation_02.png" alt=""> <img vspace="5" hspace="5" src="SSTOLaunchSimulation_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Launch vehicle simulation for single stage to orbit (SSTO) vertical launch
+%
+% Simulates a gravity turn trajectory in 2D. The goal is to get the vehicle
+% moving horizontally at orbital velocity. This demo performs a single
+% simulation. See also SolveGravityTurn, which performs a numerical search
+% for the desired initial flight path angle.
+% 
+% Uses RHSLaunchVehicle2D which has a 'flat' earth. The simulation can handle
+% any number of sequential stages.
+% 
+% You vary the pitchover angle to get different trajectories. The number in
+% the script gives the vehicle a horizontal trajectory (that begins to
+% drop due to drag) at 68 km. The trajectory is very sensitive to
+% gammaPitchover.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also RHSLaunchVehicle2D, Plot2D, TimeLabl, RK4, MSThrustModel
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright (c) 2007 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Time and Control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim           = 300;
+dT             = 1;      % sec
+gammaPitchover = 0.0035; % rad
+kPitch         = 10;     % steps
+
+%% Vehicle model and RHS data
+mSS    = [  5000]; % Dry mass of each stage
+mSP    = [100000]; % Propellant mass of each stage
+thrust = [1400];   % Thrust of each stage (kN)
+Isp    = [405];    % Specific impulse (s)
+lv     = CreateRocketModel( mSS, mSP, thrust, Isp, 'demo', 's' );
+d      = LaunchRHSData( 2, lv );
+d.cDA  = 0.35*2; % Drag coefficient of each stage times area
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% State: [x  h  v  gamma massFuel]
+%                x     Downrange distance
+%                h     Altitude
+%                v     Velocity
+%                gamma Flight path angle
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x              = [0; 0; 0; pi/2; lv.mSP'];
+
+% Store plot points in x
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x              = [x zeros(length(x),nSim)];
+
+%% Run the sim
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim
+
+  % Initiate pitchover
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( k == kPitch )
+    x(4,k) = pi/2 - gammaPitchover;
+  end
+
+  % Propagate one step
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x(:,k+1) = RK4( @RHSLaunchVehicle2D, x(:,k), dT, 0, d );
+
+  if( x(2,k+1) <= 0 ) break; end
+
+end
+
+nSim = k;
+x    = x(:,1:(nSim+1));
+
+%% Generate plots
+
+% Plot the trajectory
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+Plot2D( x(1,:), x(2,:), 'X (km)', 'H (km)', 'LV Trajectory');
+
+% Create the time array and label
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t, tL] = TimeLabl( (0:nSim)*dT );
+
+% Compute the mass
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+m = x(5,:) + lv.mSS(1);
+
+yL = {'LV Mass (kg)' 'Fuel (kg)' };
+
+% Plot the mass
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH  
+Plot2D( t, [m;x(5,:)], tL, yL, 'LV Mass');
+
+% Plot the states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+yL = {'X (km)' 'H (km)' 'V (km/s)' '\gamma (rad)'};
+Plot2D( t, x(1:4,:), tL, yL, 'LV States');
+
+ 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-07-09 14:20:20 -0400 (Thu, 09 Jul 2015) $
+% $Revision: 8606 $
+
+
+##### SOURCE END #####
+--></body></html>

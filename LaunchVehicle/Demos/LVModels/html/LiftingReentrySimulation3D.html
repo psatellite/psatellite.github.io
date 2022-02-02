@@ -1,0 +1,247 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-05-22"><meta name="DC.source" content="LiftingReentrySimulation3D.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m</h1><!--introduction--><p>The vehicle starts at 380 km, the ISS altitude. It does a delta-v to do a Hohmann transfer to 40 km where drag causes reentry. You can control reentry using angle of attack (d.alpha).  ------------------------------------------------------------------------  See also Plot2D, TimeLabl, Dot, Mag, RK4, Unit, DVHoh, RHSLiftingReentry3D  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Hohmann transfer to 70 km</a></li><li><a href="#3">Run the sim</a></li><li><a href="#4">Calculate the heating rate history</a></li><li><a href="#5">Plot the states</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2009 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+nSim           = 4800;
+dT             = 1;
+
+
+d.rPlanet      = 6378.165;
+d.omega        = 2*pi/86400;
+d.alpha        = 0;
+d.l            = 10;
+d.sRef         = 20;
+d.oswaldEff    = 0.95;
+d.aspectRatio  = 6;
+d.thickness    = 0.01;
+d.cLAlpha      = 10;
+d.mu           = 3.9860036e5; <span class="comment">% km/s^2</span>
+d.mass         = 100;
+d.mHyper       = 7;
+
+r0             = d.rPlanet + 380;
+r              = [r0;0;0];
+rI             = d.rPlanet +  40;
+</pre><h2>Hohmann transfer to 70 km<a name="2"></a></h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+[dV, dV1, dVI] = DVHoh( rI, r0, sqrt(d.mu/rI) );
+v              = [0;sqrt(d.mu/r0) - dVI;0];
+x0             = [r;v]; <span class="comment">% Last number is mass of fuel</span>
+</pre><h2>Run the sim<a name="3"></a></h2><pre class="codeinput"><span class="comment">% Store plot points in x</span>
+<span class="comment">%-----------------------</span>
+x = [x0 zeros(length(x0),nSim)];
+f = [LiftAndDragSeaLevelToOrbit(x0,d)/d.mass zeros(3,nSim)];
+
+<span class="keyword">for</span> k = 1:nSim
+  x(:,k+1) = RK4( @RHSLiftingReentry3D, x(:,k), dT, 0, d );
+  f(:,k+1) = LiftAndDragSeaLevelToOrbit(x(:,k),d)/d.mass;
+  <span class="keyword">if</span>( Mag(x(1:3,k+1)) - d.rPlanet &lt;= eps ) <span class="keyword">break</span>; <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+x    = x(:,1:(k+1));
+f    = f(:,1:(k+1));
+</pre><h2>Calculate the heating rate history<a name="4"></a></h2><pre class="codeinput"><span class="comment">%------------------------------------</span>
+d.time = (0:k)*dT;
+d.velocity = Mag(x(4:6,:))*1000;
+d.aoa = d.alpha;
+d.altitude = (Mag(x(1:3,:)) - d.rPlanet)*1000;
+k2 = find(d.altitude &lt; 80000,1);
+d.time = d.time(k2:end);
+d.velocity = d.velocity(k2:end);
+d.altitude = d.altitude (k2:end);
+qDot = AeroHeatFlux( d, d.l, <span class="string">'laminar plate'</span> );
+</pre><h2>Plot the states<a name="5"></a></h2><pre class="codeinput"><span class="comment">% Create the time array and label</span>
+<span class="comment">%--------------------------------</span>
+[t, tL] = TimeLabl( (0:k)*dT );
+
+yL = {<span class="string">'X (km)'</span> <span class="string">'H (km)'</span> <span class="string">'V (km/s)'</span> <span class="string">'dh/dt (m/s)'</span>};
+dhdt = Dot(Unit(x(1:3,:)),x(4:6,:))*1000;
+
+h = Mag(x(1:3,:)) - d.rPlanet;
+Plot2D( t, [x(1,:);h;Mag(x(4:6,:));dhdt], tL, yL, <span class="string">'2D States'</span>);
+yL = {<span class="string">'X (km)'</span> <span class="string">'Y (km)'</span> <span class="string">'Z (km)'</span> <span class="string">'V_x (km/s)'</span> <span class="string">'V_y (km/s)'</span> <span class="string">'V_z (km/s)'</span>};
+Plot2D( t, x(1:6,:), tL, yL, <span class="string">'States'</span>);
+
+yL = {<span class="string">'Acceleration (m/s^2)'</span>};
+Plot2D( t, Mag(f), tL, yL, <span class="string">'Acceleration'</span>);
+
+[t, tL] = TimeLabl( d.time );
+yL = {<span class="string">'Heat Flux (W/m^2)'</span>};
+Plot2D( t, qDot, tL, yL, <span class="string">'Heat Flux '</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LiftingReentrySimulation3D_01.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_02.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_03.png" alt=""> <img vspace="5" hspace="5" src="LiftingReentrySimulation3D_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% A reentry simulation with lift and drag forces. Uses LiftingReentry3D.m
+% The vehicle starts at 380 km, the ISS altitude. It does a delta-v to do a
+% Hohmann transfer to 40 km where drag causes reentry. You can control
+% reentry using angle of attack (d.alpha).
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TimeLabl, Dot, Mag, RK4, Unit, DVHoh, RHSLiftingReentry3D
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%    Copyright (c) 2009 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+nSim           = 4800;
+dT             = 1;
+
+
+d.rPlanet      = 6378.165;
+d.omega        = 2*pi/86400;
+d.alpha        = 0;
+d.l            = 10;
+d.sRef         = 20;
+d.oswaldEff    = 0.95;
+d.aspectRatio  = 6;
+d.thickness    = 0.01;
+d.cLAlpha      = 10;
+d.mu           = 3.9860036e5; % km/s^2
+d.mass         = 100;
+d.mHyper       = 7;
+
+r0             = d.rPlanet + 380;
+r              = [r0;0;0];
+rI             = d.rPlanet +  40;
+
+
+%% Hohmann transfer to 70 km
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[dV, dV1, dVI] = DVHoh( rI, r0, sqrt(d.mu/rI) );
+v              = [0;sqrt(d.mu/r0) - dVI;0];
+x0             = [r;v]; % Last number is mass of fuel
+
+%% Run the sim
+
+% Store plot points in x
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x = [x0 zeros(length(x0),nSim)];
+f = [LiftAndDragSeaLevelToOrbit(x0,d)/d.mass zeros(3,nSim)];
+
+for k = 1:nSim
+  x(:,k+1) = RK4( @RHSLiftingReentry3D, x(:,k), dT, 0, d );
+  f(:,k+1) = LiftAndDragSeaLevelToOrbit(x(:,k),d)/d.mass;
+  if( Mag(x(1:3,k+1)) - d.rPlanet <= eps ) break; end
+  
+end
+ 
+x    = x(:,1:(k+1));
+f    = f(:,1:(k+1));
+
+%% Calculate the heating rate history
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.time = (0:k)*dT;
+d.velocity = Mag(x(4:6,:))*1000;
+d.aoa = d.alpha;
+d.altitude = (Mag(x(1:3,:)) - d.rPlanet)*1000;
+k2 = find(d.altitude < 80000,1);
+d.time = d.time(k2:end);
+d.velocity = d.velocity(k2:end);
+d.altitude = d.altitude (k2:end);
+qDot = AeroHeatFlux( d, d.l, 'laminar plate' );
+
+%% Plot the states
+
+% Create the time array and label
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t, tL] = TimeLabl( (0:k)*dT );
+
+yL = {'X (km)' 'H (km)' 'V (km/s)' 'dh/dt (m/s)'};
+dhdt = Dot(Unit(x(1:3,:)),x(4:6,:))*1000;
+
+h = Mag(x(1:3,:)) - d.rPlanet;
+Plot2D( t, [x(1,:);h;Mag(x(4:6,:));dhdt], tL, yL, '2D States');
+yL = {'X (km)' 'Y (km)' 'Z (km)' 'V_x (km/s)' 'V_y (km/s)' 'V_z (km/s)'};
+Plot2D( t, x(1:6,:), tL, yL, 'States');
+
+yL = {'Acceleration (m/s^2)'};
+Plot2D( t, Mag(f), tL, yL, 'Acceleration');
+
+[t, tL] = TimeLabl( d.time );
+yL = {'Heat Flux (W/m^2)'};
+Plot2D( t, qDot, tL, yL, 'Heat Flux ' );
+
+ 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-04-01 12:28:02 -0400 (Wed, 01 Apr 2015) $
+% $Revision: 8554 $
+
+
+##### SOURCE END #####
+--></body></html>

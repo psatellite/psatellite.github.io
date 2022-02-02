@@ -1,0 +1,266 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>GravityTurnDemo</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-07-10"><meta name="DC.source" content="GravityTurnDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Gravity turn trajectories.</a></li><li><a href="#3">Specify the model</a></li><li><a href="#4">First, replicate the plot in the reference</a></li><li><a href="#5">Sensitivity analysis</a></li><li><a href="#6">Optimization</a></li></ul></div><h2>Gravity turn trajectories.<a name="1"></a></h2><p>Perform multiple gravity-turn trajectories for the classic Von Braun shuttle design in the reference. As prescribed, the specified "kick angles" differ by less than one degree. Then, we perform a sensitivity analysis for a range of pitchover angles and plot the ratio of the final velocity to orbital velocity. Finally, an optimization is performed with fzero to find the pitchover angle which will result in a zero flight path angle at burnout (horizontal flight).</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Reference:	Wiesel, W. E., Spaceflight Dynamics, McGraw-Hill, 1988,</span>
+<span class="comment">%               pp. 207-211 and table 7-2.</span>
+<span class="comment">%</span>
+<span class="comment">% See also: LaunchRHSData, MSThrustModel, GravityTurnSim2D, FGravityTurn</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2>Specify the model<a name="3"></a></h2><pre class="codeinput">rocket         = VonBraunRocket;
+d              = LaunchRHSData( 2, rocket );
+d.cDA          = 0.35*[30 20 10]; <span class="comment">% Drag coefficient of each stage times area</span>
+d.fThrust      = @MSThrustModel;
+pitchover      = [19 19.45 20.4]; <span class="comment">% degrees</span>
+tPitch         = 10;   <span class="comment">% sec</span>
+</pre><h2>First, replicate the plot in the reference<a name="4"></a></h2><pre class="codeinput">traj = {};
+<span class="keyword">for</span> k = 1:length(pitchover)
+  disp(<span class="string">' '</span>)
+  traj{k} = GravityTurnSim2D( d, pitchover(k), tPitch );
+  fprintf(1,<span class="string">'\tFinal velocity: %f\n'</span>,traj{k}.x(3,end));
+  fprintf(1,<span class="string">'\tOrbital velocity: %f\n'</span>,VOrbit(d.Rp+traj{k}.x(2,end)));
+<span class="keyword">end</span>
+
+xPlot = traj{1}.x;
+Plot2D(xPlot(1,:),xPlot(2,:),<span class="string">'X (km)'</span>,<span class="string">'H km'</span>,<span class="string">'Gravity-Turn Trajectories'</span>);
+hold <span class="string">on</span>
+kFirst = find(diff(xPlot(6,:)),1,<span class="string">'first'</span>);
+kSecnd = find(diff(xPlot(6,:)),1,<span class="string">'last'</span>);
+plot(xPlot(1,kFirst),xPlot(2,kFirst),<span class="string">'*'</span>)
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),<span class="string">'*'</span>)
+xPlot = traj{2}.x;
+plot(xPlot(1,:),xPlot(2,:),<span class="string">'g'</span>)
+kFirst = find(diff(xPlot(6,:)),1,<span class="string">'first'</span>);
+kSecnd = find(diff(xPlot(6,:)),1,<span class="string">'last'</span>);
+plot(xPlot(1,kFirst),xPlot(2,kFirst),<span class="string">'*'</span>)
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),<span class="string">'*'</span>)
+xPlot = traj{3}.x;
+plot(xPlot(1,:),xPlot(2,:),<span class="string">'r'</span>)
+kFirst = find(diff(xPlot(6,:)),1,<span class="string">'first'</span>);
+kSecnd = find(diff(xPlot(6,:)),1,<span class="string">'last'</span>);
+plot(xPlot(1,kFirst),xPlot(2,kFirst),<span class="string">'*'</span>)
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),<span class="string">'*'</span>)
+</pre><pre class="codeoutput"> 
+	Pitch-over altitude: 0.419161 km
+	Pitch-over velocity: 0.095632 km/s
+	Final velocity: 8.880810
+	Orbital velocity: 7.845701
+ 
+	Pitch-over altitude: 0.419161 km
+	Pitch-over velocity: 0.095632 km/s
+	Final velocity: 8.897186
+	Orbital velocity: 7.860522
+ 
+	Pitch-over altitude: 0.419161 km
+	Pitch-over velocity: 0.095632 km/s
+	Final velocity: 7.101403
+	Orbital velocity: 7.891829
+</pre><img vspace="5" hspace="5" src="GravityTurnDemo_01.png" alt=""> <h2>Sensitivity analysis<a name="5"></a></h2><p>Next, look at the sensitivity for a larger array of initial pitchover angles. The ratio of the final velocity to orbital velocity is plotted.</p><pre class="codeinput">disp(<span class="string">'Evaluate 100 pitch angles...'</span>)
+angles = linspace(18,20.5,100);
+fpa = zeros(1,100);
+vel = zeros(1,100);
+<span class="keyword">for</span> k = 1:100
+  traj = GravityTurnSim2D( d, angles(k), tPitch, false );
+  fpa(k) = traj.x(4,end);
+  vel(k) = traj.x(3,end)/VOrbit(traj.x(2,end)+d.Rp);
+<span class="keyword">end</span>
+Plot2D(angles,[fpa*180/pi;vel],<span class="string">'Initial FPA'</span>,{<span class="string">'Burnout FPA'</span>,<span class="string">'Velocity Ratio'</span>},<span class="string">'Pitchover Sensitivity'</span>);
+kVel = find(vel&gt;1,1,<span class="string">'last'</span>);
+kFPA = find(fpa&gt;0,1,<span class="string">'last'</span>);
+subplot(2,1,2)
+hold <span class="string">on</span>
+plot(angles(kVel),vel(kVel),<span class="string">'*'</span>)
+plot(angles(kFPA),vel(kFPA),<span class="string">'r*'</span>)
+subplot(2,1,1)
+hold <span class="string">on</span>
+plot(angles(kVel),fpa(kVel)*180/pi,<span class="string">'*'</span>)
+plot(angles(kFPA),fpa(kFPA)*180/pi,<span class="string">'r*'</span>)
+</pre><pre class="codeoutput">Evaluate 100 pitch angles...
+</pre><img vspace="5" hspace="5" src="GravityTurnDemo_02.png" alt=""> <h2>Optimization<a name="6"></a></h2><p>Finally, perform an optimization for the target pitchover angle</p><pre class="codeinput">fpaOpt = fzero(@(x) FGravityTurn(x,d,tPitch),19);
+traj = GravityTurnSim2D( d, fpaOpt, tPitch );
+Plot2D(traj.x(1,:),traj.x(2,:),<span class="string">'X (km)'</span>,<span class="string">'H km'</span>,<span class="string">'Optimal Gravity-Turn Trajectory'</span>);
+fprintf(1,<span class="string">'\n\tPitchover with zero burnout FPA: %f\n'</span>,fpaOpt);
+fprintf(1,<span class="string">'\tFinal velocity: %f\n'</span>,traj.x(3,end));
+fprintf(1,<span class="string">'\tOrbital velocity: %f\n'</span>,VOrbit(d.Rp+traj.x(2,end)));
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">	Pitch-over altitude: 0.419161 km
+	Pitch-over velocity: 0.095632 km/s
+
+	Pitchover with zero burnout FPA: 19.584045
+	Final velocity: 8.895501
+	Orbital velocity: 7.864934
+</pre><img vspace="5" hspace="5" src="GravityTurnDemo_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Gravity turn trajectories.
+% Perform multiple gravity-turn trajectories for the classic Von Braun
+% shuttle design in the reference. As prescribed, the specified "kick
+% angles" differ by less than one degree. Then, we perform a sensitivity
+% analysis for a range of pitchover angles and plot the ratio of the final
+% velocity to orbital velocity. Finally, an optimization is performed with
+% fzero to find the pitchover angle which will result in a zero flight
+% path angle at burnout (horizontal flight).
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Reference:	Wiesel, W. E., Spaceflight Dynamics, McGraw-Hill, 1988,
+%               pp. 207-211 and table 7-2.
+%
+% See also: LaunchRHSData, MSThrustModel, GravityTurnSim2D, FGravityTurn
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%    Copyright (c) 2014 Princeton Satellite Systems, Inc.
+%    All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Specify the model
+rocket         = VonBraunRocket;
+d              = LaunchRHSData( 2, rocket );
+d.cDA          = 0.35*[30 20 10]; % Drag coefficient of each stage times area
+d.fThrust      = @MSThrustModel;
+pitchover      = [19 19.45 20.4]; % degrees
+tPitch         = 10;   % sec
+
+%% First, replicate the plot in the reference
+traj = {};
+for k = 1:length(pitchover)
+  disp(' ')
+  traj{k} = GravityTurnSim2D( d, pitchover(k), tPitch );
+  fprintf(1,'\tFinal velocity: %f\n',traj{k}.x(3,end));
+  fprintf(1,'\tOrbital velocity: %f\n',VOrbit(d.Rp+traj{k}.x(2,end)));
+end
+
+xPlot = traj{1}.x;
+Plot2D(xPlot(1,:),xPlot(2,:),'X (km)','H km','Gravity-Turn Trajectories');
+hold on
+kFirst = find(diff(xPlot(6,:)),1,'first');
+kSecnd = find(diff(xPlot(6,:)),1,'last');
+plot(xPlot(1,kFirst),xPlot(2,kFirst),'*')
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),'*')
+xPlot = traj{2}.x;
+plot(xPlot(1,:),xPlot(2,:),'g')
+kFirst = find(diff(xPlot(6,:)),1,'first');
+kSecnd = find(diff(xPlot(6,:)),1,'last');
+plot(xPlot(1,kFirst),xPlot(2,kFirst),'*')
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),'*')
+xPlot = traj{3}.x;
+plot(xPlot(1,:),xPlot(2,:),'r')
+kFirst = find(diff(xPlot(6,:)),1,'first');
+kSecnd = find(diff(xPlot(6,:)),1,'last');
+plot(xPlot(1,kFirst),xPlot(2,kFirst),'*')
+plot(xPlot(1,kSecnd),xPlot(2,kSecnd),'*')
+
+%% Sensitivity analysis
+% Next, look at the sensitivity for a larger array of initial pitchover
+% angles. The ratio of the final velocity to orbital velocity is plotted.
+disp('Evaluate 100 pitch angles...')
+angles = linspace(18,20.5,100);
+fpa = zeros(1,100);
+vel = zeros(1,100);
+for k = 1:100
+  traj = GravityTurnSim2D( d, angles(k), tPitch, false );
+  fpa(k) = traj.x(4,end);
+  vel(k) = traj.x(3,end)/VOrbit(traj.x(2,end)+d.Rp);
+end
+Plot2D(angles,[fpa*180/pi;vel],'Initial FPA',{'Burnout FPA','Velocity Ratio'},'Pitchover Sensitivity');
+kVel = find(vel>1,1,'last');
+kFPA = find(fpa>0,1,'last');
+subplot(2,1,2)
+hold on
+plot(angles(kVel),vel(kVel),'*')
+plot(angles(kFPA),vel(kFPA),'r*')
+subplot(2,1,1)
+hold on
+plot(angles(kVel),fpa(kVel)*180/pi,'*')
+plot(angles(kFPA),fpa(kFPA)*180/pi,'r*')
+
+%% Optimization
+% Finally, perform an optimization for the target pitchover angle
+fpaOpt = fzero(@(x) FGravityTurn(x,d,tPitch),19);
+traj = GravityTurnSim2D( d, fpaOpt, tPitch );
+Plot2D(traj.x(1,:),traj.x(2,:),'X (km)','H km','Optimal Gravity-Turn Trajectory');
+fprintf(1,'\n\tPitchover with zero burnout FPA: %f\n',fpaOpt);
+fprintf(1,'\tFinal velocity: %f\n',traj.x(3,end));
+fprintf(1,'\tOrbital velocity: %f\n',VOrbit(d.Rp+traj.x(2,end)));
+  
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-07-10 11:06:35 -0400 (Fri, 10 Jul 2015) $
+% $Revision: 8610 $
+
+##### SOURCE END #####
+--></body></html>
