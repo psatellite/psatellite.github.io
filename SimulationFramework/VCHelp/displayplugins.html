@@ -1,0 +1,390 @@
+<html>
+	<head>
+		<link href="styles.css" type="text/css" rel="stylesheet" media="all">
+		<meta http-equiv="content-type" content="text/html;charset=iso-8859-1">
+		<title>Display Plugins</title>
+</head>
+<body style="font-family:arial;">
+
+<h1><a href="./index.html"><img src="logo.png" height="32px;" style="margin-bottom:-11px;"></a>Display Plugins</h1>
+
+<p>
+One of the four types of plugins available to VisualCommander, Display Plugins provide visualization of the data from Sessions and can provide control, in the form of Commands, to those sessions. Users can write their own Display Plugins to tailor their visualization to precisely the problem at hand, in addition to providing customized command input systems. For instance, a display might read data from a joystick to provide flight control commands to an aircraft simulation - or to actual aircraft hardware. All of this customization can be done by the end user, rather than requiring modification to VisualCommander.
+</p>
+
+<div style="display: none;">
+<p>
+This page explains how to write new display plugins. Display plugins are used to produce OpenGL displays for data. They can also be used
+as standalone tools for simulations or other purposes. You could conceivably do all of our programming
+in display plugins without using any other tools.
+</p>
+
+<div class=info><h3>Creating the Project</h3>
+<p class=info> Follow the following steps
+<ul>
+<li> From within Xcode
+<ul>
+<li>Choose File/New Project, and under the VisualCommander heading, select the "3D Display Plugin Bundle".
+<li>Choose a unique project name for the display plugin.
+<li>For the project directory, select an appropriate location.
+</ul>
+<ul>
+<li>Double click on Views.nib (in the NIB Files folder of the project).  Setup the classes:
+</ul>
+<img src="./Images/DisplayPlugin1.png" height=200>
+
+<ul>
+<li>Drag VCDataConsumerController.h and VCDisplayController.h from the VisualCommander project in that order to the Views.nib window.
+<li>Drag the two header files from the project Classes folder (in Xcode) to the Views.nib window (in IB).  (If you named your plugin Wacky, then these files would be named WackyController.h and WackyView.h).
+<li>In IB, go back to the Instances tab.  Bring up the inspector (Shift-Apple-I).
+</ul>
+<img src="./Images/DisplayPlugin2.png" height=200>
+
+<ul>
+<li>Change the Custom Class (Apple-5) of File's Owner to be your controller class (WackyController, for example).
+<li>Change the custom class of the NSOpenGLView in the View window to be your project view class (WackyView, for example).
+</ul>
+
+<li>Make the connections; go back to the Instances tab, then:
+<ul>
+<li>Control-drag from File's Owner to the View icon in the Views.nib window.  Connect this to the glView outlet.
+
+<li>Control-drag from the view inside the View window (which should be of type WackyView, in our example) back to File's Owner.  Connect this to the controller outlet.
+
+<li>Save and quit IB.
+</ul>
+</ul>
+
+</p>
+<p class=info>
+</p>
+
+</div>
+
+<div class=info><h4>Notes</h4>
+<ul>
+<li>The nib should have a regular NSView, and inside of that should be the OpenGL view (WackyviewView, in this case).
+the File's Owner outlet should point to the OpenGL view.
+<li>The principal class needs to be of type WackyController. To check or set this select the executable and control click.
+Select Get Info and go to the properties tab.
+</ul>
+
+<img src="./Images/ViewController.png" height=200>
+<ul>
+<li>The view.nib file should look like this. Note the names of the classes.
+</ul>
+
+<img src="./Images/DisplayPlugin/View.png" height=200>
+<ul>
+<li>This is the only connection you should see.
+</ul>
+<img src="./Images/DisplayPlugin/Connections.png" height=200>
+<ul>
+<li>This is what you see if it is working correctly. Otherwise you will get a gray box that can't be moved.
+</ul>
+
+<img src="./Images/DisplayPlugin/WorkingTemplate.png" height=200>
+
+
+</div>
+
+<div class=info><h3>Programming</h3>
+
+<div class=info><h4>Introduction</h4>
+<p class = info>
+When a display plugin is created two classes are create. One is the "View" class and the other is the "Controller" class. The first
+does all the drawing. The second supplies the interface to VisualCommander.
+</p>
+</div>
+<div class=info><h4>Initialization of OpenGL</h4>
+<p class = info>
+The <tt>prepareOpenGL</tt> method is where all your OpenGL initialization code goes. This includes
+initializing objects and the light model. In the following code we initialize three objects, a vehicle 
+terrain and a sky box. All three are read in as Wavefront OBJ models. The <tt>gu_drawable</tt> class
+handles all the details of reading in textures and the models themselves. Models are read in through
+a <tt>gu_manager</tt>. In this display we use
+a very simple ambient light model with the light set up to be pure white.
+<p>
+<pre>
+- (void)prepareOpenGL {
+	pss_init_opengl();
+    
+	// white background
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	
+	glEnable (GL_LIGHTING);
+	glShadeModel (GL_SMOOTH);
+	glEnable(GL_DEPTH_TEST);				// Enables Depth Testing
+	glDepthFunc(GL_LEQUAL);					// The Type Of Depth Testing To Do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
+	
+	// Only use ambient lighting
+	GLfloat globalAmbient[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbient);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, true);
+	
+	gu_manager *gm = gu_manager::shared_manager();
+
+	// Get the model
+	terrain = new gu_drawable (gm->top_object_in_bundle ("Land"));
+	vehicle = new gu_drawable (gm->top_object_in_bundle ("Globalhawk"));
+	skybox  = new gu_drawable (gm->top_object_in_bundle ("SkyboxT"));
+ 	
+	// Set the initial parameters
+	terrain->set_position (0, 0, 0);
+	terrain->set_orientation (0, 0, 0);
+	terrain->set_scale( landscale );
+	
+	skybox->set_position (0, 0, 0);
+	skybox->set_orientation (0, 0, 0);
+	skybox->set_scale( skyscale );
+
+	vehicle->set_position (0, 0, 0);
+	vehicle->set_orientation (0, 0, 0);
+	vehicle->set_scale( globalhawkscale );
+	
+	camera->set_target( vehicle );
+}
+</pre>
+
+</div>
+<div class=info><h4>Drawing Code</h4>
+<p class = info>
+The following member draws the three objects. We need to do a fixed rotation of the terrain 
+so that it matches our coordinate system (with y up). We also need to scale just the x and z directions 
+too so it is most convenient to use a 4 by 4 transformation matrix. We then draw the sky box. Finally
+we draw the vehicle. The inputs (discussed below) are the position and quaternion. We combine these into
+a 4 by 4 transformation matrix and apply it to the vehicle. At the bottom of the member function
+we tell the camera to point at the vehicle. In each case we need an <tt>object->draw()</tt> to 
+draw the object. The function <tt>q_to_mat</tt> operates on the input quaternion to convert it
+to a transformation matrix that occupies the upper left 3 by 3 submatrix of the 4 by 4 matrix.
+<pre>
+- (void)drawObjects{
+	
+	float m[16];
+	
+	// Draw the terrain
+	m[0] = 1.0; m[4] =  0.0; m[ 8] = 0.0; m[12] = 0.0;
+	m[1] = 0.0; m[5] =  0.0; m[ 9] = 1.0; m[13] = 0.0;
+	m[2] = 0.0; m[6] = -1.0; m[10] = 0.0; m[14] = 0.0;
+	m[3] = 0.0; m[7] =  0.0; m[11] = 0.0; m[15] = 1.0;
+	
+	// Scale only y and x
+	m[0] *= landscale;
+	m[6] *= landscale;
+
+	terrain->set_transformation(m);
+	terrain->draw();
+	
+	// Draw the skybox
+	skybox->set_scale(skyscale);
+	skybox->draw();
+    
+	// Draw the vehicle
+	ml_matrix q = *quaternion;
+     
+	q(2,1) = - q(2,1);
+	q(3,1) = - q(3,1);
+	q(4,1) = - q(4,1);    
+	ml_matrix mQ  = q_to_mat( q );
+
+	m[ 0] = mQ(1,1); m[ 4] = mQ(1,2); m[ 8] = mQ(1,3); m[12] = (*position)(1,1);
+	m[ 1] = mQ(2,1); m[ 5] = mQ(2,2); m[ 9] = mQ(2,3); m[13] = (*position)(2,1);
+	m[ 2] = mQ(3,1); m[ 6] = mQ(3,2); m[10] = mQ(3,3); m[14] = (*position)(3,1);
+	m[ 3] = 0.0;     m[ 7] = 0.0;     m[11] = 0.0;     m[15] = 1.0;
+	
+	vehicle->set_transformation(m);
+	vehicle->set_position((*position)(1,1),(*position)(2,1),(*position)(3,1));
+	camera->set_target( vehicle );
+	vehicle->draw();
+}
+</pre>
+</div>
+<div class=info><h4>Interface Code</h4>
+<p class = info>
+<tt>input</tt> has information about the incoming data. The member function looks at the name
+to identify the data. The <tt>value</tt> contains the data. We go through some contortions to
+get the data into the desired <tt>ml_matrix</tt> form. The last line <tt>[glView setNeedsDisplay:YES]</tt>
+tells the view object that when this new data is input the view needs to be updated. The  class looks at incoming
+data and decides whether it is the quaternion or position. Anything else is ignored. It then calls
+the member functions in the view which read in the data.
+</p>
+<pre>
+- (void)newDataValue:(VCValue *)value forPoint:(VCInputController *)input isCurrent:(BOOL)flag {
+    if (flag) {
+		if ([[input name] isEqualToString:@"quaternion"])
+		{
+			double q0 = [value doubleAtRow:1 column:1];
+			double q1 = [value doubleAtRow:2 column:1];
+			double q2 = [value doubleAtRow:3 column:1];
+			double q3 = [value doubleAtRow:4 column:1];
+			ml_matrix quaternion(4,1);
+			quaternion(1,1) = q0; quaternion(2,1) = q1; quaternion(3,1) = q2; quaternion(4,1) = q3;
+			[glView setQuaternion:&quaternion];
+		}
+		else if ([[input name] isEqualToString:@"position"])
+		{
+			double x = [value doubleAtRow:1 column:1];
+			double y = [value doubleAtRow:2 column:1];
+			double z = [value doubleAtRow:3 column:1];
+			ml_matrix position(3,1);
+			position(1,1) = x; position(2,1) = y; position(3,1) = z;
+			[glView setPosition:&position];
+		}
+        [glView setNeedsDisplay:YES];
+    }
+}
+</pre>
+<p class = info>
+The corresponding member functions in the VIew class are shown below.
+</p>
+<pre>
+
+- (void)setQuaternion:(ml_matrix*)value {
+    *quaternion = *value;
+}
+
+- (void)setPosition:(ml_matrix*)value {
+    *position = *value;
+}
+</pre>
+
+
+</div>
+<div class=info><h4>Test Code</h4>
+<p class = info>
+The test code is written in an m-file with suffix ".m" (Matlab) file. This should not be confused with an Objective C file which
+also has the suffix ".m". A test file that creates a quaternion matrix (4 by 1) and a position matrix (3 by 1) is shown below.
+</p>
+<pre>
+position(1,1)   = 10000*(1 - cos(0.01*time));
+position(2,1)   = 160.0;
+position(3,1)   = 10000*sin(0.01*time);
+quaternion(1,1) = cos(time);
+quaternion(2,1) = sin(time);
+quaternion(3,1) = 0.0;
+quaternion(4,1) = 0.0;
+</pre>
+<p class = info>
+<tt>time</tt> is an input variable that is input into the m-file from VisualCommander. 
+The inputs are read into the display with the following code. If you wanted to read in doubles
+you would use <tt>VCDataTypeDouble</tt>. 
+</p>
+
+<p class = info>
+The second member function reads in the data from the m-file script.
+<p>
+
+<pre>
+#pragma mark test data
+
++ (NSArray *)testDataPoints {
+	return
+	[NSArray arrayWithObjects:
+		[NSDictionary dictionaryWithObjectsAndKeys:
+			@"test.m", @"script",
+			[NSArray arrayWithObjects:
+				[NSDictionary dictionaryWithObjectsAndKeys:
+					@"quaternion", @"alias",
+					@":quaternion", @"path",
+					@"", @"units",
+					[NSNumber numberWithInt:VCDataTypeMatrix], @"type",
+					@"quaternion", @"description",
+					[NSArray arrayWithObjects:
+						[NSDictionary dictionaryWithObject:@"quaternion" forKey:@"info"],
+						nil], @"attributes",
+					[NSNumber numberWithBool:YES], @"autolink",
+					nil
+					],
+                [NSDictionary dictionaryWithObjectsAndKeys:
+					@"position", @"alias",
+					@":position", @"path",
+					@"", @"units",
+					[NSNumber numberWithInt:VCDataTypeMatrix], @"type",
+					@"position", @"description",
+					[NSArray arrayWithObjects:
+						[NSDictionary dictionaryWithObject:@"position" forKey:@"info"],
+						nil], @"attributes",
+					[NSNumber numberWithBool:YES], @"autolink",
+					nil
+					],
+				nil
+				], @"outputs",
+			[NSArray arrayWithObjects:
+				[NSDictionary dictionaryWithObjectsAndKeys:
+					@"time", @"alias",
+					@":time", @"path",
+					[NSNumber numberWithBool:YES], @"updateOnChange",
+					nil
+					],
+				nil
+				], @"inputs",
+			[NSNumber numberWithDouble:0.05], @"updateInterval",
+			nil
+			],
+		nil
+		];
+}
+</pre>
+
+
+</div>
+
+</div>
+
+<div class=info><h3>Using a geobundle</h3>
+<p class = info>
+A geobundle is a folder of the name <tt>object.geobundle</tt>. A geobundle folder has a minimum of
+3 files
+<ul>
+<li> object.obj
+<li> object.mtl
+<li> manifest.xml
+</ul>
+The <tt> .obj </tt> and <tt> .mtl </tt> are Wavefront OBJ graphics files. The first holds the 
+geometry data. The second describes the material. This file includes the file names of any textures
+which are included in the folder with the name <tt>texture.tga</tt>. Only <tt>.tga</tt> texture
+formats can be used. The manifest file is an xml file of the form:
+</p>
+
+<img src="./Images/DisplayPlugin/geobundle.png" height=200>
+
+</div>
+
+
+
+<div class=info><h3>Using the Plugin in VisualCommander</h3>
+<p class=info>
+Double click on VisualCommander. The following window appears.
+</p>
+
+<img src="./Images/DisplayPlugin/Start.png" height=200>
+<p class=info>
+Pull down on the Window menu and select Tools.
+</p>
+
+<img src="./Images/DisplayPlugin/ToolsMenu.png" height=200>
+<p class=info>
+Drag X52Scene to the window.
+</p>
+
+
+<img src="./Images/DisplayPlugin/Dragged.png" height=200>
+<p class=info>
+Keep the window in edit mode. Control click and the setup menu will appear. Select Link Test Data. The
+aircraft will start rotating and moving.
+Select run mode. You can now use the mouse to move the camera.
+</p>
+
+<img src="./Images/DisplayPlugin/Running.png" height=200>
+
+
+
+</div>
+</div>
+<!-- Footer for each page -->
+<div id="pssfoot"></div>
+<script type="text/javascript" src="pssfooter.js">  </script>
+</body>
+</html>

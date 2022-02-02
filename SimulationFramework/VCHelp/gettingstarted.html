@@ -1,0 +1,305 @@
+<html>
+	<head>
+		<link href="styles.css" type="text/css" rel="stylesheet" media="all">
+		<meta http-equiv="content-type" content="text/html;charset=iso-8859-1">
+		<title>Getting Started</title>
+</head>
+<body style="font-family:arial;">
+
+<h1><a href="./index.html"><img src="logo.png" height="32px;" style="margin-bottom:-11px;"></a>Getting Started with VisualCommander</h1>
+<p>Welcome to VisualCommander. This page is designed to give you the basics of how the VisualCommander system works. You can jump directly to the various parts of this guide, but be aware that the Hands-On sections build on the Interfaces created in the previous sections- you'll need to do all of the Hands On sections in order.
+<ol>
+<li><a href='#sessions'>Data Capture and Sessions</a></li>
+<li><a href='#ho_startsession'>Hands On: Starting a Session</a></li>
+<li><a href='#interfaces'>Analysis, Visualization and Interfaces</a></li>
+<li><a href='#ho_createinterface'>Hands On: Creating and Interface and Display</a></li>
+<li><a href='#interfacesessions'>Interface Managed Sessions</a></li>
+<li><a href='#ho_interfacemanagedsession'>Hands On: Creating an Interface Attached Session</a></li>
+<li><a href='#dataflow'>Data Flow</a></li>
+<li><a href='#ho_dataflow'>Hands On: Visualizing Data</a></li>
+<li><a href='#processors'>Data Processors and Outputs</a></li>
+<li><a href='#ho_processors'>Hands On: Transforming Data with Processors</a></li>
+<li><a href='#commands'>Responding to Sessions with Commands</a></li>
+<li><a href='#ho_commands'>Hands On: Controlling the Test Session</a></li>
+<li><a href='#archiving'>Storing Data in an Archive</a></li>
+<li><a href='#ho_archiving'>Hands On: Saving and Retrieving Session Data</a></li>
+<li><a href='#summary'>Summary</a></li>
+</ol></p>
+
+<div class=info><h3>Overview</h3>
+<p>VisualCommander is a user-extensible data capture, command, analysis, and visualization tool. In addition, it's a platform for developing reusable interfaces to sources of data. To that end, it's reasonable to think of VisualCommander as having two major components: data capture and command as the first component, and analysis and visualization as the second. In fact, this is exactly how VisualCommander is built under the hood: the <i>server</i> provides the data capture and command functionality, while the <i>client</i> provides the analysis and visualization functionality. On the workstation, this complexity is hidden from the user&mdash;you only need consider <a href='#sessions'>Sessions</a> and <a href='#interfaces'>Interfaces</a>.</p>
+</div>
+
+<div class=info><h3><a name='sessions'>Data Capture and Sessions</a></h3>
+<p>
+Before analysis and visualization can be performed, there has to be some data to analyze and visualize. In VisualCommander, data capture is performed by Sessions.
+</p>
+
+<p>
+One of the plugin types that VisualCommander accepts are Data Source plugins. A few are built into the system; others can be added by users. Data Source plugins tell VisualCommander how to connect to sources of data: simulations, stored files, external hardware, telemetry systems, etc. A Session is created by telling VisualCommander to start up a specific <a href='Glossary.html#datasourceplugin'>Data Source Plugin</a> and configure it. For example, to capture data from a <a href='Glossary.html#dsim'>DSim</a> simulation, a new Session would be created from the DSim Data Source plugin, and the new session would be configured with the location of the setup file for that simulation. The session, then, is an <i>instance</i> of the data source plugin on which it is based.
+</p>
+
+<p>
+Multiple Sessions can be active at once, including multiple sessions based on the same data source plugin (e.g., two DSim Sessions running two simulations), each collecting data and receiving commands. Each Session is independent of the others- they each have their own notion of the time for their data, they run independently, and they can be started, stopped, paused and reset independently. In addition, the Sessions are independent of the main VisualCommander application&mdash;if a Session crashes for some reason (usually a fault in the Data Source plugin it is using), other Sessions and the main application are not affected.
+</p>
+
+<p>Sessions present their data in a hierarchy of <a href='Glossary.html#volume'>Volumes</a>, <a href='Glossary.html#point'>Points</a>, and <a href='Glossary.html#command'>Commands</a>. For instance, a simple simulation of a weight on a spring might have two Volumes, one representing the weight and the other the spring. Inside the weight volume there might be three Points representing the mass, the current position, and the current velocity. The spring volume might have a Point representing the spring factor k, and a Command that would change that factor.
+</p>
+
+<p>
+In addition, each of the Volumes, Points and Commands may have other data associated with them. For instance, Points and Commands have units information and a description, so that in a list of data a user can easily understand what they represent. The data source plugin can also assign arbitrary additional data that might be used in the visualization and analysis of the Point.
+</p>
+
+<p>
+All of the above&mdash;the hierarchy of Volumes, Points, and Commands, as well as the additional information associated with them&mdash;comprise the Session's <i>metadata</i>. This metadata is static; shortly before the Session starts running it provides the metadata to the rest of VisualCommander, which does not change over the Session lifetime.
+</p>
+
+<p>
+Once the Session is running, it starts producing data associated with its Points. When that data is produced, it is tagged with a timestamp and then stored by VisualCommander. Therefore, in addition to its metadata, every Point in the session has a time history of all of its data values. All of these values are managed by VisualCommander; the entire history is always available for analysis and visualization, and this is described in more detail below.
+</p>
+
+<p>
+Lastly a quick note on two terms: <i>Sessions</i> and <i>Session Managers</i>. Sessions run under the control of a Data Center, and share many characteristics of computer daemons (faceless background processes). To create, control, and observe these Sessions, VisualCommander provides <i>Session Managers</i>. These objects offer a visible control interface to the Sessions. In addition, Session Managers store a Session recipe, and can thus recreate their Session over time when requested.
+</p>
+
+</div>
+
+<div class=info><a name='ho_startsession'><h3>Hands On: Starting a Session</h3></a>
+<div class='leftimage'><img src='images/gettingstarted/test_source_creation.png' />
+
+<p class='caption'>Fig. 1 - Session creation setup sheet.</p></div><p>To get a look at how Sessions work in VisualCommander, go to the Window menu and choose <i>Data</i> now. The Data window will open, with several tabs; if the Session window is not already selected, select it.</p>
+
+<p>The Data window is your overview of the data available to VisualCommander. The Sessions tab will list all of the active sessions and some status information about them; if you select one, details about it will appear on the right.
+
+</p>
+
+<p>There are two ways to create a new session: the first is to create it here in the Data window. The other way is to create it attached to an <a href='Glossary.html#interface'>Interface</a> via the interface's Inspector window. More detail on the second way follows; for now, click the "+" button in the bottom left of the window to open up the <i>Create New Session</i> sheet.
+</p>
+
+<p>You need to provide a few options when creating a new Session: the name, data source plugin type, and a <i>configurator</i>. A configurator is another type of plugin that VisualCommander accepts, and it provides a user interface for configuring a Session. We're going to create a Test Session, so set the name to <i>First Session</i>, and then pick <i>Test</i> as the source type. Choose <i>Basic</i> for the configuration option. (You'll see that the Test data source doesn't actually need a configurator; you can select the Default option for get the Configurator's default values. Not all data source types have defaults&mdash;most require configuration.) Uncheck the <i>Quick Start</i> checkbox, and then click <i>Accept</i>.</p>
+
+<div class='rightimage'><img src='images/gettingstarted/test_source_configuration.png' /><p class='caption'>Fig. 2 - Configuring the session.</p></div>
+
+<p>When you click Accept, the sheet will go away and your new Session will show in the list. You'll see the Status column of the new session rapidly change between the first few stages as the Session starts up, and finally stop at <i>Waiting For Config</i>. If you select your new session, a <i>Configure</i> button will appear to the bottom right of the session list. In addition, you can see some information about your session to the right, giving the Data Source plugin that it uses, the Configurator you chose, and a description of what the Data Source plugin does.</p>
+
+
+<p>Click the <i>Configure</i> button to pull up the configurator's interface for this session. The Test data source simply provides a few different basic outputs- a linearly increasing value (on which all the other values are based), a sinusoidal value, a changing 3x1 matrix, etc, and it updates with a regular time period. The options in this configurator allow you to change the update rate (<i>Update Frequency</i>), adjust what the initial value for the linear data point is (<i>Initial Linear Value</i>), and adjust the value that is added to the linear data point each time step (<i>Linear Increment</i>). We don't want to change any of these values, so just click the <i>Send Configuration</i> to send off the information to the Session. The configuration sheet will go away, and you'll see that the session's status has changed to Ready; also, the button to the lower right of the list has changed to <i>Start</i>.</p>
+
+<div class='leftimage'><img src='images/gettingstarted/test_source_data_tree.png' /><p class='caption'>Fig. 3 - Data hierarchy for the session.</p></div>
+
+<p>At this point, your new session is ready to start running. More importantly, it has provided VisualCommander with its metadata. To see it, click on the <i>Tree</i> tab. You'll see the outline view to the left, with a line for your session- <i>First Session</i>. Click the disclosure triangle to the left of the name. Go ahead and explore the tree. You'll notice that the Volumes (in <b>Bold</b> text, with disclosure triangles next to them) don't have any additional information shown to the right when you select them, but that the Points (no font style) will display a type and description. Some of them will also provide attribute/value pairs. You'll also find a few Commands (in <i>Italics</i>) in the data tree, for instance "set_linear_increment" in the Simple volume under the Generated volume.</p>
+
+<p>Now that you've looked at your session's data hierarchy, click back on the Sessions tab. With the session selected, click the "-" button to the bottom left to remove it. A sheet will pop up asking if you'd like the Archive the data from it. Since we haven't actually produced any yet, click "Don't Archive"; the sheet will go away and you'll see your new Session vanish from the list. In a later Hands On, we'll actually get some data from a session and see how Archiving works.</p>
+
+</div>
+
+<div class=info><h3><a name='interfaces'>Analysis, Visualization and Interfaces</a></h3>
+<p>Once data is being generated and brought into the VisualCommander system by a Session, the next step is to start actually working with that data. To work with data in VisualCommander, you create an <a href='Glossary.html#interface'>Interface</a> within which you set up your visualization displays and any client-side data processors.</p>
+<p>An interface is, fundamentally, a collection of <a href='Glossary.html#window'>Windows</a> and <a href='Glossary.html#page'>Pages</a> into which a user places <a href='Glossary.html#display'>Displays</a> and <a href='Glossary.html#processor'>Processors</a> (collectively referred to as <a href='Glossary.html#dataconsumers'>Data Consumers</a>). It can be thought of as a hierarchy: there are one or more Windows; each Window contains one or more Pages, and each Page may contain any number of Display Plugins. The Interface as a whole is an Interface Document, also known as a VCI File due to the .vci extension that is used when an interface is saved. Interfaces can be used just like any other documents- after you've created one, you can save it, make copies, open it up and edit it, etc. Interfaces can be shared among different users of VisualCommander as well; the only caveat is that anyone opening the interface will need to have installed any Display Plugins and Data Source Plugins that the interface uses, or those parts of the interface will not work.</p>
+<p>Display Plugins, then, are the tools that do the actual visualization of data. VisualCommander comes with a library of built-in Display Plugins, providing everything from raw numeric output to 3D plots. In addition, custom display plugins for specific visualization tasks can be written and then used in a variety of interfaces. They can be added to an interface in one of two ways:
+<ul>
+<li>Dragging the name of a point or command from the metadata tree of the Data window onto a page will create a raw (numeric) data display for a point, or a basic command display for a command.</li>
+<li>Dragging the name of a display plugin from the list in the Displays tab of the Tools window will place a new, unconfigured copy of that plugin at the point to which it was dragged.</li>
+</ul></p>
+<p>Once a display plugin has been added to a page in an interface, it then generally needs to be provided with some data so that it has something to show. When a point is dragged on and a raw data display automatically created, the data point is automatically hooked up. For other plugins, you'll need to add the points manually by dragging them from the data tree in the Data window and dropping them on the display. These then become <a href='Glossary.html#input'>Inputs</a> to the display plugin. For instance, you might create a 2D Plot display, and then drag the sinusoid point from the Test session to it. The sinusoid data point would then become an input to the display, and the historical data for that point would show up in the display.</p>
+<p><i>NOTE: Some display plugins will automatically look at the data tree and select data points to use as inputs. You'll need to refer to the documentation for those plugins in those cases; no built-in plugins do so.</i></p>
+</div>
+
+<div class=info><a name='ho_createinterface'><h3>Hands On: Creating an Interface and Display</h3></a>
+<p>It's hard to get a good sense for how an Interface works without working with one. To get started, click the <i>New Interface</i> button from the splash screen (if it is still open) or choose New from the File menu. You'll see a window with the name "Untitled Window (Untitled)" appear, with a few controls along the top and an array of grid lines across the body of the window. (The window title may show Untitled 2 or the like if this isn't the first new interface for this run of VisualCommander.) This window, and the Untitled Page that's currently showing, is the basis of an Interface. The window's title indicates that it is the <i>Untitled Window</i>, and it's part of the <i>Untitled</i> interface. (You'll be able to give names to both, of course.)</p>
+<p>When you're working with an interface, it's very important to be aware of what mode you are in- Run or Edit. A new interface will open in Edit mode; you can tell this by seeing that Edit is selected in the pop-up menu in your Untitled Window. If you select Run from that menu instead, you'll see that the grid lines disappear. When an interface is in Edit mode, you can rearrange, add, delete, or configure the display plugins that are placed in it&mdash;but you cannot interact with them. (They may display data just fine, but you won't be able to operate any controls that the displays provide.) Run mode, on the other hand, is the exact opposite- you can interact with all of your displays, but you cannot rearrange them, delete them, or add new ones. You may switch back and forth between run and edit modes many times while you're working on an interface. In addition to the small menu in each window, you can change mode from the Options menu, or by pressing Cmd-Shift-R to go to Run mode and Cmd-Shift-E to go to Edit mode. Go ahead and switch back to Edit mode now.</p>
+<p>Now that we've got an interface up, let's add a display plugin to it. First, open the Tools window (if it's not already open) by selecting Tools from the Window menu.</p>
+<p>Make sure the Displays tab is selected, and open the disclosure triangle for the Plotting category. One of the plugins listed for this category is 2D Plot.</p>
+<p>Click and drag the 2D Plot from the Tools window onto your Untitled Window. You'll see a grey box appear, surrounded by a black border.</p>
+<p>The box that has appeared is the work of the display plugin. Because a plot can't draw anything useful if it doesn't have any inputs, right now it's just drawing a plain background. We'll add some data in a moment, but first let's examine the display plugin in more detail.</p>
+<p>First, click on the box to select it. You'll see resize handles appear at the corners and sides of the box; you can drag these to change the size of the display. You can also click and drag the display around to move it around on the page. If you move it such that it's partly off the window the right, or to the bottom of the window, you'll note that scroll bars will appear in the window; in this fashion, you can put more displays on a single page than the containing Window can actually hold. The scroll bars will appear or hide as necessary.</p>
+<div class='rightimage'><img src='images/gettingstarted/properties_sheet.png' /><p class='caption'>Fig. 4 - Properties sheet for a display.</p></div><p>Right-clicking (or control-clicking if you don't have a right mouse button) on the display will bring up contextual menu for the display. The first four options are the most important:
+<ol>
+<li><b>Properties</b> - This will bring up the Properties sheet for the display, allowing you to edit the background color and border, as well as to specify the display geometry numerically. Properties are general settings that all displays have, in contrast to Configuration (below). You can also see inputs to the display on the third tab; we'll revisit this after we've added in some data.</li>
+<li><b>Configure</b> - This will bring up the Configuration sheet for the display. Not all displays will have configuration options (though most do); the sheet that opens will provide any customization options that are specific to the display type. In general, the help for a display will provide information about how its configuration options work.</li>
+<li><b>Data Flow</b> - This will open the Data Flow window and reveal this display in it. We'll cover the data flow window and its use further below.</li>
+<li><b>Help</b> - This will bring up the Help page for the display plugin, if it has one.</li>
+</ol></p>
+<p>This time, choose Properties from the menu. This will bring up the Properties sheet for the display. You'll see that there are three tabs across the top; the first tab, Appearance, is currently selected. There are four options here, allowing you to change the width and color of the <a href='Glossary.html#padding'>border</a>, <a href='Glossary.html#border'>padding</a> and background for the display. The border provides an optional colored border around the outside of the display (including the padding). The padding offsets the border a certain distance from the area that the display itself actually draws in. The background color will be used to fill the entire area inside the border. Many displays have transparent areas where the background color will show through, and others customize their own drawing based on the selected background color. Go ahead and experiment with the effect of changing the settings on the plot.</p>
+<p>The next tab, Geometry, is quite straightforward; it simply provides a way to specify the size and location of a display numerically. You can use this to precisely specify alignment, for instance. You can also lock the frame of a display here. When locked, the display cannot be moved or resized.</p>
+<p>The third tab, Data, provides information about the inputs and outputs of the display. We'll get to this later in the tutorial.</p>
+</div>
+
+<div class=info><h3><a name='interfacesessions'>Interface Attached Sessions</a></h3>
+<p>In addition to creating a session through the Data window, it is possible to create a session that is <i>managed</i> by an interface. By doing so, the information about the session is stored along with the interface, allowing the interface to automatically create the session when the interface is loaded. In addition, the tedious work of filling out the necessary information to create the interface can be done only once, and subsequent creation is as easy as clicking a button.</p>
+<p>When a session is managed by the interface, it is created and controlled via the Sessions tab of the <a href='Glossary.html#inspector'>Inspector</a> rather than via the Data window. The controls are essentially the same, though an interface attached session has a few additional options available to allow the interface to store the session's configuration data and whether or not the interface should create the session automatically whenever the Session Manager is loaded. In the hands-on below, we'll walk you through the steps necessary to create and configure such a session.</p>
+<p>When a session is configured, the configurator plugin packages up the configuration data and sends it off to the session. An interface managed session can optionally capture and store that configuration data. However, it's important to realize that as far as the interface is concerned this configuration data is a "black box"&mdash;however, you can always visit the configurator through the <i>Configure</i> menu Inspection Panel.</p>
+</div>
+
+<div class=info><a name='ho_interfacemanagedsession'><h3>Hands On: Creating an Interface Attached Session</h3></a>
+<div class='leftimage' style='width: 314px;'><img src='images/gettingstarted/session_inspector.png' /><p class='caption'>Fig. 5 - Inspector Sessions tab with a new attached session.
+</p>
+</div>
+
+<p>Now that we know something about interfaces and how they manage Sessions, we'll create an interface managed Session in our existing interface. (If you've closed the interface where we added in a plot, you'll need to re-open or re-create it.)</p>
+
+<p>First, open the Inspector if it's not already open. You can open it by choosing <i>Show Inspector</i> from the Window menu or pressing Command-Shift-I; you'll need to have the interface's window as the topmost window to open the inspector.</p>
+
+<p>There are three tabs to the inspector: Browse, List, and Sessions. You can <a href='inspector.html'>view the help</a> for the Browse and List tabs if you'd like, but for now switch to the Sessions tab to get started creating your Interface Attached Session.</p>
+
+<p>Near the bottom of the window, you'll find a button that reads <i>New Attached Session</i>. Click that, and you'll see that a new item appears near the top of the window (See Fig. 5).
+</p>
+
+<p>We'll skip down to the bottom three popup menus: leave the bottom on </i>Local</i> (using non-local Data Centers are beyond the scope of this guide).
+</p>
+
+<p>The other two popup menus allow you to select the data source type and a configurator for it. Initially, the first pop-up shows "Test" (for the Test Data Source).
+The right one lists configurators available for the selected data source type; for "Test" these are "Default" and "Basic").
+Since we want to define the configuration options, select <i>Basic</i> from the menu.</p>
+
+<p>Next, we need to instruct the Local Data Center to create a new Session (recall that the controls you are dealing with here belong to the Session Manager, not the Session itself). Press on the <i>Open</i> menu, and select <i>Create</i> (accepting the default name, which you could have changed). The status field at the top of this Session's box should show a status of "Waiting for Configuration". This field shows a text message for many states, and switches to a time display when the Session is ready to run, or in run-related state.
+</p>
+
+<p>Now we're ready for configuration, so press the <i>Configure</i> menu. Before selecting the <i>Open Session Configurator...</i>, note the three options below it.
+<i>Create Session When interface Loads</i> controls whether the Interface will automatically create the session when the interface file is opened.
+If it and <i>Start Session When Ready</i> are both checked, and the session either has saved configuration data or does not require it, the Interface will create and start this Session when opened. So, select the top item to open the configurator. Make sure that <i>Save Configuration</i> is checked</i>.
+</p>
+
+<p>The configuration sheet will drop down from the Inspector window, just as it did from the Data window when we first created a session. Only one update per second is a little slow, so let's set the <i>Update Frequency</i> to "0.1" instead of "1" (the number of seconds between updates: smaller is faster), then change the <i>Linear Increment</i> to "0.2" to compensate for the increased update rate. (Recall that all Test Session outputs are based on the Linear data point, which increases by the Linear Increment value at every time-step).
+Once complete, click <i>Send Configuration</i>, the sheet goes away, and you'll see the session status turn into <i>Ready to start</i>.
+</p>
+
+<p>We're not ready to do anything with this session just yet. Press on the <i>Close</i> menu, and see the various options. Sessions can be closed at most any time, but can only be archived if they have generated data or have data from having been unarchived. Select <i>Close Session...</i>. (If a Session has data, you will be asked to verify the close action, otherwise it just happens.)
+</p>
+
+<p>At this point, the Session Manager's process that was created when we clicked <i>Create</i> has been shut down&mdash;however, since the Session Manager has kept the Session recipe and its configuration, the Interface can create a new one at any time. You can verify this by pressing on the <i>Open</i> menu and see that the <i>Create</i> button is selectable. In fact, you can rename the Session, and change its type and/or configurator if you want.</p>
+
+<p>Create the Session again, and see that the Session moves directly to a <i>Ready to Start</i> status&mdash;since you optioned the Interface to save the configuration, it automatically delivered this saved data when the Session needed it.
+Just to get a feel for running a Session, press the blue triangle button, and see the state change to a time value. Press the center pause button to temporarily stop the session from creating new data, then press run again to restart it. The time display can show elapsed or calendar time by clicking the clock icons. In addition you can select per-Session display time 
+ranges&mdash;press the <i>Show Properties</i> button (with the Session Manager selected).
+</p>
+
+<p>Note the bottom left "?" button&mdash;it provides Session specific help for quick reference.
+Now, close the Session as before (no need to first pause), finishing this hands-on tour.
+</p>
+</div>
+
+<div class=info><h3><a name='dataflow'>Data Flow</a></h3>
+<p>At this point, we've discussed Sessions and how they can be managed to produce data, and we've discussed Interfaces and how they can be managed to hold Data Consumers to display and act on that data. Now we need to put those together.</p>
+<p>In VisualCommander, there's a well-defined flow of data within the system. Data originates within a Session, and from there it is distributed to <a href='Glossary.html#dataconsumers'>Data Consumers</a>. The Data Consumers may in turn modify the data and pass it amongst themselves. Then, some Data Consumers may send Commands back to the Session.</p>
+<p>It is the Data Consumers, then, where the complexity lies. Each will have at least one source of data, known as an <a href='Glossary.html#input'>Input</a>; that source may be a Session, or it may be another consumer. It may also have one or more <a href='Glossary.html#output'>Outputs</a>; these Outputs may in turn be used by any number of other consumers. Last, each consumer may be connected to one or more Commands.</p>
+<p>The simplest case to consider is a Display Plugin connected to a single Data Point at a Session. Data flows in from the Session, arrives at the Display Plugin, and is then visualized; the data does not flow anywhere else from the Display Plugin.</p>
+<p>When a Data Consumer is created, it creates a set of inputs, which let the user know what data that data consumer needs. These inputs can be anything from something to be drawn on a plot to a complex set of state values (position, velocity, etc) for displaying a 3D model of a simulation. When an input is created by the Data Consumer, it is <i>unconnected</i>, meaning that it has not been associated with a specific Data Point in a Session.</p>
+<p>Inputs are connected in one of two ways. The first and simplest is to simply drag a Data Point from the Data Hierarchy (in the Data window) on top of the display. When you drag it over (but before you release it), the display will highlight in red or green to let you know whether or not the display will accept this input. A tooltip will also pop up, letting you know what the display plans to do with this input. When a data points are connected to a display this way, the display is responsible for choosing which input to connect the data point to; in some cases, it cannot make that decision by itself. When this is the case, the second method of connecting the data point needs to be used.</p>
+<p>VisualCommander provides a Data Flow window that allows you to visualize the various data connections within an interface. This window also allows you to connect data points directly to the inputs of a data consumer- rather than relying on the data consumer to accurately determine what the data point is for, this allows the user to make such connections explicitly. When dragging a point onto an input in the target data consumer, the same system of highlight and tooltip will let you know if the data consumer will accept the dragged point for the targeted input.</p>
+<p>Inputs are only the first part of the overall Data Flow. The other two parts will be discussed below.</p>
+</div>
+
+<div class=info><a name='ho_dataflow'><h3>Hands On: Visualizing Data</h3></a>
+<p>It's now time to put everything together and start visualizing data. This Hands On assumes that the interface created via the previous Hands On exercises is already open; it should have a Session set up and in the <i>Waiting to be created</i> state, and it should have a 2D Plot in the single window in the interface.</p>
+<p>First, open up the Inspector if it's not already open. Switch to the Sessions tab, and click the Create button to start up the Session that we've already set up.</p>
+<p>When the session's status reads <i>Ready to start</i>, open the Data window and switch to the Tree tab. You'll see the hierarchy for the Session here. Open up the outline to get to the Sinusoid data point (NewSession -> Generated -> Simple -> Sinusoid). When you've found it, click and drag the data point's name from the outline on top of the Plot display that is in the interface's window. When you're over the display, you'll see that it highlights in green and the tooltip "Add a new line to the plot" appears, indicating what the display will do with the data point you're providing.</p>
+<p>Once you've dragged the input over the rectangle of the Plot, you'll see that the appearance of the Plot changes somewhat. There's now a white rectangular area in the upper left. However, there are still no axis or plot lines. Our session hasn't produced any data yet, so the Plot still can't actually draw anything. Let's give it some data.</p>
+<div class='leftimage' style='width: 324px;'><img src='images/gettingstarted/sinusoidplot.png' /><p class='caption'>Fig. 6 - Plot display after the session starts.</p></div><p>Back in the Inspector, click the Start button for your session. When you do, you'll notice that the Plot display suddenly springs to life and begins drawing the sinusoid that we expect.</p>
+<div class='rightimage' style='width: 104px;'><img src='images/gettingstarted/plotdataflow.png' /><p class='caption'>Fig. 7 - Plot data flow.</p></div><p>Now that we've got a display showing us some data, we can look at the Data Flow window to see what's going on. Right-click on the plot and choose "Data Flow..." from the context menu. This will bring up the Data Flow window and display a representation of our Plot and its data on it.</p>
+<p>The box labeled 2D Plot represents our display, and shows us the data flow for that plot. You'll note that it has two inputs right now, rather generically labeled "input 1" and "input 2", even though we've only added a single line to the plot. This is because the display has automatically created a new, unconnected input when we connected the first one to the sinusoid we dropped in. The filled circle next to "input 1" indicates that it's currently connected, and if you move your mouse cursor over the input name you'll see that the path to the data point it is connected to appears in a tooltip. The circle next to "input 2", on the other hand, is empty, indicating that it isn't currently connected to a data point.</p>
+<p>In addition to simply letting you see your interface's data flow, the Data Flow window allows you to control it as well. The "x" between the filled circle and the "input 1" name allows you to disconnect the input from its data point. Go ahead and click it now, and then look back at your plot display to see that it has reverted to simply showing an empty white box- it no longer has any data to show, because its inputs are not connected to anything.</p>
+<div class='rightimage' style='width: 184px;'><img src='images/gettingstarted/connectplotinput.png' /><p class='caption'>Fig. 8 - Dragging the vector data point to the plot input.</p></div><p>Let's give it some data to graph again. In the bottom left of the Data Flow window, you'll see that there's an outline view showing the Data Hierarchy, just like the one in the Data window. The two are functionally identical; the tree is available in both places for convenience. This time, find the Vector data point (NewSession -> Generated -> Matrix -> Vector). Grab it and drag it on top of "input 1". Just as with dragging on top of a display, you'll see that the input highlights in green and the "Add a new line to the plot" tooltip appears. If you look back at the display after you drop the point on, you'll see that it has started drawing again- this time it has three lines, corresponding to the elements in the matrix data point that we've dropped in.</p>
+<p>Now that you know how to connect data points to a regular display, you should know that there's also a special built-in display called Raw Data. Rather than dragging a data point onto another display, you can drop it directly onto a Page to create a simple textual display of the current value. Go ahead and do this now- grab the Sinusoid point that we used earlier, and drag it directly onto the page below your plot. Remember that you can use either the Data window's data tree, or the one in the Data Flow window, to drag the data point. When you drop the point onto the Page, you'll see that "sinusoid:" has appeared, followed by a changing number- this gives the current value of the data point. Raw Data displays act just like other displays once you've created them- you can right-click to set their properties or to change some configuration options. The only difference is how they're created. There's also a similar built-in display called Basic Command for command data points, which we'll discuss in more depth below.</p>
+<p>Close down the Session by clicking on the <i>Close</i> button in the Inspector. Click "Don't Archive" when the sheet appears asking what you'd like to do; this concludes this Hands On.</p>
+</div>
+
+<div class=info><h3><a name='processors'>Data Processors and Outputs</a></h3>
+<p>In addition to Displays, there's an additional type of Data Consumer that can be added to an Interface: Processors. The two types are actually very similar; the only functional difference is that a Processor resides directly within the Interface rather than being placed in a Page, as it does not provide any graphical representation.</p>
+<p>What, then, is the point of processors, if they're simply Displays with some functionality missing? Processors are designed to do a number of things that don't require graphical display, primarily to transform sets of data or to perform calculations on data, the results of which should then be either visualized or processed further. By not providing a display, the Processor focuses solely on doing the calculations required.</p>
+<p>As an example, one of the built-in processors provided with VisualCommander computes a matrix transpose. Just like a Display, it has an input (only one for this Processor, though like a display it could have many). Unlike most displays, however, it also has an Output. This output can be connected to the Inputs of other processors and displays, and in this case whatever is on the other end of the output will receive as data the transposed version of the Processor's input matrix. It would be quite possible to build up complex calculations solely based on a graph of Processors, each output feeding into another Processor until the final result is calculated. This is unlikely to be particularly efficient (single Processors doing complex work are generally much more efficient than many simple Processors chained together), but it does allow particular flexibility in the types of calculations that can be performed.</p>
+<p>It's important to understand something about how a processor works. When a Data Consumer's input is connected to the Output of another Data Consumer (often a Processor, the state we'll consider here, but sometimes a Display), that data consumer will ask the source for data at certain times. The Processor will then in turn request data from its own inputs for the required times, perform the necessary calculation, and finally provide the data that the requesting Consumer needed. The thing to note here is that calculation is done <i>on demand</i>; the results of a Processor are not stored or cached in any way. This is important because it means that a Data Consumer that very frequently requests lots of historical data from a Processor that does complex calculations could prove to be a performance problem. However, it also means that any historical data and times can be processed, and that any changes to the consumers involved in the whole data flow graph will immediately propagate throughout the interface.</p>
+<p>Outputs are not limited to Processors, either. Displays may also have them. Often, an Output from a Display allows Data Consumers connected to that Output to change data based on the user's interaction with the Display. For instance, a Display might provide a 3D display of the objects in a simulation, and allow the user to select specific objects. Details of whatever object is selected might then be provided via Outputs from the Display. In this way, a Plot might be connected to one of these Outputs; the historical data drawn by the Plot would then depend on the object selected by the user in the simulation display.</p>
+<p>None of the built-in displays of VisualCommander provide outputs, though displays in some of the add-on packages do.</p>
+</div>
+
+<div class=info><h3><a name='ho_processors'>Hands On: Transforming Data with Processors</a></h3>
+<p>With a theoretical understanding of processors behind us, it's time to see one in action. They are, as you will see, quite straightforward.</p>
+<p>With the interface that we've been building from the previous Hands On exercises open, use the Inspector to start the Interface Managed Session if it isn't already running.</p>
+<div class='leftimage' style='width: 287px;'><img src='images/gettingstarted/processorstab.png' /><p class='caption'>Fig. 9 - The Processors tab of the Tools window.</p></div><p>Go to the Tools window, where normally you'd go to drag a Display onto the interface. This time, switch to the Processors tab and open up the Matrix category. Grab the Transpose processor and drag it onto the interface window.</p>
+<p>When you drop the processor onto the interface window, you'll see that the Data Flow window pops to the front, and that your processor now shows up in it. You could just as easily have dragged the processor directly to the Data Flow window; because processors do not have any drawing capability, they only show up in the Data Flow, which is why it opened instead when you dragged it onto the Page.</p>
+<p><i>Note: Data Consumer representations always appear in the same location in the Data Flow window when they're made visible by either dragging a new Processor in or selecting "Data Flow..." from a Display's context menu, but they can appear underneath existing representations. The representations can be moved as necessary by selecting and dragging them to reveal other data consumers that may be covered up.</i></p>
+<p>The representation of the Transpose processor in the Data Flow window should look very similar to the representation of the 2D Plot display. The major difference is the presence of an Outputs section, with a single output called "transpose 1". You'll note that the open circle for the output is on the right rather than the left, and that there's no "X" or "-" between the output name and the circle. This is because you can't disconnect an Output; you'd need to disconnect all of the Inputs that are using it, instead.</p>
+<div class='rightimage' style='width: 223px;'><img src='images/gettingstarted/connectedprocessor.png' /><p class='caption'>Fig. 10 - The output of a transpose processor connected to the input of a raw data display.</p></div><p>Now let's connect some data to the Processor. In the Data Tree in the lower left of the Data Flow window, find the quaternion data point (NewSession -> Generated -> Matrix -> quaternion) and drag it on top of the "input 1" input for the Processor. It will highlight green, showing that the Processor will accept this input.</p>
+<p>To verify that we're transposing properly, let's go ahead and get a raw data display for the quaternion as well. Drag the quaternion data point to an empty spot on your interface window (not the Data Flow window), and you'll see a textual representation of the 4x1 quaternion matrix appear.</p>
+<p>Now let's see if the Transpose processor is doing its job. Click in the open circle next to the processor's output and drag onto an open spot on your interface window. Another textual representation will appear, this time with the label "transpose"; you'll note that this representation shows a 1x4 matrix, just as we'd expect.</p>
+<p>Now we can take a look at how this connection looks in the Data Flow window. At the moment, we can see a filled circle next to the output showing that it's connected to something, but not what it's connected to. To show that, right-click on the raw data display for our transposed matrix and choose "Data Flow..." from the context menu. A representation of the raw data display will pop up, and you'll see that there's a line drawn between the Transpose processor's output and the "input 1" input of the raw data display. This indicates that the input is getting data from the connected output.</p>
+</div>
+
+
+<div class=info><h3><a name='commands'>Responding to Sessions with Commands</a></h3>
+<p>Thus far, our discussion has been centered on visualizing the data provided by sessions. Sessions are not simply passive data providers, however- they can also respond to commands, allowing two-way data flow and closed-loop control entirely within VisualCommander.</p>
+<p>While there are some technical differences in implementation and handling within a session, commands can be considered data points that represent input rather than output. Like regular data points, any data associated with a command also has a time tag- the time at which the command should take place. They also have a specific data type&mdash;principally, matrix, double or integer. All of the metadata that generally applies to data points&mdash;e.g., dimensions and units&mdash;can also apply to commands.</p>
+<p>Because the specific data source plugin for a session is responsible for handling commands, it is very important to be aware that differences between session may arise in their handling of commands. All of the built-in data sources for VisualCommander adhere to standard command-processing semantics, but this is not guaranteed in other data sources. Please consult specific data source documentation, where available, for any differences.</p>
+<p>Commands, at the most fundamental level, record an instruction to set a specific parameter P to value V at time T. There is no provision at the present time for viewing, modification, or deletion of scheduled commands (those commands whose execution time T is still in the future relative to current data source time). If a command is scheduled in error, the only current recourse is to schedule a command to immediately correct the bad command.</p>
+<p>Commands imply setting only one specific parameter. To model multi-data commands at data sources, generally a set of commands are used to store the command data, and then a separate proxy command is used to indicate that the entire batch should be processed. This is highly data source-dependent, however, and for complex sessions not built-in to VisualCommander you should consult the data source documentation.</p>
+<p>There is no built-in limit on the meaning of commands within a data source; the only restriction is that they take the form P(T) = V, as described above, where P(T) is the parameter P's value at time T, and V is the value to set. Built-in data sources such as the DSim simulation data source use commands both for meta-parameters such as the simulation time scale and simulation internal commands- e.g., inputs to control systems for objects inside the simulation. Sessions should provide appropriate description and other metadata for commands to allow users to understand the purpose and usage of the provided commands.</p>
+<p>Commands can be connected to Displays just like Data Points, though the Data Flow segregates the two into separate sections of a Data Consumer. VisualCommander provides only one general Command display, however- the Basic Command display accessed by dragging a command from the data tree directly to a page. (Remember, commands are shown in italics in the data tree.) There are a few other built-in displays that have some command functionality&mdash;namely the Session Management displays to provide timescale and time-step setting functionality&mdash;but these are very specific to those functions and data sources.</p>
+<p>The most complicated, and Session-specific, part of commanding is related to the command execution time. Because commands and their execution time are entirely managed by the data source, rather than by VisualCommander, the exact semantics of a command sent for time T are session dependent. The Test source, for instance, expects that the commanded time be in real (clock) time. Set an execution time of five minutes into the future according to your computer's clock, and the command will execute five minutes into the future. The DSim simulation source, on the other hand, associates the command execution time to a simulation Julian Date time to determine command execution. If the simulation's run time is from 2001-01-01 to 2001-12-31, any command with an execution time of &lt 2001-01-01 will be executed immediately, while any command with an execution time &gt 2001-12-31 will never be executed; commands with an intermediate execution time will be executed at the first time-step with a Julian Date greater than or equal to the execution time. Other data sources could follow either model, or potentially ignore execution time entirely and instead apply commands immediately.</p>
+</div>
+
+<div class=info><h3><a name='ho_commands'>Hands On: Controlling the Test Session</a></h3>
+<p>The Test data source that we've been using thus far provides a few commands for us to play with to learn how commands work.</p>
+<p>First, with the interface that we've been working with so far, make sure that the session is currently created and running.</p>
+<div class='leftimage' style='width: 269px;'><img src='images/gettingstarted/basiccommand.png' /><p class='caption'>Fig. 11 - The basic command display for the set_linear_increment command.</p></div><p>From the Data Tree for the session (either in the Data Flow window or from the Data window), find the set_linear_increment command (NewSession -> Generated -> Simple -> set_linear_increment) and drag it to an empty location on the open Page for the Interface. (Our interface is starting to get a little crowded at this point; it might be worth a moments time to organize it to open up some additional free space.)</p>
+<p>The display that appears clearly provides all of the necessary parts of our P(T) = V formula. The parameter to be set (in this case, Generated|Simple:set_linear_increment) is displayed at the top, with the time T below (this input is grayed out currently, because the <i>Immediate</i> checkbox is selected, meaning that the display will set the execution time to be in the distant past, which tells the session to handle the command as soon as it arrives).</p>
+<p>Below the time input is the entry field for V, the value we want to set for P. The Basic Command display has a few built-in special cases for handling certain types of inputs; in this case, it knows that the command is for a double, so it provides only a single input field. Special cases are also provided for 3x1 and 4x1 matrices.</p>
+<div class='rightimage' style='width: 324px;'><img src='images/gettingstarted/commandresult.png' /><p class='caption'>Fig. 12 - The graph for the vector input after setting the linear increment to 0.8..</p></div><p>To test command functionality, let's change the linear increment for the test session. The linear increment is the amount by which the Generated|Simple:linear output changes each time the session updates; because almost all of the other outputs are also based on the current value of the linear output, this has the effect of changing, for instance, the period of the sinusoid, vector and quaternion outputs. We're already visualizing (in our 2D plot) the vector output, so we should see an immediate effect if we change the linear increment.</p>
+<p>To set the command, we'll need to go into Run mode to interact with the Basic Command display. Select <i>Run Mode</i> from the Options menu (or hit Command-Shift-R, or select Run from the mode menu in the upper left of the window). Then click in the value field for our basic command, and enter "4.0" to increment our linear field by 0.8 each time step instead of 0.2 (recall that when we configured the session, we set the linear increment to be 0.2). When you've done so, click the Send button to send the command.</p>
+<p>As soon as the command is sent, the plot will begin changing, showing a much more rapid (four times as rapid, in fact) frequency. Ten seconds or so after the command, your plot should look something like Figure 12.</p>
+</div>
+
+<div class=info><h3><a name='archiving'>Storing Data in an Archive</a></h3>
+<p>When a sessions produces data, that data is locally stored by the session to provide fast access to all of the historical data. However, the data is available only while that session is active- if the session is closed, the data will be lost. Clearly, however, data may be required after a session has closed; it may be helpful to review simulation output, or to compare one session with another. To allow this, the data from a session may be <a href='Glossary.html#archive'>archived</a> before the session closes.</p>
+<p>Choosing to archive the data from a session is analogous to saving a document before closing it. However, in this case the document is wholly managed by VisualCommander- there's no file on disk to keep track of; rather, VisualCommander knows where the archive is for the session and can subsequently allow the session to be unarchived, or opened.</p>
+<p>It's important to note that archiving a session can only happen when the session closes&mdash;and that an unarchived session is <i>immutable</i>&mdash;the unarchived session is run by a special Archive Data Source, rather than the original data source plugin for the session, and no new data can be produced or commands handled. However, all of the data from the session is available for view.</p>
+<p><i>Note: Depending on the amount of data, archives can become quite large. Archive files are stored in /Library/Application Support/VisualCommander/VC Data/.</i></p>
+</div>
+
+<div class=info><h3><a name='ho_archiving'>Hands On: Saving and Retrieving Session Data</a></h3>
+<p>Making use of archiving involves only a different menu selection when we close a session.
+Start our test session now and make sure it's running, and let it go for several seconds to make sure we've got data to save.</p>
+
+<p>Then, press on the Session's <i>Close</i> menu: now, when the menu appears, choose <i>Archive  then Close</i>. After a brief moment, you'll see that the Session time display stops updating, and then changes to <i>Archived</i>. At this point, when you look at the <i>Open</i> menu, <i>Create</i> is not selectable, but the <i>Unarchive</i> option is now active.</p>
+
+<p>When an archived session exists, the name is reserved by both the Interface and the Data Center, and thus no new session can use it.</p>
+
+<div class='rightimage' style='width: 289px;'><img src='images/gettingstarted/archivedSession.png' /><p class='caption'>Fig. 13 - Archived Session in the Inspector after <i>Open</i> was pressed.</p>
+</div>
+
+<p>Because we've only just archived this session, its data is still stored in the VisualCommander client, which is why the displays we've got in our interface retain their values, and the Plot retains its history. If we simply unarchive now, nothing will appear to change. If the session had been running for a longer time, or if we wanted to add a new display for a data point that we hadn't visualized yet, however, nothing would happen right now&mdash;that data isn't available in VisualCommander, and the archive needs to be unarchived before the data saved there can be used.</p>
+
+<p>Let's get a clean slate to see how this works. Make sure your interface is saved, and then quit VisualCommander and then re-open it. After it finishes launching, re-open your saved interface.</p>
+
+<p>When the interface appears, you'll see that all of the raw data displays show "No value", and the Plot shows only a blank view. Looking at the Session in the inspector, however, you'll see that it maintains its Archived status.</p>
+
+<p>Click on the <i>Open</i> menu and choose <i>Unarchive</i>. The Data Center then creates the appropriate data source, and provides it the archived data; you'll see that the data in the interface will shift a few times as historical data is requested from the archive before settling on a view that should look identical to how all of our data looked before we archived it. Also, the Session's status will switch to <i>Unarchived</i>.
+</p>
+
+<p>Let's make sure all of our data is really there, even the data that we haven't visualized yet. From the Data Tree, find the "linear" data point (NewSession -> Generated -> Simple -> linear) and drag it onto an open spot on your page to create a raw data for viewing it. You'll see that, after a brief delay while the data is retrieved, the raw data correctly shows the last value from the linear data point.</p>
+
+<p>Now that we've verified that the data is available, let's close our archive again. Click the <i>Close</i> menu.
+If you select <i>Archive then Close</i> the data is re-archived before the Session closes; <i>Close and Remove Archive</i> results in loss of the Session's data as well as the archive.
+This is one way to remove an archive&mdash;by unarchiving it, then closing and removing it.
+You can just select <i>Remove Archive</i> in the <i>Close</i> menu when the Session is in the archived state.
+Select <i>Close and Remove Archive</i> now.
+</p>
+
+<p>After being prompted with a "Are you sure" alert, you'll see that the session has gone back to the now familiar <i>Awaiting Creation</i> state, ready to be used again; the data archive has been discarded.
+<b>Note: deleting an archive cannot be undone.</b></p>
+
+<p><i>Unarchived data is most useful in conjunction with the <a href='Sessiontimecontrol.html'>Session Time Control</a> functionality, though this guide does not cover that feature. Please see that documentation for more information.</i>
+</p>
+
+</div>
+
+<div class=info><h3><a name='summary'>Summary</a></h3>
+<p>At this point, you should have a good working knowledge of the basic components of VisualCommander and some understanding of how they tie together to provide visualization and analysis capability. We've discussed how data is brought into VisualCommander via Sessions, and how Interfaces provide a canvas on which to visualize that data. You've seen how Processors work to enable data transformation, and how Commands allow two-way data flow back to the Session. Last, you've seen how Archives allow you to save the data produced by a Session for later review.</p>
+<p>There are a number of features of VisualCommander not covered by this getting started guide, however. You can take a look at the rest of this manual for more information. The <a href='ComponentDetails.html'>Component Details</a> page lists a few components of VisualCommander that have specific documentation. Also, Displays and Processors often have their own help pages; you can right-click on either in while in Edit mode and choose "Help..." if it's available.</p>
+</div>
+
+<!-- Footer for each page -->
+<div id="pssfoot"></div>
+<script type="text/javascript" src="pssfooter.js">  </script>
+</body>
+</html>
