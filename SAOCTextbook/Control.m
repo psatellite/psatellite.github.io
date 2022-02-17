@@ -1,8 +1,7 @@
 function tC = Control( theta, d )
 
-%-------------------------------------------------------------------------------
-%   Control algorithm.
-%   This is a discrete proportional derivative controller.
+%% Control algorithm.
+% This is a discrete proportional derivative controller.
 %-------------------------------------------------------------------------------
 %   Form:
 %   tC = Control( theta, d )
@@ -12,7 +11,7 @@ function tC = Control( theta, d )
 %   Inputs
 %   ------
 %   t               (3,1)  Angle (rad)
-%   d               (1,1)  Data structure
+%   d                (.)   Data structure
 %                          .inr (3,3) Inertia matrix (kg-m^2)
 %                          .kF  (1,1) Forward gain
 %                          .tau (1,1) Rate time constant
@@ -26,7 +25,7 @@ function tC = Control( theta, d )
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2008, 2021 Princeton Satellite Systems, Inc.
 %   All rights reserved.
 %-------------------------------------------------------------------------------
 
@@ -41,8 +40,3 @@ tC = -d.inr*d.kF*(theta + d.tau*(theta - thetaOld)/d.dT);
 thetaOld = theta;
 
 
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $

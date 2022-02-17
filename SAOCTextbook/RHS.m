@@ -1,7 +1,7 @@
-function xDot = RHS( t, x, d )
+function xDot = RHS( ~, x, d )
 
-%-------------------------------------------------------------------------------
-%   Right hand side of the simulation.
+%% Right hand side of the integrated simulation.
+% Includes orbit dynamics, attitude dynamics, and a charging model.
 %-------------------------------------------------------------------------------
 %   Form:
 %   xDot = RHS( t, x, d )
@@ -10,9 +10,9 @@ function xDot = RHS( t, x, d )
 %   ------
 %   Inputs
 %   ------
-%   t               (1,:)  Time (sec)
+%   t               (1,:)  Time (sec) (unused)
 %   x               (3,:)  [r;v;theta;omega;eB]
-%   d               (1,1)  Data structure
+%   d                (.)  Data structure
 %
 %   -------
 %   Outputs
@@ -22,23 +22,23 @@ function xDot = RHS( t, x, d )
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2008, 2021 Princeton Satellite Systems, Inc.
 %   All rights reserved.
 %-------------------------------------------------------------------------------
 
 % Break the state down
 %---------------------
-r    = x( 1: 3,:);
-v    = x( 4: 6,:);
-q    = x( 7: 9,:);
-w    = x(10:12,:);
-e    = x(13:13,:);
+r    = x( 1: 3,:);  % position
+v    = x( 4: 6,:);  % velocity
+q    = x( 7: 9,:);  % body angles
+w    = x(10:12,:);  % body rates
+e    = x(13:13,:);  % battery energy
 
 lon  = atan2(r(2),r(1));
 rMag = Mag(r);
 
-% Longitudinal acceleration
-%--------------------------
+% Longitudinal acceleration, J2 term
+%-----------------------------------
 a    = 6378.137;
 s22  = -9.0359e-07;
 c22  = 1.5743e-06;
@@ -48,9 +48,9 @@ u    = [r(2);-r(1);0];
 u    = u/Mag(u);
 rMD  = r - d.d;
 aSun = -d.mu3*(rMD/Mag(rMD)^3 + d.d/Mag(d.d)^3);
-aE   = -d.mu2*r/rMag^3;
+aE   = -d.mu2*r/rMag^3; % Earth
 
-aS   = d.f/d.m;
+aS   = d.f/d.m; % solar panel perturbing force
 aS   = [0;0;0];
 
 vDot = aE + aSun + aS + aT*u;
@@ -60,9 +60,9 @@ wDot = d.inrInv*(d.tD + d.tC - cross( w, d.inr*w ));
 % Battery model
 %--------------
 if( e >= d.eMax )
-    eDot = 0;
+  eDot = 0;
 else
-    eDot = d.p - d.pRF;
+  eDot = d.p - d.pRF;
 end
 
 xDot = [v;vDot;qDot;wDot;eDot];
@@ -74,9 +74,3 @@ function m = Mag( x )
 
 m = sqrt( x'*x );
 
-
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $

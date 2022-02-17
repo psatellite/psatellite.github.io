@@ -1,26 +1,24 @@
-%-------------------------------------------------------------------------------
-%   Simulation of a spacecraft in GEO orbit. 
-%   Includes gravitational acceleration from the sun and Earth.
+%% Simulation of a spacecraft in GEO orbit. 
+% Includes gravitational acceleration from the sun and Earth.
 %
-%   Simulates the orbit and shows the apparent motion of the spacecraft in
-%   a coordinate frame that rotates with the Earth.
+% Simulates the orbit and shows the apparent motion of the spacecraft in
+% a coordinate frame that rotates with the Earth.
+%-------------------------------------------------------------------------------
+% See also: RHSOrbit
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2008, 2021 Princeton Satellite Systems, Inc.
 %   All rights reserved.
 %-------------------------------------------------------------------------------
 
-% Clean up previous runs
-%-----------------------
+%% Clean up previous runs
+%------------------------
 close all
-clear all
+clearvars
 
-% Time for the maneuver
-%----------------------
-
-% Simulation setup
-%-----------------
+%% Simulation setup
+%------------------
 dT       = 8; % Time step (s)
 nDays    = 2;
 nSim     = nDays*86400/dT; % Number of simulation steps
@@ -51,33 +49,29 @@ t        = 0; % Start time (s)
 
 xODEOptions = odeset( 'AbsTol', 1e-9, 'RelTol', 1e-6 );
 
-
-% Run the sim
-%------------
+%% Run the sim
+%-------------
 for k = 1:nSim
-    
-    % Plot vector
-    %------------
-    xPlot(:,k)   = x; 
-    
-    % Integrate one time step
-    %------------------------
-    [t, x]       = ode45(@RHSOrbit,[t t+dT], x, xODEOptions, d );
-    
-    t            = t(end);
-    x            = x(end,:)';
+  % Plot vector
+  %------------
+  xPlot(:,k)   = x; 
+
+  % Integrate one time step
+  %------------------------
+  [t, x]       = ode45(@RHSOrbit,[t t+dT], x, xODEOptions, d );
+
+  t            = t(end);
+  x            = x(end,:)';
 end
 
-% Plot the results
-%-----------------
+%% Plot the results
+%------------------
 r  = xPlot( 1: 3,:);
 v  = xPlot( 4: 6,:);
 
 % Orbit
 %------
-h = figure;
-set(h,'name','Orbit','numbertitle','off');
-
+h = figure('name','Orbit','numbertitle','off');
 
 t  = (0:(nSim-1))*dT;
 c  = cos(wo*t);
@@ -90,49 +84,38 @@ for k = 1:length(t)
     rT(:,k) = [c(k) s(k) 0;-s(k) c(k) 0;0 0 1]*r(:,k) - [42167;0;0];
 end
 
-
 % Convert time to hours
 %----------------------
 t = t/3600;
 tL = 'Time (hr)';
-
 
 subplot(2,2,1)
 plot(rT(1,:),rT(2,:));
 xlabel('\Delta x (km)')
 ylabel('\Delta y (km)');
 title('Rotating frame')
-grid
+grid on
 
 subplot(2,2,2)
 plot(t,rT(3,:));
 xlabel(tL)
 ylabel('\Delta z (km)');
 title('Rotating frame')
-
-grid
-
+grid on
 
 subplot(2,2,3)
 plot(t,r);
 xlabel(tL)
 ylabel('Position (km)');
-grid
+grid on
 title('ECI frame')
-
 
 subplot(2,2,4)
 plot(t,rT(1:2,:));
 xlabel(tL)
 ylabel('Position (km)');
 title('Rotating frame')
-grid
+grid on; grid minor
 legend({'\Delta x' '\Delta y'},'location','northwest')
 
 
-
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $

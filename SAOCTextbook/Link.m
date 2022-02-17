@@ -1,8 +1,7 @@
 function p = Link( theta, r, t, d )
 
-%-------------------------------------------------------------------------------
-%   Computes the power on the ground from the spacecraft.
-%   Time is only used for plotting from within this routine
+%% Computes the power on the ground from the spacecraft.
+% Time is only used for plotting from within this routine.
 %-------------------------------------------------------------------------------
 %   Form:
 %   p = Link( theta, r, t, d )
@@ -30,7 +29,7 @@ function p = Link( theta, r, t, d )
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2008, 2021 Princeton Satellite Systems, Inc.
 %   All rights reserved.
 %-------------------------------------------------------------------------------
 
@@ -60,7 +59,7 @@ lon      = d.lonGS*degToRad;
 rGS      = 6378.165*[cos(lon)*cos(lat);sin(lon)*cos(lat);sin(lat)];
 
 % Earth rate
-%-----------
+%-----------hmm
 wo       = 2*pi/86400;
 
 n        = length(t);
@@ -68,7 +67,7 @@ p        = zeros(1,n);
 
 dT       = 2*sqrt(d.aT/pi);
 gT       = 4*pi*d.aT/d.lambda^2;
-gR       = 4*pi*d.aR/d.lambda&2;
+gR       = 4*pi*d.aR/d.lambda^2;
 theta3DB = 70*degToRad*d.lambda/dT;
 
 % Gains
@@ -89,18 +88,12 @@ end
 % Default output
 %---------------
 if( nargout == 0 )
-    h = figure;
+    figure('name','Link');
     plot(t,10*log10(p))
-    xlabel('time (sec)')
+    xlabel('Time (sec)')
     ylabel('Power (dBW)')
     title('Power on ground')
     grid
     clear p
 end
 
-
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $

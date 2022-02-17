@@ -1,33 +1,33 @@
 function [t, f, p] = ThermalOptical( beta, d )
 
-%-------------------------------------------------------------------------------
-%   Temperature, force and power due to solar flux.
+%% Temperature, force and power due to solar flux.
 %-------------------------------------------------------------------------------
 %   Form:
-%   t, f, p] = ThermalOptical( beta, d )
+%   [t, f, p] = ThermalOptical( beta, d )
 %-------------------------------------------------------------------------------
 %
 %   ------
 %   Inputs
 %   ------
 %   beta            (1,:)  Sun angle rad
-%   d               (1,1)  Temperature data structure
+%   d                (.)   Temperature data structure
+%                          .a      (1,1) Area (m^2)
 %                          .gamma  (1,1) Tilt angle (rad)
 %                          .rhoA   (1,1) Absorption coeffiicent (0-1)
 %                          .eps    (1,1) Emissivity (0-1)
-%                          .eta    (1,1) Cell conversion efficienty (0-1)
+%                          .eta    (1,1) Cell conversion efficiency (0-1)
 %
 %   -------
 %   Outputs
 %   -------
 %   t               (1,:)  Temperature (deg-K)
-%   f               (1,:)  Force
-%   p               (1,:)  power
+%   f               (1,:)  Force (N)
+%   p               (1,:)  Power (W)
 %
 %-------------------------------------------------------------------------------
 
 %-------------------------------------------------------------------------------
-%   Copyright (c) 2008 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2008, 2021 Princeton Satellite Systems, Inc.
 %   All rights reserved.
 %-------------------------------------------------------------------------------
 
@@ -74,7 +74,7 @@ f     = [f0;f0;f0].*([f1*n(1);f1*n(2);f1*n(3)] + d.rhoA*s);
 % Default output
 %---------------
 if( nargout == 0 )
-    figure;
+    figure('name','ThermalOptical');
     beta = beta*180/pi;
     
     subplot(1,3,1)
@@ -82,14 +82,14 @@ if( nargout == 0 )
     xlabel('\beta (deg)')
     ylabel('Temperature (deg-K)')
     title('Panel Temperature')
-    grid
+    grid on
     
     subplot(1,3,2)
     plot(beta,p)
     xlabel('\beta (deg)')
     ylabel('Power (W)')
     title('Panel Power')
-    grid
+    grid on
     
     subplot(1,3,3)
     h = plot(beta,f*1e6);
@@ -99,15 +99,9 @@ if( nargout == 0 )
     xlabel('\beta (deg)')
     ylabel('Force (\mu N)')
     title('Panel Force')
-    grid
+    grid on
     legend({'x' 'y' 'z'})
 
     clear t
 end
 
-
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $

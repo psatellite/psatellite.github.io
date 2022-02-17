@@ -1,7 +1,6 @@
 function xDot = RHSOrbit( t, x, d )
 
-%-------------------------------------------------------------------------------
-%   Right hand side of the simulation.
+%% Right hand side of the orbit simulation.
 %-------------------------------------------------------------------------------
 %   Form:
 %   xDot = RHSOrbit( t, x, d )
@@ -10,7 +9,7 @@ function xDot = RHSOrbit( t, x, d )
 %   ------
 %   Inputs
 %   ------
-%   t               (1,1)  Time (sec)
+%   t               (1,1)  Time (sec) - unused
 %   x               (6,1)  [r;v]
 %   d               (1,1)  Data structure
 %
@@ -57,9 +56,3 @@ function m = Mag( x )
 
 m = sqrt( x'*x );
 
-
-%--------------------------------------
-% PSS internal file version information
-%--------------------------------------
-% $Date: 2013-12-30 16:59:03 -0500 (Mon, 30 Dec 2013) $
-% $Revision: 36558 $
