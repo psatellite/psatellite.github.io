@@ -1,0 +1,28 @@
+var classfsw__torque__distribution =
+[
+    [ "initialize_data", "classfsw__torque__distribution.html#a978f5400929c1d1726a11d955e37e306", null ],
+    [ "acs_actuator_selection_command_ref", "group___commands.html#ga68f32ce9620e50fa635f96ead5917620", null ],
+    [ "acs_rwa_pinv_command_ref", "group___commands.html#ga1b7de143faf3e94f66d1db71bdfe4216", null ],
+    [ "acs_thruster_command_ref", "group___commands.html#ga7560a0d3298238e7ea33e4a3ff5b0fc4", null ],
+    [ "acs_torque_demand_ref", "classfsw__torque__distribution.html#afd53c4868124970d667f41bcc594ed93", null ],
+    [ "center_of_mass_ref", "classfsw__torque__distribution.html#a3c40bd33d775c19b7a311c35cccbb28d", null ],
+    [ "control_period_ref", "classfsw__torque__distribution.html#aa03d3b9c4f2a9cfcc77064f037b5da3d", null ],
+    [ "guidance_orbit_force_ref", "classfsw__torque__distribution.html#a1ae6d239dc259273651b861abd68c6b7", null ],
+    [ "guidance_pulsewidth_demand_ref", "classfsw__torque__distribution.html#a5b9aa5ff6ac659af16bd72d0e69311aa", null ],
+    [ "guidance_thruster_command_ref", "classfsw__torque__distribution.html#a80f2902a3abdf4c22d34d9aef79ab784", null ],
+    [ "guidance_use_rcs_command_ref", "classfsw__torque__distribution.html#a58963aca352faa8eb312242325a19397", null ],
+    [ "prop_simplex_failed_ref", "classfsw__torque__distribution.html#a3f09af1231f81db3b5017d96dfbdd4cf", null ],
+    [ "prop_tank_pressure_ref", "classfsw__torque__distribution.html#a443817bdf66dbdc1b9eb2426ecfa2077", null ],
+    [ "prop_thruster_coefficients_ref", "classfsw__torque__distribution.html#a596acca04d233763907ac140e622626a", null ],
+    [ "prop_thruster_directions_ref", "classfsw__torque__distribution.html#aff19ec1a26dfc922eaa1d3bbe1f38d05", null ],
+    [ "prop_thruster_positions_ref", "classfsw__torque__distribution.html#ae5aa4d22cf34d6bd4a44f5f86e03e3b5", null ],
+    [ "prop_thruster_pulsewidth_demand_ref", "classfsw__torque__distribution.html#a405e564e6caec6e9ca87d895504d6296", null ],
+    [ "rwa_command_ref", "group___commands.html#ga98b9b41f8ef5492294428d0c0f00a4ab", null ],
+    [ "rwa_inertia_ref", "classfsw__torque__distribution.html#aa03646387556a5813fbddc0ab9b11459", null ],
+    [ "rwa_max_voltage_ref", "classfsw__torque__distribution.html#abbffc563c33d6d33232b1ec0b1229bf4", null ],
+    [ "rwa_rate_ref", "classfsw__torque__distribution.html#a75312013f3d438cb888ba9d25a31acd4", null ],
+    [ "rwa_torque_constant_ref", "classfsw__torque__distribution.html#afe997556f9938293b1e3a78080c5c7f7", null ],
+    [ "rwa_unit_vector_ref", "classfsw__torque__distribution.html#a158076b29955a970425172210f17bb53", null ],
+    [ "rwa_voltage_demand_ref", "classfsw__torque__distribution.html#acf14dc966e99acd46fdd2a6b0c51906d", null ],
+    [ "thruster_period_mult_command_ref", "group___commands.html#ga2d133bbbfaac9b490eeab5c7d5c3ce89", null ]
+];

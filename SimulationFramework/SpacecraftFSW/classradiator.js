@@ -1,0 +1,28 @@
+var classradiator =
+[
+    [ "handle_message", "../../SpacecraftPackage/html/classradiator.html#a145bc47adc17e299c1ca0bc7c6e6f18a", null ],
+    [ "initialization_complete", "../../SpacecraftPackage/html/classradiator.html#a755d3e1bce6a5b3afad518fcebb064b9", null ],
+    [ "initialize_data", "../../SpacecraftPackage/html/classradiator.html#a7f45c8c2ee946a8066064f2e123eacda", null ],
+    [ "initialize_timestep", "../../SpacecraftPackage/html/classradiator.html#a060801077eeb6dd6b6798c5af58a8c1e", null ],
+    [ "post_calculate", "../../SpacecraftPackage/html/classradiator.html#a2b395bf5c8d2d4e12da984b83853c61f", null ],
+    [ "pre_calculate", "../../SpacecraftPackage/html/classradiator.html#a7b078250939273005aa2a27350d361bb", null ],
+    [ "antenna_receive_gain_dsim", "../../SpacecraftPackage/html/classradiator.html#abaafc984c17aaf25e3acfdf2afa23eba", null ],
+    [ "antenna_temperature_dsim", "../../SpacecraftPackage/html/classradiator.html#a78b49f19ef08b5715a4c17c4f9adfedb", null ],
+    [ "antenna_transmit_gain_dsim", "../../SpacecraftPackage/html/classradiator.html#a5743e938aa0afc7e4901dc9da2827267", null ],
+    [ "boresight_dsim", "../../SpacecraftPackage/html/classradiator.html#a220e8ac9202bcb4cc637b12c3f95678c", null ],
+    [ "channel_data_rate_dsim", "../../SpacecraftPackage/html/classradiator.html#a2b66ea98fa6cbff1f6942bd5d692e2d4", null ],
+    [ "feed_loss_dsim", "../../SpacecraftPackage/html/classradiator.html#a6b6d1e3b3e29ab14939ac4c9d550c870", null ],
+    [ "guard_bits_dsim", "../../SpacecraftPackage/html/classradiator.html#a64c4e873dece12db0d8bc92514cdbe20", null ],
+    [ "message_incoming_dsim", "../../SpacecraftPackage/html/classradiator.html#a28fffa0dfd61196030b2453b940d8724", null ],
+    [ "message_outgoing_dsim", "../../SpacecraftPackage/html/classradiator.html#ad2256c55b906e90711f76fc4abbb175a", null ],
+    [ "parent_position_dsim", "../../SpacecraftPackage/html/classradiator.html#aafb96c32f9ef06c8f3e962569b6e93cb", null ],
+    [ "parent_quaternion_dsim", "../../SpacecraftPackage/html/classradiator.html#ae0db02d8c76a19eaf69217bde9702bb4", null ],
+    [ "position_dsim", "../../SpacecraftPackage/html/classradiator.html#a0a8685cebf2aca002f6a6677b9a8b01c", null ],
+    [ "power_receive_dsim", "../../SpacecraftPackage/html/classradiator.html#ac1da4db2affa1cf9b3df94e72a56de3f", null ],
+    [ "power_receive_saturation_dsim", "../../SpacecraftPackage/html/classradiator.html#a352d5b2f110f5c460aca351125d31b6c", null ],
+    [ "power_transmit_dsim", "../../SpacecraftPackage/html/classradiator.html#a1d2d360a7a31c1d14075ca364a3f6231", null ],
+    [ "receive_angle_dsim", "../../SpacecraftPackage/html/classradiator.html#ad89cfb0e5045ac5fbb3c552f1a1b67d4", null ],
+    [ "transmit_angle_dsim", "../../SpacecraftPackage/html/classradiator.html#a1aca1f6e167fbf3910cb42e1990ebeb0", null ],
+    [ "transmit_dsim", "../../SpacecraftPackage/html/classradiator.html#aecbdc97f903d68454f5a9fb4a194f7fe", null ],
+    [ "transmit_frequency_dsim", "../../SpacecraftPackage/html/classradiator.html#acbba66955d4ef50d05511025aba90339", null ]
+];

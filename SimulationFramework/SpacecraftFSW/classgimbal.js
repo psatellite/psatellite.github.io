@@ -1,0 +1,27 @@
+var classgimbal =
+[
+    [ "complete_timestep", "../../SpacecraftPackage/html/classgimbal.html#adaecece9cf48c496f75b73e64798335e", null ],
+    [ "initialization_complete", "../../SpacecraftPackage/html/classgimbal.html#aeaad3b97d484ab863db7b556faa4730a", null ],
+    [ "initialize_data", "../../SpacecraftPackage/html/classgimbal.html#a2917a097c61443f6f7afc081618b288b", null ],
+    [ "rhs", "../../SpacecraftPackage/html/classgimbal.html#ac303411f6a38fad87f2d2d1b1c1ba148", null ],
+    [ "acceleration_dsim", "../../SpacecraftPackage/html/classgimbal.html#abe81743c62246a78df2120b29931c891", null ],
+    [ "angular_acceleration_dsim", "../../SpacecraftPackage/html/classgimbal.html#acbe221970f70f1e29b2871ebc0c6eb27", null ],
+    [ "body_rate_dsim", "../../SpacecraftPackage/html/classgimbal.html#a9c1997cc634fde57354f0b70f9c402bb", null ],
+    [ "center_mass_dsim", "../../SpacecraftPackage/html/classgimbal.html#ab38151c3ebd3355eb50489b1f221252d", null ],
+    [ "gimbal_angle_dsim", "../../SpacecraftPackage/html/classgimbal.html#a488fa96576cb3e01e205b79b9431fd65", null ],
+    [ "gimbal_angle_max_dsim", "../../SpacecraftPackage/html/classgimbal.html#ac837aac273c00d5ffae1d0600493a489", null ],
+    [ "gimbal_angle_scaled_dsim", "../../SpacecraftPackage/html/classgimbal.html#a25ce5dd96816c5294e21691963021c67", null ],
+    [ "parent_acceleration_dsim", "../../SpacecraftPackage/html/classgimbal.html#ac94f64013e473fa68d4e020aecea124d", null ],
+    [ "parent_angularAcceleration_dsim", "../../SpacecraftPackage/html/classgimbal.html#ab376fb8cffd4c2a20a76d7d7550e5636", null ],
+    [ "parent_body_rate_dsim", "../../SpacecraftPackage/html/classgimbal.html#a2356d671c305733b6bd67462726bc7a1", null ],
+    [ "parent_centerOfMass_dsim", "../../SpacecraftPackage/html/classgimbal.html#ab31d22c583dc7948651f4b4c16eaa42d", null ],
+    [ "parent_position_dsim", "../../SpacecraftPackage/html/classgimbal.html#a5e976f3d14faace3687be430413cb420", null ],
+    [ "parent_quaternion_dsim", "../../SpacecraftPackage/html/classgimbal.html#a5eb2abfa674beeba733d4cba4b643e75", null ],
+    [ "parent_velocity_dsim", "../../SpacecraftPackage/html/classgimbal.html#ae1195341536d5fd4642a9678a55981f8", null ],
+    [ "position_dsim", "../../SpacecraftPackage/html/classgimbal.html#aacc28859bfe47b746b31dd631c1de5e9", null ],
+    [ "quaternion_base_to_axis_dsim", "../../SpacecraftPackage/html/classgimbal.html#ae3c255ed7aadd50c37f62f72ee552e3f", null ],
+    [ "quaternion_dsim", "../../SpacecraftPackage/html/classgimbal.html#a51ac06a222fae992db69c43c83b22ae5", null ],
+    [ "rate_command_dsim", "../../SpacecraftPackage/html/classgimbal.html#a448b9c924957a7a38701acbcd521d78e", null ],
+    [ "rotational_velocity_dsim", "../../SpacecraftPackage/html/classgimbal.html#aacba77044a5deacfddf8008d2c972114", null ],
+    [ "velocity_dsim", "../../SpacecraftPackage/html/classgimbal.html#a84022707e11863518d8f166c023c5b6c", null ]
+];

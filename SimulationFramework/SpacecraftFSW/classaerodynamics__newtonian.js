@@ -1,0 +1,25 @@
+var classaerodynamics__newtonian =
+[
+    [ "aerodynamics_newtonian", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#acc775f17bacd0d4c0fb0f3f957a22ac6", null ],
+    [ "~aerodynamics_newtonian", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#ac0f7b5fd879488a740ea4c8803ead418", null ],
+    [ "complete_timestep", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#ac5de09d4db9888b887c63f84cfcdc4e9", null ],
+    [ "initialization_complete", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a5feb9bf0eefcc37ab2321ce2e8f45e0d", null ],
+    [ "initialize_data", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a465a45ad1b143030e2abe464fccf63e8", null ],
+    [ "initialize_timestep", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a9e41b15b5f448ac365a763a3c23fc93d", null ],
+    [ "rankine_hugoniot_factor", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#aeec3a251b383995f363bed73688eaf99", null ],
+    [ "rhs", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a54fbbaef8c41d3e0988d216841cce4e8", null ],
+    [ "centroid_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a833c06776f5fa4f0fca2c5bb1ac64359", null ],
+    [ "force_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a3a66c488e79a207f2894fa079d2df6ce", null ],
+    [ "normal_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a13d7c2a7e420e0c842f5492d93b03ff4", null ],
+    [ "parent_center_of_mass_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#aa168180e8dcd7f050963dfd6f452cf5a", null ],
+    [ "parent_position_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a363c29bc0039d83a84eaa9d935c89115", null ],
+    [ "parent_quaternion_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a7c5a38fe23877d65219a1e5585ab79da", null ],
+    [ "parent_velocity_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a5ce55798c8b37aa289eab90ce07734f7", null ],
+    [ "rho_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a8019c7c6e8d08806d932632f6a916672", null ],
+    [ "rotation_angle_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#af8103876afce35abb59d16936f5e3052", null ],
+    [ "rotation_axis_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a2276a9f09d48ef3cd99ad37a15ffcfa9", null ],
+    [ "solarFluxFile_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a5262e636f42718ea2377c72d8a6fe06d", null ],
+    [ "surface_area_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a450aae62501ac646626322f7be0d499e", null ],
+    [ "t_stagnation_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a2bf7cb1c206b4caa22d7cc6b8c52a27e", null ],
+    [ "torque_dsim", "../../SpacecraftPackage/html/classaerodynamics__newtonian.html#a4ae7f62afa7dfc2c634880753ec330a0", null ]
+];
