@@ -1,0 +1,232 @@
+<html>
+<head>
+<title>AC</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<?php
+	$rootPath = "../..";
+	include("$rootPath/includes/header.inc");
+?>
+</head>
+<body>
+<div class=page>
+
+<h2>AC:</h2>
+<p>Path: AC/ACDynamics</p>
+<pre>
+% Dynamics model for an aircraft. Updates the data structure x.
+ This model can include:
+
+ * Flexible appendages
+ * Spinning rotors
+ * Nonlinear aerodynamics
+ * Disturbance models
+
+ You can supply up to six routine names to customize the simulation:
+
+   d.aero.name     = 'YourAeroFunctionName'        - default []
+   d.actuator.name = 'YourActuatorFunctionName'    - default []
+   d.engine.name   = 'YourEngineFunctionName'      - default []
+   d.rotor.name    = 'YourRotorFunctionName'       - default []
+   d.sensor.name   = 'YourSensorFunctionName'      - default []
+   d.disturb.name  = 'YourDisturbanceFunctionName' - default []
+
+   -----------------------------------------------------------
+   Your aerodynamics routine must be in the form:
+
+   gAero = YourAeroFunctionName( alpha, beta, x, d.aero, qBar, control )
+
+ where gAero is a data structure that computes
+ the forces and torques on all of the components
+ and an addition the the mass and inertia matrix.
+
+ gAero is a data structure of the form:
+
+   gAero.torque  (3,1) Core torques
+   gAero.force   (3,1) Core forces
+   gAero.modal   (:,1) Modal forces
+   gAero.inertia (3,3) Delta inertia due to aerodynamics
+   gAero.mass    (3,3) Delta mass matrix due to aerodynamics
+
+ If the last terms are zero return [] for them.
+ All terms are in the body frame.
+
+   -----------------------------------------------------------
+   Your engine routine must be in the form:
+
+   gEngine = YourEngineFunctionName( x.engine, d.engine, control, altitude, machNo )
+
+ where gEngine is a data structure that contains
+ the forces and torques on the aircraft due to the engines
+ and the engine state derivatives.
+
+ gEngine is a data structure of the form
+
+   gEngine.torque      (3,1) Core torques
+   gEngine.force       (3,1) Core forces
+   gEngine.dX          (:,1) Engine state derivatives
+   gEngine.mDot        (1,1) Fuel consumption
+   gEngine.inertiaDot  (3,3) Inertia derivative due to fuel consumption
+   gEngine.cGDot       (3,1) CG derivative due to fuel consumption
+   gEngine.torqueRotor (:,1) Torques on rotors
+
+   -----------------------------------------------------------
+   Your rotor routine must be in the form:
+
+   torque = YourRotorFunctionName( gEngine.torqueRotor, d.control, d.rotor )
+
+ where torque is a data structure that contains the torques on all rotors.
+
+   gEngine.torqueRotor (:,1) Torques on rotors
+
+   -----------------------------------------------------------
+   Your actuator routine must be in the form:
+
+   [dXActuator, control] = YourActuatorFunctionName( x.actuator, d.control, d.actuator )
+
+   where torque is a data structure that contains the torques on all rotors.
+
+   -----------------------------------------------------------
+   Your sensor routine must be in the form:
+
+   x = YourSensorFunctionName( x, d, opt )
+   when opt = 'rhs'
+   x = dXSensor
+   when opt = 'meas'
+   x = measurement
+
+   -----------------------------------------------------------
+   Your disturbance routine must be in the form:
+
+   disturb = YourDisturbanceFunctionName( x.disturb, d.disturb )
+
+   where
+     disturb.xDot   - disturbance state derivatives
+     disturb.torque - disturbance torque
+     disturb.force  - disturbance force
+
+--------------------------------------------------------------------------
+   Form:
+   [x, measurement] = AC( x, t, dT, d, opt )
+--------------------------------------------------------------------------
+
+   ------
+   Inputs
+   ------
+   x             (:)         Aircraft state
+                             r          (3,1) ECI position vector
+                             q          (4,1) Quaternion from ECI to body
+                             w          (3,1) Inertial body rate in body frame
+                             v          (3,1) Velocity of cm wrt air
+                             wR         (:,1) Angular velocity of rotors
+                             mass       (1,1) Mass
+                             inertia    (6,1) Inertia
+                             cG         (3,1) Center of mass
+                             engine     (:,1) Engine states
+                             actuator   (:,1) Actuator states
+                             sensor     (:,1) Sensor states
+                             flex       (:,1) Flex model states organized [x;v] by appendage
+                             disturb    (:,1) Disturbance model states
+   t             (1,1)       Time
+   dT            (1,1)       Time step
+   d             (:)         Aircraft data structure
+                             d.wPlanet  (3,1) Planet rate
+                             d.mu       (1,1) Planet gravitational parameter
+                             d.theta0   (1,1) Initial angle between planet
+                                              x-axis and ECI x-axis
+                             d.atmData  (1,:) Atmospheric data
+                             d.atmUnits (1,:) Atmospheric data units
+                             d.rotor    (:)   Rotor data structure
+                                        .u       (3,1) Unit vector
+                                        .inertia (1,1) Spin axis inertia
+                             d.flex     (:)   See get BldFlex
+                             d.engine   (:)   Private engine data structure
+                             d.aero     (:)   Private aerodynamics data structure
+                             d.actuator (:)   Private actuator data structure
+                             d.sensor   (:)   Private sensor data structure
+                             d.disturb  (:)   Private disturbance data structure
+                             d.control  (:)   Control data structure
+                                              .elevator
+                                              .aileron
+                                              .rudder
+                                              .throttle
+   opt           (1,:)       Options
+                             'integrate'   (default)
+                             'xdot'
+                             'meas'
+   -------
+   Outputs
+   -------
+   x             (:)         Aircraft state  'integrate'
+                             acceleration    'xdot'
+   measurement   (:)         Measurement data structure
+                                              opt
+--------------------------------------------------------------------------
+</pre>
+
+<h2>Children:</h2>
+<pre>
+<a href="../ACHeaders/AlphBetaHeader.html">AC: ACCoord/AlphBeta</a>
+<a href="../ACHeaders/ECIToNEDHeader.html">AC: ACCoord/ECIToNED</a>
+<a href="../ACHeaders/@acstate/abs.mHeader.html">AC: Classes/@acstate/abs.m</a>
+<a href="../ACHeaders/@acstate/acstate.mHeader.html">AC: Classes/@acstate/acstate.m</a>
+<a href="../ACHeaders/@acstate/get.mHeader.html">AC: Classes/@acstate/get.m</a>
+<a href="../ACHeaders/@acstate/length.mHeader.html">AC: Classes/@acstate/length.m</a>
+<a href="../ACHeaders/@acstate/minus.mHeader.html">AC: Classes/@acstate/minus.m</a>
+<a href="../ACHeaders/@acstate/mrdivide.mHeader.html">AC: Classes/@acstate/mrdivide.m</a>
+<a href="../ACHeaders/@acstate/mtimes.mHeader.html">AC: Classes/@acstate/mtimes.m</a>
+<a href="../ACHeaders/@acstate/plus.mHeader.html">AC: Classes/@acstate/plus.m</a>
+<a href="../ACHeaders/@acstate/subsasgn.mHeader.html">AC: Classes/@acstate/subsasgn.m</a>
+<a href="../ACHeaders/@acstate/subsref.mHeader.html">AC: Classes/@acstate/subsref.m</a>
+<a href="../ACHeaders/@acstate/zeros.mHeader.html">AC: Classes/@acstate/zeros.m</a>
+<a href="../AerospaceUtilsHeaders/AtmDataHeader.html">AerospaceUtils: AeroData/AtmData</a>
+<a href="../AerospaceUtilsHeaders/AirDataHeader.html">AerospaceUtils: AtmosphericCalculations/AirData</a>
+<a href="../AerospaceUtilsHeaders/QIToBDotHeader.html">AerospaceUtils: Coord/QIToBDot</a>
+<a href="../CommonHeaders/StdAtmHeader.html">Common: Atmosphere/StdAtm</a>
+<a href="../CommonHeaders/@statespace/and.mHeader.html">Common: Classes/@statespace/and.m</a>
+<a href="../CommonHeaders/@statespace/close.mHeader.html">Common: Classes/@statespace/close.m</a>
+<a href="../CommonHeaders/@statespace/connect.mHeader.html">Common: Classes/@statespace/connect.m</a>
+<a href="../CommonHeaders/@statespace/eig.mHeader.html">Common: Classes/@statespace/eig.m</a>
+<a href="../CommonHeaders/@statespace/get.mHeader.html">Common: Classes/@statespace/get.m</a>
+<a href="../CommonHeaders/@statespace/getabcd.mHeader.html">Common: Classes/@statespace/getabcd.m</a>
+<a href="../CommonHeaders/@statespace/getsub.mHeader.html">Common: Classes/@statespace/getsub.m</a>
+<a href="../CommonHeaders/@statespace/isempty.mHeader.html">Common: Classes/@statespace/isempty.m</a>
+<a href="../CommonHeaders/@statespace/mtimes.mHeader.html">Common: Classes/@statespace/mtimes.m</a>
+<a href="../CommonHeaders/@statespace/plus.mHeader.html">Common: Classes/@statespace/plus.m</a>
+<a href="../CommonHeaders/@statespace/series.mHeader.html">Common: Classes/@statespace/series.m</a>
+<a href="../CommonHeaders/@statespace/set.mHeader.html">Common: Classes/@statespace/set.m</a>
+<a href="../CommonHeaders/@statespace/statespace.mHeader.html">Common: Classes/@statespace/statespace.m</a>
+<a href="../CommonHeaders/SwooshWatermarkHeader.html">Common: CommonData/SwooshWatermark</a>
+<a href="../CommonHeaders/AppendHeader.html">Common: Control/Append</a>
+<a href="../CommonHeaders/C2DZOHHeader.html">Common: Control/C2DZOH</a>
+<a href="../CommonHeaders/ParallelHeader.html">Common: Control/Parallel</a>
+<a href="../CommonHeaders/SeriesHeader.html">Common: Control/Series</a>
+<a href="../CommonHeaders/SizeABCDHeader.html">Common: Control/SizeABCD</a>
+<a href="../CommonHeaders/CellToMatHeader.html">Common: General/CellToMat</a>
+<a href="../CommonHeaders/DeBlankLTHeader.html">Common: General/DeBlankLT</a>
+<a href="../CommonHeaders/MatToCellHeader.html">Common: General/MatToCell</a>
+<a href="../CommonHeaders/WatermarkHeader.html">Common: General/Watermark</a>
+<a href="../CommonHeaders/NewFigHeader.html">Common: Graphics/NewFig</a>
+<a href="../CommonHeaders/Plot2DHeader.html">Common: Graphics/Plot2D</a>
+<a href="../CommonHeaders/PltStyleHeader.html">Common: Graphics/PltStyle</a>
+<a href="../CommonHeaders/XLabelSHeader.html">Common: Graphics/XLabelS</a>
+<a href="../CommonHeaders/YLabelSHeader.html">Common: Graphics/YLabelS</a>
+<a href="../CommonHeaders/ZLabelSHeader.html">Common: Graphics/ZLabelS</a>
+<a href="../CommonHeaders/Mat2QHeader.html">Common: Quaternion/Mat2Q</a>
+<a href="../CommonHeaders/Q2EulHeader.html">Common: Quaternion/Q2Eul</a>
+<a href="../CommonHeaders/Q2MatHeader.html">Common: Quaternion/Q2Mat</a>
+<a href="../CommonHeaders/QFormHeader.html">Common: Quaternion/QForm</a>
+<a href="../CommonHeaders/QMultHeader.html">Common: Quaternion/QMult</a>
+<a href="../CommonHeaders/QPoseHeader.html">Common: Quaternion/QPose</a>
+<a href="../CommonHeaders/QTFormHeader.html">Common: Quaternion/QTForm</a>
+<a href="../CommonHeaders/QUnitHeader.html">Common: Quaternion/QUnit</a>
+<a href="../CommonHeaders/AltitudeHeader.html">Common: Transform/Altitude</a>
+<a href="../CommonHeaders/Eul2QHeader.html">Common: Transform/Eul2Q</a>
+<a href="../CommonHeaders/Mat2EulHeader.html">Common: Transform/Mat2Eul</a>
+<a href="../MathHeaders/CrossHeader.html">Math: Linear/Cross</a>
+<a href="../MathHeaders/DupVectHeader.html">Math: Linear/DupVect</a>
+<a href="../MathHeaders/MagHeader.html">Math: Linear/Mag</a>
+<a href="../MathHeaders/SkewSymmHeader.html">Math: Linear/SkewSymm</a>
+</pre>
+<hr><p> <a href="../ACFunctions.html">Back</a> to the AC Module page</p></div>
+<?php include("$rootPath/includes/footer.inc"); ?>
+</html>

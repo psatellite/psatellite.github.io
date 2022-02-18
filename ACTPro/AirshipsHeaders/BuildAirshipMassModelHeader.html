@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>BuildAirshipMassModel</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<?php
+	$rootPath = "../..";
+	include("$rootPath/includes/header.inc");
+?>
+</head>
+<body>
+<div class=page>
+
+<h2>BuildAirshipMassModel:</h2>
+<p>Path: Airships/Mass</p>
+<pre>
+% Generate a distributed mass model for an axisymmetric airship.
+--------------------------------------------------------------------------
+   Form:
+   [body,comp] = BuildAirshipMassModel( name, h, xon, bvf );
+--------------------------------------------------------------------------
+
+   ------
+   Inputs
+   ------
+   name          (:)       Name of airship design file.
+   h             (1)       Altitude (meters)
+   xon           (1)       x-location of origin, measured back from nose 
+                             (optional, default is to put origin at CV)
+   bvf           (1)       Ballonet volume fraction, optional (default: 1)
+
+   -------
+   Outputs
+   -------
+   body          (.)       Body mass data structure with fields:
+                             .mass       Total mass of the airship
+                             .inertia    Moment of inertia about CV
+                             .cM         Center of mass position wrt CV
+
+   comp          (.)       Component mass data structures with fields:
+                             .mass       Mass of the component
+                             .inertia    Inertia of the component about
+                                         the local origin
+                             .cM         Center of mass position wrt the
+                                         origin of the local frame
+                             .r0         Position of the local frame
+                                         origin wrt the CV
+
+--------------------------------------------------------------------------
+
+ DESCRIPTION:
+
+ The airship hull is modelled as 2 axi-symmetric ellpsoids. It has 4
+ symmetric tailfins, and a hanging empennage that supports the payload and 
+ 2 engines / propellers. 
+
+ The total mass is given as:
+  m = mS + mF + mP + mH + mA
+
+ where the individual mass components are
+
+     mS: structure and all systems
+     mF: external fabric
+     mP: payload
+     mH: Helium
+     mA: air in ballonets (varies with altitude)
+
+ In order to compute the CG and the moment of inertia, we approximate the 
+ mass distribution of the airship. Several steps and assumptions are taken
+ to develop the model.
+
+  *  The structure/system mass (mS) includes the engines, internal 
+     structure, and tail-fins. Solar cells are ignored. 
+     The engine mass is assumed to be 60% mS. The tail-fins are assumed to
+     be 10% mS. This leaves 30% mS for support structure.
+
+  *  Each tail-fin is treated as a point-mass, with the CG located at the
+     centroid of the surface area.
+
+  *  The support structure is assumed to be distributed uniformly 
+     across the hull surface.
+
+  *  The air in the ballonets occupies the bottom portion of the hull.
+     The volume of air (and the mass) changes with altitude. We assume two
+     ballonets, fore and aft, are used. Each is modeled as a
+     half-ellipsoid, and they are centered at the CV location of the hull,
+     which is also the center of buoyancy (CB). This is done so that, when
+     the ballonets have equal volumes, the center of mass of the air lies
+     directly beneath the CB, creating no moment.
+
+  *  The payload is treated as a point mass, located at [xP;0;zP], which
+     is the center point of the hanging empennage. A separate function can
+     be used (BalanceAirshipPayload) to find the "xP" value that give zero
+     moment when the ballonets are empty. The airship should be designed
+     so that this value fits within the x-range of the empennage.
+
+  *  The right/left engines are treated as two point-masses, located at
+     [xE;+/-yE;zE]. To be practical, xE and zE should lie within the area
+     occupied by the hanging empennage.
+ 
+ Given these assumptions, the model is composed of 7 point masses (4 fins, 
+ 2 engines, 1 payload), and 4 continuum masses (fabric shell, Helium, air, 
+ structure). Each continuum mass is split into front and rear components. 
+ This gives a total of 15 components. When the airship is above the 
+ pressure altitude, the ballonets are empty and are thus not included, 
+ leaving 13 components. 
+
+ The "IntegrateMassProps" function is called to compute the mass, CG and 
+ inertia of the complete airship in body-frame coordinates. The body-frame 
+ is an orthoganal frame with x pointing through the nose, z pointing down, 
+ and y completing the right-handed system. The origin of the body-frame
+ may be specified as an input. If not provided, it is placed at the CV.
+
+--------------------------------------------------------------------------
+</pre>
+
+<h2>Children:</h2>
+<pre>
+<a href="../AerospaceUtilsHeaders/AtmDataHeader.html">AerospaceUtils: AeroData/AtmData</a>
+<a href="../AirshipsHeaders/IntegrateMassPropsHeader.html">Airships: Mass/IntegrateMassProps</a>
+<a href="../AirshipsHeaders/AirshipCVHeader.html">Airships: Modeling/AirshipCV</a>
+<a href="../AirshipsHeaders/GondolaGeometryHeader.html">Airships: Modeling/GondolaGeometry</a>
+<a href="../AirshipsHeaders/HalfEllipsoidHeader.html">Airships: Modeling/HalfEllipsoid</a>
+<a href="../CommonHeaders/StdAtmHeader.html">Common: Atmosphere/StdAtm</a>
+<a href="../CommonHeaders/SwooshWatermarkHeader.html">Common: CommonData/SwooshWatermark</a>
+<a href="../CommonHeaders/CellToMatHeader.html">Common: General/CellToMat</a>
+<a href="../CommonHeaders/MatToCellHeader.html">Common: General/MatToCell</a>
+<a href="../CommonHeaders/WatermarkHeader.html">Common: General/Watermark</a>
+<a href="../CommonHeaders/NewFigHeader.html">Common: Graphics/NewFig</a>
+<a href="../CommonHeaders/Plot2DHeader.html">Common: Graphics/Plot2D</a>
+<a href="../CommonHeaders/PltStyleHeader.html">Common: Graphics/PltStyle</a>
+<a href="../CommonHeaders/IConvPHeader.html">Common: Transform/IConvP</a>
+<a href="../MathHeaders/SkewSqHeader.html">Math: Linear/SkewSq</a>
+</pre>
+<hr><p> <a href="../AirshipsFunctions.html">Back</a> to the Airships Module page</p></div>
+<?php include("$rootPath/includes/footer.inc"); ?>
+</html>
