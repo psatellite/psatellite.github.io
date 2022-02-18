@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['c_0',['C',['../structellipse__coefficients.html#a732c947e9ef085e0c2c2c75717843a74',1,'ellipse_coefficients']]],
+  ['c_5fcoef_1',['c_coef',['../structgravity__s.html#a2886bcd5195ac159aaef53eaa45b7f41',1,'gravity_s']]],
+  ['c_5fdist_2',['c_dist',['../structgravity__s.html#acdf49c78e517054e3432c0602511d5ff',1,'gravity_s']]],
+  ['captainid_3',['captainID',['../structteam__s.html#a80e37cadf2b9ad047d527e30fc82277c',1,'team_s']]],
+  ['centuries_5fto_5fdays_4',['CENTURIES_TO_DAYS',['../sc__constants_8h.html#ab5ad8517c72c084c3d839ebc4ec68b65',1,'sc_constants.h']]],
+  ['cic_5',['cic',['../structgps__data__s.html#ad7d27414b38b7bf7086679e3dbbe8dc8',1,'gps_data_s']]],
+  ['cis_6',['cis',['../structgps__data__s.html#a6dfcd161ae4dbb0bc4e925d515958539',1,'gps_data_s']]],
+  ['col_5forigin_7',['col_origin',['../structstar__sun__mag__meas__data.html#a3765bfd9a16d1a250b57dad8f9b5ea9e',1,'star_sun_mag_meas_data']]],
+  ['constraints_8',['constraints',['../structteam__goals__s.html#ac8a71612bfd464a2f18cde825b875baf',1,'team_goals_s::constraints()'],['../structecc__team__goals__s.html#a20536770d4b16d45e8e6eb9d13cb98d9',1,'ecc_team_goals_s::constraints()']]],
+  ['cost_9',['cost',['../structcost__s.html#aa153af6e8488a3f9a24d89012081156c',1,'cost_s']]],
+  ['costlength_10',['costLength',['../structcost__s.html#a78448f053fb66a7b2d3814b0d5a62338',1,'cost_s']]],
+  ['crc_11',['crc',['../structgps__data__s.html#a8d543e106839cdce5e511c46888c87fe',1,'gps_data_s']]],
+  ['crs_12',['crs',['../structgps__data__s.html#ad94de9c8c05d4aef6d19d285233a7d5c',1,'gps_data_s']]],
+  ['ctx_5fmeas_13',['ctx_meas',['../classUKF2.html#a96b001039db24191a4c0bd2efa962cd3',1,'UKF2']]],
+  ['ctx_5frhs_14',['ctx_rhs',['../classUKF2.html#a3d69c399819fa64a41b909f661c737d1',1,'UKF2']]],
+  ['cuc_15',['cuc',['../structgps__data__s.html#a4aba6c2f77b47e16dc7f9523f7c07fc7',1,'gps_data_s']]],
+  ['cus_16',['cus',['../structgps__data__s.html#ab053cf385f2a007db6244eedd53eca5d',1,'gps_data_s']]]
+];

@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['r_0',['R',['../structcamera__data__s.html#a12cabd1324959db52322c77d86094060',1,'camera_data_s']]],
+  ['r_1',['r',['../structellipse__points.html#a9b93ce7c77af2bcebb6a81b6dc30b889',1,'ellipse_points::r()'],['../structpsf__data__s.html#ab3bf5259935a9e4414b3273d80a9dd3f',1,'psf_data_s::r()'],['../structgps__orb__out__s.html#a706b77f24570165c7b72dbcc4ab73f19',1,'gps_orb_out_s::r()'],['../structorbit__closest__point__out.html#ac08ccee189e4e58a0a3f1658041db75d',1,'orbit_closest_point_out::r()']]],
+  ['r_5feci_2',['r_eci',['../structstar__sun__mag__meas__data.html#ae307a9678f3fff412fc9a250a3fd167b',1,'star_sun_mag_meas_data']]],
+  ['r_5fmagnetometer_3',['r_magnetometer',['../structstar__sun__mag__meas__data.html#a47c53d2bf6f0920c1edeeb28d917bffa',1,'star_sun_mag_meas_data']]],
+  ['r_5fstar_4',['r_star',['../structstar__sun__mag__meas__data.html#a0b6dd37fc6565e00c44997f673b84ff8',1,'star_sun_mag_meas_data']]],
+  ['r_5fsun_5',['r_sun',['../structstar__sun__mag__meas__data.html#a7ed2f5870c9fe21a565285f30bff07bd',1,'star_sun_mag_meas_data']]],
+  ['raan_6',['raan',['../structalf__orb__data__s.html#ab5efc64599a61c7391964922a094b893',1,'alf_orb_data_s::raan()'],['../structorb__data__s.html#aa75fe6236be33bcd092bc1501efff903',1,'orb_data_s::raan()']]],
+  ['radians_5fto_5fdegrees_7',['RADIANS_TO_DEGREES',['../sc__constants_8h.html#a2952056c1a595d692e67bc8af0630b09',1,'sc_constants.h']]],
+  ['radius_5fearth_8',['RADIUS_EARTH',['../sc__constants_8h.html#ad6ced367857b130153df275020ee6785',1,'sc_constants.h']]],
+  ['radius_5fmoon_9',['RADIUS_MOON',['../sc__constants_8h.html#a898b180b1163974d374fe5b64d579d46',1,'sc_constants.h']]],
+  ['radius_5fsun_10',['RADIUS_SUN',['../sc__constants_8h.html#aa75ce0f5cc12f174c41d2872e0a0b95c',1,'sc_constants.h']]],
+  ['refid_11',['refID',['../structteam__s.html#acca79f5ca01f9c8d7c7883d51e33813d',1,'team_s']]],
+  ['restrictid_12',['restrictID',['../structconstraints__s.html#a4096ee054ae1ddb17c86b3faa1afb12d',1,'constraints_s']]],
+  ['revs_5fto_5fdegrees_13',['REVS_TO_DEGREES',['../sc__constants_8h.html#a9fe60584f718665c70f4022fa9afdc30',1,'sc_constants.h']]],
+  ['row_5forigin_14',['row_origin',['../structstar__sun__mag__meas__data.html#a9dd959a742b1ad63fd174f23e3c48557',1,'star_sun_mag_meas_data']]],
+  ['rpm_5fto_5frps_15',['RPM_TO_RPS',['../sc__constants_8h.html#ad0b2e0c57795c8807c0f0ba5317cd45e',1,'sc_constants.h']]]
+];

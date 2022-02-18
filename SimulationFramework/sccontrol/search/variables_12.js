@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['s_0',['s',['../structcamera__data__s.html#a62549c375f345da501e91418657f6b33',1,'camera_data_s']]],
+  ['s0_1',['S0',['../structcoll__mon__data__s.html#af530108e86b0c6f2d12c32c8312e60e2',1,'coll_mon_data_s']]],
+  ['s_5fcoef_2',['s_coef',['../structgravity__s.html#a08311bf530234f506dcda4b8e6bf5001',1,'gravity_s']]],
+  ['s_5fdist_3',['s_dist',['../structgravity__s.html#a67e6cc392598404af9a7e3a2aad75ef4',1,'gravity_s']]],
+  ['satellite_4',['satellite',['../structgps__data__s.html#a77eba25d038623ed86a9e2a1dce4b733',1,'gps_data_s']]],
+  ['secs_5fto_5fdays_5',['SECS_TO_DAYS',['../sc__constants_8h.html#af55edb638dc6bf2a7d395ad2b34563ad',1,'sc_constants.h']]],
+  ['secs_5fto_5fhours_6',['SECS_TO_HOURS',['../sc__constants_8h.html#a1a544b52cd07fa653c3c385542e8865b',1,'sc_constants.h']]],
+  ['sidereal_5fday_7',['SIDEREAL_DAY',['../sc__constants_8h.html#aead385798272ecffb5ef5e5acfd12a2f',1,'sc_constants.h']]],
+  ['sigma_8',['sigma',['../structcoll__mon__data__s.html#a943bbe94fd4ab5a848cfeb697fda7745',1,'coll_mon_data_s::sigma()'],['../structgaussian__psf__s.html#ac6d5e8caefcb1d987667bd2127a44147',1,'gaussian_psf_s::sigma()']]],
+  ['slope_9',['slope',['../structellipse__points.html#a38e53fb02f5b45492dbddd1c1f210024',1,'ellipse_points']]],
+  ['sma_10',['sma',['../structalf__orb__data__s.html#a18339299dced50a59a620067b901e177',1,'alf_orb_data_s::sma()'],['../structorb__data__s.html#a505f10ac1834d3e71a5957bae288ae62',1,'orb_data_s::sma()']]],
+  ['solar_5fflux_11',['SOLAR_FLUX',['../sc__environs_8h.html#a74466a58d9f9a8fddba050849d0d73e8',1,'sc_environs.h']]],
+  ['speed_5fof_5flight_12',['SPEED_OF_LIGHT',['../sc__constants_8h.html#aa9d062184e1c09d26080c7fe53b33b9e',1,'sc_constants.h']]],
+  ['spherical_13',['spherical',['../structgravity__s.html#a9a5d73a5ae92728ef819d118febb1f8d',1,'gravity_s']]],
+  ['sqrt_5fax_14',['sqrt_ax',['../structgps__data__s.html#a68c73bfd01a0295bbf8d18e752eb4423',1,'gps_data_s']]],
+  ['ssc_15',['Ssc',['../structcoll__mon__data__s.html#a9cd6877deaaebf90d2bd6c1d1fcc047e',1,'coll_mon_data_s']]],
+  ['star_5fuv_16',['star_uv',['../structstar__sun__mag__meas__data.html#a3d8b98f092a669046feab301b2be0ec6',1,'star_sun_mag_meas_data']]],
+  ['starttime_17',['startTime',['../structwindow__s.html#a153f8468ddb98b6f4f309f35c9799909',1,'window_s']]],
+  ['state_5ffp_18',['state_fp',['../classUKF2.html#aebcb1f79fcf4af596959738aa1ffade5',1,'UKF2']]],
+  ['status_19',['status',['../structgaussian__fit__s.html#a385da77204e6b27c4ab8389cb5952373',1,'gaussian_fit_s::status()'],['../structgaussian__xyfit__s.html#af0b5acb968ad0299c8c568c8a8bbcf92',1,'gaussian_xyfit_s::status()']]],
+  ['std_5fdev_20',['std_dev',['../structgaussian__fit__s.html#a381b0e60e28cad1065bb281b6aecd1b9',1,'gaussian_fit_s::std_dev()'],['../structgaussian__xyfit__s.html#a3461474e88ed09515a79fc350ebeefce',1,'gaussian_xyfit_s::std_dev()']]],
+  ['sun_5fsensor_5fid_21',['sun_sensor_id',['../structstar__sun__mag__meas__data.html#a8fe0c8e2f2d16bb70a7005ac6841379b',1,'star_sun_mag_meas_data']]]
+];
