@@ -1,0 +1,86 @@
+<html>
+<head>
+<title>FSailCombined</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<?php
+	$rootPath = "../../";
+	include("../../includes/header.inc");
+?>
+</head>
+<body>
+<div class=page>
+
+<h2>FSailCombined:</h2>
+<pre>
+--------------------------------------------------------------------------
+  Simulation right hand side. Calls all needed portions in order.
+  The state should contain at a minimum 10 states for [r;v;q], even if
+  some are placeholders of 0. After a simulation, call it with multiple
+  outputs to post-process the state.
+
+  The portions are below. To use a default pass an empty matrix.
+    1. d.ephemeris - default is SailEphemAlmanac, comparable is SailEphemJPL
+    2. d.environment - default is SailEnvironment
+    3. d.disturbance - default is SailDisturbance
+    4. d.attitude - default dynamics is FSailRB, see also FMovingBody
+    5. d.guidance - can be used to override attitude dynamics
+    6. d.orbit - default is FOrbitGeneral, see also FOrbitSingle
+ 
+  Also available embedded in this function are NoEphemeris, NoEnvironment, 
+  NoDisturbance, NoAttitude, and NoOrbit, which can be used to skip any portion.
+  There is no default guidance function - you must specify one to override
+  the attitude dynamics. Guidance will assume that the attitude is in states
+  7 through 10. The function StoredDisturbance enables you to pass a stored
+  force structure f and torque structure tq through d. 
+
+  The function formats are:
+      rB  = FEphemeris( jD, d )
+      env = FEnvironment( planet, p, d )
+  [f, tq] = FDisturbance( g, p, env, d )
+    xADot = FAttitude( t, x, f, tq, d )  OR   q = FGuidance( t, x, d, env )
+    xODot = FOrbit( t, x, rB, center, jD, accel )
+  planets = FOrbit( 'planets' )
+
+  The resulting derivative is [xODot;xADot]
+ 
+  Calling this function with no inputs will return a default data structure
+  with empty matrices for each field.
+
+   Since version 7.
+--------------------------------------------------------------------------
+  Forms:
+  xDot = FSailCombined( t, x, p, d )
+     d = FSailCombined()
+  [p, env, f, tq, planets] = FSailCombined( t, x, p, d )
+--------------------------------------------------------------------------
+
+   ------
+   Inputs
+   ------  
+   t             (1,1)    Time in seconds from jD0 epoch
+   x             (n,1)    The state vector, at least [r;v;q;w]
+   p              (.)     Profile data structure (angle, axis, body)
+   d              (.)     Data structure. The following fields are required:
+     .jD0, default is JD2000
+     .kP, ids of gravitational bodies
+     .center, defaults to 1 (1st planet in list)
+     .g, CAD model, need at least mass structure, defaults to 1 kg
+   
+
+   -------
+   Outputs
+   -------
+   xDot          (n,1)    State derivative
+
+--------------------------------------------------------------------------
+  See also SailCombinedDemo.
+--------------------------------------------------------------------------
+</pre>
+
+<h2>Children:</h2>
+<pre>
+<a href="../CommonHeaders/AssignFHandleHeader.html">Common: General/AssignFHandle</a>
+</pre>
+</div>
+<?php include("../../includes/footer.inc"); ?>
+</html>
