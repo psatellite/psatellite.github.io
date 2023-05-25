@@ -1,0 +1,27 @@
+var dir_0d0ee1b4259140420d978d7c5a074432 =
+[
+    [ "ACosD.m", "_a_cos_d_8m.html", "_a_cos_d_8m" ],
+    [ "ACot2.m", "_a_cot2_8m.html", "_a_cot2_8m" ],
+    [ "ACot2D.m", "_a_cot2_d_8m.html", "_a_cot2_d_8m" ],
+    [ "ACotD.m", "_a_cot_d_8m.html", "_a_cot_d_8m" ],
+    [ "ACscD.m", "_a_csc_d_8m.html", "_a_csc_d_8m" ],
+    [ "ASecD.m", "_a_sec_d_8m.html", "_a_sec_d_8m" ],
+    [ "ASinD.m", "_a_sin_d_8m.html", "_a_sin_d_8m" ],
+    [ "ATan2D.m", "_a_tan2_d_8m.html", "_a_tan2_d_8m" ],
+    [ "ATanD.m", "_a_tan_d_8m.html", "_a_tan_d_8m" ],
+    [ "CosD.m", "_cos_d_8m.html", "_cos_d_8m" ],
+    [ "CosX.m", "_cos_x_8m.html", "_cos_x_8m" ],
+    [ "CotD.m", "_cot_d_8m.html", "_cot_d_8m" ],
+    [ "CscD.m", "_csc_d_8m.html", "_csc_d_8m" ],
+    [ "DeltCirc.m", "_delt_circ_8m.html", "_delt_circ_8m" ],
+    [ "LinearSinCosToQuadCos.m", "_linear_sin_cos_to_quad_cos_8m.html", "_linear_sin_cos_to_quad_cos_8m" ],
+    [ "SecD.m", "_sec_d_8m.html", "_sec_d_8m" ],
+    [ "SinD.m", "_sin_d_8m.html", "_sin_d_8m" ],
+    [ "SinX.m", "_sin_x_8m.html", "_sin_x_8m" ],
+    [ "SolveLinearSinCos.m", "_solve_linear_sin_cos_8m.html", "_solve_linear_sin_cos_8m" ],
+    [ "TanD.m", "_tan_d_8m.html", "_tan_d_8m" ],
+    [ "TrigReduction.m", "_trig_reduction_8m.html", "_trig_reduction_8m" ],
+    [ "UnwrapPhase.m", "_unwrap_phase_8m.html", "_unwrap_phase_8m" ],
+    [ "VerSin.m", "_ver_sin_8m.html", "_ver_sin_8m" ],
+    [ "WrapPhase.m", "_wrap_phase_8m.html", "_wrap_phase_8m" ]
+];

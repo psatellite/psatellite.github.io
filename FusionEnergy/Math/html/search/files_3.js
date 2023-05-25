@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['dcmotordetectionfilter_2em_0',['DCMotorDetectionFilter.m',['../_d_c_motor_detection_filter_8m.html',1,'']]],
+  ['dcmotorfailures_2em_1',['DCMotorFailures.m',['../_d_c_motor_failures_8m.html',1,'']]],
+  ['dcmotorparityspace_2em_2',['DCMotorParitySpace.m',['../_d_c_motor_parity_space_8m.html',1,'']]],
+  ['dcmotorsim_2em_3',['DCMotorSim.m',['../_d_c_motor_sim_8m.html',1,'']]],
+  ['dellz_2em_4',['DelLZ.m',['../_del_l_z_8m.html',1,'']]],
+  ['deltaanglefornewradec_2em_5',['DeltaAngleForNewRADec.m',['../_delta_angle_for_new_r_a_dec_8m.html',1,'']]],
+  ['deltaeig_2em_6',['DeltaEig.m',['../_delta_eig_8m.html',1,'']]],
+  ['deltcirc_2em_7',['DeltCirc.m',['../_delt_circ_8m.html',1,'']]],
+  ['demos_2emd_8',['demos.md',['../demos_8md.html',1,'']]],
+  ['detectionfilter_2em_9',['DetectionFilter.m',['../_detection_filter_8m.html',1,'']]],
+  ['detectionfilterbuild_2em_10',['DetectionFilterBuild.m',['../_detection_filter_build_8m.html',1,'']]],
+  ['detectionfilterbuilder_2em_11',['DetectionFilterBuilder.m',['../_detection_filter_builder_8m.html',1,'']]],
+  ['detectionfilterbuilderdemo_2em_12',['DetectionFilterBuilderDemo.m',['../_detection_filter_builder_demo_8m.html',1,'']]],
+  ['detectionfiltersimulation_2em_13',['DetectionFilterSimulation.m',['../_detection_filter_simulation_8m.html',1,'']]],
+  ['detectionfilterunnormalized_2em_14',['DetectionFilterUnnormalized.m',['../_detection_filter_unnormalized_8m.html',1,'']]],
+  ['dlyapg_2em_15',['DLyapG.m',['../_d_lyap_g_8m.html',1,'']]],
+  ['doggyproblem_2em_16',['DoggyProblem.m',['../_doggy_problem_8m.html',1,'']]],
+  ['dot_2em_17',['Dot.m',['../_dot_8m.html',1,'']]],
+  ['dualdcmotors_2em_18',['DualDCMotors.m',['../_dual_d_c_motors_8m.html',1,'']]],
+  ['dunit_2em_19',['DUnit.m',['../_d_unit_8m.html',1,'']]],
+  ['dupvect_2em_20',['DupVect.m',['../_dup_vect_8m.html',1,'']]]
+];
