@@ -1,0 +1,312 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>CoilStudy</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="CoilStudy.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Coil currents design study</a></li><li><a href="#2">Compare to fixed-radii, constant-current array of current loops</a></li></ul></div><h2 id="1">Coil currents design study</h2><p>Calculate the radii for an ellipsoidal solenoid and calculate the currents to maintain a desired average field. This is compared to a uniform current in the same coils.</p><p>Note: for a 4 m long PFRC, 16 magnets produce a much more uniform field. 8 magnets are more suitable for a 2 m long PFRC.</p><p>See also: EllipsoidalSolenoid, ConcentricCoils, PFRCSolenoid</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright (c) 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">% All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Taper the coil following an ellipsoid and calculate currents to create a</span>
+<span class="comment">% nearly constant axial field</span>
+zC    = [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+bAve  = 5;
+n     = length(zC);
+aMin  = [0.3 0.35 0.4 0.45 0.5];
+m     = length(aMin);
+b     = zeros(m,500);
+i     = zeros(m,n);
+a     = zeros(m,n);
+
+s = {};
+<span class="keyword">for</span> k = 1:m
+  a(k,:)           	= EllipsoidalSolenoid( aMin(k), 0.5, zC );
+  [b(k,:),i(k,:),z]	= ConcentricCoils( zC, bAve, a(k,:) );
+  s{k}              = sprintf(<span class="string">'a_{min} = %4.2f'</span>,aMin(k));
+<span class="keyword">end</span>
+
+ll = {};
+IT = [];
+B  = [];
+<span class="keyword">for</span> k = 1:m
+  a(k,:)  = EllipsoidalSolenoid( aMin(k), 0.5, zC );
+  gamma   = 1;
+  [IT(k,:),~,~,B(k,:),zs] = PFRCSolenoid(a(k,:),gamma,bAve);
+  bm(k,:) = FieldCurrentLoop( a(k,:), IT(k,:), 0 );
+  ll{k}   = sprintf(<span class="string">'I = %4.2f'</span>,IT(k,1)*1e-3);
+<span class="keyword">end</span>
+
+h1 = Plot2D(z,b,<span class="string">'z (m)'</span>, <span class="string">'B (T)'</span>, <span class="string">'Axial Field - Stepped Currents'</span>);
+legend(s,<span class="string">'location'</span>,<span class="string">'best'</span>)
+hold <span class="string">on</span>
+plot(zC,max(b(:))*ones(size(zC)),<span class="string">'kx'</span>)
+h3 = Plot2D(zs,B,<span class="string">'z (m)'</span>, <span class="string">'B (T)'</span>, <span class="string">'Axial Field - Uniform Current'</span>);
+legend(s,<span class="string">'location'</span>,<span class="string">'best'</span>)
+hold <span class="string">on</span>
+plot(zC,max(B(:))*ones(size(zC)),<span class="string">'kx'</span>)
+
+h2 = NewFig(<span class="string">'Coil Radii and Stepped Currents'</span>);
+subplot(2,1,1)
+plot(1:n,i/1e6,<span class="string">'.-'</span>,<span class="string">'markersize'</span>,20);
+YLabelS(<span class="string">'Current (MA)'</span>);
+grid <span class="string">on</span>
+subplot(2,1,2)
+plot(1:n,a,<span class="string">'.-'</span>,<span class="string">'markersize'</span>,20);
+grid <span class="string">on</span>
+YLabelS(<span class="string">'Coil Radii (m)'</span>);
+XLabelS(<span class="string">'Coil Number'</span>);
+legend(s,<span class="string">'location'</span>,<span class="string">'best'</span>)
+
+h2 = NewFig(<span class="string">'Coil Radii and Uniform Current'</span>);
+subplot(2,1,1)
+plot(1:n,bm,<span class="string">'.-'</span>,<span class="string">'markersize'</span>,20);
+YLabelS(<span class="string">'Field (T)'</span>);
+grid <span class="string">on</span>
+legend(ll,<span class="string">'location'</span>,<span class="string">'best'</span>)
+subplot(2,1,2)
+plot(1:n,a,<span class="string">'.-'</span>,<span class="string">'markersize'</span>,20);
+grid <span class="string">on</span>
+YLabelS(<span class="string">'Coil Radii (m)'</span>);
+XLabelS(<span class="string">'Coil Number'</span>);
+legend(s,<span class="string">'location'</span>,<span class="string">'best'</span>)
+
+
+<span class="keyword">if</span> 0
+  PrintFig(1,4,h1,<span class="string">'CoilB'</span>);
+  PrintFig(1,4,h2,<span class="string">'CoilAR'</span>);
+<span class="keyword">end</span>
+
+DispWithTitle(a',<span class="string">'Coil Radius'</span>)
+DispWithTitle(i',<span class="string">'Coil Current'</span>)
+
+disp(i)
+
+<span class="keyword">return</span>
+</pre><pre class="codeoutput">Coil Radius
+          0.3         0.35          0.4         0.45          0.5
+      0.41231      0.43157      0.45277      0.47566          0.5
+      0.47258      0.47828      0.48477      0.49202          0.5
+          0.5          0.5          0.5          0.5          0.5
+          0.5          0.5          0.5          0.5          0.5
+      0.47258      0.47828      0.48477      0.49202          0.5
+      0.41231      0.43157      0.45277      0.47566          0.5
+          0.3         0.35          0.4         0.45          0.5
+Coil Current
+   1.9074e+06   2.1318e+06   2.3588e+06   2.5931e+06   2.8375e+06
+   2.2397e+06   2.1648e+06   2.0974e+06    2.035e+06   1.9752e+06
+   2.0902e+06   2.0964e+06   2.0947e+06   2.0869e+06   2.0744e+06
+   2.1477e+06   2.1198e+06     2.09e+06   2.0579e+06   2.0231e+06
+   2.1477e+06   2.1198e+06     2.09e+06   2.0579e+06   2.0231e+06
+   2.0902e+06   2.0964e+06   2.0947e+06   2.0869e+06   2.0744e+06
+   2.2397e+06   2.1648e+06   2.0974e+06    2.035e+06   1.9752e+06
+   1.9074e+06   2.1318e+06   2.3588e+06   2.5931e+06   2.8375e+06
+  Columns 1 through 6
+   1.9074e+06   2.2397e+06   2.0902e+06   2.1477e+06   2.1477e+06   2.0902e+06
+   2.1318e+06   2.1648e+06   2.0964e+06   2.1198e+06   2.1198e+06   2.0964e+06
+   2.3588e+06   2.0974e+06   2.0947e+06     2.09e+06     2.09e+06   2.0947e+06
+   2.5931e+06    2.035e+06   2.0869e+06   2.0579e+06   2.0579e+06   2.0869e+06
+   2.8375e+06   1.9752e+06   2.0744e+06   2.0231e+06   2.0231e+06   2.0744e+06
+  Columns 7 through 8
+   2.2397e+06   1.9074e+06
+   2.1648e+06   2.1318e+06
+   2.0974e+06   2.3588e+06
+    2.035e+06   2.5931e+06
+   1.9752e+06   2.8375e+06
+</pre><img vspace="5" hspace="5" src="CoilStudy_01.png" alt=""> <img vspace="5" hspace="5" src="CoilStudy_02.png" alt=""> <img vspace="5" hspace="5" src="CoilStudy_03.png" alt=""> <img vspace="5" hspace="5" src="CoilStudy_04.png" alt=""> <h2 id="2">Compare to fixed-radii, constant-current array of current loops</h2><p>This is a 2 m long array</p><pre class="codeinput">iC = 1.5e6;
+aMax  = 0.45;
+<span class="comment">% Field of a single loop</span>
+b1 = MagneticFieldCurrentLoop( iC, aMax, [0;0;0], [1;0;0;0], [0;0;0] )
+<span class="comment">% Field of the array of loops</span>
+zF = [-0.9 -0.64 -0.38 -0.13 0.13 0.38 0.64 0.9];
+bS = MagneticFieldCurrentLoop( iC*ones(1,8), aMax*ones(1,8), [zF;zeros(1,8);zeros(1,8)], repmat([1;0;0;0],1,8), [0;0;0] )
+<span class="comment">% Add the nozzle coils</span>
+zz = linspace(-1.5,1.5,40);
+z2 = [zz;zeros(size(zz));zeros(size(zz))];
+bN = MagneticFieldCurrentLoop( [iC*ones(1,8) 3e6*[1 1]],<span class="keyword">...</span>
+  [aMax*ones(1,8) 0.1*[1 1]], [[zF 1.25 -1.25];zeros(1,10);zeros(1,10)],<span class="keyword">...</span>
+  repmat([1;0;0;0],1,10), z2 );
+Plot2D(zz,bN(1,:),<span class="string">'z'</span>,<span class="string">'Bz'</span>,<span class="string">'Axial Scan'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Coil currents design study
+% Calculate the radii for an ellipsoidal solenoid and calculate the currents to
+% maintain a desired average field. This is compared to a uniform current in the
+% same coils.
+%
+% Note: for a 4 m long PFRC, 16 magnets produce a much more uniform field. 8
+% magnets are more suitable for a 2 m long PFRC.
+%
+% See also: EllipsoidalSolenoid, ConcentricCoils, PFRCSolenoid
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright (c) 2016 Princeton Satellite Systems, Inc.
+% All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Taper the coil following an ellipsoid and calculate currents to create a
+% nearly constant axial field
+zC    = [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+bAve  = 5;
+n     = length(zC);
+aMin  = [0.3 0.35 0.4 0.45 0.5];
+m     = length(aMin);
+b     = zeros(m,500);
+i     = zeros(m,n);
+a     = zeros(m,n);
+
+s = {};
+for k = 1:m
+  a(k,:)           	= EllipsoidalSolenoid( aMin(k), 0.5, zC );
+  [b(k,:),i(k,:),z]	= ConcentricCoils( zC, bAve, a(k,:) );
+  s{k}              = sprintf('a_{min} = %4.2f',aMin(k));
+end
+
+ll = {};
+IT = [];
+B  = [];
+for k = 1:m
+  a(k,:)  = EllipsoidalSolenoid( aMin(k), 0.5, zC );
+  gamma   = 1;
+  [IT(k,:),~,~,B(k,:),zs] = PFRCSolenoid(a(k,:),gamma,bAve);
+  bm(k,:) = FieldCurrentLoop( a(k,:), IT(k,:), 0 );
+  ll{k}   = sprintf('I = %4.2f',IT(k,1)*1e-3);
+end
+
+h1 = Plot2D(z,b,'z (m)', 'B (T)', 'Axial Field - Stepped Currents');
+legend(s,'location','best')
+hold on
+plot(zC,max(b(:))*ones(size(zC)),'kx')
+h3 = Plot2D(zs,B,'z (m)', 'B (T)', 'Axial Field - Uniform Current');
+legend(s,'location','best')
+hold on
+plot(zC,max(B(:))*ones(size(zC)),'kx')
+
+h2 = NewFig('Coil Radii and Stepped Currents');
+subplot(2,1,1)
+plot(1:n,i/1e6,'.-','markersize',20);
+YLabelS('Current (MA)');
+grid on
+subplot(2,1,2)
+plot(1:n,a,'.-','markersize',20);
+grid on
+YLabelS('Coil Radii (m)');
+XLabelS('Coil Number');
+legend(s,'location','best')
+
+h2 = NewFig('Coil Radii and Uniform Current');
+subplot(2,1,1)
+plot(1:n,bm,'.-','markersize',20);
+YLabelS('Field (T)');
+grid on
+legend(ll,'location','best')
+subplot(2,1,2)
+plot(1:n,a,'.-','markersize',20);
+grid on
+YLabelS('Coil Radii (m)');
+XLabelS('Coil Number');
+legend(s,'location','best')
+
+
+if 0
+  PrintFig(1,4,h1,'CoilB');
+  PrintFig(1,4,h2,'CoilAR');
+end
+
+DispWithTitle(a','Coil Radius')
+DispWithTitle(i','Coil Current')
+
+disp(i)
+
+return
+
+%% Compare to fixed-radii, constant-current array of current loops
+% This is a 2 m long array
+iC = 1.5e6;
+aMax  = 0.45;
+% Field of a single loop
+b1 = MagneticFieldCurrentLoop( iC, aMax, [0;0;0], [1;0;0;0], [0;0;0] )
+% Field of the array of loops
+zF = [-0.9 -0.64 -0.38 -0.13 0.13 0.38 0.64 0.9];
+bS = MagneticFieldCurrentLoop( iC*ones(1,8), aMax*ones(1,8), [zF;zeros(1,8);zeros(1,8)], repmat([1;0;0;0],1,8), [0;0;0] )
+% Add the nozzle coils
+zz = linspace(-1.5,1.5,40);
+z2 = [zz;zeros(size(zz));zeros(size(zz))];
+bN = MagneticFieldCurrentLoop( [iC*ones(1,8) 3e6*[1 1]],...
+  [aMax*ones(1,8) 0.1*[1 1]], [[zF 1.25 -1.25];zeros(1,10);zeros(1,10)],...
+  repmat([1;0;0;0],1,10), z2 );
+Plot2D(zz,bN(1,:),'z','Bz','Axial Scan')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-06-11 $
+% $Revision: e37485677be77ce840fca0991daeebc226e4ec77 $
+##### SOURCE END #####
+--></body></html>

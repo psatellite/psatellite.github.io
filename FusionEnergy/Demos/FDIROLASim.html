@@ -1,0 +1,229 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test Fault Diagnosis using online approximators.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="FDIROLASim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test Fault Diagnosis using online approximators.</h1><!--introduction--><p>This script replicates the example in the referenced paper.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">9.</span>
+----------------------------------------------------------------------
+References: Demetriou, M. A. and M. M. Polycarpou. <span class="untermstring">"Incipient Fault</span>
+           Diagnosis <span class="string">of</span> <span class="string">Dynamical</span> <span class="string">Systems</span> <span class="string">Using</span> <span class="string">Online</span> <span class="string">Approximators."</span>
+           IEEE <span class="string">Trans.</span> <span class="string">Automatic</span> <span class="string">Control</span>, Vol. 43, No. 11, Nov. 1998,
+           pp. 1612-1616.
+----------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">Plot2D</span>, RK4, NonlinearEstimator, NonlinearSpringFault,
+OnlineApproximator, delta
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Spring data</a></li><li><a href="#3">Estimator states</a></li><li><a href="#4">We are plotting y, yDot and the fault which is the nonlinear</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2002 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">d</span>; clear <span class="string">dEst</span>;
+
+dT   = 0.1;
+
+tEnd = 60;
+
+nSim = tEnd/dT;
+
+yPlot = zeros(4,nSim);
+qPlot = zeros(19,nSim);
+t     = (0:(nSim-1))*dT;
+
+y     = [0.5;0.1];
+</pre><h2 id="2">Spring data</h2><pre class="codeinput"><span class="comment">%------------</span>
+d.m      = 1;
+d.k0     = 0.5;
+d.c0     = 0.5;
+d.a      = 1;
+d.rho    = 0.1;
+d.tFail  = 10;
+d.f      = 5;
+d.omegaF = 1.0;
+
+delta    = d.k0*d.a^2;
+</pre><h2 id="3">Estimator states</h2><pre class="codeinput"><span class="comment">%-----------------</span>
+nP               = 19;
+yEst             = [0;0;zeros(nP,1)];
+dEst.plant.k0    = d.k0;
+dEst.plant.c0    = d.c0;
+dEst.plant.m     = d.m;
+dEst.est.k       = 0.55;
+dEst.est.c       = 5;
+dEst.oA.sigma    = 0.5/sqrt(log(2));
+dEst.oA.c        = linspace(-9,9,nP)';
+dEst.thetaMax    = 100;
+c                = dEst.est.c;
+k                = dEst.est.k;
+dEst.gamma       = 100*max([(sqrt(c^2 + 4*d.m*k) - c)/(2*k) d.m/c]);
+dEst.dT          = dT;
+dEst.f           = d.f;
+
+<span class="keyword">for</span> k = 1:nSim
+  yEst       = NonlinearEstimator( yEst, y, t(k), dEst );
+  f          = NonlinearSpringFault( y, t(k), d );
+  fOLA       = -OnlineApproximator( y(1), yEst(3:end), dEst.oA );
+  yPlot(:,k) = [y(1);yEst(1);f;fOLA];
+  qPlot(:,k) = yEst(3:end);
+  y          = RK4(<span class="string">'NonlinearSpring'</span>, y, dT, t(k), d );
+<span class="keyword">end</span>
+</pre><h2 id="4">We are plotting y, yDot and the fault which is the nonlinear</h2><pre class="codeinput">Plot2D( t, yPlot, <span class="string">'Time (sec)'</span>,[<span class="string">'dY'</span>;<span class="string">'dF'</span>],<span class="string">'Nonlinear Spring'</span>,<span class="string">'lin'</span>,{<span class="string">'[1 2]'</span>;<span class="string">'[3 4]'</span>})
+Plot2D( t, qPlot, <span class="string">'Time (sec)'</span>,<span class="string">'Theta'</span>,<span class="string">'Nonlinear Spring'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="FDIROLASim_01.png" alt=""> <img vspace="5" hspace="5" src="FDIROLASim_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test Fault Diagnosis using online approximators.
+% This script replicates the example in the referenced paper.
+%
+%   Since version 9.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  References: Demetriou, M. A. and M. M. Polycarpou. "Incipient Fault
+%              Diagnosis of Dynamical Systems Using Online Approximators."
+%              IEEE Trans. Automatic Control, Vol. 43, No. 11, Nov. 1998,
+%              pp. 1612-1616.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, RK4, NonlinearEstimator, NonlinearSpringFault, 
+%  OnlineApproximator, delta
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2002 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear d; clear dEst;
+
+dT   = 0.1;
+
+tEnd = 60;
+
+nSim = tEnd/dT;
+
+yPlot = zeros(4,nSim);
+qPlot = zeros(19,nSim);
+t     = (0:(nSim-1))*dT;
+
+y     = [0.5;0.1];
+
+%% Spring data
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.m      = 1;
+d.k0     = 0.5;
+d.c0     = 0.5;
+d.a      = 1;
+d.rho    = 0.1;
+d.tFail  = 10;
+d.f      = 5;
+d.omegaF = 1.0;
+
+delta    = d.k0*d.a^2;
+
+%% Estimator states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+nP               = 19;
+yEst             = [0;0;zeros(nP,1)];
+dEst.plant.k0    = d.k0;
+dEst.plant.c0    = d.c0;
+dEst.plant.m     = d.m;
+dEst.est.k       = 0.55;
+dEst.est.c       = 5;
+dEst.oA.sigma    = 0.5/sqrt(log(2));
+dEst.oA.c        = linspace(-9,9,nP)';
+dEst.thetaMax    = 100;
+c                = dEst.est.c;
+k                = dEst.est.k;
+dEst.gamma       = 100*max([(sqrt(c^2 + 4*d.m*k) - c)/(2*k) d.m/c]);
+dEst.dT          = dT;
+dEst.f           = d.f;
+
+for k = 1:nSim
+  yEst       = NonlinearEstimator( yEst, y, t(k), dEst );
+  f          = NonlinearSpringFault( y, t(k), d );
+  fOLA       = -OnlineApproximator( y(1), yEst(3:end), dEst.oA );
+  yPlot(:,k) = [y(1);yEst(1);f;fOLA];
+  qPlot(:,k) = yEst(3:end);
+  y          = RK4('NonlinearSpring', y, dT, t(k), d );
+end
+
+%% We are plotting y, yDot and the fault which is the nonlinear
+% 
+
+Plot2D( t, yPlot, 'Time (sec)',['dY';'dF'],'Nonlinear Spring','lin',{'[1 2]';'[3 4]'})
+Plot2D( t, qPlot, 'Time (sec)','Theta','Nonlinear Spring')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2015-04-03 11:35:40 -0400 (Fri, 03 Apr 2015) $
+% $Revision: 39958 $
+
+##### SOURCE END #####
+--></body></html>

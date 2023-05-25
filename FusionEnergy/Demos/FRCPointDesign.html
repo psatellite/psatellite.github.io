@@ -1,0 +1,364 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Generates a point design for a D-He3 engine.</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-09-17"><meta name="DC.source" content="FRCPointDesign.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Generates a point design for a D-He3 engine.</h1><p>Includes Bremsstrahlung and synchrotron but not transport.</p><p>See also: FusionPower, CentralPressure, VolumeAveragedPressure, BField, Synchrotron, Bremsstrahlung, PlasmaRadius, PlasmaVolume, FirstWallThermalPower, NumberOfElectrons, MagnetMass, PlasmaInternalEnergy</p><pre>------------------------------------------------------------------------</pre><p>Reference: Schaffer, M.J., "Considerations for Steady-State FRC-Based Fusion Space Propulsion", GA-A23579, December 2000. General Atomics, San Diego, CA</p><pre>------------------------------------------------------------------------</pre><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2011 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%	All rights reserved.</span>
+<span class="comment">% 2021.2 fix order of inputs to Synchrotron</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Global parameters</span>
+<span class="comment">%------------------</span>
+pFusion      = 6160; <span class="comment">%(MW)</span>
+beta         = 1;
+rhoMag       = 4300;   <span class="comment">% Titanium (kg/m^3)</span>
+sigmaMag     = 880e6;  <span class="comment">% Titanium</span>
+rW           = 0.998;  <span class="comment">% wall reflectivity</span>
+
+<span class="comment">% D-He3</span>
+<span class="comment">%-----</span>
+zDH          = [1 2];
+n1DH         = 6.15e20;
+n2DH         = 6.15e20;
+nIDH         = [n1DH n2DH];
+r1DH         = <span class="string">'d'</span>;
+r2DH         = <span class="string">'he3'</span>;
+tDH          = 100;
+pFusDH       = FusionPower( n1DH, n2DH, r1DH, r2DH, tDH );
+pCDH         = CentralPressure( tDH, [n1DH n2DH], zDH );
+pVDH         = VolumeAveragedPressure( tDH, [n1DH n2DH], zDH );
+bDH          = BField( pVDH, beta );
+pSDH         = Synchrotron( nIDH, zDH, bDH, tDH, 2, rW);
+pBDH         = Bremsstrahlung( nIDH, zDH, tDH, 2 );
+pNetDH       = pFusDH - pSDH - pBDH;
+rPDH         = PlasmaRadius( pNetDH, pFusion );
+vPDH         = PlasmaVolume( pNetDH, pFusion );
+pWallDH      = FirstWallThermalPower( (pSDH+pBDH)*vPDH, 1.1*rPDH );
+nEDH         = NumberOfElectrons( nIDH, zDH );
+mMDH         = MagnetMass( rhoMag, sigmaMag, bDH, rPDH);
+iEDH         = PlasmaInternalEnergy( sum(nIDH), tDH, vPDH );
+
+
+<span class="comment">%Table</span>
+s = {};
+k = 1;
+s{k,1} = <span class="string">'Fuel, Assumed'</span>;
+s{k,2} = <span class="string">'50/50 D$^3$He'</span>;
+s{k,3} = <span class="string">'50/50 D$^3$He'</span>; k = k + 1;
+
+s{k,1} = <span class="string">'First Wall Thermal Power (MW m$^{-2}$)'</span>;
+s{k,2} = <span class="string">'10'</span>;
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,pWallDH); k = k + 1;
+
+s{k,1} = <span class="string">'Plasma Radius (m)'</span>;
+s{k,2} = <span class="string">'3.45'</span>;
+s{k,3} = sprintf(<span class="string">'%4.2f'</span>,rPDH); k = k + 1;
+
+s{k,1} = <span class="string">'Plasma Volume (m$^3$)'</span>;
+s{k,2} = <span class="string">'172'</span>;
+s{k,3} = sprintf(<span class="string">'%4.0f'</span>,vPDH); k = k + 1;
+
+s{k,1} = <span class="string">'RMS Plasma Pressure (Pa)'</span>;
+s{k,2} = <span class="string">'2.5e+07'</span>;
+s{k,3} = sprintf(<span class="string">'%5.1e'</span>,pVDH); k = k + 1;
+
+s{k,1} = <span class="string">'Central Plasma Pressure (Pa)'</span>;
+s{k,2} = <span class="string">'4.9e+07'</span>;
+s{k,3} = sprintf(<span class="string">'%5.1e'</span>,pCDH); k = k + 1;
+
+s{k,1} = <span class="string">'Plasma Internal Energy (GJ)'</span>;
+s{k,2} = <span class="string">'6.45'</span>;
+s{k,3} = sprintf(<span class="string">'%4.2f'</span>,iEDH); k = k + 1;
+
+s{k,1} = <span class="string">'$\beta$'</span>;
+s{k,2} = <span class="string">'1'</span>;
+s{k,3} = sprintf(<span class="string">'%4.0f'</span>,beta);
+
+s{k,1} = <span class="string">'Average Magnetic Field at Coil (T)'</span>;
+s{k,2} = <span class="string">'7.9'</span>;
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,bDH); k = k + 1;
+
+s{k,1} = <span class="string">'Magnet Specific Mass (kg/W)'</span>;
+s{k,2} = <span class="string">'1.9e-05'</span>;
+s{k,3} = sprintf(<span class="string">'%6.1e'</span>,1e-6*mMDH/pFusion); k = k + 1;
+
+s{k,1} = <span class="string">'Magnet Mass (kg)'</span>;
+s{k,2} = <span class="string">'1.52e+05'</span>;
+s{k,3} = sprintf(<span class="string">'%5.2e'</span>,mMDH); k = k + 1;
+
+s{k,1} = <span class="string">'Shield \&amp; Magnet Mass (kg)'</span>;
+s{k,2} = <span class="string">'500000'</span>;
+s{k,3} = <span class="string">'473670'</span>;  k = k + 1;
+
+s{k,1} = <span class="string">'Central Temperature (keV)'</span>;
+s{k,2} = <span class="string">'100'</span>;
+s{k,3} = sprintf(<span class="string">'%4.0f'</span>,tDH);  k = k + 1;
+
+s{k,1} = <span class="string">'Ion Density 10$^{20}$ m$^{-3}$)'</span>;
+s{k,2} = <span class="string">'12.3'</span>;
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,sum(nIDH)/1e20);  k = k + 1;
+
+s{k,1} = <span class="string">'Electron Density ( 10$^{20}$ m$^{-3}$)'</span>;
+s{k,2} = <span class="string">'18.4'</span>;
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,nEDH/1e20);  k = k + 1;
+
+s{k,1} = <span class="string">'Synchrotron  (MW m$^{-3}$)'</span>;
+s{k,2} = <span class="string">'0.0'</span>;
+s{k,3} = sprintf(<span class="string">'%4.2f'</span>, pSDH);  k = k + 1;
+
+s{k,1} = <span class="string">'Bremsstrahlung  (MW m$^{-3}$)'</span>;
+s{k,2} = sprintf(<span class="string">'%4.1f'</span>,0.23*8000/172);
+s{k,3} = sprintf(<span class="string">'%4.2f'</span>,pBDH);  k = k + 1;
+
+s{k,1} = <span class="string">'Fusion Power (GW)'</span>;
+s{k,2} = <span class="string">'8.0'</span>;
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,pFusDH*vPDH/1e3);k = k + 1;
+
+s{k,1} = <span class="string">'Net Power (GW)'</span>;
+s{k,2} = sprintf(<span class="string">'%4.1f'</span>,8*0.77);
+s{k,3} = sprintf(<span class="string">'%4.1f'</span>,pNetDH*vPDH/1e3);
+
+fprintf(1,<span class="string">'\n\n'</span>);
+<span class="keyword">for</span> k = 1:size(s,1)
+    fprintf(1,<span class="string">'%60s %20s %20s \n'</span>,s{k,:})
+<span class="keyword">end</span>
+
+CreateLatexTable(s,<span class="string">'PointDesignTable'</span> );
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">
+
+                                               Fuel, Assumed        50/50 D$^3$He        50/50 D$^3$He 
+                      First Wall Thermal Power (MW m$^{-2}$)                   10                 31.5 
+                                           Plasma Radius (m)                 3.45                 2.45 
+                                       Plasma Volume (m$^3$)                  172                   61 
+                                    RMS Plasma Pressure (Pa)              2.5e+07              2.5e+07 
+                                Central Plasma Pressure (Pa)              4.9e+07              4.9e+07 
+                                 Plasma Internal Energy (GJ)                 6.45        1812086813.44 
+                          Average Magnetic Field at Coil (T)                  7.9                  7.9 
+                                 Magnet Specific Mass (kg/W)              1.9e-05              1.8e-06 
+                                            Magnet Mass (kg)             1.52e+05             1.11e+04 
+                                  Shield \&amp; Magnet Mass (kg)               500000               473670 
+                                   Central Temperature (keV)                  100                  100 
+                             Ion Density 10$^{20}$ m$^{-3}$)                 12.3                 12.3 
+                      Electron Density ( 10$^{20}$ m$^{-3}$)                 18.4                 18.4 
+                                  Synchrotron  (MW m$^{-3}$)                  0.0                 1.46 
+                               Bremsstrahlung  (MW m$^{-3}$)                 10.7                45.25 
+                                           Fusion Power (GW)                  8.0                  9.0 
+                                              Net Power (GW)                  6.2                  6.2 
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Generates a point design for a D-He3 engine.
+% Includes Bremsstrahlung and synchrotron but not transport.
+%
+% See also: FusionPower, CentralPressure, VolumeAveragedPressure, BField,
+% Synchrotron, Bremsstrahlung, PlasmaRadius, PlasmaVolume,
+% FirstWallThermalPower, NumberOfElectrons, MagnetMass,
+% PlasmaInternalEnergy
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%
+% Reference: Schaffer, M.J., "Considerations for Steady-State FRC-Based Fusion
+% Space Propulsion", GA-A23579, December 2000. General Atomics, San Diego, CA
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2011 Princeton Satellite Systems, Inc. 
+%	All rights reserved.
+% 2021.2 fix order of inputs to Synchrotron
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Global parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+pFusion      = 6160; %(MW)
+beta         = 1;
+rhoMag       = 4300;   % Titanium (kg/m^3)                    
+sigmaMag     = 880e6;  % Titanium  
+rW           = 0.998;  % wall reflectivity
+
+% D-He3
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zDH          = [1 2];
+n1DH         = 6.15e20;
+n2DH         = 6.15e20;
+nIDH         = [n1DH n2DH]; 
+r1DH         = 'd';
+r2DH         = 'he3';
+tDH          = 100;
+pFusDH       = FusionPower( n1DH, n2DH, r1DH, r2DH, tDH );
+pCDH         = CentralPressure( tDH, [n1DH n2DH], zDH );
+pVDH         = VolumeAveragedPressure( tDH, [n1DH n2DH], zDH );
+bDH          = BField( pVDH, beta );
+pSDH         = Synchrotron( nIDH, zDH, bDH, tDH, 2, rW);
+pBDH         = Bremsstrahlung( nIDH, zDH, tDH, 2 );
+pNetDH       = pFusDH - pSDH - pBDH;
+rPDH         = PlasmaRadius( pNetDH, pFusion );
+vPDH         = PlasmaVolume( pNetDH, pFusion );
+pWallDH      = FirstWallThermalPower( (pSDH+pBDH)*vPDH, 1.1*rPDH );
+nEDH         = NumberOfElectrons( nIDH, zDH );
+mMDH         = MagnetMass( rhoMag, sigmaMag, bDH, rPDH);
+iEDH         = PlasmaInternalEnergy( sum(nIDH), tDH, vPDH );
+
+
+%Table 
+s = {};
+k = 1;
+s{k,1} = 'Fuel, Assumed';
+s{k,2} = '50/50 D$^3$He';
+s{k,3} = '50/50 D$^3$He'; k = k + 1;
+
+s{k,1} = 'First Wall Thermal Power (MW m$^{-2}$)';
+s{k,2} = '10';
+s{k,3} = sprintf('%4.1f',pWallDH); k = k + 1;
+
+s{k,1} = 'Plasma Radius (m)';
+s{k,2} = '3.45';
+s{k,3} = sprintf('%4.2f',rPDH); k = k + 1;
+
+s{k,1} = 'Plasma Volume (m$^3$)';
+s{k,2} = '172';
+s{k,3} = sprintf('%4.0f',vPDH); k = k + 1;
+ 
+s{k,1} = 'RMS Plasma Pressure (Pa)';
+s{k,2} = '2.5e+07';
+s{k,3} = sprintf('%5.1e',pVDH); k = k + 1;
+ 
+s{k,1} = 'Central Plasma Pressure (Pa)';
+s{k,2} = '4.9e+07';
+s{k,3} = sprintf('%5.1e',pCDH); k = k + 1;
+
+s{k,1} = 'Plasma Internal Energy (GJ)';
+s{k,2} = '6.45';
+s{k,3} = sprintf('%4.2f',iEDH); k = k + 1;
+
+s{k,1} = '$\beta$';
+s{k,2} = '1';
+s{k,3} = sprintf('%4.0f',beta);
+
+s{k,1} = 'Average Magnetic Field at Coil (T)';
+s{k,2} = '7.9';
+s{k,3} = sprintf('%4.1f',bDH); k = k + 1;
+
+s{k,1} = 'Magnet Specific Mass (kg/W)';
+s{k,2} = '1.9e-05';
+s{k,3} = sprintf('%6.1e',1e-6*mMDH/pFusion); k = k + 1;
+
+s{k,1} = 'Magnet Mass (kg)';
+s{k,2} = '1.52e+05';
+s{k,3} = sprintf('%5.2e',mMDH); k = k + 1;
+
+s{k,1} = 'Shield \& Magnet Mass (kg)';
+s{k,2} = '500000';
+s{k,3} = '473670';  k = k + 1;
+
+s{k,1} = 'Central Temperature (keV)';
+s{k,2} = '100';
+s{k,3} = sprintf('%4.0f',tDH);  k = k + 1;
+
+s{k,1} = 'Ion Density 10$^{20}$ m$^{-3}$)';
+s{k,2} = '12.3';
+s{k,3} = sprintf('%4.1f',sum(nIDH)/1e20);  k = k + 1;
+
+s{k,1} = 'Electron Density ( 10$^{20}$ m$^{-3}$)';
+s{k,2} = '18.4';
+s{k,3} = sprintf('%4.1f',nEDH/1e20);  k = k + 1;
+
+s{k,1} = 'Synchrotron  (MW m$^{-3}$)';
+s{k,2} = '0.0';
+s{k,3} = sprintf('%4.2f', pSDH);  k = k + 1;
+
+s{k,1} = 'Bremsstrahlung  (MW m$^{-3}$)';
+s{k,2} = sprintf('%4.1f',0.23*8000/172);
+s{k,3} = sprintf('%4.2f',pBDH);  k = k + 1;
+
+s{k,1} = 'Fusion Power (GW)';
+s{k,2} = '8.0';
+s{k,3} = sprintf('%4.1f',pFusDH*vPDH/1e3);k = k + 1;
+
+s{k,1} = 'Net Power (GW)';
+s{k,2} = sprintf('%4.1f',8*0.77);
+s{k,3} = sprintf('%4.1f',pNetDH*vPDH/1e3);
+
+fprintf(1,'\n\n');
+for k = 1:size(s,1)
+    fprintf(1,'%60s %20s %20s \n',s{k,:})
+end
+
+CreateLatexTable(s,'PointDesignTable' );
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-06-19 $
+% $Revision: ca093fb9f18fa576cc1a8c96a69887213ce9fa00 $
+
+
+##### SOURCE END #####
+--></body></html>

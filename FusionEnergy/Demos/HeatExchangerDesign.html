@@ -1,0 +1,244 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>HeatExchangerDesign</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-17"><meta name="DC.source" content="HeatExchangerDesign.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Study the heat exchanger between the plasma and the magnets</a></li><li><a href="#2">Display output</a></li></ul></div><h2 id="1">Study the heat exchanger between the plasma and the magnets</h2><p>The heat exchanger is modeled as a flat plate with a uniform flux q on one side and a cooling gas flow. The other side has radiation heat loss. In this case, we model the wall with layers for turbulent gas flow, a ceramic wall, and an MLI blanket.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% See also RFromCPAndGamma, HeatExchangerWithLosses, HeatTransferCoeff,</span>
+<span class="comment">% KinematicViscosity, NusseltTurbulent, PrandtlNumber,</span>
+<span class="comment">% ReynoldsNumberKinematic, OptimalMLIDensity</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+d = HeatExchangerWithLosses;
+
+<span class="comment">% Compute the thermal conductivity with an MLI blanket</span>
+
+tH          = 1589;  <span class="comment">% hot end</span>
+d.tB0       = 300;   <span class="comment">% cold end</span>
+
+d.qDot      = 10787; <span class="comment">% W/m, this is for one channel</span>
+
+<span class="comment">% approximate conductivity of a 4 mm ceramic wall</span>
+kW          = 20.7;  <span class="comment">% W/m K  % SJT: source?</span>
+<span class="comment">% thermal conductance</span>
+kW          = kW/0.004; <span class="comment">% W/m^2 K</span>
+
+<span class="comment">% turbulent flow heat exchanger</span>
+<span class="comment">% Assume a mix of 70% He and 30% Xe</span>
+gamma       = d.cP/300; <span class="comment">% SJT: what is 300?</span>
+u           = 8.8;      <span class="comment">% m/s (??) should this be computed?</span>
+<span class="comment">% SJT: memo says 2 ATM but an ATM is 14.7 psi. 6895 is psi to N/m2</span>
+p           = 2*14.7*6895; <span class="comment">% 2 psi to N/m2</span>
+mu          = 5.95e-5;     <span class="comment">% (??) viscosity, kg/m-s</span>
+r1          = 0.3;         <span class="comment">% wall radius (m)</span>
+kF          = 0.0262;      <span class="comment">% conductivity (W/m-K) ??</span>
+R           = RFromCPAndGamma(d.cP,gamma);
+rho         = p/(R*d.tB0);
+nu          = KinematicViscosity( mu, rho );
+pR          = PrandtlNumber( mu, d.cP, kF );
+rE          = ReynoldsNumberKinematic( u, 2*r1, nu );
+nU          = NusseltTurbulent( rE, pR );
+h           = HeatTransferCoeff( nU, kF, 2*r1 );  <span class="comment">% W/m^2 K</span>
+
+<span class="comment">% MLI - compute layers/cm and total conductance</span>
+dMLI        = OptimalMLIDensity;
+dMLI.n      = 200; <span class="comment">% number of layers</span>
+[nD,~,kMLI]	= OptimalMLIDensity(tH,d.tB0,dMLI);
+
+<span class="comment">% sum the thermal conductances</span>
+<span class="comment">% SJT: conductance or conductivity???</span>
+d.k         = 1/(1/kW + 1/h + 1/kMLI);
+
+<span class="comment">% assumed mass flow rate</span>
+d.mDot      = 0.2; <span class="comment">% kg/s</span>
+
+<span class="comment">% calculate the temperatures and fluxes</span>
+<span class="comment">% NOTE: header says input k is thermal conductivity</span>
+[tB,tS4,q4] = HeatExchangerWithLosses( d );
+</pre><h2 id="2">Display output</h2><pre class="codeinput">disp(<span class="string">'----'</span>)
+disp(<span class="string">'Fusion Heat Exchanger Design'</span>)
+disp(<span class="string">'----'</span>)
+fprintf(<span class="string">'Input heat flux: %g W/m\n'</span>,d.qDot)
+fprintf(<span class="string">'Flow rate: %g kg/s\n\n'</span>,d.mDot)
+fprintf(1,<span class="string">"Thickness of MLI blanket = %.2f cm\n"</span>,dMLI.n/nD);
+fprintf(<span class="string">'Thermal conductance wall: %g W/m2 deg-K\n'</span>,kW)
+fprintf(<span class="string">'Thermal conductance MLI: %g W/m2 deg-K\n'</span>,kMLI)
+fprintf(<span class="string">'Thermal conductance flow: %g W/m2 deg-K\n'</span>,h)
+fprintf(<span class="string">'Total conductance: %g W/m2 deg-K\n'</span>,d.k)
+fprintf(<span class="string">'Max radiative flux: %g W/m2\n'</span>,max(q4))
+fprintf(<span class="string">'Start/end wall temps: %g, %g K\n'</span>,tS4(1),tS4(end))
+fprintf(<span class="string">'Start/end gas temps: %g, %g K\n'</span>,tB(1),tB(end))
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">----
+Fusion Heat Exchanger Design
+----
+Input heat flux: 10787 W/m
+Flow rate: 0.2 kg/s
+
+Thickness of MLI blanket = 2.27 cm
+Thermal conductance wall: 5175 W/m2 deg-K
+Thermal conductance MLI: 0.133934 W/m2 deg-K
+Thermal conductance flow: 31.7535 W/m2 deg-K
+Total conductance: 0.133368 W/m2 deg-K
+Max radiative flux: 175.859 W/m2
+Start/end wall temps: 139.411, 235.991 K
+Start/end gas temps: 300, 1554.59 K
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Study the heat exchanger between the plasma and the magnets
+% The heat exchanger is modeled as a flat plate with a uniform flux q on one
+% side and a cooling gas flow. The other side has radiation heat loss. In this
+% case, we model the wall with layers for turbulent gas flow, a ceramic wall,
+% and an MLI blanket.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% See also RFromCPAndGamma, HeatExchangerWithLosses, HeatTransferCoeff, 
+% KinematicViscosity, NusseltTurbulent, PrandtlNumber, 
+% ReynoldsNumberKinematic, OptimalMLIDensity
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright (c) 2018 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+d = HeatExchangerWithLosses;
+
+% Compute the thermal conductivity with an MLI blanket
+
+tH          = 1589;  % hot end
+d.tB0       = 300;   % cold end
+
+d.qDot      = 10787; % W/m, this is for one channel
+
+% approximate conductivity of a 4 mm ceramic wall
+kW          = 20.7;  % W/m K  % SJT: source?
+% thermal conductance
+kW          = kW/0.004; % W/m^2 K
+
+% turbulent flow heat exchanger
+% Assume a mix of 70% He and 30% Xe
+gamma       = d.cP/300; % SJT: what is 300?
+u           = 8.8;      % m/s (??) should this be computed?
+% SJT: memo says 2 ATM but an ATM is 14.7 psi. 6895 is psi to N/m2
+p           = 2*14.7*6895; % 2 psi to N/m2
+mu          = 5.95e-5;     % (??) viscosity, kg/m-s
+r1          = 0.3;         % wall radius (m)
+kF          = 0.0262;      % conductivity (W/m-K) ??
+R           = RFromCPAndGamma(d.cP,gamma);
+rho         = p/(R*d.tB0);
+nu          = KinematicViscosity( mu, rho );
+pR          = PrandtlNumber( mu, d.cP, kF );
+rE          = ReynoldsNumberKinematic( u, 2*r1, nu );
+nU          = NusseltTurbulent( rE, pR );
+h           = HeatTransferCoeff( nU, kF, 2*r1 );  % W/m^2 K
+
+% MLI - compute layers/cm and total conductance
+dMLI        = OptimalMLIDensity;
+dMLI.n      = 200; % number of layers
+[nD,~,kMLI]	= OptimalMLIDensity(tH,d.tB0,dMLI);
+
+% sum the thermal conductances
+% SJT: conductance or conductivity???
+d.k         = 1/(1/kW + 1/h + 1/kMLI);
+
+% assumed mass flow rate
+d.mDot      = 0.2; % kg/s
+
+% calculate the temperatures and fluxes
+% NOTE: header says input k is thermal conductivity
+[tB,tS4,q4] = HeatExchangerWithLosses( d );
+
+%% Display output
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+disp('Fusion Heat Exchanger Design')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf('Input heat flux: %g W/m\n',d.qDot)
+fprintf('Flow rate: %g kg/s\n\n',d.mDot)
+fprintf(1,"Thickness of MLI blanket = %.2f cm\n",dMLI.n/nD);
+fprintf('Thermal conductance wall: %g W/m2 deg-K\n',kW)
+fprintf('Thermal conductance MLI: %g W/m2 deg-K\n',kMLI)
+fprintf('Thermal conductance flow: %g W/m2 deg-K\n',h)
+fprintf('Total conductance: %g W/m2 deg-K\n',d.k)
+fprintf('Max radiative flux: %g W/m2\n',max(q4))
+fprintf('Start/end wall temps: %g, %g K\n',tS4(1),tS4(end))
+fprintf('Start/end gas temps: %g, %g K\n',tB(1),tB(end))
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-17 $
+% $Revision: 0ad0f4e824f637aedbe5e48d6a09e990b1285cf0 $
+
+
+##### SOURCE END #####
+--></body></html>

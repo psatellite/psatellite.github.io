@@ -1,0 +1,329 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate an orbit detection filter with random thrust pulses.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="OrbitFDIRPulseDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate an orbit detection filter with random thrust pulses.</h1><!--introduction--><p>This filter will detect measurement failures and actuator failures. A single thruster is assumed and it is assumed that each measurement of x, y, z and velocity is independent.</p><pre class="language-matlab">Since <span class="string">version</span> <span class="string">10.</span>
+-------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">@statespace/statespace.m</span>, C2DZOH, CToD, Plot2D, TimeLabl,
+Unit, DetectionFilterBuild, DetectionFilterUnnormalized, LinOrb, Period
+-------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Setup</a></li><li><a href="#3">Simulate</a></li><li><a href="#4">Plot</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2002 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Setup</h2><pre class="codeinput"><span class="keyword">if</span>( exist(<span class="string">'LinOrb'</span>) )
+  [a,b,c,d] = LinOrb( [], 1 );
+<span class="keyword">else</span>
+  a       = [ zeros(3), eye(3); diag([3 0 -1]), [0 2 0;-2 0 0;0 0 0] ];
+<span class="keyword">end</span>
+
+<span class="keyword">if</span>( exist(<span class="string">'Period'</span>) )
+  rNom    = 7000;
+  p       = Period(rNom);
+<span class="keyword">else</span>
+  p       = 5828.51668009113; <span class="comment">% sec</span>
+<span class="keyword">end</span>
+
+nOrbits   = 20;
+dT        = 100;
+
+<span class="comment">% Random pulse train; rand (0-1) is used with these thresholds to create pulses.</span>
+uRandOn   = 0.02; <span class="comment">% threshold to start a pulse (rand &lt; uRandOn)</span>
+uRandOff  = 0.1;  <span class="comment">% threshold to continue a pulse (rand &gt; uRandOff)</span>
+
+wo        = 2*pi/p;
+dT        = wo*dT;
+c         = eye(6);
+d         = zeros(6,1);
+bV        = Unit([0;1;1]);
+b         = [0;0;0;bV]; <span class="comment">% Only one thruster pointing in an arbitrary,</span>
+                        <span class="comment">% Hill's equation fixed, direction.</span>
+
+nSim      = floor(nOrbits*p*wo/dT); <span class="comment">% 4 years</span>
+xPlot     = zeros(12,nSim);
+rPlot     = zeros(6,nSim);
+
+x         = zeros(6,1);
+thrust    = 0.001; <span class="comment">% N</span>
+mass      = 100; <span class="comment">% kg</span>
+aMax      = thrust*0.001/mass; <span class="comment">% km/sec^2</span>
+uMax      = aMax/wo^2; <span class="comment">% km</span>
+
+<span class="comment">% Set up the state space model</span>
+<span class="comment">%-----------------------------</span>
+states       = {<span class="string">'x'</span> <span class="string">'y'</span> <span class="string">'z'</span> <span class="string">'vX'</span> <span class="string">'vY'</span> <span class="string">'vZ'</span>};
+inputs       = {<span class="string">'u'</span>};
+outputs      = states;
+g            = statespace( a, b, c, d, <span class="string">'Linear Orbit'</span>, states, inputs, outputs );
+
+d            = DetectionFilterBuild( g, -0.25 );
+
+<span class="comment">% Set up the detection filter</span>
+<span class="comment">%----------------------------</span>
+[aX, d.d]    = C2DZOH( a, d.d, dT );
+
+<span class="comment">% Convert plant to discrete time</span>
+<span class="comment">%-------------------------------</span>
+[a, b]       = C2DZOH( a, b, dT );
+d.g          = CToD( g, dT, <span class="string">'z'</span> );
+
+xE           = x;
+
+<span class="comment">% Add noise</span>
+<span class="comment">%----------</span>
+pos1Sigma    = 10;
+vel1Sigma    = pos1Sigma*wo;
+y1Sigma      = [pos1Sigma*ones(3,1);vel1Sigma*ones(3,1)]*1e-3; <span class="comment">% Convert to km</span>
+bias         = [1;1;1;wo;wo;wo];
+bias         = zeros(6,1);
+rD           = zeros(6,1);
+u            = zeros(1,size(rPlot,2));
+</pre><h2 id="3">Simulate</h2><pre class="codeinput"><span class="comment">%---------</span>
+<span class="keyword">for</span> k = 1:nSim
+  xPlot(:,k)   = [x;xE];
+  rPlot(:,k)   = rD;
+  yMeas        = c*x + y1Sigma.*randn(6,1) + bias;
+  [rD, xE]     = DetectionFilterUnnormalized( d, yMeas, 0, xE );
+
+  <span class="comment">% Create a random pulse train</span>
+  <span class="comment">%----------------------------</span>
+  <span class="keyword">if</span>( k &gt; 1 )
+    <span class="keyword">if</span>( u(k-1) == 0 )
+      <span class="comment">% initiate a new pulse</span>
+      <span class="keyword">if</span>( rand &lt; uRandOn )
+        u(k) = uMax;
+      <span class="keyword">end</span>
+    <span class="keyword">else</span>
+      <span class="comment">% extend an existing pulse</span>
+      <span class="keyword">if</span>( rand &gt; uRandOff )
+        u(k) = uMax;
+      <span class="keyword">end</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+  x = a*x + b*u(k);
+<span class="keyword">end</span>
+</pre><h2 id="4">Plot</h2><pre class="codeinput"><span class="comment">% Convert velocity to km/sec</span>
+<span class="comment">%---------------------------</span>
+xPlot([4:6 10:12],:) = xPlot([4:6 10:12],:)*wo;
+
+<span class="comment">% Generate reasonable time labels</span>
+<span class="comment">%--------------------------------</span>
+[t,tL] = TimeLabl( (0:(nSim-1))*dT/wo );
+
+yL = {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'z'</span>, <span class="string">'vX'</span>, <span class="string">'vY'</span>, <span class="string">'vZ'</span> };
+Plot2D( t, xPlot(1:6,:), tL, yL,<span class="string">'True States'</span>,<span class="string">'lin'</span> );
+Plot2D( t, xPlot(7:12,:), tL, yL,<span class="string">'Detection Filter States'</span>,<span class="string">'lin'</span> );
+
+yL = {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'z'</span>, <span class="string">'vX'</span>, <span class="string">'vY'</span>, <span class="string">'vZ'</span>, <span class="string">'u'</span> };
+
+Plot2D( t, [rPlot;u], tL, yL,<span class="string">'Detection Filter Residuals and Pulses'</span> );
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="OrbitFDIRPulseDemo_01.png" alt=""> <img vspace="5" hspace="5" src="OrbitFDIRPulseDemo_02.png" alt=""> <img vspace="5" hspace="5" src="OrbitFDIRPulseDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate an orbit detection filter with random thrust pulses. 
+% This filter will detect measurement failures and actuator failures. 
+% A single thruster is assumed and it is assumed that each measurement of 
+% x, y, z and velocity is independent.
+%
+%   Since version 10.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also @statespace/statespace.m, C2DZOH, CToD, Plot2D, TimeLabl, 
+%  Unit, DetectionFilterBuild, DetectionFilterUnnormalized, LinOrb, Period
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2002 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Setup
+
+if( exist('LinOrb') )
+  [a,b,c,d] = LinOrb( [], 1 );
+else
+  a       = [ zeros(3), eye(3); diag([3 0 -1]), [0 2 0;-2 0 0;0 0 0] ];
+end
+
+if( exist('Period') )
+  rNom    = 7000;
+  p       = Period(rNom);
+else
+  p       = 5828.51668009113; % sec
+end
+
+nOrbits   = 20;
+dT        = 100;
+
+% Random pulse train; rand (0-1) is used with these thresholds to create pulses.
+uRandOn   = 0.02; % threshold to start a pulse (rand < uRandOn)
+uRandOff  = 0.1;  % threshold to continue a pulse (rand > uRandOff)
+
+wo        = 2*pi/p;
+dT        = wo*dT;
+c         = eye(6);
+d         = zeros(6,1);
+bV        = Unit([0;1;1]);
+b         = [0;0;0;bV]; % Only one thruster pointing in an arbitrary, 
+                        % Hill's equation fixed, direction.
+
+nSim      = floor(nOrbits*p*wo/dT); % 4 years
+xPlot     = zeros(12,nSim);
+rPlot     = zeros(6,nSim);
+
+x         = zeros(6,1);
+thrust    = 0.001; % N
+mass      = 100; % kg
+aMax      = thrust*0.001/mass; % km/sec^2
+uMax      = aMax/wo^2; % km
+
+% Set up the state space model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+states       = {'x' 'y' 'z' 'vX' 'vY' 'vZ'};
+inputs       = {'u'};
+outputs      = states;
+g            = statespace( a, b, c, d, 'Linear Orbit', states, inputs, outputs );
+
+d            = DetectionFilterBuild( g, -0.25 );
+
+% Set up the detection filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[aX, d.d]    = C2DZOH( a, d.d, dT );
+
+% Convert plant to discrete time
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[a, b]       = C2DZOH( a, b, dT );
+d.g          = CToD( g, dT, 'z' );
+
+xE           = x;
+
+% Add noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+pos1Sigma    = 10;
+vel1Sigma    = pos1Sigma*wo;
+y1Sigma      = [pos1Sigma*ones(3,1);vel1Sigma*ones(3,1)]*1e-3; % Convert to km
+bias         = [1;1;1;wo;wo;wo];
+bias         = zeros(6,1);
+rD           = zeros(6,1);
+u            = zeros(1,size(rPlot,2));
+
+%% Simulate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim
+  xPlot(:,k)   = [x;xE];
+  rPlot(:,k)   = rD;
+  yMeas        = c*x + y1Sigma.*randn(6,1) + bias;
+  [rD, xE]     = DetectionFilterUnnormalized( d, yMeas, 0, xE );
+  
+  % Create a random pulse train
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( k > 1 )
+    if( u(k-1) == 0 )
+      % initiate a new pulse
+      if( rand < uRandOn )
+        u(k) = uMax;
+      end
+    else
+      % extend an existing pulse
+      if( rand > uRandOff )
+        u(k) = uMax;
+      end
+    end
+  end
+  x = a*x + b*u(k);
+end
+
+%% Plot
+
+% Convert velocity to km/sec
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xPlot([4:6 10:12],:) = xPlot([4:6 10:12],:)*wo;
+
+% Generate reasonable time labels
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t,tL] = TimeLabl( (0:(nSim-1))*dT/wo );
+
+yL = {'x', 'y', 'z', 'vX', 'vY', 'vZ' };
+Plot2D( t, xPlot(1:6,:), tL, yL,'True States','lin' );
+Plot2D( t, xPlot(7:12,:), tL, yL,'Detection Filter States','lin' );
+
+yL = {'x', 'y', 'z', 'vX', 'vY', 'vZ', 'u' };
+
+Plot2D( t, [rPlot;u], tL, yL,'Detection Filter Residuals and Pulses' );
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2017-05-02 10:40:56 -0400 (Tue, 02 May 2017) $
+% $Revision: 44447 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,427 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Complete thermal analysis from fusion to magnets</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-18"><meta name="DC.source" content="Total1DHeatTransfer.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Complete thermal analysis from fusion to magnets</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also: RadiationShield, HeatTransferChannel, HeatExchangerWithLosses,
+OptimalMLIDensity
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Inputs</a></li><li><a href="#3">Solar radiation and outer heat shield</a></li><li><a href="#4">Fusion heat exchanger</a></li><li><a href="#5">Total heat to magnet</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 2019 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Inputs</h2><p>Waste heat, for a 1.1 MW fusion reactor</p><pre class="codeinput">Q = 0.61e6;       <span class="comment">% W</span>
+l = 1.0;          <span class="comment">% length of radiating plasma, m</span>
+r = 0.3;          <span class="comment">% radius of inner wall, m</span>
+
+qSun = 1367; <span class="comment">% W/m2</span>
+
+nChannels = 20;   <span class="comment">% how many ducts</span>
+
+tIn  = 300;       <span class="comment">% inlet (cold) temperature</span>
+tOut = 1589;      <span class="comment">% out temperature, GE ceramic blades</span>
+pR   = 2;         <span class="comment">% inlet pressure, ATM</span>
+cP   = 424;       <span class="comment">% He/Xe</span>
+</pre><h2 id="3">Solar radiation and outer heat shield</h2><pre class="codeinput">dShield = RadiationShield;
+dShield.n = 200;    <span class="comment">% layers of MLI</span>
+
+<span class="comment">% Flux emitted from fusion heat exchanger</span>
+dShield.qS = qSun;   <span class="comment">% Surface flux (W/m^2)</span>
+dShield.epsI = 0.6;  <span class="comment">% Emittance of inner MLI wall</span>
+
+[tS, tI, qI, k, outSh] = RadiationShield(dShield);
+
+disp(<span class="string">'----'</span>)
+disp(<span class="string">'Heat Thru Sun Shield'</span>)
+disp(<span class="string">'----'</span>)
+fprintf(1,<span class="string">'Outer shield temperature %12.2f deg-K\n'</span>,tS);
+fprintf(1,<span class="string">'Inner shield temperature %12.2f deg-K\n'</span>,tI);
+fprintf(1,<span class="string">'Inner shield flux        %12.4f  W/m^2\n'</span>,qI);
+fprintf(1,<span class="string">'MLI thickness            %12.2f  cm\n'</span>,dShield.n/outSh.nD);
+</pre><pre class="codeoutput">----
+Heat Thru Sun Shield
+----
+Outer shield temperature       299.40 deg-K
+Inner shield temperature        38.03 deg-K
+Inner shield flux              0.0711  W/m^2
+MLI thickness                   10.96  cm
+</pre><h2 id="4">Fusion heat exchanger</h2><p>Assume a 70/30 He/Xe molar mixture</p><pre class="codeinput"><span class="comment">% Calculate heat per channel</span>
+c = 2*pi*r;             <span class="comment">% circumference</span>
+w = c/nChannels;        <span class="comment">% channel width</span>
+h = 0.5*w;              <span class="comment">% channel height</span>
+q = Q/l/nChannels;      <span class="comment">% wall loading, W/m, per channel</span>
+
+d = struct( <span class="string">'name'</span>,     <span class="string">'Helium/Xenon 70/30'</span>,<span class="keyword">...</span>
+            <span class="string">'length'</span>,   l,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'w'</span>,        w,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'h'</span>,        h,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'q'</span>,        q,<span class="keyword">...</span><span class="comment">       % MW</span>
+            <span class="string">'cP'</span>,       cP,<span class="keyword">...</span><span class="comment">     % J/kg-K</span>
+            <span class="string">'gamma'</span>,    1.659,<span class="keyword">...</span><span class="comment">   %</span>
+            <span class="string">'kC'</span>,       0,<span class="keyword">...</span><span class="comment">       %</span>
+            <span class="string">'kE'</span>,       0,<span class="keyword">...</span><span class="comment">       %</span>
+            <span class="string">'tInlet'</span>,   tIn,<span class="keyword">...</span><span class="comment">     % K</span>
+            <span class="string">'tOutlet'</span>,  tOut,<span class="keyword">...</span><span class="comment">    % K</span>
+            <span class="string">'tube'</span>,     <span class="string">'square'</span>,<span class="keyword">...</span>
+            <span class="string">'pressure'</span>, pR	);        <span class="comment">% ATM</span>
+d.gas = {<span class="string">'xe'</span>, 0.3, <span class="string">'he'</span>, 0.7};
+
+
+channel = HeatTransferChannel( d );
+
+<span class="comment">% Compute the thermal conductivity of the complete exchanger with the channel,</span>
+<span class="comment">% duct wall, and an MLI blanket</span>
+d = HeatExchangerWithLosses;
+
+<span class="comment">% Don't need to do this chamber stuff, it's already determined in the function</span>
+<span class="comment">% above. Should be able to use the</span>
+d.tB0       = tIn;   <span class="comment">% cold end</span>
+d.qDot      = q; <span class="comment">% W/m, this is for one channel</span>
+d.cP        = cP;
+
+<span class="comment">% approximate conductivity of a 4 mm ceramic wall</span>
+kW          = 20.7;  <span class="comment">% W/m K  % SJT: source?</span>
+<span class="comment">% thermal conductance</span>
+kW          = kW/0.004; <span class="comment">% W/m^2 K</span>
+<span class="comment">% % heat exchanger channel</span>
+<span class="comment">% gamma       = d.cP/300; % SJT: what is 300?</span>
+<span class="comment">% u           = channel.u;   % m/s</span>
+<span class="comment">% p           = pR*14.7*6895; % ATM to N/m2</span>
+<span class="comment">% % Note: mu and  kF are actually functions of temperature...</span>
+<span class="comment">% mu          = 5.95e-5;     % (??) viscosity, kg/m-s</span>
+<span class="comment">% kF          = 0.0262;      % conductivity (W/m-K) ??</span>
+<span class="comment">% R           = RFromCPAndGamma(d.cP,gamma);</span>
+<span class="comment">% rho         = p/(R*d.tB0);</span>
+<span class="comment">% nu          = KinematicViscosity( mu, rho );</span>
+<span class="comment">% pR          = PrandtlNumber( mu, d.cP, kF );</span>
+<span class="comment">% % whoopsies: the reactor diameter or the channel diameter?</span>
+<span class="comment">% rE          = ReynoldsNumberKinematic( u, channel.d, nu );</span>
+<span class="comment">% nU          = NusseltTurbulent( rE, pR );</span>
+<span class="comment">% h           = HeatTransferCoeff( nU, kF, channel.d );  % W/m^2 K</span>
+
+<span class="comment">% MLI - compute layers/cm and total conductance.</span>
+dMLI        = OptimalMLIDensity;
+dMLI.n      = 200; <span class="comment">% number of layers</span>
+[nD,~,kMLI]	= OptimalMLIDensity(tOut,d.tB0,dMLI);
+
+<span class="comment">% sum the thermal conductances</span>
+<span class="comment">% SJT: conductance or conductivity???</span>
+<span class="comment">% channel - mean h or beginning/end h</span>
+d.k         = 1/(1/kW + 1/channel.out.h(end) + 1/kMLI);
+
+<span class="comment">% channel mass flow rate</span>
+d.mDot      = channel.mDot; <span class="comment">% kg/s</span>
+
+<span class="comment">% calculate the temperatures and fluxes</span>
+<span class="comment">% NOTE: header says input k is thermal conductivity</span>
+[tB,tS4,q4] = HeatExchangerWithLosses( d, true );
+
+<span class="comment">% Display output</span>
+disp(<span class="string">'----'</span>)
+disp(<span class="string">'Fusion Heat Exchanger Design'</span>)
+disp(<span class="string">'----'</span>)
+fprintf(<span class="string">'Input heat flux: %g W/m\n'</span>,d.qDot)
+fprintf(<span class="string">'Channel flow rate: %g kg/s\n\n'</span>,d.mDot)
+fprintf(<span class="string">'Thickness of MLI blanket = %.2f cm\n'</span>,dMLI.n/nD);
+fprintf(<span class="string">'Thermal conductance wall: %g W/m2 deg-K\n'</span>,kW)
+fprintf(<span class="string">'Thermal conductance MLI: %g W/m2 deg-K\n'</span>,kMLI)
+fprintf(<span class="string">'Thermal conductance flow: %g W/m2 deg-K\n'</span>,h)
+fprintf(<span class="string">'Total conductance: %g W/m2 deg-K\n'</span>,d.k)
+fprintf(<span class="string">'Max radiative flux: %g W/m2\n'</span>,max(q4))
+fprintf(<span class="string">'Start/end wall temps: %g, %g K\n'</span>,tS4(1),tS4(end))
+fprintf(<span class="string">'Start/end gas temps: %g, %g K\n'</span>,tB(1),tB(end))
+</pre><pre class="codeoutput">----
+Fusion Heat Exchanger Design
+----
+Input heat flux: 30500 W/m
+Channel flow rate: 0.055806 kg/s
+
+Thickness of MLI blanket = 2.27 cm
+Thermal conductance wall: 5175 W/m2 deg-K
+Thermal conductance MLI: 0.133934 W/m2 deg-K
+Thermal conductance flow: 0.0471239 W/m2 deg-K
+Total conductance: 0.133618 W/m2 deg-K
+Max radiative flux: 1652.02 W/m2
+Start/end wall temps: 139.464, 413.15 K
+Start/end gas temps: 300, 12776.9 K
+</pre><img vspace="5" hspace="5" src="Total1DHeatTransfer_01.png" alt=""> <h2 id="5">Total heat to magnet</h2><pre class="codeinput">d = RadiationShield;
+
+d.n = 200;    <span class="comment">% layers of MLI protecting coils</span>
+
+<span class="comment">% Flux emitted from fusion heat exchanger</span>
+d.qS = 170;   <span class="comment">% Surface flux (W/m^2)</span>
+d.epsI = 0.2; <span class="comment">% Emittance of inner MLI wall</span>
+
+StructToText(d)
+
+[tS, tI, qI, k, out] = RadiationShield(d);
+
+disp(<span class="string">'----'</span>)
+disp(<span class="string">'Heat To Magnets'</span>)
+disp(<span class="string">'----'</span>)
+fprintf(1,<span class="string">'Outer wall temperature %12.2f deg-K\n'</span>,tS);
+fprintf(1,<span class="string">'Inner wall temperature %12.2f deg-K\n'</span>,tI);
+fprintf(1,<span class="string">'Inner wall flux        %12.2e  W/m^2\n'</span>,qI);
+fprintf(1,<span class="string">'MLI conductance        %12.2e  W/m^2-K\n'</span>,k);
+fprintf(1,<span class="string">'MLI thickness          %12.2f  cm\n'</span>,d.n/out.nD);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">n:
+	200
+cS:
+	2.98e-08
+cR:
+	5.86e-10
+gamma:
+	2.84
+epsTR:
+	0.043
+alphaS:
+	0.3
+epsS:
+	0.9
+epsI:
+	0.2
+qS:
+	170
+tol:
+	1
+
+----
+Heat To Magnets
+----
+Outer wall temperature       177.80 deg-K
+Inner wall temperature        27.24 deg-K
+Inner wall flux            6.24e-03  W/m^2
+MLI conductance            4.14e-05  W/m^2-K
+MLI thickness                 17.84  cm
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Complete thermal analysis from fusion to magnets
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also: RadiationShield, HeatTransferChannel, HeatExchangerWithLosses,
+%  OptimalMLIDensity
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright 2019 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Inputs
+% Waste heat, for a 1.1 MW fusion reactor
+Q = 0.61e6;       % W
+l = 1.0;          % length of radiating plasma, m
+r = 0.3;          % radius of inner wall, m
+
+qSun = 1367; % W/m2
+
+nChannels = 20;   % how many ducts
+
+tIn  = 300;       % inlet (cold) temperature
+tOut = 1589;      % out temperature, GE ceramic blades
+pR   = 2;         % inlet pressure, ATM
+cP   = 424;       % He/Xe
+
+%% Solar radiation and outer heat shield
+
+dShield = RadiationShield;
+dShield.n = 200;    % layers of MLI
+
+% Flux emitted from fusion heat exchanger
+dShield.qS = qSun;   % Surface flux (W/m^2)
+dShield.epsI = 0.6;  % Emittance of inner MLI wall
+         
+[tS, tI, qI, k, outSh] = RadiationShield(dShield);
+
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+disp('Heat Thru Sun Shield')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf(1,'Outer shield temperature %12.2f deg-K\n',tS);
+fprintf(1,'Inner shield temperature %12.2f deg-K\n',tI);
+fprintf(1,'Inner shield flux        %12.4f  W/m^2\n',qI);
+fprintf(1,'MLI thickness            %12.2f  cm\n',dShield.n/outSh.nD);
+
+%% Fusion heat exchanger
+% Assume a 70/30 He/Xe molar mixture
+
+% Calculate heat per channel
+c = 2*pi*r;             % circumference
+w = c/nChannels;        % channel width
+h = 0.5*w;              % channel height
+q = Q/l/nChannels;      % wall loading, W/m, per channel
+
+d = struct( 'name',     'Helium/Xenon 70/30',...
+            'length',   l,...       % m
+            'w',        w,...       % m
+            'h',        h,...       % m
+            'q',        q,...       % MW
+            'cP',       cP,...     % J/kg-K
+            'gamma',    1.659,...   % 
+            'kC',       0,...       % 
+            'kE',       0,...       % 
+            'tInlet',   tIn,...     % K
+            'tOutlet',  tOut,...    % K
+            'tube',     'square',...
+            'pressure', pR	);        % ATM  
+d.gas = {'xe', 0.3, 'he', 0.7};
+
+
+channel = HeatTransferChannel( d );
+
+% Compute the thermal conductivity of the complete exchanger with the channel,
+% duct wall, and an MLI blanket
+d = HeatExchangerWithLosses;
+
+% Don't need to do this chamber stuff, it's already determined in the function
+% above. Should be able to use the 
+d.tB0       = tIn;   % cold end
+d.qDot      = q; % W/m, this is for one channel
+d.cP        = cP;
+
+% approximate conductivity of a 4 mm ceramic wall
+kW          = 20.7;  % W/m K  % SJT: source?
+% thermal conductance
+kW          = kW/0.004; % W/m^2 K
+% % heat exchanger channel
+% gamma       = d.cP/300; % SJT: what is 300?
+% u           = channel.u;   % m/s
+% p           = pR*14.7*6895; % ATM to N/m2
+% % Note: mu and  kF are actually functions of temperature...
+% mu          = 5.95e-5;     % (??) viscosity, kg/m-s
+% kF          = 0.0262;      % conductivity (W/m-K) ??
+% R           = RFromCPAndGamma(d.cP,gamma);
+% rho         = p/(R*d.tB0);
+% nu          = KinematicViscosity( mu, rho );
+% pR          = PrandtlNumber( mu, d.cP, kF );
+% % whoopsies: the reactor diameter or the channel diameter?
+% rE          = ReynoldsNumberKinematic( u, channel.d, nu );
+% nU          = NusseltTurbulent( rE, pR );
+% h           = HeatTransferCoeff( nU, kF, channel.d );  % W/m^2 K
+
+% MLI - compute layers/cm and total conductance. 
+dMLI        = OptimalMLIDensity;
+dMLI.n      = 200; % number of layers
+[nD,~,kMLI]	= OptimalMLIDensity(tOut,d.tB0,dMLI);
+
+% sum the thermal conductances
+% SJT: conductance or conductivity???
+% channel - mean h or beginning/end h
+d.k         = 1/(1/kW + 1/channel.out.h(end) + 1/kMLI);
+
+% channel mass flow rate
+d.mDot      = channel.mDot; % kg/s
+
+% calculate the temperatures and fluxes
+% NOTE: header says input k is thermal conductivity
+[tB,tS4,q4] = HeatExchangerWithLosses( d, true );
+
+% Display output
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+disp('Fusion Heat Exchanger Design')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf('Input heat flux: %g W/m\n',d.qDot)
+fprintf('Channel flow rate: %g kg/s\n\n',d.mDot)
+fprintf('Thickness of MLI blanket = %.2f cm\n',dMLI.n/nD);
+fprintf('Thermal conductance wall: %g W/m2 deg-K\n',kW)
+fprintf('Thermal conductance MLI: %g W/m2 deg-K\n',kMLI)
+fprintf('Thermal conductance flow: %g W/m2 deg-K\n',h)
+fprintf('Total conductance: %g W/m2 deg-K\n',d.k)
+fprintf('Max radiative flux: %g W/m2\n',max(q4))
+fprintf('Start/end wall temps: %g, %g K\n',tS4(1),tS4(end))
+fprintf('Start/end gas temps: %g, %g K\n',tB(1),tB(end))
+
+
+%% Total heat to magnet
+
+d = RadiationShield;
+
+d.n = 200;    % layers of MLI protecting coils
+
+% Flux emitted from fusion heat exchanger
+d.qS = 170;   % Surface flux (W/m^2)
+d.epsI = 0.2; % Emittance of inner MLI wall
+
+StructToText(d)         
+         
+[tS, tI, qI, k, out] = RadiationShield(d);
+
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+disp('Heat To Magnets')
+disp('REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH')
+fprintf(1,'Outer wall temperature %12.2f deg-K\n',tS);
+fprintf(1,'Inner wall temperature %12.2f deg-K\n',tI);
+fprintf(1,'Inner wall flux        %12.2e  W/m^2\n',qI);
+fprintf(1,'MLI conductance        %12.2e  W/m^2-K\n',k);
+fprintf(1,'MLI thickness          %12.2f  cm\n',d.n/out.nD);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2021-06-17 $
+% $Revision: da0c3b5a2e719e3088ce7d5f16d48963dd794225 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,208 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>WireFieldEstimates</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="WireFieldEstimates.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Field strength and currents for PFRC coils</a></li><li><a href="#2">Field at the conductors</a></li></ul></div><h2 id="1">Field strength and currents for PFRC coils</h2><p>See also EllipsoidalSolenoid, ConcentricCoils, MagneticFieldCurrentLoop,</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright (c) 2016 Princeton Satellite Systems, Inc.</span>
+<span class="comment">% All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Calculate radii assuming coils are smaller at the ends</span>
+z	= [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+a	= EllipsoidalSolenoid( 0.4, 0.5, z );
+fprintf(1,<span class="string">'Radii of coils (m): %g %g %g %g %g %g %g %g\n'</span>,a)
+
+<span class="comment">% Calculate currents to give a smooth interior field</span>
+bA = 6;
+[b,i,zs] = ConcentricCoils( z, bA, a );
+fprintf(1,<span class="string">'Field strength: %g T\n'</span>,bA)
+
+<span class="comment">% Plot the central field variation</span>
+Plot2D(zs,b,<span class="string">'z'</span>,<span class="string">'Center Field Strength (T)'</span>,<span class="string">'Central Field'</span>);
+yy = axis;
+hold <span class="string">on</span>
+plot((z'*[1 1])',(ones(8,1)*yy(3:4))',<span class="string">'r--'</span>)
+</pre><pre class="codeoutput">Radii of coils (m): 0.4 0.452769 0.484768 0.5 0.5 0.484768 0.452769 0.4
+Field strength: 6 T
+</pre><img vspace="5" hspace="5" src="WireFieldEstimates_01.png" alt=""> <h2 id="2">Field at the conductors</h2><p>Use all of the coils EXCEPT the one you are checking, which will give an infinite result</p><pre class="codeinput"><span class="comment">% Field at the center - decreases with increasing radius</span>
+d = z; <span class="comment">% SJT lost definition of d think maybe it was the same as z??</span>
+pCoil = [d;zeros(2,8)];
+qCoil = repmat([1;0;0;0],1,8);
+x     = [zeros(1,10);zeros(1,10);linspace(0,0.5,10)];
+bCenter = MagneticFieldCurrentLoop( i, a, pCoil,qCoil,x )
+
+
+<span class="comment">% Field at a coil location due only to the other coils</span>
+bEdge = [];
+kCoils = [1:3 5:8];
+bEdge(:,1) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],<span class="keyword">...</span>
+                                  repmat([1;0;0;0],1,7), [z(4);0;a(4)] );
+kCoils = [1:2 4:8];
+bEdge(:,2) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],<span class="keyword">...</span>
+                                  repmat([1;0;0;0],1,7), [z(3);0;a(3)] );
+kCoils = [1 3:8];
+bEdge(:,3) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],<span class="keyword">...</span>
+                                  repmat([1;0;0;0],1,7), [z(2);0;a(2)] );
+kCoils = [2:8];
+bEdge(:,4) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],<span class="keyword">...</span>
+                                  repmat([1;0;0;0],1,7), [z(1);0;a(1)] );
+
+<span class="comment">% Self-field - assume uniform current and a cable radius r</span>
+r = 0.05; <span class="comment">% assume 5 cm stack</span>
+bSelf = 4e-7*pi*i/2/pi/r
+
+<span class="comment">% total maximum fields</span>
+bWire = bEdge(1,:) + bSelf(1:4);
+fprintf(1,<span class="string">'Field strength at wire inner edge: %g %g %g %g T\n'</span>,bWire)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">bCenter =
+  Columns 1 through 6
+       5.9268       5.9174       5.8856       5.8197       5.6958       5.4722
+            0   8.9074e-34   1.8778e-33  -3.5148e-33   -3.563e-33  -4.8148e-33
+            0   1.0408e-17   -9.541e-18  -5.2042e-18  -4.5103e-17   1.2143e-17
+  Columns 7 through 10
+       5.0858       4.4647       3.5814        2.533
+  -6.6445e-33   8.0889e-33  -3.8519e-34  -9.2445e-33
+  -8.6736e-17  -1.0061e-16  -7.4593e-17  -6.5919e-17
+bSelf =
+  Columns 1 through 6
+       11.322       10.068       10.055       10.032       10.032       10.055
+  Columns 7 through 8
+       10.068       11.322
+Field strength at wire inner edge: 12.7286 11.4437 11.3579 10.9837 T
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Field strength and currents for PFRC coils
+%
+% See also EllipsoidalSolenoid, ConcentricCoils, MagneticFieldCurrentLoop, 
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright (c) 2016 Princeton Satellite Systems, Inc.
+% All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Calculate radii assuming coils are smaller at the ends
+z	= [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+a	= EllipsoidalSolenoid( 0.4, 0.5, z );
+fprintf(1,'Radii of coils (m): %g %g %g %g %g %g %g %g\n',a)
+
+% Calculate currents to give a smooth interior field
+bA = 6;
+[b,i,zs] = ConcentricCoils( z, bA, a );
+fprintf(1,'Field strength: %g T\n',bA)
+
+% Plot the central field variation
+Plot2D(zs,b,'z','Center Field Strength (T)','Central Field');
+yy = axis;
+hold on
+plot((z'*[1 1])',(ones(8,1)*yy(3:4))','rREPLACE_WITH_DASH_DASH')
+
+%% Field at the conductors
+% Use all of the coils EXCEPT the one you are checking, which will give an
+% infinite result
+
+% Field at the center - decreases with increasing radius
+d = z; % SJT lost definition of d think maybe it was the same as z??
+pCoil = [d;zeros(2,8)];
+qCoil = repmat([1;0;0;0],1,8);
+x     = [zeros(1,10);zeros(1,10);linspace(0,0.5,10)];
+bCenter = MagneticFieldCurrentLoop( i, a, pCoil,qCoil,x )
+
+
+% Field at a coil location due only to the other coils
+bEdge = [];
+kCoils = [1:3 5:8];
+bEdge(:,1) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],...
+                                  repmat([1;0;0;0],1,7), [z(4);0;a(4)] );
+kCoils = [1:2 4:8];
+bEdge(:,2) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],...
+                                  repmat([1;0;0;0],1,7), [z(3);0;a(3)] );
+kCoils = [1 3:8];
+bEdge(:,3) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],...
+                                  repmat([1;0;0;0],1,7), [z(2);0;a(2)] );
+kCoils = [2:8];
+bEdge(:,4) = MagneticFieldCurrentLoop( i(kCoils), a(kCoils), [d(kCoils);zeros(2,7)],...
+                                  repmat([1;0;0;0],1,7), [z(1);0;a(1)] );
+                               
+% Self-field - assume uniform current and a cable radius r
+r = 0.05; % assume 5 cm stack
+bSelf = 4e-7*pi*i/2/pi/r
+
+% total maximum fields
+bWire = bEdge(1,:) + bSelf(1:4);
+fprintf(1,'Field strength at wire inner edge: %g %g %g %g T\n',bWire)
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-06-20 $
+% $Revision: 6566016de994d8c73e45ed44d426d6abbc5f89e0 $
+
+##### SOURCE END #####
+--></body></html>

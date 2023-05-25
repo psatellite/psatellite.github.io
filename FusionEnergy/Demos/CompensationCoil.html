@@ -1,0 +1,242 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>CompensationCoil</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="CompensationCoil.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Create a compensating coil for the DFD dipole</a></li><li><a href="#2">Axial field computation</a></li></ul></div><h2 id="1">Create a compensating coil for the DFD dipole</h2><p>Uses AWG3 wire. The field is computed to see the effect of the compensating coils on the central field of the solenoid.</p><p>See also: ConcentricCoils</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% The DFD dipole</span>
+
+bAxial  = 5; <span class="comment">% T</span>
+rCC     = 2; <span class="comment">% Radius of compensating coil</span>
+zCC     = 8; <span class="comment">% Location of compensating coil</span>
+
+<span class="comment">% Coil locations</span>
+zC      = [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+
+<span class="comment">% Coil radii</span>
+r       = EllipsoidalSolenoid( 0.35, 0.5, zC ); <span class="comment">% Radii</span>
+
+<span class="comment">% https://en.wikipedia.org/wiki/American_wire_gauge</span>
+<span class="comment">% Gauge: AWG3, area is 26.7 mm2</span>
+iAWG3   = 115; <span class="comment">% Maximum capacity of wire (A)</span>
+rho     = 0.6465e-3; <span class="comment">% ohms/m</span>
+linear  = 8.9*26.7*1e-2; <span class="comment">% linear density copper (g/cm)</span>
+
+<span class="comment">% superconductors - should specify which material at what temp</span>
+iHTS = 500;
+linearHTS = 0.085; <span class="comment">% g/cm</span>
+
+<span class="comment">% Compute the coil currents</span>
+[~, i]	= ConcentricCoils( zC, bAxial, r )
+
+<span class="comment">% Compute the dipoles and compensating coil</span>
+mDFD    = pi*sum(r.^2.*i);
+zC      = [zC zCC]; <span class="comment">% Z location</span>
+r       = [r  rCC]; <span class="comment">% Radii</span>
+z       = linspace(2*zC(1),1.5*zC(end));
+iCC     = mDFD/(pi*rCC^2);
+n       = iCC/iAWG3;
+l       = 2*pi*rCC*n; <span class="comment">% total length of wire</span>
+power   = iAWG3^2*rho*l;
+mass    = linear*l*0.1; <span class="comment">% mass of copper (kg)</span>
+massHTS = iCC/iHTS*2*pi*rCC*linearHTS*0.1
+
+k       = 1;
+s = {};
+s{k,1}	= <span class="string">'Mass'</span>;               s{k,2}= sprintf(<span class="string">'%12.2f kg'</span>,mass);  k = k + 1;
+s{k,1}	= <span class="string">'Power consumption'</span>;  s{k,2}= sprintf(<span class="string">'%12.2f kW'</span>,power/1000);  k = k + 1;
+s{k,1}	= <span class="string">'Current'</span>;            s{k,2}= sprintf(<span class="string">'%12.2f MA'</span>,iCC/1e6);     k = k + 1;
+s{k,1}	= <span class="string">'Number of turns'</span>;    s{k,2}= sprintf(<span class="string">'%12.0f'</span>,n);              k = k + 1;
+s{k,1}	= <span class="string">'Radius'</span>;             s{k,2}= sprintf(<span class="string">'%12.2f m'</span>,rCC);          k = k + 1;
+s{k,1}	= <span class="string">'DFD B Field'</span>;        s{k,2}= sprintf(<span class="string">'%12.2f T'</span>,bAxial);
+
+DisplayLatexTable(s)
+
+i       = [i -iCC];
+b       = Field(i,r,zC,z);
+
+Plot2D(z,b,<span class="string">'z (m)'</span>, <span class="string">'b (T)'</span>, <span class="string">'Field with Compensating Coil'</span>);
+</pre><pre class="codeoutput">i =
+  Columns 1 through 6
+   2.1318e+06   2.1648e+06   2.0964e+06   2.1198e+06   2.1198e+06   2.0964e+06
+  Columns 7 through 8
+   2.1648e+06   2.1318e+06
+massHTS =
+       178.79
+             Mass     21731.80 kg 
+Power consumption       781.91 kW 
+          Current         0.84 MA 
+  Number of turns            7278 
+           Radius          2.00 m 
+      DFD B Field          5.00 T 
+</pre><h2 id="2">Axial field computation</h2><pre class="codeinput"><span class="keyword">function</span> b = Field( i, a, d, z )
+
+mu0   = 4e-7*pi;
+a2    = a.^2;
+f     = mu0*i.*a2/2;
+b     = zeros(1,length(z));
+
+<span class="keyword">for</span> k = 1:length(d)
+  b = b + f(k)./((z-d(k)).^2 + a2(k)).^1.5;
+<span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="CompensationCoil_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Create a compensating coil for the DFD dipole
+% Uses AWG3 wire. The field is computed to see the effect of the compensating
+% coils on the central field of the solenoid.
+%
+% See also: ConcentricCoils
+%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2017 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% The DFD dipole
+
+bAxial  = 5; % T
+rCC     = 2; % Radius of compensating coil
+zCC     = 8; % Location of compensating coil
+
+% Coil locations
+zC      = [-1.75 -1.25 -0.75 -0.25 0.25 0.75 1.25 1.75];
+
+% Coil radii
+r       = EllipsoidalSolenoid( 0.35, 0.5, zC ); % Radii
+
+% https://en.wikipedia.org/wiki/American_wire_gauge
+% Gauge: AWG3, area is 26.7 mm2
+iAWG3   = 115; % Maximum capacity of wire (A)
+rho     = 0.6465e-3; % ohms/m
+linear  = 8.9*26.7*1e-2; % linear density copper (g/cm)
+
+% superconductors - should specify which material at what temp
+iHTS = 500;
+linearHTS = 0.085; % g/cm
+
+% Compute the coil currents
+[~, i]	= ConcentricCoils( zC, bAxial, r )
+
+% Compute the dipoles and compensating coil
+mDFD    = pi*sum(r.^2.*i);
+zC      = [zC zCC]; % Z location
+r       = [r  rCC]; % Radii
+z       = linspace(2*zC(1),1.5*zC(end));
+iCC     = mDFD/(pi*rCC^2);
+n       = iCC/iAWG3;
+l       = 2*pi*rCC*n; % total length of wire
+power   = iAWG3^2*rho*l;
+mass    = linear*l*0.1; % mass of copper (kg)
+massHTS = iCC/iHTS*2*pi*rCC*linearHTS*0.1
+
+k       = 1;
+s = {};
+s{k,1}	= 'Mass';               s{k,2}= sprintf('%12.2f kg',mass);  k = k + 1;
+s{k,1}	= 'Power consumption';  s{k,2}= sprintf('%12.2f kW',power/1000);  k = k + 1;
+s{k,1}	= 'Current';            s{k,2}= sprintf('%12.2f MA',iCC/1e6);     k = k + 1;
+s{k,1}	= 'Number of turns';    s{k,2}= sprintf('%12.0f',n);              k = k + 1;
+s{k,1}	= 'Radius';             s{k,2}= sprintf('%12.2f m',rCC);          k = k + 1;
+s{k,1}	= 'DFD B Field';        s{k,2}= sprintf('%12.2f T',bAxial);
+
+DisplayLatexTable(s)
+
+i       = [i -iCC];
+b       = Field(i,r,zC,z);
+
+Plot2D(z,b,'z (m)', 'b (T)', 'Field with Compensating Coil');
+
+%% Axial field computation
+function b = Field( i, a, d, z )
+
+mu0   = 4e-7*pi;
+a2    = a.^2;
+f     = mu0*i.*a2/2;
+b     = zeros(1,length(z));
+
+for k = 1:length(d)
+  b = b + f(k)./((z-d(k)).^2 + a2(k)).^1.5;
+end
+
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-06-20 $
+% $Revision: 6566016de994d8c73e45ed44d426d6abbc5f89e0 $
+
+##### SOURCE END #####
+--></body></html>

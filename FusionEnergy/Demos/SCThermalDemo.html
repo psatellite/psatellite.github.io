@@ -1,0 +1,395 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrates how to use the thermal modeling package</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-09-19"><meta name="DC.source" content="SCThermalDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrates how to use the thermal modeling package</h1><!--introduction--><p>The spacecraft is a cube with two solar wings.  ------------------------------------------------------------------------  See also SpaceCamera, SpaceThermalCamera, SpacecraftThermal,  PlotThermal, DrawSCPlanPlugIn, QForm, QLVLH, QPose, TimeGUI,  FindSolsticeOrEquinox, RVFromKepler, SolarFlx, SunV1, AutoPoint,  CameraDatabase, ThermalImager  ------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Load the CAD model</a></li><li><a href="#3">Set up the simulation</a></li><li><a href="#4">Loop through the disturbances</a></li><li><a href="#5">Plot the results</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 1998-2003, 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Load the CAD model</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+g = load(<span class="string">'SCForImaging'</span>);
+DrawSCPlanPlugIn(g);
+
+<span class="comment">% Initial rotation of solar arrays</span>
+<span class="comment">%---------------------------------</span>
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+</pre><img vspace="5" hspace="5" src="SCThermalDemo_01.png" alt=""> <h2 id="3">Set up the simulation</h2><pre class="codeinput"><span class="comment">%-----------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">'Do Nothing'</span>;
+
+<span class="comment">% Ephemeris</span>
+<span class="comment">%----------</span>
+jD0   = FindSolsticeOrEquinox(<span class="string">'spring equinox'</span>,2002);
+nDays = 2;
+nSamp = 300;
+t     = linspace(0,nDays,nSamp)*86400;
+jD    = jD0 + t/86400;
+dTSim = t(2)-t(1);
+
+<span class="comment">% Spacecraft orbit (GEO)</span>
+<span class="comment">%-----------------------</span>
+[rECI, vECI] = RVFromKepler( [42167 0 0 0 0 0], t );
+
+<span class="comment">% Camera</span>
+<span class="comment">%-------</span>
+camera                  = CameraDatabase(<span class="string">'256 square'</span>);
+camera.up               = [0;-1;0];
+camera.focalLength      = 0.05;
+
+<span class="comment">% Initialize the picture in SpaceCamera</span>
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% The optical camera</span>
+qECIToLVLH              = QLVLH( rECI(:,1), vECI(:,1) );
+g.body(1).bHinge.q      = QPose(qECIToLVLH);
+g.rECI                  = rECI(:,1);
+g.qLVLH                 = qECIToLVLH;
+g.name                  = <span class="string">'Satellite'</span>;
+d                       = struct(<span class="string">'position'</span>,[]);
+d.planetName            = <span class="string">'Earth'</span>;
+d.camera                = camera;
+tagVisibleCameraWindow  = SpaceCamera( <span class="string">'initialize'</span>, d, g, jD(1) );
+
+<span class="comment">% The thermal camera</span>
+<span class="comment">%-------------------</span>
+figH = findobj( <span class="string">'tag'</span>, tagVisibleCameraWindow );
+h    = get( figH, <span class="string">'UserData'</span> );
+d.position              = get(h.fig3D,<span class="string">'position'</span>) + [camera.xPixels 0 0 0];
+d.planetName            = <span class="string">'Earth'</span>;
+d.camera                = camera;
+d.imagerFunction        = @ThermalImager;
+d.colorMap              = hot;
+d.tempMax               = 700;
+g.temperature           = 300*ones(length(g.component),1);
+d.name                  = <span class="string">'SpaceThermalCamera'</span>;
+tagInfraredCameraWindow = SpaceCamera( <span class="string">'initialize'</span>, d, g, jD(1) );
+
+<span class="comment">% Environment data for thermal temperature model</span>
+<span class="comment">%-----------------------------------------------</span>
+e = struct;
+flux0                   = SolarFlx(1);
+e.planet                = <span class="string">'earth'</span>;
+e.planetRadius          = 6378.165;
+e.s                     = flux0*SunV1(jD(1)); <span class="comment">% Watts/m^2</span>
+e.tSamp                 = dTSim;
+e.shadow                = false;
+e.showScans             = false;
+e.nScanLines            = 10;
+e.units                 = <span class="string">'m'</span>;
+
+<span class="comment">% Initialize the flux and temperature arrays</span>
+<span class="comment">%-------------------------------------------</span>
+q    = zeros(length(g.component),nSamp);
+temp = zeros(length(g.component),nSamp);
+
+<span class="comment">% Now run the simulation</span>
+<span class="comment">%-----------------------</span>
+qLVLHToBody = Mat2Q([0 0 -1;0 1 0;1 0 0]);
+
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSamp, 0 );
+</pre><img vspace="5" hspace="5" src="SCThermalDemo_02.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_03.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_04.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_05.png" alt=""> <h2 id="4">Loop through the disturbances</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">for</span> k = 1:nSamp
+
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSamp, k, tToGoMem, ratioRealTime, dTSim );
+
+  <span class="comment">% Update solar ephemeris</span>
+  <span class="comment">%-----------------------</span>
+  [uSun, rSun] = SunV1(jD(k));
+  e.s          = flux0*uSun;
+  e.r          = rECI(:,k);
+  e.v          = vECI(:,k);
+  e.rSun       = rSun*uSun;
+
+  <span class="comment">% Sun vector</span>
+  <span class="comment">%-----------</span>
+  qLVLH    = QLVLH( rECI(:,k), vECI(:,k) );
+  uSunLVLH = QForm( qLVLH, uSun );
+  theta    = atan2( uSunLVLH(1), uSunLVLH(3) );
+
+  <span class="comment">% CAD body structure</span>
+  <span class="comment">%-------------------</span>
+  g.body(1).bHinge.q     = QPose(QMult(qLVLH,qLVLHToBody));
+  g.body(2).bHinge.angle = theta;
+  g.body(3).bHinge.angle = theta;
+  g.rECI                 = rECI(:,k);
+  g.qLVLH                = qLVLH;
+
+  <span class="comment">% Update the temperature</span>
+  <span class="comment">%-----------------------</span>
+  p = SpacecraftThermal( <span class="string">'run'</span>, g, e );
+
+  <span class="comment">% Draw the picture</span>
+  <span class="comment">%-----------------</span>
+  [qCamera,rCamera,distance] = AutoPoint( <span class="string">'above'</span>, camera, g );
+  camera.rBody    = rCamera;
+  camera.qBody    = qCamera;
+  camera.distance = distance;
+  g.temperature   = p.temperature;
+
+  SpaceCamera( <span class="string">'update camera'</span>,     tagVisibleCameraWindow,  camera, jD(k) );
+  SpaceCamera( <span class="string">'update spacecraft'</span>, tagVisibleCameraWindow,  g,      jD(k) );
+  SpaceCamera( <span class="string">'update camera'</span>,     tagInfraredCameraWindow, camera, jD(k) );
+  SpaceCamera( <span class="string">'update spacecraft'</span>, tagInfraredCameraWindow, g,      jD(k) );
+
+  <span class="comment">% For the plots</span>
+  <span class="comment">%--------------</span>
+  q(:,k)    = p.qTotal;
+  temp(:,k) = p.temperature;
+
+  <span class="comment">% TimeGUI control</span>
+  <span class="comment">%-----------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="SCThermalDemo_06.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_07.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_08.png" alt=""> <h2 id="5">Plot the results</h2><pre class="codeinput">PlotThermal( q(:,1:k), temp(:,1:k), t(1:k), g );
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SCThermalDemo_09.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_10.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_11.png" alt=""> <img vspace="5" hspace="5" src="SCThermalDemo_12.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrates how to use the thermal modeling package
+% The spacecraft is a cube with two solar wings.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also SpaceCamera, SpaceThermalCamera, SpacecraftThermal, 
+%  PlotThermal, DrawSCPlanPlugIn, QForm, QLVLH, QPose, TimeGUI, 
+%  FindSolsticeOrEquinox, RVFromKepler, SolarFlx, SunV1, AutoPoint, 
+%  CameraDatabase, ThermalImager
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 1998-2003, 2007 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Load the CAD model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g = load('SCForImaging');
+DrawSCPlanPlugIn(g);
+
+% Initial rotation of solar arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+g.body(2).bHinge.angle = 0;
+g.body(2).bHinge.axis  = 2;
+g.body(3).bHinge.angle = 0;
+g.body(3).bHinge.axis  = 2;
+
+%% Set up the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+global simulationAction
+simulationAction = 'Do Nothing';
+
+% Ephemeris
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+jD0   = FindSolsticeOrEquinox('spring equinox',2002);
+nDays = 2;
+nSamp = 300;
+t     = linspace(0,nDays,nSamp)*86400;
+jD    = jD0 + t/86400;
+dTSim = t(2)-t(1);
+
+% Spacecraft orbit (GEO)
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[rECI, vECI] = RVFromKepler( [42167 0 0 0 0 0], t );
+
+% Camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+camera                  = CameraDatabase('256 square');
+camera.up               = [0;-1;0];
+camera.focalLength      = 0.05;
+
+% Initialize the picture in SpaceCamera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% The optical camera
+qECIToLVLH              = QLVLH( rECI(:,1), vECI(:,1) );
+g.body(1).bHinge.q      = QPose(qECIToLVLH);
+g.rECI                  = rECI(:,1);
+g.qLVLH                 = qECIToLVLH;
+g.name                  = 'Satellite';
+d                       = struct('position',[]);
+d.planetName            = 'Earth';
+d.camera                = camera;
+tagVisibleCameraWindow  = SpaceCamera( 'initialize', d, g, jD(1) );
+
+% The thermal camera
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+figH = findobj( 'tag', tagVisibleCameraWindow );
+h    = get( figH, 'UserData' );
+d.position              = get(h.fig3D,'position') + [camera.xPixels 0 0 0];
+d.planetName            = 'Earth';
+d.camera                = camera;
+d.imagerFunction        = @ThermalImager;
+d.colorMap              = hot;
+d.tempMax               = 700;
+g.temperature           = 300*ones(length(g.component),1);
+d.name                  = 'SpaceThermalCamera';
+tagInfraredCameraWindow = SpaceCamera( 'initialize', d, g, jD(1) );
+
+% Environment data for thermal temperature model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+e = struct;
+flux0                   = SolarFlx(1);
+e.planet                = 'earth';
+e.planetRadius          = 6378.165;
+e.s                     = flux0*SunV1(jD(1)); % Watts/m^2
+e.tSamp                 = dTSim;
+e.shadow                = false;
+e.showScans             = false;
+e.nScanLines            = 10;
+e.units                 = 'm';
+
+% Initialize the flux and temperature arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+q    = zeros(length(g.component),nSamp);
+temp = zeros(length(g.component),nSamp);
+
+% Now run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qLVLHToBody = Mat2Q([0 0 -1;0 1 0;1 0 0]);
+
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSamp, 0 );
+
+%% Loop through the disturbances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSamp
+
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSamp, k, tToGoMem, ratioRealTime, dTSim );
+
+  % Update solar ephemeris
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [uSun, rSun] = SunV1(jD(k));
+  e.s          = flux0*uSun;
+  e.r          = rECI(:,k);
+  e.v          = vECI(:,k);
+  e.rSun       = rSun*uSun;
+
+  % Sun vector
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qLVLH    = QLVLH( rECI(:,k), vECI(:,k) );
+  uSunLVLH = QForm( qLVLH, uSun );
+  theta    = atan2( uSunLVLH(1), uSunLVLH(3) );
+
+  % CAD body structure
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  g.body(1).bHinge.q     = QPose(QMult(qLVLH,qLVLHToBody));
+  g.body(2).bHinge.angle = theta;
+  g.body(3).bHinge.angle = theta;
+  g.rECI                 = rECI(:,k);
+  g.qLVLH                = qLVLH;
+
+  % Update the temperature
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  p = SpacecraftThermal( 'run', g, e );
+  
+  % Draw the picture
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [qCamera,rCamera,distance] = AutoPoint( 'above', camera, g );
+  camera.rBody    = rCamera;
+  camera.qBody    = qCamera;
+  camera.distance = distance;
+  g.temperature   = p.temperature;
+  
+  SpaceCamera( 'update camera',     tagVisibleCameraWindow,  camera, jD(k) );
+  SpaceCamera( 'update spacecraft', tagVisibleCameraWindow,  g,      jD(k) );
+  SpaceCamera( 'update camera',     tagInfraredCameraWindow, camera, jD(k) );
+  SpaceCamera( 'update spacecraft', tagInfraredCameraWindow, g,      jD(k) );
+  
+  % For the plots
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  q(:,k)    = p.qTotal;
+  temp(:,k) = p.temperature;
+  
+  % TimeGUI control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+end
+
+%% Plot the results
+PlotThermal( q(:,1:k), temp(:,1:k), t(1:k), g );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2022-08-12 $
+% $Revision: b17255e3d80017a7c4eb06145f3049493cf71ddd $
+
+##### SOURCE END #####
+--></body></html>

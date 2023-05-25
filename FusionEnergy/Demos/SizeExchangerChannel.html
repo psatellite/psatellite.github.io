@@ -1,0 +1,248 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SizeExchangerChannel</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-17"><meta name="DC.source" content="SizeExchangerChannel.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Size the channels for heat transfer with He/Xe</a></li><li><a href="#2">Inputs</a></li><li><a href="#3">Calculate heat per channel</a></li><li><a href="#4">Flow rate and pressure as a function of heat</a></li></ul></div><h2 id="1">Size the channels for heat transfer with He/Xe</h2><p>Create a set of circumferential channels around the fusion region. Compute the flow rate to achieve the desired temperatures.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% See also: HeatTransferChannel</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2017 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Inputs</h2><p>Waste heat, for a 1.1 MW fusion reactor</p><pre class="codeinput">Q = 0.61e6;       <span class="comment">% W</span>
+l = 1.5;          <span class="comment">% length of radiating plasma, m</span>
+r = 0.35;         <span class="comment">% radius of inner wall, m</span>
+
+nChannels = 20;   <span class="comment">% how many ducts</span>
+
+tIn  = 300;       <span class="comment">% inlet (cold) temperature</span>
+tOut = 1589;      <span class="comment">% out temperature, GE ceramic blades</span>
+pR   = 2;         <span class="comment">% inlet pressure, ATM</span>
+
+gas  = {<span class="string">'xe'</span>, 0.3, <span class="string">'he'</span>, 0.7};
+cP   = 494;       <span class="comment">% 70/30 He/Xe, specific heat/pressure</span>
+cV   = 300;       <span class="comment">% 70/30 He/Xe, specific heat/volume</span>
+</pre><h2 id="3">Calculate heat per channel</h2><p>This assumes the flux is uniform around the channel perimeter.</p><pre class="codeinput">c = 2*pi*r;             <span class="comment">% circumference</span>
+w = c/nChannels;        <span class="comment">% channel width</span>
+h = 0.5*w;              <span class="comment">% channel height</span>
+q = Q/nChannels;        <span class="comment">% wall loading, W/m, per channel</span>
+
+d = struct( <span class="string">'name'</span>,     <span class="string">'Helium/Xenon 70/30'</span>,<span class="keyword">...</span>
+            <span class="string">'length'</span>,   l,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'w'</span>,        w,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'h'</span>,        h,<span class="keyword">...</span><span class="comment">       % m</span>
+            <span class="string">'q'</span>,        q,<span class="keyword">...</span><span class="comment">       % MW</span>
+            <span class="string">'cP'</span>,       cP,<span class="keyword">...</span><span class="comment">     % J/kg-K</span>
+            <span class="string">'gamma'</span>,    cP/cV,<span class="keyword">...</span><span class="comment">   % ratio</span>
+            <span class="string">'kC'</span>,       0,<span class="keyword">...</span><span class="comment">       %</span>
+            <span class="string">'kE'</span>,       0,<span class="keyword">...</span><span class="comment">       %</span>
+            <span class="string">'tInlet'</span>,   tIn,<span class="keyword">...</span><span class="comment">     % K</span>
+            <span class="string">'tOutlet'</span>,  tOut,<span class="keyword">...</span><span class="comment">    % K</span>
+            <span class="string">'tube'</span>,     <span class="string">'square'</span>,<span class="keyword">...</span>
+            <span class="string">'pressure'</span>, pR	);        <span class="comment">% ATM</span>
+
+d.gas = gas;
+
+[out, ltx] = HeatTransferChannel( d, true );
+
+k = size(ltx,1)+1;
+ltx{k,1} = <span class="string">'Total $\dot{m}$'</span>;
+ltx{k,2} = sprintf(<span class="string">'%12.2e'</span>,nChannels*out.mDot);
+ltx{k,3} = <span class="string">'kg/s'</span>;
+fprintf(1,<span class="string">'\n\n'</span>);
+DisplayLatexTable(ltx);
+</pre><pre class="codeoutput">       Gas Helium/Xenon 70/30          
+    height               5.50       cm 
+     width              11.00       cm 
+         Q           45750.00        W 
+     $C_p$             494.00   J/kg-K 
+  $\gamma$               1.65          
+     $T_i$             300.00        K 
+     $T_o$            1589.00        K 
+ $\dot{m}$           0.047898     kg/s 
+  $\rho_o$               3.48 kg/m$^3$ 
+  $\rho_i$               0.66 kg/m$^3$ 
+     $a_c$              60.45   cm$^2$ 
+       $u$              12.05      m/s 
+         q           30500.00        W 
+$\Delta P$          -2.45e-04      Atm 
+      Tube             square          
+
+
+            Gas Helium/Xenon 70/30          
+         height               5.50       cm 
+          width              11.00       cm 
+              Q           45750.00        W 
+          $C_p$             494.00   J/kg-K 
+       $\gamma$               1.65          
+          $T_i$             300.00        K 
+          $T_o$            1589.00        K 
+      $\dot{m}$           0.047898     kg/s 
+       $\rho_o$               3.48 kg/m$^3$ 
+       $\rho_i$               0.66 kg/m$^3$ 
+          $a_c$              60.45   cm$^2$ 
+            $u$              12.05      m/s 
+              q           30500.00        W 
+     $\Delta P$          -2.45e-04      Atm 
+           Tube             square          
+Total $\dot{m}$           9.58e-01     kg/s 
+</pre><img vspace="5" hspace="5" src="SizeExchangerChannel_01.png" alt=""> <img vspace="5" hspace="5" src="SizeExchangerChannel_02.png" alt=""> <img vspace="5" hspace="5" src="SizeExchangerChannel_03.png" alt=""> <h2 id="4">Flow rate and pressure as a function of heat</h2><p>Keep the channel size the same, how does the flow vary?</p><pre class="codeinput">qs = linspace(0.5*q,2*q);
+<span class="keyword">for</span> k = 1:length(qs)
+  d.q = qs(k);
+  out = HeatTransferChannel( d );
+  us(k) = out.u;
+  mDots(k) = out.mDot;
+<span class="keyword">end</span>
+Plot2D(qs,[us;mDots;nChannels*mDots],<span class="string">'Channel Heat Flux (W/m)'</span>,<span class="keyword">...</span>
+  {<span class="string">'Flow Speed (m/s)'</span>,<span class="string">'Mass Flow (kg/s)'</span>,<span class="string">'Total Mass Flow'</span>},<span class="string">'Channel Flow'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="SizeExchangerChannel_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Size the channels for heat transfer with He/Xe
+% Create a set of circumferential channels around the fusion region. Compute the
+% flow rate to achieve the desired temperatures.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% See also: HeatTransferChannel
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2017 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Inputs
+% Waste heat, for a 1.1 MW fusion reactor
+Q = 0.61e6;       % W
+l = 1.5;          % length of radiating plasma, m
+r = 0.35;         % radius of inner wall, m
+
+nChannels = 20;   % how many ducts
+
+tIn  = 300;       % inlet (cold) temperature
+tOut = 1589;      % out temperature, GE ceramic blades
+pR   = 2;         % inlet pressure, ATM
+
+gas  = {'xe', 0.3, 'he', 0.7};
+cP   = 494;       % 70/30 He/Xe, specific heat/pressure
+cV   = 300;       % 70/30 He/Xe, specific heat/volume
+
+%% Calculate heat per channel
+% This assumes the flux is uniform around the channel perimeter.
+c = 2*pi*r;             % circumference
+w = c/nChannels;        % channel width
+h = 0.5*w;              % channel height
+q = Q/nChannels;        % wall loading, W/m, per channel
+
+d = struct( 'name',     'Helium/Xenon 70/30',...
+            'length',   l,...       % m
+            'w',        w,...       % m
+            'h',        h,...       % m
+            'q',        q,...       % MW
+            'cP',       cP,...     % J/kg-K
+            'gamma',    cP/cV,...   % ratio
+            'kC',       0,...       % 
+            'kE',       0,...       % 
+            'tInlet',   tIn,...     % K
+            'tOutlet',  tOut,...    % K
+            'tube',     'square',...
+            'pressure', pR	);        % ATM  
+          
+d.gas = gas;
+
+[out, ltx] = HeatTransferChannel( d, true );
+
+k = size(ltx,1)+1;
+ltx{k,1} = 'Total $\dot{m}$';
+ltx{k,2} = sprintf('%12.2e',nChannels*out.mDot); 
+ltx{k,3} = 'kg/s';
+fprintf(1,'\n\n');
+DisplayLatexTable(ltx);
+
+%% Flow rate and pressure as a function of heat
+% Keep the channel size the same, how does the flow vary?
+qs = linspace(0.5*q,2*q);
+for k = 1:length(qs)
+  d.q = qs(k);
+  out = HeatTransferChannel( d );
+  us(k) = out.u;
+  mDots(k) = out.mDot;
+end
+Plot2D(qs,[us;mDots;nChannels*mDots],'Channel Heat Flux (W/m)',...
+  {'Flow Speed (m/s)','Mass Flow (kg/s)','Total Mass Flow'},'Channel Flow')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-08-01 $
+% $Revision: 0882d3630ce800ea2de9fa76fa778c295c1fdadb $
+
+
+##### SOURCE END #####
+--></body></html>

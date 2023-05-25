@@ -1,0 +1,363 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulates 2 DC Motors with failure detection logic.</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-06-08"><meta name="DC.source" content="DCMotorSim.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulates 2 DC Motors with failure detection logic.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also C2DZOH, Plot2D, TimeGUI, TimeLabl, RK4,
+DCMotorDetectionFilter, DCMotorFailures, DCMotorParitySpace
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Global for the time GUI</a></li><li><a href="#3">The control sampling period and the simulation integration time step</a></li><li><a href="#4">Number of sim steps</a></li><li><a href="#5">Plotting arrays</a></li><li><a href="#6">Initial conditions</a></li><li><a href="#7">Failure</a></li><li><a href="#8">Noise</a></li><li><a href="#9">Measurement matrix</a></li><li><a href="#10">Initialize the time display</a></li><li><a href="#11">Run the simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2005 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 9.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Global for the time GUI</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+<span class="keyword">global</span> simulationAction
+simulationAction = <span class="string">' '</span>;
+clear <span class="string">q</span>;
+</pre><h2 id="3">The control sampling period and the simulation integration time step</h2><pre class="codeinput"><span class="comment">%---------------------------------------------------------------------</span>
+dT         = 0.01;
+</pre><h2 id="4">Number of sim steps</h2><pre class="codeinput"><span class="comment">%--------------------</span>
+nSim       = 1000;
+</pre><h2 id="5">Plotting arrays</h2><pre class="codeinput"><span class="comment">%----------------</span>
+xPlot      = zeros(13,nSim);
+</pre><h2 id="6">Initial conditions</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+x          = [0;0;0;0];
+t          = 0;
+
+d          = struct(<span class="string">'r'</span>,[100 100]);
+d.kT       = [0.01 0.01];
+d.b        = [0.001 0.001];
+d.j        = [0.1 0.1];
+
+d.beta     = -(d.kT.^2/d.r + d.b)./d.j;
+d.alpha    = d.kT./(d.j.*d.r);
+</pre><h2 id="7">Failure</h2><pre class="codeinput"><span class="comment">%--------</span>
+noise      = <span class="string">'no_noise'</span>;
+type       = <span class="string">'tach'</span>;
+
+tFail      = 2;
+<span class="keyword">if</span>( strcmp( type, <span class="string">'beta'</span> ) )
+  failure    = <span class="string">'motor 1 beta'</span>;
+  pFail      = d.beta(1)*0.98;
+<span class="keyword">else</span>
+  failure    = <span class="string">'motor 1 omega'</span>;
+  pFail      = 0;
+<span class="keyword">end</span>
+</pre><h2 id="8">Noise</h2><pre class="codeinput"><span class="comment">%------</span>
+<span class="keyword">if</span>( strcmp( noise, <span class="string">'no_noise'</span> ) )
+  sigma  = 0;
+<span class="keyword">else</span>
+  sigma  = 1e-8;
+<span class="keyword">end</span>
+</pre><h2 id="9">Measurement matrix</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+c          = [1 0  0 0;<span class="keyword">...</span>
+              0 1  0 0;<span class="keyword">...</span>
+              1 0 -1 0;<span class="keyword">...</span>
+              0 0  1 0;<span class="keyword">...</span>
+              0 0  0 1];
+</pre><h2 id="10">Initialize the time display</h2><pre class="codeinput"><span class="comment">%----------------------------</span>
+ratioRealTime          = 0;
+tToGoMem.lastJD        = 0;
+tToGoMem.lastStepsDone = 0;
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, <span class="string">'Dual Motor Sim'</span> );
+
+d.v    = [1;1];
+alpha  = d.alpha';
+beta   = d.beta';
+alpha0 = alpha;
+beta0  = beta;
+gain   = 0.995;
+tau    = 0.2;
+xDF{1} = [0;0];
+xDF{2} = [0;0];
+
+[plant{1}.a, plant{1}.b] = C2DZOH( [0 1;0 -beta0(1)], [0;alpha0(1)], dT );
+[plant{2}.a, plant{2}.b] = C2DZOH( [0 1;0 -beta0(2)], [0;alpha0(2)], dT );
+plant{1}.c = eye(2);
+plant{2}.c = eye(2);
+q{1}.uS    = [0;0];
+q{1}.yS    = [0;0;0;0];
+q{2}       = q{1};
+r          = {};
+p          = {};
+</pre><img vspace="5" hspace="5" src="DCMotorSim_01.png" alt=""> <h2 id="11">Run the simulation</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  y              = c*x + sigma*randn(5,1);
+
+  [r{1}, xDF{1}] = DCMotorDetectionFilter( y(1:2), d.v(1), dT, xDF{1}, alpha0(1), beta0(1), tau );
+  [r{2}, xDF{2}] = DCMotorDetectionFilter( y(4:5), d.v(2), dT, xDF{2}, alpha0(2), beta0(2), tau );
+
+  [p{1}, q{1}]   = DCMotorParitySpace( y(1:2), d.v(1), dT, plant{1}, q{1} );
+  [p{2}, q{2}]   = DCMotorParitySpace( y(4:5), d.v(2), dT, plant{2}, q{2} );
+
+  xPlot(:,k)     = [y;r{1};r{2};p{1};p{2}];
+  d.v            = [1;1];
+
+  <span class="comment">% Implement failures</span>
+  <span class="comment">%-------------------</span>
+  [c, d]         = DCMotorFailures( failure, t, dT, c, d, tFail, pFail );
+
+  <span class="comment">% Display the status message</span>
+  <span class="comment">%---------------------------</span>
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT);
+  x             = RK4(<span class="string">'DualDCMotors'</span>,x,dT,t,d);
+  t             = t + dT;
+
+  <span class="comment">% Time control</span>
+  <span class="comment">%-------------</span>
+  <span class="keyword">switch</span> simulationAction
+    <span class="keyword">case</span> <span class="string">'pause'</span>
+      pause
+      simulationAction = <span class="string">' '</span>;
+    <span class="keyword">case</span> <span class="string">'stop'</span>
+      <span class="keyword">return</span>;
+    <span class="keyword">case</span> <span class="string">'plot'</span>
+      <span class="keyword">break</span>;
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+TimeGUI( <span class="string">'close'</span> )
+
+xPlot  = xPlot(:,1:k);
+[t,tL] = TimeLabl( (0:(k-1))*dT );
+
+Plot2D( t, xPlot(1:5,:),tL,{<span class="string">'\theta_1'</span> <span class="string">'\omega_1'</span> <span class="string">'\Delta\theta'</span>,<span class="string">'\theta_2'</span> <span class="string">'\omega_2'</span>},<span class="string">'Sensor Outputs'</span>)
+Plot2D( t, xPlot(6:9,:),tL,{<span class="string">'r_{\theta_1}'</span>, <span class="string">'r_{\omega_1}'</span> <span class="string">'r_{\theta_2}'</span>, <span class="string">'r_{\omega_2}'</span>},<span class="string">'Detecton Filter'</span>)
+Plot2D( t, xPlot(10:13,:),tL,{<span class="string">'r_{11}'</span>, <span class="string">'r_{12}'</span> <span class="string">'r_{21}'</span>, <span class="string">'r_{22}'</span>},<span class="string">'Parity Residuals'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="DCMotorSim_02.png" alt=""> <img vspace="5" hspace="5" src="DCMotorSim_03.png" alt=""> <img vspace="5" hspace="5" src="DCMotorSim_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulates 2 DC Motors with failure detection logic.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also C2DZOH, Plot2D, TimeGUI, TimeLabl, RK4, 
+%  DCMotorDetectionFilter, DCMotorFailures, DCMotorParitySpace
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2005 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 9.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Global for the time GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+global simulationAction
+simulationAction = ' ';
+clear q;
+
+%% The control sampling period and the simulation integration time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+dT         = 0.01;
+
+%% Number of sim steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim       = 1000;
+
+%% Plotting arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xPlot      = zeros(13,nSim);
+
+%% Initial conditions
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x          = [0;0;0;0];
+t          = 0;
+
+d          = struct('r',[100 100]);
+d.kT       = [0.01 0.01];
+d.b        = [0.001 0.001];
+d.j        = [0.1 0.1];
+
+d.beta     = -(d.kT.^2/d.r + d.b)./d.j;
+d.alpha    = d.kT./(d.j.*d.r);
+
+%% Failure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+noise      = 'no_noise';
+type       = 'tach';
+
+tFail      = 2;
+if( strcmp( type, 'beta' ) )
+  failure    = 'motor 1 beta';
+  pFail      = d.beta(1)*0.98;
+else
+  failure    = 'motor 1 omega';
+  pFail      = 0;
+end
+
+%% Noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( strcmp( noise, 'no_noise' ) )
+  sigma  = 0;
+else
+  sigma  = 1e-8;
+end
+
+%% Measurement matrix
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+c          = [1 0  0 0;...
+              0 1  0 0;...
+              1 0 -1 0;...
+              0 0  1 0;...
+              0 0  0 1];
+
+%% Initialize the time display
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+ratioRealTime          = 0;
+tToGoMem.lastJD        = 0; 
+tToGoMem.lastStepsDone = 0; 
+tToGoMem.kAve          = 0;
+ratioRealTime          = 0;
+[ ratioRealTime, tToGoMem ] =  TimeGUI( nSim, 0, tToGoMem, 0, dT, 'Dual Motor Sim' );
+
+d.v    = [1;1];
+alpha  = d.alpha';
+beta   = d.beta';
+alpha0 = alpha;
+beta0  = beta;
+gain   = 0.995;
+tau    = 0.2;
+xDF{1} = [0;0];
+xDF{2} = [0;0];
+
+[plant{1}.a, plant{1}.b] = C2DZOH( [0 1;0 -beta0(1)], [0;alpha0(1)], dT );
+[plant{2}.a, plant{2}.b] = C2DZOH( [0 1;0 -beta0(2)], [0;alpha0(2)], dT );
+plant{1}.c = eye(2);
+plant{2}.c = eye(2);
+q{1}.uS    = [0;0];
+q{1}.yS    = [0;0;0;0];
+q{2}       = q{1};
+r          = {};
+p          = {};
+
+%% Run the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nSim 
+    
+  y              = c*x + sigma*randn(5,1);
+  
+  [r{1}, xDF{1}] = DCMotorDetectionFilter( y(1:2), d.v(1), dT, xDF{1}, alpha0(1), beta0(1), tau );
+  [r{2}, xDF{2}] = DCMotorDetectionFilter( y(4:5), d.v(2), dT, xDF{2}, alpha0(2), beta0(2), tau );
+  
+  [p{1}, q{1}]   = DCMotorParitySpace( y(1:2), d.v(1), dT, plant{1}, q{1} );
+  [p{2}, q{2}]   = DCMotorParitySpace( y(4:5), d.v(2), dT, plant{2}, q{2} );
+  
+  xPlot(:,k)     = [y;r{1};r{2};p{1};p{2}];
+  d.v            = [1;1];
+  
+  % Implement failures
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [c, d]         = DCMotorFailures( failure, t, dT, c, d, tFail, pFail );
+    
+  % Display the status message
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [ ratioRealTime, tToGoMem ] = TimeGUI( nSim, k, tToGoMem, ratioRealTime, dT);
+  x             = RK4('DualDCMotors',x,dT,t,d);
+  t             = t + dT;
+  
+  % Time control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  switch simulationAction
+    case 'pause'
+      pause
+      simulationAction = ' ';
+    case 'stop'
+      return;
+    case 'plot'
+      break;
+  end
+  
+end
+
+TimeGUI( 'close' )
+
+xPlot  = xPlot(:,1:k);
+[t,tL] = TimeLabl( (0:(k-1))*dT );
+
+Plot2D( t, xPlot(1:5,:),tL,{'\theta_1' '\omega_1' '\Delta\theta','\theta_2' '\omega_2'},'Sensor Outputs')
+Plot2D( t, xPlot(6:9,:),tL,{'r_{\theta_1}', 'r_{\omega_1}' 'r_{\theta_2}', 'r_{\omega_2}'},'Detecton Filter')
+Plot2D( t, xPlot(10:13,:),tL,{'r_{11}', 'r_{12}' 'r_{21}', 'r_{22}'},'Parity Residuals')
+ 
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2020-05-29 16:30:19 -0400 (Fri, 29 May 2020) $
+% $Revision: 52547 $
+
+##### SOURCE END #####
+--></body></html>

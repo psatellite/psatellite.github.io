@@ -1,0 +1,28 @@
+var dir_70bd9ff78ce23ff1ee638f76110ebe80 =
+[
+    [ "Beta.m", "_beta_8m.html", "_beta_8m" ],
+    [ "BField.m", "_b_field_8m.html", "_b_field_8m" ],
+    [ "Bremsstrahlung.m", "_bremsstrahlung_8m.html", "_bremsstrahlung_8m" ],
+    [ "CentralPressure.m", "_central_pressure_8m.html", "_central_pressure_8m" ],
+    [ "CentralTemperature.m", "_central_temperature_8m.html", "_central_temperature_8m" ],
+    [ "DensityFromFusionPower.m", "_density_from_fusion_power_8m.html", "_density_from_fusion_power_8m" ],
+    [ "DivertorCLR.m", "_divertor_c_l_r_8m.html", "_divertor_c_l_r_8m" ],
+    [ "DMassFromPower.m", "_d_mass_from_power_8m.html", "_d_mass_from_power_8m" ],
+    [ "FirstWallThermalPower.m", "_first_wall_thermal_power_8m.html", "_first_wall_thermal_power_8m" ],
+    [ "FusionPower.m", "_fusion_power_8m.html", "_fusion_power_8m" ],
+    [ "FusionPowerDHe3.m", "_fusion_power_d_he3_8m.html", "_fusion_power_d_he3_8m" ],
+    [ "He3MassFromPower.m", "_he3_mass_from_power_8m.html", "_he3_mass_from_power_8m" ],
+    [ "MagneticPressure.m", "_magnetic_pressure_8m.html", "_magnetic_pressure_8m" ],
+    [ "MagnetRadius.m", "_magnet_radius_8m.html", "_magnet_radius_8m" ],
+    [ "NetFusionPower.m", "_net_fusion_power_8m.html", "_net_fusion_power_8m" ],
+    [ "NumberDensityFromBeta.m", "_number_density_from_beta_8m.html", "_number_density_from_beta_8m" ],
+    [ "PlasmaInternalEnergy.m", "_plasma_internal_energy_8m.html", "_plasma_internal_energy_8m" ],
+    [ "PointFusionReaction.m", "_point_fusion_reaction_8m.html", "_point_fusion_reaction_8m" ],
+    [ "PowerDD.m", "_power_d_d_8m.html", "_power_d_d_8m" ],
+    [ "PowerDHe3.m", "_power_d_he3_8m.html", "_power_d_he3_8m" ],
+    [ "PowerDT.m", "_power_d_t_8m.html", "_power_d_t_8m" ],
+    [ "RadiusSphericalTorus.m", "_radius_spherical_torus_8m.html", "_radius_spherical_torus_8m" ],
+    [ "ReactorField.m", "_reactor_field_8m.html", "_reactor_field_8m" ],
+    [ "Synchrotron.m", "_synchrotron_8m.html", "_synchrotron_8m" ],
+    [ "VolumeAveragedPressure.m", "_volume_averaged_pressure_8m.html", "_volume_averaged_pressure_8m" ]
+];

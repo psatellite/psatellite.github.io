@@ -1,0 +1,231 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>HTS Axial coil with cryocooler mass analysis</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-16"><meta name="DC.source" content="HTSAxialMagnets.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>HTS Axial coil with cryocooler mass analysis</h1><p>Calculate the coil and cryocooler mass for a magnet with a specific inner radius and target central field, as a function of operating temperature. This is also dependent on the amount of heat the cryocooler is removing, which is an input.</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% See also: CoilTurns, Cryocooler, PancakeMagnetMass, SuperPowerHTS</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Copyright Princeton Satellite Systems, 2019. All rights reserved.</span>
+<span class="comment">% STTR NNX17CC74P</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">% Optimal mass for a single high-temperature superconducting coil</span>
+<span class="comment">% mirror coil: 15-20 T, inner radius 0.15 m</span>
+<span class="comment">% axial coil: 5-7 T, inner radius 0.5 m</span>
+
+B0 = 2;      <span class="comment">% T, largest center magnet is ~2 T</span>
+Ri = 0.45;   <span class="comment">% m</span>
+qC = 5;      <span class="comment">% W; a guess</span>
+nMag = 6;    <span class="comment">% number of magnets</span>
+
+d = SuperconductorDataStructure(<span class="string">'HTS'</span>);
+
+Ts = linspace(10,69);
+Zs = zeros(size(Ts));
+Ns       = Zs;
+massCoil = Zs;
+massCryo = Zs;
+Iop      = Zs;
+<span class="keyword">for</span> k = 1:length(Ts)
+  Ic = SuperPowerHTS( B0, Ts(k) );
+  Iop(k) = 0.6*Ic;
+  N = 1;
+  [massCoil(k),turns,height,width,N] = PancakeMagnetMass( B0, Ri, N, Iop(k), d );
+  Ns(k) = N;
+  <span class="keyword">if</span> Ts(k)&gt;50
+    massCryo(k) = CryocoolerBrake( qC, Ts(k) );
+  <span class="keyword">else</span>
+    massCryo(k) = CryocoolerBrake( qC, Ts(k) );
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+mass = nMag*massCoil + massCryo;
+
+<span class="comment">% Compare to low-temp at 4 K</span>
+dLTS = SuperconductorDataStructure(<span class="string">'LTS'</span>);
+dLTS.Iop = 528;
+[massCoilLTS,turnsL,heightL,widthL,Blts] = CoilTurns(Ri,1.5e6,dLTS);
+
+<span class="comment">% Cryocoolers</span>
+massCryoLTS = CryocoolerBrake( qC, 4.2 );
+
+tStr = sprintf(<span class="string">'HTS Coil and Cryo Mass, Qc = %g W'</span>,qC);
+Plot2D(Ts,[massCoil;massCryo;mass],<span class="string">'Temperature'</span>,<span class="string">'Mass'</span>,tStr)
+[~,kMin] = min(mass);
+hold <span class="string">on</span>;
+plot(Ts(kMin),mass(kMin),<span class="string">'k*'</span>)
+plot(Ts(kMin),massCoil(kMin),<span class="string">'b.'</span>)
+plot(Ts(kMin),massCryo(kMin),<span class="string">'r.'</span>)
+legend(<span class="string">'Coil'</span>,<span class="string">'Cryo'</span>,<span class="string">'Total'</span>,<span class="string">'Min'</span>)
+
+<span class="comment">%plot([10 70],massCoilLTS*[1 1],'g--')</span>
+
+
+<span class="comment">% an estimate of the structural mass (energy method), carbon fiber structure</span>
+rhoM   = 2500;    <span class="comment">% Density (kg/m^3)</span>
+sigmaM = 1000e6; <span class="comment">% Ultimate stress (N/m^2)</span>
+volume = 4/3*pi*Ri^3;
+massStruct = MagnetMassVirial( rhoM, sigmaM, B0, volume );
+
+
+<span class="keyword">if</span> 0
+disp(<span class="string">'Use mouse to place text on plot'</span>)
+gtext(sprintf(<span class="string">'B0 = %g T, D = %g m'</span>,B0,2*Ri));
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="HTSAxialMagnets_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% HTS Axial coil with cryocooler mass analysis
+% Calculate the coil and cryocooler mass for a magnet with a specific inner
+% radius and target central field, as a function of operating temperature. This
+% is also dependent on the amount of heat the cryocooler is removing, which is
+% an input.
+%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% See also: CoilTurns, Cryocooler, PancakeMagnetMass, SuperPowerHTS
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Copyright Princeton Satellite Systems, 2019. All rights reserved.
+% STTR NNX17CC74P
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Optimal mass for a single high-temperature superconducting coil
+% mirror coil: 15-20 T, inner radius 0.15 m
+% axial coil: 5-7 T, inner radius 0.5 m
+
+B0 = 2;      % T, largest center magnet is ~2 T
+Ri = 0.45;   % m
+qC = 5;      % W; a guess
+nMag = 6;    % number of magnets
+
+d = SuperconductorDataStructure('HTS');
+
+Ts = linspace(10,69);
+Zs = zeros(size(Ts));
+Ns       = Zs;
+massCoil = Zs;
+massCryo = Zs;
+Iop      = Zs;
+for k = 1:length(Ts)
+  Ic = SuperPowerHTS( B0, Ts(k) );
+  Iop(k) = 0.6*Ic;
+  N = 1;
+  [massCoil(k),turns,height,width,N] = PancakeMagnetMass( B0, Ri, N, Iop(k), d );
+  Ns(k) = N;
+  if Ts(k)>50
+    massCryo(k) = CryocoolerBrake( qC, Ts(k) );
+  else
+    massCryo(k) = CryocoolerBrake( qC, Ts(k) );
+  end
+end
+mass = nMag*massCoil + massCryo;
+
+% Compare to low-temp at 4 K
+dLTS = SuperconductorDataStructure('LTS');
+dLTS.Iop = 528;
+[massCoilLTS,turnsL,heightL,widthL,Blts] = CoilTurns(Ri,1.5e6,dLTS);
+
+% Cryocoolers
+massCryoLTS = CryocoolerBrake( qC, 4.2 );
+
+tStr = sprintf('HTS Coil and Cryo Mass, Qc = %g W',qC);
+Plot2D(Ts,[massCoil;massCryo;mass],'Temperature','Mass',tStr)
+[~,kMin] = min(mass);
+hold on;
+plot(Ts(kMin),mass(kMin),'k*')
+plot(Ts(kMin),massCoil(kMin),'b.')
+plot(Ts(kMin),massCryo(kMin),'r.')
+legend('Coil','Cryo','Total','Min')
+
+%plot([10 70],massCoilLTS*[1 1],'gREPLACE_WITH_DASH_DASH')
+
+
+% an estimate of the structural mass (energy method), carbon fiber structure
+rhoM   = 2500;    % Density (kg/m^3)
+sigmaM = 1000e6; % Ultimate stress (N/m^2)
+volume = 4/3*pi*Ri^3;
+massStruct = MagnetMassVirial( rhoM, sigmaM, B0, volume );
+
+
+if 0
+disp('Use mouse to place text on plot')
+gtext(sprintf('B0 = %g T, D = %g m',B0,2*Ri));
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-06-19 $
+% $Revision: ca093fb9f18fa576cc1a8c96a69887213ce9fa00 $
+
+
+##### SOURCE END #####
+--></body></html>

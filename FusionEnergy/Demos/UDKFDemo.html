@@ -1,0 +1,227 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate the Kalman Filter using UD factorization.</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-09-19"><meta name="DC.source" content="UDKFDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate the Kalman Filter using UD factorization.</h1><!--introduction--><pre class="language-matlab">Since <span class="string">version</span> <span class="string">9.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">UDKalmanFilter.</span>, C2DZOH, KFilter, Plot2D
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Double integrator plant</a></li><li><a href="#3">Measuring position</a></li><li><a href="#4">Time step</a></li><li><a href="#5">Discretize</a></li><li><a href="#6">Create the UD form</a></li><li><a href="#7">Initialize the simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Double integrator plant</h2><pre class="codeinput"><span class="comment">%------------------------</span>
+a = [0 1;0 0];
+b = [0;1];
+</pre><h2 id="3">Measuring position</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+h = [1 0];
+</pre><h2 id="4">Time step</h2><pre class="codeinput"><span class="comment">%----------</span>
+dT = 0.5;
+</pre><h2 id="5">Discretize</h2><pre class="codeinput"><span class="comment">%-----------</span>
+[phi,gam] = C2DZOH(a,b,dT);
+
+p       = 5*eye(2);
+z1Sigma = 0.1;
+r       = z1Sigma^2;
+q       = eye(2);
+xEst    = [1;2];
+</pre><h2 id="6">Create the UD form</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+d   = UDKalmanFilter( <span class="string">'p to ud'</span>, p        );
+d   = UDKalmanFilter( <span class="string">'add q'</span>,   d, q     );
+d   = UDKalmanFilter( <span class="string">'add g'</span>,   d, eye(2));
+d   = UDKalmanFilter( <span class="string">'add phi'</span>, d, phi   );
+d   = UDKalmanFilter( <span class="string">'add r'</span>,   d, r     );
+d   = UDKalmanFilter( <span class="string">'add x'</span>,   d, xEst  );
+d   = UDKalmanFilter( <span class="string">'add h'</span>,   d, h     );
+</pre><h2 id="7">Initialize the simulation</h2><pre class="codeinput"><span class="comment">%--------------------------</span>
+x     = [0;0];
+nSim  = 10;
+xPlot = zeros(10,nSim);
+
+<span class="keyword">for</span> j = 1:nSim
+
+  <span class="comment">% Plotting</span>
+  <span class="comment">%---------</span>
+  xPlot(:,j)   = [x;xEst;d.x;diag(p);diag(UDKalmanFilter(<span class="string">'compute p'</span>,d))];
+
+  <span class="comment">% Measurement with random noise</span>
+  <span class="comment">%------------------------------</span>
+  z            = h*x + z1Sigma*randn;
+
+  <span class="comment">% Conventional Kalman Filter</span>
+  <span class="comment">%---------------------------</span>
+  [xEst, p, k] = KFilter( r, phi, q, h, xEst, z, p );
+
+  <span class="comment">% UD Kalman Filter</span>
+  <span class="comment">%-----------------</span>
+  d            = UDKalmanFilter( <span class="string">'incorporate measurement'</span>, d, z );
+  d            = UDKalmanFilter( <span class="string">'propagate'</span>, d );
+
+  <span class="comment">% Plant</span>
+  <span class="comment">%------</span>
+  x            = phi*x;
+<span class="keyword">end</span>
+
+Plot2D( 1:nSim, xPlot, <span class="string">'step'</span>,[<span class="string">'State'</span>;<span class="string">'Covar'</span>],<span class="string">'UDKF'</span>,<span class="string">'lin'</span>,[<span class="string">'1:6 '</span>;<span class="string">'7:10'</span>])
+Plot2D( 1:nSim, xPlot([1 2 5 6 9 10],:), <span class="string">'step'</span>,[<span class="string">'State'</span>;<span class="string">'Covar'</span>],<span class="string">'UD Only'</span>,<span class="string">'lin'</span>,[<span class="string">'1:4'</span>;<span class="string">'5:6'</span>])
+Plot2D( 1:nSim, xPlot([3 4 5 6],:), <span class="string">'step'</span>,[<span class="string">'State UD'</span>;<span class="string">'State KF'</span>],<span class="string">'KF and UD'</span>,<span class="string">'lin'</span>,[<span class="string">'1:2'</span>;<span class="string">'3:4'</span>])
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% $Date$</span>
+<span class="comment">% $Id: 045f617c1bfa2ae87a53f87352043b99dc57deb1 $</span>
+</pre><img vspace="5" hspace="5" src="UDKFDemo_01.png" alt=""> <img vspace="5" hspace="5" src="UDKFDemo_02.png" alt=""> <img vspace="5" hspace="5" src="UDKFDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate the Kalman Filter using UD factorization.
+%
+%   Since version 9.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also UDKalmanFilter., C2DZOH, KFilter, Plot2D
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright 1999 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Double integrator plant
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+a = [0 1;0 0];
+b = [0;1];
+
+%% Measuring position
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+h = [1 0];
+
+%% Time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT = 0.5;
+
+%% Discretize
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[phi,gam] = C2DZOH(a,b,dT);
+
+p       = 5*eye(2);
+z1Sigma = 0.1;
+r       = z1Sigma^2;
+q       = eye(2);
+xEst    = [1;2];
+
+%% Create the UD form
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d   = UDKalmanFilter( 'p to ud', p        );
+d   = UDKalmanFilter( 'add q',   d, q     );
+d   = UDKalmanFilter( 'add g',   d, eye(2));
+d   = UDKalmanFilter( 'add phi', d, phi   );
+d   = UDKalmanFilter( 'add r',   d, r     );
+d   = UDKalmanFilter( 'add x',   d, xEst  );
+d   = UDKalmanFilter( 'add h',   d, h     );
+
+%% Initialize the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x     = [0;0];
+nSim  = 10;
+xPlot = zeros(10,nSim);
+
+for j = 1:nSim
+
+  % Plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xPlot(:,j)   = [x;xEst;d.x;diag(p);diag(UDKalmanFilter('compute p',d))];
+
+  % Measurement with random noise
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  z            = h*x + z1Sigma*randn;
+
+  % Conventional Kalman Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [xEst, p, k] = KFilter( r, phi, q, h, xEst, z, p );
+
+  % UD Kalman Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d            = UDKalmanFilter( 'incorporate measurement', d, z );
+  d            = UDKalmanFilter( 'propagate', d );
+
+  % Plant
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x            = phi*x;
+end
+
+Plot2D( 1:nSim, xPlot, 'step',['State';'Covar'],'UDKF','lin',['1:6 ';'7:10'])
+Plot2D( 1:nSim, xPlot([1 2 5 6 9 10],:), 'step',['State';'Covar'],'UD Only','lin',['1:4';'5:6'])
+Plot2D( 1:nSim, xPlot([3 4 5 6],:), 'step',['State UD';'State KF'],'KF and UD','lin',['1:2';'3:4'])
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date$
+% $Id: 045f617c1bfa2ae87a53f87352043b99dc57deb1 $
+
+##### SOURCE END #####
+--></body></html>

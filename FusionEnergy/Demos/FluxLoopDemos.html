@@ -1,0 +1,219 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Flux conservation of series vs. individual loops</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-08"><meta name="DC.source" content="FluxLoopDemos.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Flux conservation of series vs. individual loops</h1><p>Compare effects of having multiple individually flux conserving loops (left side of plot) and having a small number of multiply-wound flux conserving loops in series (right side of plot)</p><p>See also: CoAxRectangle, CoAxConserveFluxes, CoAxPlotFlux</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright 2019 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+wR1 = 0.005;
+[rR1,zR1] = CoAxRectangle( 5, 5, 0.2, 0, wR1);
+IR1 = 1;
+CoilsRegular = [rR1(:),zR1(:),wR1*ones(numel(rR1),1),IR1*ones(numel(rR1),1)];
+wR2 = 0.005;
+[rR2,zR2] = CoAxRectangle( 5, 5, 0.3, -0, wR2);
+IR2 = 1;
+CoilsRegular = [CoilsRegular;rR2(:),zR2(:),wR2*ones(numel(rR2),1),IR2*ones(numel(rR2),1)];
+
+<span class="comment">% Solenoid of multiply wound serial loops</span>
+wC1 = 0.005;
+[rC1,zC1] = CoAxRectangle( 1, 15, 0.1, 0.05+5*wC1, wC1);
+IC1 = 0;
+CoilsConserving = {rC1,zC1,wC1,IC1};
+
+<span class="comment">% Disk of multiply would serial loops</span>
+wC2 = 0.005;
+[rC2,zC2] = CoAxRectangle( 35, 1, 0.1, 0.15, wC2);
+IC2 = 0;
+CoilsConserving = [{CoilsConserving};{{rC2,zC2,wC2,IC2}}];
+
+<span class="comment">% Solenoid of individually wound loops</span>
+zCSingles1 = (-2*wC1:-2*wC1:-0.14)';
+rCSingles1 = (0.1+wC1)*ones(size(zCSingles1));
+
+<span class="comment">% Disk of individually wound loops</span>
+rCSingles2 = (0.1+wC1:2*wC1:0.45)';
+zCSingles2 = -0.15*ones(size(rCSingles2));
+
+rCSingles = [rCSingles1;rCSingles2];
+zCSingles = [zCSingles1;zCSingles2];
+wCSingles = wC1 * ones(size(rCSingles));
+ICSingles = zeros(size(rCSingles));
+quantitiesCSingles = [rCSingles zCSingles wCSingles ICSingles];
+cellsCSingles = num2cell(quantitiesCSingles);
+CoilsConserving = [CoilsConserving;mat2cell(cellsCSingles,ones(1,size(cellsCSingles,1)),4)];
+
+
+<span class="comment">% Call the conserving calculator</span>
+ISC = CoAxConserveFluxes(CoilsRegular,CoilsConserving);
+
+<span class="comment">% Prepare data for plotting</span>
+rToPlot = CoilsRegular(:,1);
+zToPlot = CoilsRegular(:,2);
+IToPlot = CoilsRegular(:,4);
+<span class="keyword">for</span> j = 1:size(CoilsConserving,1)
+  rToPlot = [rToPlot;CoilsConserving{j}{1}(:)];
+  zToPlot = [zToPlot;CoilsConserving{j}{2}(:)];
+  IToPlot = [IToPlot;ISC(j)*ones([numel(CoilsConserving{j}{2}) 1])];
+<span class="keyword">end</span>
+
+<span class="comment">% Plot</span>
+rmax = 0.5;
+zmax = rmax/2;
+dx = 0.003;
+rS1 = dx/2:dx:rmax;
+zS1 = (-zmax:dx:zmax)';
+rS = repmat(rS1,size(zS1));
+zS = repmat(zS1,size(rS1));
+
+CoAxPlotFlux(rS,zS,rToPlot,zToPlot,IToPlot);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="FluxLoopDemos_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Flux conservation of series vs. individual loops
+% Compare effects of having multiple individually flux conserving loops
+% (left side of plot) and having a small number of multiply-wound flux
+% conserving loops in series (right side of plot)
+%
+% See also: CoAxRectangle, CoAxConserveFluxes, CoAxPlotFlux
+  
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright 2019 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+wR1 = 0.005;
+[rR1,zR1] = CoAxRectangle( 5, 5, 0.2, 0, wR1);
+IR1 = 1;
+CoilsRegular = [rR1(:),zR1(:),wR1*ones(numel(rR1),1),IR1*ones(numel(rR1),1)];
+wR2 = 0.005;
+[rR2,zR2] = CoAxRectangle( 5, 5, 0.3, -0, wR2);
+IR2 = 1;
+CoilsRegular = [CoilsRegular;rR2(:),zR2(:),wR2*ones(numel(rR2),1),IR2*ones(numel(rR2),1)];
+
+% Solenoid of multiply wound serial loops
+wC1 = 0.005;
+[rC1,zC1] = CoAxRectangle( 1, 15, 0.1, 0.05+5*wC1, wC1); 
+IC1 = 0;
+CoilsConserving = {rC1,zC1,wC1,IC1};
+
+% Disk of multiply would serial loops
+wC2 = 0.005;
+[rC2,zC2] = CoAxRectangle( 35, 1, 0.1, 0.15, wC2); 
+IC2 = 0;
+CoilsConserving = [{CoilsConserving};{{rC2,zC2,wC2,IC2}}];
+
+% Solenoid of individually wound loops
+zCSingles1 = (-2*wC1:-2*wC1:-0.14)';
+rCSingles1 = (0.1+wC1)*ones(size(zCSingles1)); 
+
+% Disk of individually wound loops
+rCSingles2 = (0.1+wC1:2*wC1:0.45)';
+zCSingles2 = -0.15*ones(size(rCSingles2));
+
+rCSingles = [rCSingles1;rCSingles2];
+zCSingles = [zCSingles1;zCSingles2];
+wCSingles = wC1 * ones(size(rCSingles));
+ICSingles = zeros(size(rCSingles));
+quantitiesCSingles = [rCSingles zCSingles wCSingles ICSingles];
+cellsCSingles = num2cell(quantitiesCSingles);
+CoilsConserving = [CoilsConserving;mat2cell(cellsCSingles,ones(1,size(cellsCSingles,1)),4)];
+
+
+% Call the conserving calculator
+ISC = CoAxConserveFluxes(CoilsRegular,CoilsConserving);
+
+% Prepare data for plotting
+rToPlot = CoilsRegular(:,1);
+zToPlot = CoilsRegular(:,2);
+IToPlot = CoilsRegular(:,4);
+for j = 1:size(CoilsConserving,1)
+  rToPlot = [rToPlot;CoilsConserving{j}{1}(:)];
+  zToPlot = [zToPlot;CoilsConserving{j}{2}(:)];
+  IToPlot = [IToPlot;ISC(j)*ones([numel(CoilsConserving{j}{2}) 1])];
+end
+
+% Plot
+rmax = 0.5;
+zmax = rmax/2;
+dx = 0.003;
+rS1 = dx/2:dx:rmax;
+zS1 = (-zmax:dx:zmax)';
+rS = repmat(rS1,size(zS1));
+zS = repmat(zS1,size(rS1));
+
+CoAxPlotFlux(rS,zS,rToPlot,zToPlot,IToPlot);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2020-05-27 $
+% $Revision: d2eb2f6963372735264d5fb59603da69c8005bd0 $
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,404 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>FuelPowerModel</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-06-16"><meta name="DC.source" content="FuelPowerModel.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Fuel mix analysis demo creating contour plots</a></li><li><a href="#2">Model with equal temperatures, full T; electron temp is 0.9 Ti</a></li><li><a href="#3">Model with equal temperatures, all T removed</a></li><li><a href="#4">Model with different temperatures</a></li><li><a href="#5">Finished</a></li></ul></div><h2 id="1">Fuel mix analysis demo creating contour plots</h2><p>Uses a fixed electron temperature for all computations.</p><p>- to make the colormaps uniform: caxis([0.2 50]) - to lighten the colors: brighten(0.5)</p><p>Reference: Carpenter 1999, Figure 4</p><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% See also: PowerDHe3, Synchrotron</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%	Copyright (c) 2018 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+ratios = logspace(-1.6,0.5);
+temps = linspace(40,140);
+
+d = PowerDHe3;
+
+ne = 4e20;
+zI = [1 2];
+b = 5;
+
+d.tE   = 30;   <span class="comment">% electron temp</span>
+d.fD   = 1;    <span class="comment">% as low as 0.25</span>
+d.fT   = 1;
+
+pF = zeros(length(temps),length(ratios));
+pN = [];
+pB = [];
+pS = [];
+</pre><h2 id="2">Model with equal temperatures, full T; electron temp is 0.9 Ti</h2><pre class="codeinput">d.fD   = 1;    <span class="comment">% as low as 0.25</span>
+d.fT   = 1;
+<span class="keyword">for</span> k=1:length(ratios)
+  <span class="comment">% calculate ion densities from electron density assuming fuel ratio</span>
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  <span class="keyword">for</span> j = 1:length(temps)
+    d.tHe3 = temps(j);   <span class="comment">% potentially uo to 140 keV</span>
+    d.tD   = temps(j);   <span class="comment">% potentially 70 keV</span>
+    d.tE   = 0.9*temps(j);
+
+    <span class="comment">% these are powers in MW per cubic meter</span>
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+MakePlots( ratios, temps, pN, pB, pS, pF,<span class="keyword">...</span>
+  [2 3 4 5 6 7 8 9 10 20 30 40 50], <span class="string">'D-D and D-T'</span> )
+drawnow;
+</pre><img vspace="5" hspace="5" src="FuelPowerModel_01.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_02.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_03.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_04.png" alt=""> <h2 id="3">Model with equal temperatures, all T removed</h2><pre class="codeinput">d.fD   = 1;    <span class="comment">% as low as 0.25</span>
+d.fT   = 0;
+d.tE   = 30;   <span class="comment">% electron temp</span>
+pF = [];
+pN = [];
+pB = [];
+pS = [];
+<span class="keyword">for</span> k=1:length(ratios)
+  <span class="comment">% calculate ion densities from electron density assuming fuel ratio</span>
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  <span class="keyword">for</span> j = 1:length(temps)
+    d.tHe3 = temps(j);   <span class="comment">% potentially uo to 140 keV</span>
+    d.tD   = temps(j);   <span class="comment">% potentially 70 keV</span>
+
+    <span class="comment">% these are powers in MW per cubic meter</span>
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+MakePlots( ratios, temps, pN, pB, pS, pF,<span class="keyword">...</span>
+  [0.3 0.5 1 2 3 4 5 6 7 8 9 10 20], <span class="string">'zero D-T'</span> )
+drawnow
+</pre><img vspace="5" hspace="5" src="FuelPowerModel_05.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_06.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_07.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_08.png" alt=""> <h2 id="4">Model with different temperatures</h2><pre class="codeinput">temps2 = linspace(70,140);
+d.fD   = 1;    <span class="comment">% as low as 0.25</span>
+d.fT   = 0;
+d.tD   = 70;   <span class="comment">% potentially 70 keV</span>
+d.tE   = 30;   <span class="comment">% electron temp</span>
+pF = [];
+pN = [];
+pB = [];
+pS = [];
+<span class="keyword">for</span> k=1:length(ratios)
+  <span class="comment">% calculate ion densities from electron density assuming fuel ratio</span>
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  <span class="keyword">for</span> j = 1:length(temps2)
+    d.tHe3 = temps2(j);   <span class="comment">% potentially uo to 140 keV</span>
+
+    <span class="comment">% these are powers in MW per cubic meter</span>
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+MakePlots( ratios, temps2, pN, pB, pS, pF,<span class="keyword">...</span>
+  [0.1 0.2 0.3 0.5 1 2 3 4 5 6 7 8 9 10 20], <span class="string">'70 keV D, zero D-T'</span> )
+</pre><img vspace="5" hspace="5" src="FuelPowerModel_09.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_10.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_11.png" alt=""> <img vspace="5" hspace="5" src="FuelPowerModel_12.png" alt=""> <h2 id="5">Finished</h2><pre class="codeinput">Figui;
+
+
+<span class="keyword">function</span> MakePlots( ratioPlot, tempPlot, pN, pB, pS, pF, N, str )
+
+NewFig(<span class="string">'Neutron Power'</span>)
+[c,h] = contourf(ratioPlot,tempPlot,pN./pF*100,N);
+clabel(c,h);
+set(gca,<span class="string">'xscale'</span>,<span class="string">'log'</span>)
+grid <span class="string">on</span>;
+title([<span class="string">'% Power in 3He-D Neutrons, '</span> str])
+xlabel(<span class="string">'Fuel Ratio (3He/D)'</span>)
+ylabel(<span class="string">'Kinetic Temperature (keV)'</span>)
+set(gca,<span class="string">'xtick'</span>,[0.03 0.1 0.5 1 3])
+set(gcf,<span class="string">'colormap'</span>,flipud(parula))
+line([1 1],[100 140])
+line([1 3],[100 100])
+
+NewFig(<span class="string">'Bremsstrahlung Power'</span>)
+[c,h] = contourf(ratioPlot,tempPlot,pB./pF*100);
+clabel(c,h);
+set(gca,<span class="string">'xscale'</span>,<span class="string">'log'</span>)
+grid <span class="string">on</span>;
+title([<span class="string">'% Power in Bremsstrahlung, '</span> str])
+xlabel(<span class="string">'Fuel Ratio (3He/D)'</span>)
+ylabel(<span class="string">'Kinetic Temperature (keV)'</span>)
+set(gca,<span class="string">'xtick'</span>,[0.03 0.1 0.5 1 3])
+set(gcf,<span class="string">'colormap'</span>,flipud(parula))
+line([1 1],[100 140])
+line([1 3],[100 100])
+
+NewFig(<span class="string">'% Power in Synchrotron (10% volume)'</span>)
+[c,h] = contourf(ratioPlot,tempPlot,0.1*pS./pF*100);
+clabel(c,h);
+set(gca,<span class="string">'xscale'</span>,<span class="string">'log'</span>)
+set(gca,<span class="string">'xtick'</span>,[0.03 0.1 0.5 1 3])
+grid <span class="string">on</span>;
+xlabel(<span class="string">'Fuel Ratio (3He/D)'</span>)
+title([<span class="string">'Synchrontron Power, '</span> str])
+
+NewFig(<span class="string">'Total Fusion Power'</span>)
+[c,h] = contourf(ratioPlot,tempPlot,pF);
+clabel(c,h);
+set(gca,<span class="string">'xscale'</span>,<span class="string">'log'</span>)
+set(gca,<span class="string">'xtick'</span>,[0.03 0.1 0.5 1 3])
+grid <span class="string">on</span>;
+xlabel(<span class="string">'Fuel Ratio (3He/D)'</span>)
+title([<span class="string">'Fusion Power, '</span> str])
+caxis([0 16]) <span class="comment">% Note: will change if tE, etc are changed!!</span>
+cb = colorbar;
+cb.Title.String = <span class="string">'MW/m3'</span>;
+
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="FuelPowerModel_13.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Fuel mix analysis demo creating contour plots
+% Uses a fixed electron temperature for all computations.
+%
+% - to make the colormaps uniform: caxis([0.2 50])
+% - to lighten the colors: brighten(0.5)
+%
+% Reference: Carpenter 1999, Figure 4
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% See also: PowerDHe3, Synchrotron
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%	Copyright (c) 2018 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+ratios = logspace(-1.6,0.5);
+temps = linspace(40,140);
+
+d = PowerDHe3;
+
+ne = 4e20;
+zI = [1 2];
+b = 5;
+
+d.tE   = 30;   % electron temp
+d.fD   = 1;    % as low as 0.25
+d.fT   = 1;
+
+pF = zeros(length(temps),length(ratios));
+pN = [];
+pB = [];
+pS = [];
+
+%% Model with equal temperatures, full T; electron temp is 0.9 Ti
+d.fD   = 1;    % as low as 0.25
+d.fT   = 1;
+for k=1:length(ratios)
+  % calculate ion densities from electron density assuming fuel ratio
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  for j = 1:length(temps)
+    d.tHe3 = temps(j);   % potentially uo to 140 keV
+    d.tD   = temps(j);   % potentially 70 keV
+    d.tE   = 0.9*temps(j); 
+
+    % these are powers in MW per cubic meter
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  end
+end
+
+MakePlots( ratios, temps, pN, pB, pS, pF,...
+  [2 3 4 5 6 7 8 9 10 20 30 40 50], 'D-D and D-T' )
+drawnow;
+
+
+%% Model with equal temperatures, all T removed
+d.fD   = 1;    % as low as 0.25
+d.fT   = 0;
+d.tE   = 30;   % electron temp
+pF = [];
+pN = [];
+pB = [];
+pS = [];
+for k=1:length(ratios)
+  % calculate ion densities from electron density assuming fuel ratio
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  for j = 1:length(temps)
+    d.tHe3 = temps(j);   % potentially uo to 140 keV
+    d.tD   = temps(j);   % potentially 70 keV
+
+    % these are powers in MW per cubic meter
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  end
+end
+
+MakePlots( ratios, temps, pN, pB, pS, pF,...
+  [0.3 0.5 1 2 3 4 5 6 7 8 9 10 20], 'zero D-T' )
+drawnow
+
+
+%% Model with different temperatures
+temps2 = linspace(70,140);
+d.fD   = 1;    % as low as 0.25
+d.fT   = 0;
+d.tD   = 70;   % potentially 70 keV
+d.tE   = 30;   % electron temp
+pF = [];
+pN = [];
+pB = [];
+pS = [];
+for k=1:length(ratios)
+  % calculate ion densities from electron density assuming fuel ratio
+  den = 1 + 2*ratios(k);
+  density = 1/den*ne;
+  d.nD = density;
+  d.nHe3 = density*ratios(k);
+  for j = 1:length(temps2)
+    d.tHe3 = temps2(j);   % potentially uo to 140 keV
+
+    % these are powers in MW per cubic meter
+    [pF(j,k), pN(j,k), pB(j,k), nNd, nNt] = PowerDHe3( d );
+    pS(j,k) = Synchrotron( [d.nD d.nHe3], zI, b, d.tE );
+  end
+end
+
+MakePlots( ratios, temps2, pN, pB, pS, pF,...
+  [0.1 0.2 0.3 0.5 1 2 3 4 5 6 7 8 9 10 20], '70 keV D, zero D-T' )
+
+%% Finished
+Figui;
+
+
+function MakePlots( ratioPlot, tempPlot, pN, pB, pS, pF, N, str )
+
+NewFig('Neutron Power')
+[c,h] = contourf(ratioPlot,tempPlot,pN./pF*100,N);
+clabel(c,h);
+set(gca,'xscale','log')
+grid on;
+title(['% Power in 3He-D Neutrons, ' str])
+xlabel('Fuel Ratio (3He/D)')
+ylabel('Kinetic Temperature (keV)')
+set(gca,'xtick',[0.03 0.1 0.5 1 3])
+set(gcf,'colormap',flipud(parula))
+line([1 1],[100 140])
+line([1 3],[100 100])
+
+NewFig('Bremsstrahlung Power')
+[c,h] = contourf(ratioPlot,tempPlot,pB./pF*100);
+clabel(c,h);
+set(gca,'xscale','log')
+grid on;
+title(['% Power in Bremsstrahlung, ' str])
+xlabel('Fuel Ratio (3He/D)')
+ylabel('Kinetic Temperature (keV)')
+set(gca,'xtick',[0.03 0.1 0.5 1 3])
+set(gcf,'colormap',flipud(parula))
+line([1 1],[100 140])
+line([1 3],[100 100])
+
+NewFig('% Power in Synchrotron (10% volume)')
+[c,h] = contourf(ratioPlot,tempPlot,0.1*pS./pF*100);
+clabel(c,h);
+set(gca,'xscale','log')
+set(gca,'xtick',[0.03 0.1 0.5 1 3])
+grid on;
+xlabel('Fuel Ratio (3He/D)')
+title(['Synchrontron Power, ' str])
+
+NewFig('Total Fusion Power')
+[c,h] = contourf(ratioPlot,tempPlot,pF);
+clabel(c,h);
+set(gca,'xscale','log')
+set(gca,'xtick',[0.03 0.1 0.5 1 3])
+grid on;
+xlabel('Fuel Ratio (3He/D)')
+title(['Fusion Power, ' str])
+caxis([0 16]) % Note: will change if tE, etc are changed!!
+cb = colorbar;
+cb.Title.String = 'MW/m3';
+
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2019-10-08 $
+% $Revision: 93b4095dcc3b1d49d4f0929f9656b69cfdb7e91c $
+
+
+##### SOURCE END #####
+--></body></html>

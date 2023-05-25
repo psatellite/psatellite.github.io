@@ -1,0 +1,319 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Design a linear quadratic temperature controller</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="LQThermalControl.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Design a linear quadratic temperature controller</h1><!--introduction--><pre class="language-matlab">Since <span class="string">version</span> <span class="string">9.</span>
+------------------------------------------------------------------------
+See <span class="string">also</span> <span class="string">AC</span>, C2DZOH, QCR, Plot2D, TimeLabl
+------------------------------------------------------------------------
+</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Create a test conductance matrix</a></li><li><a href="#3">Simulation loop</a></li><li><a href="#4">Set the time label</a></li><li><a href="#5">Plotting</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%    Copyright (c) 2010 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%    All Rights Reserved</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">T</span>; clear <span class="string">Q</span>; clear <span class="string">H</span>;
+</pre><h2 id="2">Create a test conductance matrix</h2><p>dT/dt = aT + bq where q is the input heat flux or loss</p><pre class="codeinput"><span class="comment">%---------------------------------------</span>
+n = 10;
+a = zeros(n,n);
+<span class="keyword">for</span> k = 1:n
+	a(k,k) = -2;
+	j = k+1;
+	<span class="keyword">if</span>( j &lt; n+1 )
+    a(j,k) = 1;
+	<span class="keyword">end</span>
+	j = k-1;
+	<span class="keyword">if</span>( j &gt;  0 )
+     a(j,k) = 1;
+	<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+a(1,1)   = -1;
+a(n,n)   = -1;
+
+disp(<span class="string">'Eigenvalues of a'</span>)
+eig(a)
+
+b        = eye(n);
+r        = eye(n);
+q        = eye(n);
+
+dT       = 10;
+
+gain     = QCR( a, b, q, 100000*r );
+
+disp(<span class="string">'Eigenvalues of the closed loop system'</span>)
+eig(a-b*gain)
+
+[aC,gain] = C2DZOH( a, gain, dT );
+[a, b]    = C2DZOH( a, b, dT );
+
+eig(a-b*gain)
+
+x        = 300*ones(n,1);
+xS       = x;
+qC       = zeros(n,1);
+
+nSim     = 2000;
+xP       = zeros(3*n,nSim);
+t        = 0;
+
+qH       = (rand(n,1) - 0.5);
+</pre><pre class="codeoutput">Eigenvalues of a
+ans =
+      -3.9021
+       -3.618
+      -3.1756
+       -2.618
+           -2
+       -1.382
+     -0.82443
+     -0.38197
+    -0.097887
+  -1.1143e-17
+Eigenvalues of the closed loop system
+ans =
+      -3.9021
+       -3.618
+      -3.1756
+       -2.618
+           -2
+       -1.382
+     -0.82444
+   -0.0031623
+    -0.097938
+     -0.38198
+ans =
+      0.68377
+      0.37366
+     0.021849
+   0.00025384
+  -8.9856e-07
+  -6.2294e-07
+  -2.7864e-07
+  -1.5614e-07
+  -1.0557e-07
+  -8.4153e-08
+</pre><h2 id="3">Simulation loop</h2><pre class="codeinput"><span class="comment">%----------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+    <span class="comment">% Bidirectional input heat flux</span>
+    <span class="comment">%------------------------------</span>
+    <span class="keyword">if</span>( k &lt; 100 || (k &gt; 300 &amp;&amp; k &lt; 700)  )
+        q = qH;
+    <span class="keyword">else</span>
+        q = zeros(n,1);
+    <span class="keyword">end</span>
+
+    qC      = -gain*(x - xS);
+
+    j       = find(qC &lt; 0);
+    qC(j)   = 0;
+
+    xP(:,k) = [x;q;qC];
+
+    <span class="comment">% State update</span>
+    <span class="comment">%-------------</span>
+    x       = a*x + b*(q + qC);
+    t       = t + dT;
+<span class="keyword">end</span>
+</pre><h2 id="4">Set the time label</h2><pre class="codeinput"><span class="comment">%-------------------</span>
+[t, tL] = TimeLabl((0:nSim-1)*dT);
+
+T = cell(1,n);
+Q = cell(1,n);
+H = cell(1,n);
+
+<span class="keyword">for</span> k = 1:n
+	T{k} = sprintf(<span class="string">'T%d'</span>,k);
+	Q{k} = sprintf(<span class="string">'Q%d'</span>,k);
+	H{k} = sprintf(<span class="string">'H%d'</span>,k);
+<span class="keyword">end</span>
+</pre><h2 id="5">Plotting</h2><pre class="codeinput"><span class="comment">%---------</span>
+Plot2D( t, xP( 1: n,:), tL, T, <span class="string">'Temperatures'</span> )
+Plot2D( t, xP( n+1:2*n,:), tL, Q, <span class="string">'Flux'</span>      )
+Plot2D( t, xP(2*n+1:3*n,:), tL, H, <span class="string">'Heater'</span>   )
+
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="LQThermalControl_01.png" alt=""> <img vspace="5" hspace="5" src="LQThermalControl_02.png" alt=""> <img vspace="5" hspace="5" src="LQThermalControl_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Design a linear quadratic temperature controller
+%
+%   Since version 9.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AC, C2DZOH, QCR, Plot2D, TimeLabl
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%    Copyright (c) 2010 Princeton Satellite Systems, Inc.
+%    All Rights Reserved
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear T; clear Q; clear H;
+
+%% Create a test conductance matrix
+% dT/dt = aT + bq
+% where q is the input heat flux or loss
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+n = 10;
+a = zeros(n,n);
+for k = 1:n
+	a(k,k) = -2;
+	j = k+1;
+	if( j < n+1 )
+    a(j,k) = 1;
+	end
+	j = k-1;
+	if( j >  0 )
+     a(j,k) = 1;
+	end
+end
+
+a(1,1)   = -1;
+a(n,n)   = -1; 
+
+disp('Eigenvalues of a')
+eig(a)
+
+b        = eye(n);
+r        = eye(n);
+q        = eye(n);
+
+dT       = 10;
+
+gain     = QCR( a, b, q, 100000*r );
+
+disp('Eigenvalues of the closed loop system')
+eig(a-b*gain)
+
+[aC,gain] = C2DZOH( a, gain, dT );
+[a, b]    = C2DZOH( a, b, dT );
+
+eig(a-b*gain)
+
+x        = 300*ones(n,1);
+xS       = x;
+qC       = zeros(n,1);
+
+nSim     = 2000;
+xP       = zeros(3*n,nSim);
+t        = 0;
+
+qH       = (rand(n,1) - 0.5);
+
+%% Simulation loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim
+    
+    % Bidirectional input heat flux
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    if( k < 100 || (k > 300 && k < 700)  )
+        q = qH;
+    else
+        q = zeros(n,1);
+    end
+     
+    qC      = -gain*(x - xS);
+    
+    j       = find(qC < 0);
+    qC(j)   = 0;
+   
+    xP(:,k) = [x;q;qC];
+    
+    % State update
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    x       = a*x + b*(q + qC);    
+    t       = t + dT;
+end
+
+%% Set the time label
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, tL] = TimeLabl((0:nSim-1)*dT);
+
+T = cell(1,n);
+Q = cell(1,n);
+H = cell(1,n);
+
+for k = 1:n
+	T{k} = sprintf('T%d',k);
+	Q{k} = sprintf('Q%d',k);
+	H{k} = sprintf('H%d',k);
+end
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+Plot2D( t, xP( 1: n,:), tL, T, 'Temperatures' )
+Plot2D( t, xP( n+1:2*n,:), tL, Q, 'Flux'      )
+Plot2D( t, xP(2*n+1:3*n,:), tL, H, 'Heater'   )
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2019-09-07 18:10:05 -0400 (Sat, 07 Sep 2019) $
+% $Revision: 49735 $
+
+
+
+##### SOURCE END #####
+--></body></html>
