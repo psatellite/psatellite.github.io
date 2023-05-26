@@ -1,5 +1,13 @@
 var group___coils =
 [
+    [ "Forces", "dir_4f5ead046c633dccd9c6511bf38971cf.html", null ],
+    [ "Inductances", "dir_bd86cc3b1be91c949938073db8a5a893.html", null ],
+    [ "Magnetic", "dir_848bc4e3d21ea0bdd626eb3ffb591a13.html", null ],
+    [ "Mass", "dir_8a358b64435835d0d54d264b7b4f7fab.html", null ],
+    [ "Pancake", "dir_0f764af27ceeffc32e3da9747900303f.html", null ],
+    [ "SingleLoop", "dir_b1f1880faf6578b4b6bcefd40681606b.html", null ],
+    [ "Solenoid", "dir_5d577d247303afd717610b74d0eb6b41.html", null ],
+    [ "Wire", "dir_c1fd864ab987d498fe9f3af9ec84f5d9.html", null ],
     [ "Bpancake", "group___coils.html#ga45f5dc7eceb08f117e8a70da15df9038", null ],
     [ "CoAxBField", "group___coils.html#ga7e1b7e3afece392b92449a8448a937e4", null ],
     [ "CoAxConserveFluxes", "group___coils.html#ga6498750d6d791428bb39badb43e9bbf0", null ],
