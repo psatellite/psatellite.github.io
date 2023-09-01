@@ -1,0 +1,373 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Demonstrate a Hohmann Transfer in simulation</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-09-19"><meta name="DC.source" content="HohmannDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Demonstrate a Hohmann Transfer in simulation</h1><!--introduction--><p>The spacecraft has 3 reaction wheels and a single thruster that needs to be aligned with the velocity vector for the burns. The delta-V is computed with OrbMnvrHohmann, and the propellant mass is then computed using RocketMass. The fuel mass is then used to compute the duration of the finite burn. A numerical simulation implements the necessary attitude and orbit</p><pre>-------------------------------------------------------------------------
+See also: Mag, RV2El, Period, OrbMnvrHohmann, RocketMass, InertiaCubeSat,
+RHSRWAOrbit, PID3Axis, RK4, TimeHistory, Figui
+-------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Constants</a></li><li><a href="#3">Compute the maneuver</a></li><li><a href="#4">Set up the spacecraft</a></li><li><a href="#5">Set up the controller</a></li><li><a href="#6">Steps</a></li><li><a href="#7">Simulation</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2022 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 2022.1</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre><h2 id="2">Constants</h2><pre class="codeinput">nToKN    = 0.001;
+mu       = Constant(<span class="string">'mu earth'</span>);
+</pre><h2 id="3">Compute the maneuver</h2><pre class="codeinput">rI       = [-7000;0;0];
+vI       = [0;-sqrt(mu/Mag(rI));0];
+rF       = 7100;
+el       = RV2El(rI,vI);
+p        = Period(el(1));
+OrbMnvrHohmann(Mag(rI),rF);
+[dV,tOF] = OrbMnvrHohmann(Mag(rI),rF);
+</pre><pre class="codeoutput">Hohmann Transfer
+------------------------------------------------
+Initial Orbit Radius      =    7000.0000
+Final Orbit Radius        =    7100.0000
+------------------------------------------------
+Delta V Total             =       0.0533
+Delta V at A              =       0.0267
+Delta V at B              =       0.0266
+E transfer                =       0.0071
+SMA transfer              =    7050.0000
+Time of Flight            =       0.8182 hours
+
+</pre><img vspace="5" hspace="5" src="HohmannDemo_01.png" alt=""> <h2 id="4">Set up the spacecraft</h2><pre class="codeinput">mP       = 6; <span class="comment">% kg</span>
+thrustE  = 4.448*0.2; <span class="comment">% N</span>
+dVTot    = dV.a + dV.b; <span class="comment">% km/s</span>
+iSp      = 224; <span class="comment">% s</span>
+fS       = 0.1; <span class="comment">% Structural fraction</span>
+[mF,mT]  = RocketMass(iSp,mP,fS,dVTot);
+inr      = InertiaCubeSat(<span class="string">'6U'</span>,mT);
+acc      = thrustE/mT; <span class="comment">% m/s^2</span>
+tBA      = dV.a/acc/nToKN; <span class="comment">% s</span>
+tBB      = dV.b/acc/nToKN; <span class="comment">% s</span>
+dRHS     = RHSRWAOrbit;
+dRHS.inr = inr;
+dRHS.m   = mT;
+tStart   = [p/4-tBA/2 p/4+tOF-tBB/2]; <span class="comment">% center burn durations on target timehelp</span>
+tEnd     = tStart + [tBA tBB];
+</pre><h2 id="5">Set up the controller</h2><pre class="codeinput">dC             = PID3Axis;
+dC.body_vector = [1;0;0];
+dC.mode        = 1; <span class="comment">% Align two axes</span>
+dC.inertia     = inr;
+
+fprintf(<span class="string">'Burn A duration %8.2f s\n'</span>,tBA);
+fprintf(<span class="string">'Burn B duration %8.2f s\n'</span>,tBB);
+fprintf(<span class="string">'Thrust          %8.2f N\n'</span>,thrustE);
+fprintf(<span class="string">'Mass Total      %8.2f kg\n'</span>,mT);
+fprintf(<span class="string">'Mass Fuel       %8.2f kg\n'</span>,mF);
+fprintf(<span class="string">'Initial SMA     %8.2f km\n'</span>,el(1));
+fprintf(<span class="string">'Initial e       %8.2f\n'</span>,el(5));
+</pre><pre class="codeoutput">Burn A duration   185.04 s
+Burn B duration   184.39 s
+Thrust              0.89 N
+Mass Total          6.16 kg
+Mass Fuel           0.15 kg
+Initial SMA      7000.00 km
+Initial e           0.00
+</pre><h2 id="6">Steps</h2><p>1. Reorient with reaction wheels 2. Burn 3. Reorient/coast 4. Burn</p><h2 id="7">Simulation</h2><pre class="codeinput"><span class="comment">% ECI burn vector</span>
+uBurn  = [1 -1;0 0;0 0];
+dT     = 1; <span class="comment">% s</span>
+n      = ceil(2*tOF/dT);
+kMnvr  = 1;
+x      = [rI;vI;1;zeros(9,1)];
+xP     = zeros(22,n);
+inMnvr = false;
+t      = (0:n-1)*dT;
+
+aDone  = false;
+bDone  = false;
+
+<span class="comment">% Simulation loop</span>
+<span class="keyword">for</span> k = 1:n
+  <span class="comment">% Update the controller</span>
+  dC.eci_vector = uBurn(:,kMnvr);
+  [tRWA, dC]    = PID3Axis( x(7:10), dC );
+
+  <span class="comment">% Start the first burn</span>
+  inMnvr = false;
+  <span class="keyword">if</span>( t(k) &gt; tStart(1) &amp;&amp; t(k) &lt; tEnd(1) )
+    inMnvr = true;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Switch orientation</span>
+  <span class="keyword">if</span>( t(k) &gt; tEnd(1) )
+    kMnvr = 2;
+  <span class="keyword">end</span>
+
+  <span class="comment">% Start the second burn</span>
+  <span class="keyword">if</span>( t(k) &gt; tStart(2) &amp;&amp; t(k) &lt; tEnd(2) )
+    inMnvr = true;
+    kMnvr  = 2;
+  <span class="keyword">end</span>
+
+  <span class="keyword">if</span>( inMnvr )
+    dRHS.force = thrustE*QTForm(x(7:10),dC.body_vector)*nToKN; <span class="comment">% kN</span>
+  <span class="keyword">else</span>
+    dRHS.force = [0;0;0];
+  <span class="keyword">end</span>
+  el = RV2El(x(1:3),x(4:6));
+  xP(:,k) = [x;tRWA;Mag(dRHS.force)/nToKN;el(1);el(5)];
+
+  <span class="comment">% Right hand side</span>
+  dRHS.torqueRWA = -tRWA;
+  x = RK4(@RHSRWAOrbit,x,dT,0,dRHS);
+<span class="keyword">end</span>
+
+fprintf(<span class="string">'Final SMA       %8.2f km\n'</span>,el(1));
+fprintf(<span class="string">'  SMA error     %8.2f km\n'</span>,rF-el(1));
+fprintf(<span class="string">'Final e         %8.2g\n'</span>,el(5));
+
+yL = {<span class="string">'r_x (km)'</span> <span class="string">'r_y (km)'</span> <span class="string">'r_z (km)'</span> <span class="keyword">...</span>
+      <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span> <span class="keyword">...</span>
+      <span class="string">'q_s'</span> <span class="string">'q_x'</span> <span class="string">'q_y'</span> <span class="string">'q_z'</span> <span class="keyword">...</span>
+      <span class="string">'\omega_x (rad/s)'</span> <span class="string">'\omega_y (rad/s)'</span> <span class="string">'\omega_z (rad/s)'</span> <span class="keyword">...</span>
+      <span class="string">'\omega_1 (rad/s)'</span> <span class="string">'\omega_2 (rad/s)'</span> <span class="string">'\omega_3 (rad/s)'</span> <span class="keyword">...</span>
+      <span class="string">'T_1 (Nm)'</span> <span class="string">'T_2 (Nm)'</span> <span class="string">'T_3 (Nm)'</span> <span class="keyword">...</span>
+      <span class="string">'Thrust (N)'</span> <span class="string">'SMA (km)'</span> <span class="string">'e'</span>};
+
+k = 1:3;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Position'</span>);
+k = 4:6;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Velocity'</span>);
+k = 7:10;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Quaternion'</span>);
+k = 11:13;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Angular Rate'</span>);
+k = 14:16;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Wheel Rate'</span>);
+k = 17:20;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'RWA and Engine'</span>);
+k = 21:22;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'SMA and E'</span>);
+
+Figui;
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Final SMA        7099.72 km
+  SMA error         0.28 km
+Final e          1.3e-05
+</pre><img vspace="5" hspace="5" src="HohmannDemo_02.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_03.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_04.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_05.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_06.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_07.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_08.png" alt=""> <img vspace="5" hspace="5" src="HohmannDemo_09.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstrate a Hohmann Transfer in simulation
+% The spacecraft has 3 reaction wheels and a single thruster that needs to
+% be aligned with the velocity vector for the burns. The delta-V is
+% computed with OrbMnvrHohmann, and the propellant mass is then computed
+% using RocketMass. The fuel mass is then used to compute the duration of
+% the finite burn. A numerical simulation implements the necessary attitude
+% and orbit 
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also: Mag, RV2El, Period, OrbMnvrHohmann, RocketMass, InertiaCubeSat,
+%  RHSRWAOrbit, PID3Axis, RK4, TimeHistory, Figui
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2022 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%   Since version 2022.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Constants
+nToKN    = 0.001;
+mu       = Constant('mu earth');
+
+%% Compute the maneuver
+rI       = [-7000;0;0];
+vI       = [0;-sqrt(mu/Mag(rI));0];
+rF       = 7100;
+el       = RV2El(rI,vI);
+p        = Period(el(1));
+OrbMnvrHohmann(Mag(rI),rF);
+[dV,tOF] = OrbMnvrHohmann(Mag(rI),rF);
+
+%% Set up the spacecraft
+mP       = 6; % kg
+thrustE  = 4.448*0.2; % N
+dVTot    = dV.a + dV.b; % km/s
+iSp      = 224; % s
+fS       = 0.1; % Structural fraction
+[mF,mT]  = RocketMass(iSp,mP,fS,dVTot);
+inr      = InertiaCubeSat('6U',mT);
+acc      = thrustE/mT; % m/s^2
+tBA      = dV.a/acc/nToKN; % s
+tBB      = dV.b/acc/nToKN; % s
+dRHS     = RHSRWAOrbit;
+dRHS.inr = inr;
+dRHS.m   = mT;
+tStart   = [p/4-tBA/2 p/4+tOF-tBB/2]; % center burn durations on target timehelp
+tEnd     = tStart + [tBA tBB];
+
+%% Set up the controller
+dC             = PID3Axis;
+dC.body_vector = [1;0;0];
+dC.mode        = 1; % Align two axes
+dC.inertia     = inr;
+
+fprintf('Burn A duration %8.2f s\n',tBA);
+fprintf('Burn B duration %8.2f s\n',tBB);
+fprintf('Thrust          %8.2f N\n',thrustE);
+fprintf('Mass Total      %8.2f kg\n',mT);
+fprintf('Mass Fuel       %8.2f kg\n',mF);
+fprintf('Initial SMA     %8.2f km\n',el(1));
+fprintf('Initial e       %8.2f\n',el(5));
+
+%% Steps
+% 1. Reorient with reaction wheels
+% 2. Burn
+% 3. Reorient/coast
+% 4. Burn
+
+%% Simulation
+
+% ECI burn vector
+uBurn  = [1 -1;0 0;0 0]; 
+dT     = 1; % s
+n      = ceil(2*tOF/dT);
+kMnvr  = 1;
+x      = [rI;vI;1;zeros(9,1)];
+xP     = zeros(22,n);
+inMnvr = false;
+t      = (0:n-1)*dT;
+
+aDone  = false;
+bDone  = false;
+
+% Simulation loop
+for k = 1:n
+  % Update the controller
+  dC.eci_vector = uBurn(:,kMnvr);
+  [tRWA, dC]    = PID3Axis( x(7:10), dC );
+
+  % Start the first burn
+  inMnvr = false;
+  if( t(k) > tStart(1) && t(k) < tEnd(1) )
+    inMnvr = true;
+  end
+
+  % Switch orientation
+  if( t(k) > tEnd(1) )
+    kMnvr = 2;
+  end
+
+  % Start the second burn
+  if( t(k) > tStart(2) && t(k) < tEnd(2) )
+    inMnvr = true;
+    kMnvr  = 2;
+  end
+  
+  if( inMnvr )
+    dRHS.force = thrustE*QTForm(x(7:10),dC.body_vector)*nToKN; % kN
+  else
+    dRHS.force = [0;0;0];
+  end
+  el = RV2El(x(1:3),x(4:6));
+  xP(:,k) = [x;tRWA;Mag(dRHS.force)/nToKN;el(1);el(5)];
+
+  % Right hand side
+  dRHS.torqueRWA = -tRWA;
+  x = RK4(@RHSRWAOrbit,x,dT,0,dRHS);
+end
+
+fprintf('Final SMA       %8.2f km\n',el(1));
+fprintf('  SMA error     %8.2f km\n',rF-el(1));
+fprintf('Final e         %8.2g\n',el(5));
+
+yL = {'r_x (km)' 'r_y (km)' 'r_z (km)' ...
+      'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)' ...
+      'q_s' 'q_x' 'q_y' 'q_z' ...
+      '\omega_x (rad/s)' '\omega_y (rad/s)' '\omega_z (rad/s)' ...
+      '\omega_1 (rad/s)' '\omega_2 (rad/s)' '\omega_3 (rad/s)' ...
+      'T_1 (Nm)' 'T_2 (Nm)' 'T_3 (Nm)' ...
+      'Thrust (N)' 'SMA (km)' 'e'};
+
+k = 1:3;
+TimeHistory(t,xP(k,:),yL(k),'Position');
+k = 4:6;
+TimeHistory(t,xP(k,:),yL(k),'Velocity');
+k = 7:10;
+TimeHistory(t,xP(k,:),yL(k),'Quaternion');
+k = 11:13;
+TimeHistory(t,xP(k,:),yL(k),'Angular Rate');
+k = 14:16;
+TimeHistory(t,xP(k,:),yL(k),'Wheel Rate');
+k = 17:20;
+TimeHistory(t,xP(k,:),yL(k),'RWA and Engine');
+k = 21:22;
+TimeHistory(t,xP(k,:),yL(k),'SMA and E');
+
+Figui;
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2022-09-19 $
+% $Revision: 91f9ce843fb00ef360cf90ec0308c7e458a589ea $
+
+##### SOURCE END #####
+--></body></html>
