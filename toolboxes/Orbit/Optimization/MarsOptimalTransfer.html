@@ -1,0 +1,190 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Optimal 3D transfer to Mars, continuous thrust</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-09-28"><meta name="DC.source" content="MarsOptimalTransfer.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Optimal 3D transfer to Mars, continuous thrust</h1><!--introduction--><p>Optimize a transfer to Mars for continuous thrust, minimizing the total acceleration. This is a fixed end point optimization, run it with different durations and start dates to see how the delta-V required will vary. This routine uses JPL ephemerides for both the Earth and Mars. The optimization function requires fmincon in the Optimization toolbox.</p><p>This demo uses a longer duration resulting in a power level that might be appropriate for for a solar powered electric propulsion mission.</p><p>See also: Date2JD, TrajectoryBetweenTwoPlanets, SpacecraftFromAccel</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Compute the optimal trajectory</a></li><li><a href="#3">Size the spacecraft</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2023 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%   Since version 2023.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Compute the optimal trajectory</h2><p>Launch date</p><pre class="codeinput">jD0 = Date2JD([2022 6 19 0 0 0]);
+
+<span class="comment">% Planet IDs</span>
+planet1 = 3;
+planet2 = 4;
+
+<span class="comment">% long, low-thrust transfer</span>
+years = 0.5;
+nPts  = 50;
+s     = TrajectoryBetweenTwoPlanets( jD0, planet1, planet2, years, 50 );
+</pre><pre class="codeoutput">                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0     301    1.538129e-04    1.021e+08    1.842e-05
+    1     602    7.979193e-05    1.399e+07    4.701e+03    1.390e-05
+    2     903    8.401357e-05    1.016e+05    4.684e+03    3.822e-06
+    3    1205    7.488607e-05    3.256e+03    3.943e+03    3.079e-06
+    4    1507    7.359173e-05    1.313e+03    1.585e+02    8.471e-07
+    5    1808    7.356509e-05    6.971e+02    2.196e-01    2.167e-08
+    6    2109    7.356494e-05    3.866e+00    4.722e-02    2.326e-10
+
+Optimization stopped because the relative changes in all elements of x are
+less than options.StepTolerance = 1.000000e-10, and the relative maximum constraint
+violation, 3.785413e-08, is less than options.ConstraintTolerance = 1.000000e-06.
+
+Nonoptimal solution, flag: 2
+         iterations: 6
+          funcCount: 2109
+    constrviolation: 3.8663
+           stepsize: 2.3264e-10
+          algorithm: 'interior-point'
+      firstorderopt: 0.04722
+       cgiterations: 0
+            message: 'Local minimum possible. Constraints satisfied.&#8629;&#8629;fmincon stopped because the size of the current step is less than&#8629;the value of the step size tolerance and constraints are &#8629;satisfied to within the value of the constraint tolerance.&#8629;&#8629;&lt;stopping criteria details&gt;&#8629;&#8629;Optimization stopped because the relative changes in all elements of x are&#8629;less than options.StepTolerance = 1.000000e-10, and the relative maximum constraint&#8629;violation, 3.785413e-08, is less than options.ConstraintTolerance = 1.000000e-06.'
+       bestfeasible: []
+
+Final Equality Constraints (km, km/s)
+      -1.2349
+       3.8663
+      -2.6399
+  -1.2964e-06
+   1.8375e-07
+  -2.6912e-07
+
+</pre><img vspace="5" hspace="5" src="MarsOptimalTransfer_01.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTransfer_02.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTransfer_03.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTransfer_04.png" alt=""> <h2 id="3">Size the spacecraft</h2><p>This will compute the power required to move the requested payload given the acceleration profile returned from the optimization. Not all combinations of parameters will converge.</p><pre class="codeinput">sC = SpacecraftFromAccel;
+sC.uE    = 50;    <span class="comment">% exhaust velocity, km/s</span>
+sC.sigma = 300;   <span class="comment">% specific power, W/kg</span>
+sC.fS    = 0.08;  <span class="comment">% fuel structural fraction</span>
+sC.eff   = 0.8;   <span class="comment">% efficiency to jet thrust power</span>
+sC.mP    = 10000;  <span class="comment">% payload mass, kg</span>
+
+SpacecraftFromAccel(sC,s);
+
+
+<span class="comment">%--------------------------------------</span>
+</pre><pre class="codeoutput">Total mission DV:     23.2 km/s
+Max thrust power:    3.496 MW
+Total mass:        40712.9 kg
+Payload mass:     10000 kg
+Engine mass:      11654 kg
+Fuel mass:        15121 kg
+Structural mass:  1210 kg
+Payload Fraction: 0.245622
+</pre><img vspace="5" hspace="5" src="MarsOptimalTransfer_05.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Optimal 3D transfer to Mars, continuous thrust
+% Optimize a transfer to Mars for continuous thrust, minimizing the total
+% acceleration. This is a fixed end point optimization, run it with
+% different durations and start dates to see how the delta-V required will
+% vary. This routine uses JPL ephemerides for both the Earth and Mars. The
+% optimization function requires fmincon in the Optimization toolbox.
+%
+% This demo uses a longer duration resulting in a power level that might be
+% appropriate for for a solar powered electric propulsion mission.
+%
+% See also: Date2JD, TrajectoryBetweenTwoPlanets, SpacecraftFromAccel
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2023 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%   Since version 2023.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Compute the optimal trajectory
+% Launch date
+jD0 = Date2JD([2022 6 19 0 0 0]);
+
+% Planet IDs
+planet1 = 3;
+planet2 = 4;
+
+% long, low-thrust transfer
+years = 0.5;
+nPts  = 50;
+s     = TrajectoryBetweenTwoPlanets( jD0, planet1, planet2, years, 50 );
+
+%% Size the spacecraft
+% This will compute the power required to move the requested payload given
+% the acceleration profile returned from the optimization. Not all
+% combinations of parameters will converge.
+
+sC = SpacecraftFromAccel;
+sC.uE    = 50;    % exhaust velocity, km/s
+sC.sigma = 300;   % specific power, W/kg
+sC.fS    = 0.08;  % fuel structural fraction
+sC.eff   = 0.8;   % efficiency to jet thrust power
+sC.mP    = 10000;  % payload mass, kg
+
+SpacecraftFromAccel(sC,s);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2023-08-25 $
+% $Revision: 7743fad90fc6b136d1712614439fa135babd2ebb $
+
+##### SOURCE END #####
+--></body></html>
