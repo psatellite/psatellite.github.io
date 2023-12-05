@@ -2,7 +2,7 @@ Testing the ease of creating an index file using markdown. This can use the GitH
 
 # Toolboxes for MATLAB
 
-For our MATLAB toolboxes, this site hosts an API of function and demo headers and published toolbox demos.
+For our [MATLAB](https://www.mathworks.com/products/matlab.html) toolboxes, this site hosts an API of function and demo headers and published toolbox demos.
 
 ## Spacecraft Control Toolbox
 
