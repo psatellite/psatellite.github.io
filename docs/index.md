@@ -1,6 +1,4 @@
-Testing the ease of creating an index file using markdown instead. This can use the GitHub editor right in the browser.
-
-Let's try linking to the Wiki. [Link Text](wiki/MATLAB-Toolboxes)
+Testing the ease of creating an index file using markdown. This can use the GitHub editor right in the browser.
 
 # MATLAB Toolboxes
 
