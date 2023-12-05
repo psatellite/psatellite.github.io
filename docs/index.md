@@ -53,5 +53,7 @@ Our Aero/Astro Vehicle Control packages include spacecraft models, spacecraft co
 ---
 
 ![Princeton Satellite Systems logo](https://www.psatellite.com/wp-content/uploads/2022/08/PSSLogo.jpg)
+
 Copyright 2023 Princeton Satellite Systems, Inc. All rights reserved.
+
 Visit us at [www.psatellite.com](https://www.psatellite.com)
