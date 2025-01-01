@@ -1,0 +1,145 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="generator" content="MATLAB 7.10">
+<meta name="date" content="2011-01-28">
+<meta name="m-file" content="Included">
+<title>Add-On Modules</title>
+<style type="text/css">
+body {background-color: white; margin:10px;}
+
+h1 {color: #990000;font-size: x-large;}
+h2 {color: #990000;font-size: large;}
+h3 {color: #990000;font-size: MEDIUM;}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px; /* Hack for IE6 */
+  width: auto !important; width: 600px;}
+
+hr        {width: 600; 
+           text-align: left; /*this will align it for IE*/
+           margin: 0 auto 0 0; /*this will align it for Mozilla*/
+           color: #333;
+           background-color: #fff;
+           height: 1px;}
+
+table.cl  {font-family: Times;   
+           font-size: 14pt; 
+           background-color: #e1e6f2;
+           border-width: 2px;
+           border-color: #e9effa;
+           cellpadding: 10;
+           cellspacing: 10;
+           border-style: solid;}
+           
+td.module {font-family: Cambria;
+           font-size: 14pt;
+           width: 25%;
+           vertical-align: top;}
+td.bio    {font-family: Times;
+           font-size: 14pt;
+           width: 75%;
+           vertical-align: top;}
+
+</style>
+</head>
+<body><div class="content">
+<p><table width="600" border="0"><tr>
+<td width=50%><font size="5" color="990000"><b>Getting Started</b></font></td>
+<td width=50%><img src="images/PSSLogo.jpg"></td>
+</tr></table>
+<br></p>
+<p>The MHT Module is an add-on module to the Core Control Toolbox that  implements Track-Oriented Multiple Hypothesis Testing. Remember that you must install GLPK and GLPKMEX before running the MHT functions.</p>
+
+<p>A brief manual with background theory and references is included with the module.</p>
+
+<hr>
+<h2>Contents</h2>
+<div><ul>
+<li><a href="#1">Background on MHT</a></li>
+<li><a href="#2">Kalman Filters</a></li>
+<li><a href="#3">Example: Automobile Simulation</a></li>
+<li><a href="#4">Using MHT</a></li>
+<li><a href="#5">MHT Simulations</a></li>
+</ul></div>
+
+<h2><a name="1"></a>Background on MHT</h2>
+<p>In many situations a sensor system must track multiple targets, like in rush hour traffic shown in the photo above. This leads to the problem of associating measurements with objects, or tracks. This is an essential element of any practical tracking system.</p>
+    
+<p>The following figure shows the general tracking problem. Two scans  (concurrent sets) of data are shown. When the first scan is done there are two tracks. The uncertainty ellipsoids are shown and they are based on all previous information.  In the $k-1$ scan three measurements are observed. 1 and 3 are within the ellipsoids of the two tracks but 2 is in both. It may be a measurement of either of the tracks or a spurious measurement. In scan $k$ four measurements are taken. Only measurement 4 is in one of the uncertainty ellipsoids. 3 might be interpreted as spurious but it is actually due to to a new track from a third vehicle that separates from the blue track. 1 is outside of the red ellipsoid but is actually a good measurement of the red track and (if correctly interpreted) indicates that the model is erroneous. 4 is a good measurement of the blue track and indicates that the model is valid.</p>
+    
+    <img width=450 src="images/Tracking.png" align="center">
+   
+<p>Hypotheses are sets of tracks with consistent data, that is where no measurements are assigned to more than one track. The track-oriented approach recomputes the hypotheses using the newly updated tracks after each scan of data are received. Rather than maintaining, and expanding, hypotheses from scan to scan, the track-oriented approach discards the hypotheses formed on scan k-1. The tracks that survive pruning are predicted to the next scan k where new tracks are formed, using the new observations, and reformed into hypotheses. Except for the necessity to delete some tracks based upon low probability or N-scan pruning, no information is lost because the track scores, that are maintained, contain all the relevant statistical data. </p>
+    
+<p>The MHT Toolbox uses a powerful track pruning algorithm that does the pruning in one step. Because of its speed, ad-hoc pruning methods are not required leading to more robust and reliable results. The track management software is, as a consequence, quite simple.</p>
+    
+<h2><a name="2"></a>Kalman Filters</h2>
+<p>The Core Control Toolbox includes Kalman Filters, Extended Kalman Filters and Unscented Kalman Filters. All of the Kalman Filters use a common code format:</p>
+    
+<pre>
+    u.t     = t;
+    u.y     = xS(3,k);
+    u       = UKFPredict( u );
+    u       = UKFUpdate( u );
+</pre>
+    
+<p>where <font face = "courier">u</font> is a MATLAB data structure. This allows the two filtering steps to be used independently. For example, you can run the predict step multiple times while waiting for a measurement update.</p>
+        
+<p>You can switch filter types by simply changing the <font face = "courier">UKF</font> in the name to <font face = "courier">EKF</font>.  Each Kalman Filter can handle multiple measurement sources and measurements arriving at different times. </p>
+    
+<p>All three Kalman Filters can be used independently or as part of the MHT system. The usual practice is to test the filter with the dynamical model before incorporating it into the MHT management system. The toolbox makes this easy to do. For example, the toolbox includes MHT distance functions for Kalman Filters, Extended Kalman Filters and the UKF. The UKF automatically uses sigma points and does not require derivatives to be taken of the measurement functions or linearized versions of the measurement models.</p>
+    
+<h2><a name="3"></a>Example: Automobile Simulation</h2>
+<p>This demonstration involves multiple cars passing another car which has a radar system that measures range, range rate and azimuth. The radar has a limited field of view and range.</p>
+
+<p>There are two scripts associated with this demo. The first,  <font face = "courier">UKFAutomobileDemo.m</font>, tests the Unscented Kalman Filter that is to be used in the MHT system. This script has the car containing the radar and one other car that does a variety of maneuvers. It is, in essence, an MHT system with perfect measurement association. It is always a good idea to do this first to sort out the filter parameters and make sure that your filter works. The second script is the  <font face = "courier">MHTAutomobileDemo.m</font> that implements the MHT system.</p>
+    
+<p>The first figure shows the four cars in the simulation. At first the car with the radar cannot see any of the cars until one begins to pass. </p>
+<img width=450 src="images/AutoSim.png" align="center">
+    
+<p>The passing car is quickly acquired. The tree shows the "thinking" of the MHT algorithm. The circles show which measurements from each scan are assigned to the tracks, and the blue bars are the resulting score for each.</p>
+<img width=450 src="images/AutoTree.png" align="center">
+   
+<p>The MHT GUI provides the user with a snapshot of the process of the MHT system thinking. This makes it easy to validate its decisions and to debug your software.</p>
+<img width=450 src="images/AutoGUI.png" align="center">
+    
+    
+<h2><a name="4"></a>Using MHT</h2>
+<p>You will need the following functions to build an MHT application.</p>
+    
+<ul>
+<li> <font face = "courier">MyRHSFunction</font> - The dynamical equations.</li>
+<li> <font face = "courier">MyKFRHSFunction</font> - The dynamical equations for use by the Kalman Filter. For a linearized version you have the a, b, c and d matrices for the state equations
+    which are x[k+1] = ax[k] + bu[k], y[k] = cx[k] + du[k]. For the nonlinear filters you can use the function above or write another.</li>
+<li> <font face = "courier">MyMeasFunction</font> - The measurement function. This can be used directly by UKF and EKF. For KF you will need a linearized version.</li>
+<li> <font face = "courier">MyScanToTrackFunction</font> - This takes a measurement and creates a new track. Since you will rarely have more than partial state information,
+you will need to "guess" the remaining states.</li>
+</ul>
+  
+<p>for the automobile demonstration the functions are.</p>
+    
+    <ul>
+        <li><font face = "courier">RHSAutomobile</font></li>
+        <li> <font face = "courier">RHSAutomobileXY</font></li>
+        <li> <font face = "courier">AutoRadar</font></li>
+        <li><font face = "courier">ScanToTrackAuto</font></li>
+    </ul>
+
+<p>Once you get good results your can build your MHT function using the same simulation. A convenient way is to have one script to run the simulation and save the measurements and states
+    in a mat file. Then you can use this for both the Kalman Filter and MHT tests.</p>
+    
+<h2><a name="5"></a>MHT Simulations</h2>
+    <p>Thorough testing of an MHT system requires a number of features in the simulation.</p>
+    <ul>
+        <li>The fidelity of the dynamical model and sensor model should be higher than the fidelity of the model used by the Kalman Filter.</li>
+        <li>The dynamical model should always be nonlinear.</li>
+        <li>False alarms, i.e. measurements that do not correspond to any object, need to be included.</li>
+        <li>Missed measurements need to be included.</li>
+    </ul>
+    <p> It is always a good idea to start by using the same model in your simulation as is in your Kalman filter. You should also not add false alarms or missed measurements until you have thoroughly tested your MHT code. Another useful debugging tool is to initialize new track Kalman Filter states exactly. Remove these simplifications one at time to validate your system. Your test script can have flags that allow you to switch these "features" on and off.</p>
+<br><hr>
+<p><a href="index.html">Back</a> to main module page.</p>
+</div>
+</body></html>
