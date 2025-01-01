@@ -1,0 +1,375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>A UKF for estimating position, velocity and accelerometer bias.</title>
+<meta name="generator" content="MATLAB 23.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2023-11-14">
+<meta name="DC.source" content="Rover1D.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>A UKF for estimating position, velocity and accelerometer bias.</h1>
+<!--introduction-->
+<p>The measurement is the angle to a fixed reference height h above the ground.</p>
+<p>The state equations are linear but the measurement equation is nonlinear. The UKF allows us to use the latter directly.</p>
+<p>The name is Rover1D because the measurement is similar to a sextant and the motion is 1 dimensional like a surface rover moving in a straight line. It does not model any real ground vehicle dynamics.</p>
+<p>See also Plot2D, TimeLabl, RK4, UKF ------------------------------------------------------------------------</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Sim length and time step</a>
+</li>
+<li>
+<a href="#3">Plotting array and initial state</a>
+</li>
+<li>
+<a href="#4">Parameters</a>
+</li>
+<li>
+<a href="#5">p is passed to the UKF</a>
+</li>
+<li>
+<a href="#6">UKF parameters</a>
+</li>
+<li>
+<a href="#7">Plant measurement noise</a>
+</li>
+<li>
+<a href="#8">Measurement and plant covariances</a>
+</li>
+<li>
+<a href="#9">Initial covariance</a>
+</li>
+<li>
+<a href="#10">plus a sine wave but them becomes just a sine wave</a>
+</li>
+<li>
+<a href="#11">Plotting</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+clear <span class="string">p</span>; clear <span class="string">d</span>;
+</pre>
+<h2 id="2">Sim length and time step</h2>
+<pre class="codeinput">
+<span class="comment">%------------------------</span>
+n             = 1000;
+dT            = 1;
+</pre>
+<h2 id="3">Plotting array and initial state</h2>
+<pre class="codeinput">
+<span class="comment">%---------------------------------</span>
+xP            = zeros(10,n);
+x             = [0;0;0];
+</pre>
+<h2 id="4">Parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-----------</span>
+xTarg         = 10000;
+h             = 1000;
+</pre>
+<h2 id="5">p is passed to the UKF</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------------</span>
+p.x           = x;
+p.rHSFun      = <span class="string">'RHS1DWithAccelUKF'</span>;
+p.measFun     = <span class="string">'HAngleUKF'</span>;
+p.measFunData = struct(<span class="string">'h'</span>,h,<span class="string">'xTarget'</span>,xTarg);
+p.rHSFunData  = struct(<span class="string">'a'</span>,0);
+</pre>
+<h2 id="6">UKF parameters</h2>
+<pre class="codeinput">
+<span class="comment">%---------------</span>
+p.alpha       = 0.5;
+p.kappa       = 0;
+p.beta        = 2;
+p.dY          = 1;
+p.dT          = dT;
+</pre>
+<h2 id="7">Plant measurement noise</h2>
+<pre class="codeinput">
+<span class="comment">%------------------------</span>
+d.sigma       = 0.001;
+</pre>
+<h2 id="8">Measurement and plant covariances</h2>
+<pre class="codeinput">
+<span class="comment">%----------------------------------</span>
+p.rM          = d.sigma^2;
+p.rP          = 0.00001;
+</pre>
+<h2 id="9">Initial covariance</h2>
+<pre class="codeinput">
+<span class="comment">%-------------------</span>
+p.p           = diag([1 1 1]);
+
+p             = UKF(<span class="string">'initialize'</span>, p );
+
+<span class="comment">% The simulation. The acceleration is initially a constant</span>
+</pre>
+<h2 id="10">plus a sine wave but them becomes just a sine wave</h2>
+<pre class="codeinput">
+<span class="comment">%---------------------------------------------------------</span>
+t             = 0;
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% Nonlinear angle measurement</span>
+  <span class="comment">%----------------------------</span>
+  theta   = atan(h/(xTarg - x(1)));
+
+  <span class="comment">% Save for plotting</span>
+  <span class="comment">%------------------</span>
+  xP(:,k) = [x;p.x;theta;diag(p.p)];
+
+  <span class="comment">% External acceleration</span>
+  <span class="comment">%----------------------</span>
+  aSine   = 0.001*sin(0.01*t);
+  <span class="keyword">if</span> ( t &lt; 20 )
+    d.a = 0.01 + aSine;
+  <span class="keyword">else</span>
+    d.a =        aSine;
+  <span class="keyword">end</span>
+
+  <span class="comment">% The measured acceleration includes the bias</span>
+  <span class="comment">%--------------------------------------------</span>
+  aMeas   = d.a + x(3);
+
+  <span class="comment">% Simulation</span>
+  <span class="comment">%-----------</span>
+  x       = RK4(<span class="string">'RHS1DWithAccel'</span>,x,dT,0,d);
+  t       = t + dT;
+
+  <span class="comment">% Kalman  Filter</span>
+  <span class="comment">%---------------</span>
+  p.t            = t;
+  p.rHSFunData.a = aMeas;
+  p              = UKF( <span class="string">'update'</span>, p, theta );
+
+<span class="keyword">end</span>
+</pre>
+<h2 id="11">Plotting</h2>
+<pre class="codeinput">
+<span class="comment">%---------</span>
+[t, tL] = TimeLabl( (1:n)*dT );
+
+Plot2D( t, xP(1:7,:), tL, {<span class="string">'x'</span> <span class="string">'v'</span> <span class="string">'b'</span> <span class="string">'\theta'</span>}, <span class="string">'Rover State'</span>, <span class="string">'lin'</span>,<span class="keyword">...</span>
+        {<span class="string">'[1 4]'</span> <span class="string">'[2 5]'</span> <span class="string">'[3 6]'</span> <span class="string">'[7]'</span>})
+Plot2D( t, xP(8:10,:), tL, {<span class="string">'p_x'</span> <span class="string">'p_v'</span> <span class="string">'p_b'</span> }, <span class="string">'Rover P'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% $Date$</span>
+<span class="comment">% $Id: 6779785f3c280d33a109a58e09b71ff7010e4631 $</span>
+</pre>
+<img vspace="5" hspace="5" src="Rover1D_01.png" alt=""> <img vspace="5" hspace="5" src="Rover1D_02.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% A UKF for estimating position, velocity and accelerometer bias.
+% The measurement is the angle to a fixed reference height h above
+% the ground.
+%
+% The state equations are linear but the measurement equation is
+% nonlinear. The UKF allows us to use the latter directly.
+%
+% The name is Rover1D because the measurement is similar to a sextant
+% and the motion is 1 dimensional like a surface rover moving in 
+% a straight line. It does not model any real ground vehicle dynamics.
+%
+% See also Plot2D, TimeLabl, RK4, UKF
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2007 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+clear p; clear d;
+
+%% Sim length and time step
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+n             = 1000;
+dT            = 1;
+
+%% Plotting array and initial state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP            = zeros(10,n);
+x             = [0;0;0];
+
+%% Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xTarg         = 10000;
+h             = 1000;
+
+%% p is passed to the UKF
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+p.x           = x;
+p.rHSFun      = 'RHS1DWithAccelUKF';
+p.measFun     = 'HAngleUKF';
+p.measFunData = struct('h',h,'xTarget',xTarg);
+p.rHSFunData  = struct('a',0);
+
+%% UKF parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+p.alpha       = 0.5;
+p.kappa       = 0;
+p.beta        = 2;
+p.dY          = 1;
+p.dT          = dT;
+
+%% Plant measurement noise
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.sigma       = 0.001;
+
+%% Measurement and plant covariances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+p.rM          = d.sigma^2;
+p.rP          = 0.00001;
+
+%% Initial covariance
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+p.p           = diag([1 1 1]);
+
+p             = UKF('initialize', p );
+
+% The simulation. The acceleration is initially a constant
+%% plus a sine wave but them becomes just a sine wave
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t             = 0;
+for k = 1:n
+
+  % Nonlinear angle measurement
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  theta   = atan(h/(xTarg - x(1)));
+
+  % Save for plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  xP(:,k) = [x;p.x;theta;diag(p.p)];
+
+  % External acceleration
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  aSine   = 0.001*sin(0.01*t);
+  if ( t < 20 )
+    d.a = 0.01 + aSine;
+  else
+    d.a =        aSine;
+  end
+
+  % The measured acceleration includes the bias
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  aMeas   = d.a + x(3);
+
+  % Simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  x       = RK4('RHS1DWithAccel',x,dT,0,d);
+  t       = t + dT;
+
+  % Kalman  Filter
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  p.t            = t;
+  p.rHSFunData.a = aMeas;
+  p              = UKF( 'update', p, theta );
+
+end
+
+%% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t, tL] = TimeLabl( (1:n)*dT );
+
+Plot2D( t, xP(1:7,:), tL, {'x' 'v' 'b' '\theta'}, 'Rover State', 'lin',...
+        {'[1 4]' '[2 5]' '[3 6]' '[7]'})
+Plot2D( t, xP(8:10,:), tL, {'p_x' 'p_v' 'p_b' }, 'Rover P')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date$
+% $Id: 6779785f3c280d33a109a58e09b71ff7010e4631 $
+
+
+##### SOURCE END #####
+-->
+</body>
+</html>

@@ -1,0 +1,225 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Test AStarSearch using a grid with randomly placed obstacles.</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-06-30"><meta name="DC.source" content="AStarSearchRandomGridDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Test AStarSearch using a grid with randomly placed obstacles.</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also AStarSearch, TransformGridCoordinates, NewFig, Plot2D, TextS
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Put in a one dimensional array</a></li></ul></div><pre class="codeinput"><span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2003 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+
+n                          = 8;
+d.pathCostEstimateFunction = <span class="string">'GridPathCost'</span>;
+d.traverseCostFunction     = <span class="string">'GridTraverseCost'</span>;
+d.successorNodesFunction   = <span class="string">'GridSuccessorNodes'</span>;
+grid                       = zeros(n,n);
+d.myData.n                 = n;
+
+nBlocked                   = floor(20*rand);
+rowStart                   = 4;
+colStart                   = 1;
+rowEnd                     = 4;
+colEnd                     = 8;
+
+blockedNode = [];
+<span class="keyword">for</span> k = 1:nBlocked
+  <span class="keyword">while</span>( 1 )
+    row = ceil(n*rand);
+    col = ceil(n*rand);
+    <span class="keyword">if</span>( ((row == rowStart) &amp; (col == colStart)) | ((row == rowEnd) &amp; (col == colEnd)) )
+    <span class="keyword">else</span>
+      <span class="keyword">break</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+  blockedNode(:,k) = [col;row];
+  grid(row,col) = 1;
+<span class="keyword">end</span>
+</pre><h2 id="2">Put in a one dimensional array</h2><pre class="codeinput"><span class="comment">%-------------------------------</span>
+<span class="keyword">for</span> k = 1:n
+  d.myData.grid(1,((k-1)*n+1):(k*n)) = grid(k,:);
+<span class="keyword">end</span>
+d.n  = length(d.myData.grid);
+
+startNode = TransformGridCoordinates( rowStart, colStart, n );
+endNode   = TransformGridCoordinates( rowEnd,   colEnd,   n );
+
+tic
+path      = AStarSearch( startNode, endNode, d );
+
+t = sprintf(<span class="string">'A* Search: %2.3 sec'</span>,toc);
+
+<span class="keyword">if</span>( ~isempty(path) )
+
+  [y, x] = TransformGridCoordinates( path, n );
+
+  Plot2D( x, y, <span class="string">'x'</span>, <span class="string">'y'</span>, t );
+<span class="keyword">else</span>
+  NewFig( t );
+<span class="keyword">end</span>
+n = n + 1;
+set( gca, <span class="string">'xlim'</span>, [0 n], <span class="string">'ylim'</span>, [0 n], <span class="string">'xtick'</span>, 0:n, <span class="string">'ytick'</span>, 0:n )
+hold <span class="string">on</span>
+
+[row, col] = TransformGridCoordinates( startNode, n-1 );
+TextS(col,row-.15,<span class="string">'  start'</span>)
+plot(col,row,<span class="string">'*g'</span>)
+[row, col] = TransformGridCoordinates( endNode, n-1 );
+TextS(col,row-.15,<span class="string">'  end'</span>)
+plot(col,row,<span class="string">'*r'</span>)
+
+<span class="keyword">for</span> k = 1:size(blockedNode,2)
+  plot(blockedNode(1,k),blockedNode(2,k),<span class="string">'*k'</span>);
+<span class="keyword">end</span>
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: ed724af3c9d346757d4e17c2b6599778a407ff4b $</span>
+</pre><img vspace="5" hspace="5" src="AStarSearchRandomGridDemo_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test AStarSearch using a grid with randomly placed obstacles.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also AStarSearch, TransformGridCoordinates, NewFig, Plot2D, TextS
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2003 Princeton Satellite Systems, Inc. All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+n                          = 8;
+d.pathCostEstimateFunction = 'GridPathCost';
+d.traverseCostFunction     = 'GridTraverseCost';
+d.successorNodesFunction   = 'GridSuccessorNodes';
+grid                       = zeros(n,n);
+d.myData.n                 = n;
+
+nBlocked                   = floor(20*rand);
+rowStart                   = 4;
+colStart                   = 1;
+rowEnd                     = 4;
+colEnd                     = 8;
+
+blockedNode = [];
+for k = 1:nBlocked
+  while( 1 )
+    row = ceil(n*rand);
+    col = ceil(n*rand);
+    if( ((row == rowStart) & (col == colStart)) | ((row == rowEnd) & (col == colEnd)) )
+    else
+      break
+    end
+  end
+  blockedNode(:,k) = [col;row];
+  grid(row,col) = 1;
+end
+
+%% Put in a one dimensional array
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:n
+  d.myData.grid(1,((k-1)*n+1):(k*n)) = grid(k,:);
+end
+d.n  = length(d.myData.grid);
+
+startNode = TransformGridCoordinates( rowStart, colStart, n );
+endNode   = TransformGridCoordinates( rowEnd,   colEnd,   n );
+
+tic
+path      = AStarSearch( startNode, endNode, d );
+
+t = sprintf('A* Search: %2.3 sec',toc);
+
+if( ~isempty(path) )
+
+  [y, x] = TransformGridCoordinates( path, n );
+
+  Plot2D( x, y, 'x', 'y', t );
+else
+  NewFig( t );
+end
+n = n + 1;
+set( gca, 'xlim', [0 n], 'ylim', [0 n], 'xtick', 0:n, 'ytick', 0:n )
+hold on
+
+[row, col] = TransformGridCoordinates( startNode, n-1 );
+TextS(col,row-.15,'  start')
+plot(col,row,'*g')
+[row, col] = TransformGridCoordinates( endNode, n-1 );
+TextS(col,row-.15,'  end')
+plot(col,row,'*r')
+
+for k = 1:size(blockedNode,2)
+  plot(blockedNode(1,k),blockedNode(2,k),'*k');
+end
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2023-06-30 $
+% $Id: ed724af3c9d346757d4e17c2b6599778a407ff4b $
+
+##### SOURCE END #####
+--></body></html>

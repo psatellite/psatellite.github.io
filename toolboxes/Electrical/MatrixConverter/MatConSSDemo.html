@@ -1,0 +1,412 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Simulate a matrix converter in steady state.</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-06-30"><meta name="DC.source" content="MatConSSDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Simulate a matrix converter in steady state.</h1><!--introduction--><p>Simulate a matrix converter in steady state. A matrix converter converts n phase currents into m phase currents without an intermediate DC stage. In effect it pieces together the n phase currents using switches into the m phases. This simulation simulates the steady-state output from a matrix converter.</p><pre>------------------------------------------------------------------------
+See also NewFig, XLabelS, YLabelS, delta
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Intialize the data</a></li><li><a href="#3">Switches</a></li><li><a href="#4">Parameters</a></li><li><a href="#5">Run the simulation</a></li><li><a href="#6">Plot results</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2009-2010 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">Intialize the data</h2><pre class="codeinput">fs   = 2281;  <span class="comment">% Switching frequency</span>
+fo   = 60;    <span class="comment">% Output frequency</span>
+
+ws   = 2*pi*fs;
+wn   = 2*pi*fo;
+vtg  = 6/7.2;
+
+fsw  = fs + fo;
+tsw  = 1/fsw;
+wf   = 2*pi*fsw;
+dT   = tsw/7200;
+TotT = 0.03;
+
+prdnos   = round(TotT/tsw);
+sbintnos = tsw/dT;
+sbintnos = round(sbintnos);
+simlen   = prdnos*sbintnos + 1;
+
+iassto = zeros(simlen,1);
+ibssto = zeros(simlen,1);
+icssto = zeros(simlen,1);
+iansto = zeros(simlen,1);
+ibnsto = zeros(simlen,1);
+icnsto = zeros(simlen,1);
+tsto   = zeros(simlen,1);
+
+S1 = zeros(round(sbintnos),1);
+S2 = zeros(round(sbintnos),1);
+S3 = zeros(round(sbintnos),1);
+
+alpha = 45; <span class="comment">% in degrees</span>
+</pre><h2 id="3">Switches</h2><pre class="codeinput"><span class="keyword">for</span> j = 1:sbintnos
+    ang = j*(360/sbintnos);
+    <span class="keyword">if</span> ang &lt;= alpha
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 60
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 120-alpha
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 120+alpha
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 180
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    <span class="keyword">elseif</span> ang &lt;= 240-alpha
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 240+alpha
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    <span class="keyword">elseif</span> ang &lt;= 300
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    <span class="keyword">elseif</span> ang &lt;= 360-alpha
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    <span class="keyword">else</span>
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="4">Parameters</h2><pre class="codeinput"><span class="comment">%-----------</span>
+RN = 0.0167;
+LN = 0.0628;
+RS = 0.0095;
+LS = 0.927;
+C = 0.755;
+tm = 0;
+</pre><h2 id="5">Run the simulation</h2><pre class="codeinput">Spp = [cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3);cos(wf*tm-2*pi/3) <span class="keyword">...</span>
+  cos(wf*tm+2*pi/3) cos(wf*tm);cos(wf*tm+2*pi/3) cos(wf*tm) cos(wf*tm-2*pi/3)];
+delta = 0;
+iassto(1) = 0;
+ibssto(1) = sin(2*pi/3);
+icssto(1) = sin(4*pi/3);
+iabcn = Spp*[iassto(1);ibssto(1);icssto(1)];
+iansto(1) = iabcn(1);
+ibnsto(1) = iabcn(2);
+icnsto(1) = iabcn(3);
+tsto(1) = 0;
+
+<span class="keyword">for</span> i = 1:prdnos
+    <span class="keyword">for</span> j = 1:sbintnos
+        tsto(round((i-1)*sbintnos+j+1)) = dT*((i-1)*sbintnos+j);
+        tm = tsto(round((i-1)*sbintnos+j+1));
+        indx = round((i-1)*sbintnos+j+1);
+        Spp = [cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3); <span class="keyword">...</span>
+          cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3) cos(wf*tm);cos(wf*tm+2*pi/3) <span class="keyword">...</span>
+          cos(wf*tm) cos(wf*tm-2*pi/3)];
+        Sp = [cos(wf*tm)*S1(j) cos(wf*tm-2*pi/3)*S2(j) <span class="keyword">...</span>
+          cos(wf*tm+2*pi/3)*S3(j);cos(wf*tm-2*pi/3)*S2(j) <span class="keyword">...</span>
+          cos(wf*tm+2*pi/3)*S3(j) cos(wf*tm)*S1(j); <span class="keyword">...</span>
+          cos(wf*tm+2*pi/3)*S3(j) cos(wf*tm)*S1(j) cos(wf*tm-2*pi/3)*S2(j)];
+        S = [S1(j) S2(j) S3(j);S2(j) S3(j) S1(j);S3(j) S1(j) S2(j)];
+        iassto(indx) = sin(ws*tm);
+        ibssto(indx) = sin(ws*tm - 2*pi/3);
+        icssto(indx) = sin(ws*tm + 2*pi/3);
+        K = (2/3)*[cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3); <span class="keyword">...</span>
+          sin(wf*tm) sin(wf*tm-2*pi/3) sin(wf*tm+2*pi/3);0.5 0.5 0.5];
+        iabcn = S*[iassto(indx);ibssto(indx);icssto(indx)];
+        iansto(indx) = iabcn(1);
+        ibnsto(indx) = iabcn(2);
+        icnsto(indx) = iabcn(3);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+iansto2 = [];
+tsto2 = [];
+<span class="keyword">for</span> i = 1:100:length(iansto)-2000
+    iansto2 = [iansto2;mean(iansto(i:i+2000))];
+    tsto2 = [tsto2;tsto(i)];
+<span class="keyword">end</span>
+
+IpCurr = [iassto ibssto icssto];
+OpCurr = [iansto ibnsto icnsto];
+
+alpha = 0.0005;
+OpCurraF = zeros(simlen,1);
+OpCurraF(1) = iansto(1);
+<span class="keyword">for</span> i = 2:length(iansto)
+    OpCurraF(i) =  alpha*iansto(i) + (1-alpha)*OpCurraF(i-1);
+<span class="keyword">end</span>
+
+OpCurr = [OpCurraF ibnsto icnsto];
+</pre><h2 id="6">Plot results</h2><pre class="codeinput">NewFig(<span class="string">'Matrix Converter Currents'</span>);
+subplot(2,1,1),plot(tsto,iassto)
+
+ylabel(<span class="string">'Input Current (A)'</span>)
+subplot(2,1,2),plot(tsto2,iansto2)
+grid <span class="string">on</span>
+XLabelS(<span class="string">'Time (s)'</span>)
+YLabelS(<span class="string">'Output Current (A)'</span>)
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: e6cb1a248c1ee3b9fb7c1f8354f057cb69a9ce37 $</span>
+</pre><img vspace="5" hspace="5" src="MatConSSDemo_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Simulate a matrix converter in steady state.
+%
+% Simulate a matrix converter in steady state. A matrix converter converts 
+% n phase currents into m phase currents without an intermediate DC stage. 
+% In effect it pieces together the n phase currents using switches into the 
+% m phases. This simulation simulates the steady-state output from a matrix 
+% converter.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also NewFig, XLabelS, YLabelS, delta
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2009-2010 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Intialize the data
+
+fs   = 2281;  % Switching frequency
+fo   = 60;    % Output frequency
+
+ws   = 2*pi*fs;
+wn   = 2*pi*fo;
+vtg  = 6/7.2;
+ 
+fsw  = fs + fo;
+tsw  = 1/fsw;
+wf   = 2*pi*fsw;
+dT   = tsw/7200;
+TotT = 0.03;
+
+prdnos   = round(TotT/tsw);
+sbintnos = tsw/dT;
+sbintnos = round(sbintnos);
+simlen   = prdnos*sbintnos + 1;
+
+iassto = zeros(simlen,1);
+ibssto = zeros(simlen,1);
+icssto = zeros(simlen,1);
+iansto = zeros(simlen,1);
+ibnsto = zeros(simlen,1);
+icnsto = zeros(simlen,1);
+tsto   = zeros(simlen,1);
+
+S1 = zeros(round(sbintnos),1);
+S2 = zeros(round(sbintnos),1);
+S3 = zeros(round(sbintnos),1);
+
+alpha = 45; % in degrees
+
+%% Switches
+for j = 1:sbintnos
+    ang = j*(360/sbintnos);
+    if ang <= alpha
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    elseif ang <= 60
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    elseif ang <= 120-alpha
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    elseif ang <= 120+alpha
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    elseif ang <= 180
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    elseif ang <= 240-alpha
+        S1(j) = 0;
+        S2(j) = 1;
+        S3(j) = 0;
+    elseif ang <= 240+alpha
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    elseif ang <= 300
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    elseif ang <= 360-alpha
+        S1(j) = 0;
+        S2(j) = 0;
+        S3(j) = 1;
+    else
+        S1(j) = 1;
+        S2(j) = 0;
+        S3(j) = 0;
+    end
+end
+
+%% Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+RN = 0.0167;
+LN = 0.0628;
+RS = 0.0095;
+LS = 0.927;
+C = 0.755;
+tm = 0;
+
+%% Run the simulation
+
+Spp = [cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3);cos(wf*tm-2*pi/3) ...
+  cos(wf*tm+2*pi/3) cos(wf*tm);cos(wf*tm+2*pi/3) cos(wf*tm) cos(wf*tm-2*pi/3)];
+delta = 0;
+iassto(1) = 0;
+ibssto(1) = sin(2*pi/3);
+icssto(1) = sin(4*pi/3);
+iabcn = Spp*[iassto(1);ibssto(1);icssto(1)];
+iansto(1) = iabcn(1);
+ibnsto(1) = iabcn(2);
+icnsto(1) = iabcn(3);
+tsto(1) = 0;
+
+for i = 1:prdnos
+    for j = 1:sbintnos
+        tsto(round((i-1)*sbintnos+j+1)) = dT*((i-1)*sbintnos+j);
+        tm = tsto(round((i-1)*sbintnos+j+1));
+        indx = round((i-1)*sbintnos+j+1);
+        Spp = [cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3); ...
+          cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3) cos(wf*tm);cos(wf*tm+2*pi/3) ...
+          cos(wf*tm) cos(wf*tm-2*pi/3)];
+        Sp = [cos(wf*tm)*S1(j) cos(wf*tm-2*pi/3)*S2(j) ...
+          cos(wf*tm+2*pi/3)*S3(j);cos(wf*tm-2*pi/3)*S2(j) ...
+          cos(wf*tm+2*pi/3)*S3(j) cos(wf*tm)*S1(j); ...
+          cos(wf*tm+2*pi/3)*S3(j) cos(wf*tm)*S1(j) cos(wf*tm-2*pi/3)*S2(j)];
+        S = [S1(j) S2(j) S3(j);S2(j) S3(j) S1(j);S3(j) S1(j) S2(j)]; 
+        iassto(indx) = sin(ws*tm);
+        ibssto(indx) = sin(ws*tm - 2*pi/3);
+        icssto(indx) = sin(ws*tm + 2*pi/3);
+        K = (2/3)*[cos(wf*tm) cos(wf*tm-2*pi/3) cos(wf*tm+2*pi/3); ...
+          sin(wf*tm) sin(wf*tm-2*pi/3) sin(wf*tm+2*pi/3);0.5 0.5 0.5]; 
+        iabcn = S*[iassto(indx);ibssto(indx);icssto(indx)];
+        iansto(indx) = iabcn(1);
+        ibnsto(indx) = iabcn(2);
+        icnsto(indx) = iabcn(3);
+    end
+end
+
+iansto2 = [];
+tsto2 = [];
+for i = 1:100:length(iansto)-2000
+    iansto2 = [iansto2;mean(iansto(i:i+2000))];
+    tsto2 = [tsto2;tsto(i)];
+end
+
+IpCurr = [iassto ibssto icssto];
+OpCurr = [iansto ibnsto icnsto];
+
+alpha = 0.0005;
+OpCurraF = zeros(simlen,1);
+OpCurraF(1) = iansto(1);
+for i = 2:length(iansto)
+    OpCurraF(i) =  alpha*iansto(i) + (1-alpha)*OpCurraF(i-1);
+end
+
+OpCurr = [OpCurraF ibnsto icnsto];
+
+%% Plot results
+
+NewFig('Matrix Converter Currents');
+subplot(2,1,1),plot(tsto,iassto)
+
+ylabel('Input Current (A)')
+subplot(2,1,2),plot(tsto2,iansto2)
+grid on
+XLabelS('Time (s)')
+YLabelS('Output Current (A)')
+
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2023-06-30 $
+% $Id: e6cb1a248c1ee3b9fb7c1f8354f057cb69a9ce37 $
+
+
+##### SOURCE END #####
+--></body></html>

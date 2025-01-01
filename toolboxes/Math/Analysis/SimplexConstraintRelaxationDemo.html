@@ -1,0 +1,227 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Solve an infeasible LP with simplex through constraint relaxation</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-06-30"><meta name="DC.source" content="SimplexConstraintRelaxationDemo.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Solve an infeasible LP with simplex through constraint relaxation</h1><!--introduction--><pre>------------------------------------------------------------------------
+See also NewFig, Simplex
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">form problem</a></li><li><a href="#3">add infeasible constraint</a></li><li><a href="#4">relax infeasible constraint</a></li></ul></div><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2009 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 8.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre><h2 id="2">form problem</h2><p>In this problem, demonstrate the ability of simplex to handle infeasible problems and return a "best" solution. The Simplex interface is</p><p>[u, f, rc] = Simplex( c, a, b, maxValue, maxIter, slack, relax, nhardcon, nsofteq )</p><p>problem definition:  max 2*x1 + x2   subject to:       x1 + x2 .le. 10                     x1 .ge. 11  (infeasible constraint)</p><pre class="codeinput"><span class="comment">% first solve with only the hard constraint</span>
+a = [1 1 1];
+b = [10];
+c = [-2 -1 0];
+[u,f] = Simplex(c,a,b);
+
+<span class="comment">% plot solution</span>
+NewFig(<span class="string">'Simplex with Hard Constraint'</span>)
+plot(u(1),u(2),<span class="string">'bo'</span>)
+xlabel(<span class="string">'x1'</span>)
+ylabel(<span class="string">'x2'</span>)
+hold <span class="string">on</span>
+fplot(@(x) -x+10,[-1 12],<span class="string">'r-'</span>)
+grid <span class="string">on</span>
+fplot(@(x) 11, [-1 12],<span class="string">'c-'</span>)
+legend(<span class="string">'solution'</span>,<span class="string">'constraint 1'</span>,<span class="string">'constraint 2'</span>)
+clear <span class="string">title</span>
+title(<span class="string">'Simplex solution to max(2*x1 + x2) with constraint 1 active'</span>)
+</pre><pre class="codeoutput">Warning: Function behaves unexpectedly on array inputs. To improve performance,
+properly vectorize your function to return an output with the same size and
+shape as the input arguments. 
+</pre><img vspace="5" hspace="5" src="SimplexConstraintRelaxationDemo_01.png" alt=""> <h2 id="3">add infeasible constraint</h2><pre class="codeinput">a = [1 1 1 0; 0 1 0 -1];
+b = [10; 11];
+c = [-2 -1 0 0]';
+[u] = Simplex(c,a,b);
+
+<span class="comment">% plot solution</span>
+NewFig(<span class="string">'Simplex with Infeasible Constraint'</span>)
+plot(u(1),u(2),<span class="string">'bo'</span>)
+xlabel(<span class="string">'x1'</span>)
+ylabel(<span class="string">'x2'</span>)
+hold <span class="string">on</span>
+fplot(@(x) -x+10,[-1 12],<span class="string">'r-'</span>)
+grid <span class="string">on</span>
+fplot(@(x) 11, [-1 12],<span class="string">'c-'</span>)
+legend(<span class="string">'solution'</span>,<span class="string">'constraint 1'</span>,<span class="string">'constraint 2'</span>)
+title(<span class="string">'Simplex solution to max(2*x1 + x2) with both constraints active'</span>)
+</pre><pre class="codeoutput">Warning: Function behaves unexpectedly on array inputs. To improve performance,
+properly vectorize your function to return an output with the same size and
+shape as the input arguments. 
+</pre><img vspace="5" hspace="5" src="SimplexConstraintRelaxationDemo_02.png" alt=""> <h2 id="4">relax infeasible constraint</h2><pre class="codeinput">a = [1 1 1 0; 0 1 0 -1];
+b = [10; 11];
+c = [-2 -1 0 0]';
+[u,flag,s] = Simplex( c, a, b, [], [], [], 1, 1, 1 );
+
+<span class="comment">% plot solution</span>
+NewFig(<span class="string">'Simplex with Constraint Relaxation'</span>)
+plot(u(1),u(2),<span class="string">'bo'</span>)
+xlabel(<span class="string">'x1'</span>)
+ylabel(<span class="string">'x2'</span>)
+hold <span class="string">on</span>
+fplot(@(x) -x+10,[-1 12],<span class="string">'r-'</span>)
+grid <span class="string">on</span>
+fplot(@(x) 11, [-1 12],<span class="string">'c-'</span>)
+legend(<span class="string">'solution'</span>,<span class="string">'constraint 1'</span>,<span class="string">'constraint 2'</span>)
+title(<span class="string">'Simplex solution to max(2*x1 + x2) with 2nd constraint relaxed'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: cd77183852de0c7d9d036e08f4c47cbf439bbe29 $</span>
+</pre><pre class="codeoutput">Warning: Function behaves unexpectedly on array inputs. To improve performance,
+properly vectorize your function to return an output with the same size and
+shape as the input arguments. 
+</pre><img vspace="5" hspace="5" src="SimplexConstraintRelaxationDemo_03.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Solve an infeasible LP with simplex through constraint relaxation
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also NewFig, Simplex
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2009 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 8.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% form problem
+% In this problem, demonstrate the ability of simplex to handle infeasible
+% problems and return a "best" solution. The Simplex interface is
+%
+% [u, f, rc] = Simplex( c, a, b, maxValue, maxIter, slack, relax, nhardcon, nsofteq )
+%
+% problem definition:  max 2*x1 + x2
+%   subject to:       x1 + x2 .le. 10
+%                     x1 .ge. 11  (infeasible constraint)
+
+% first solve with only the hard constraint
+a = [1 1 1];
+b = [10];
+c = [-2 -1 0];
+[u,f] = Simplex(c,a,b);
+
+% plot solution
+NewFig('Simplex with Hard Constraint')
+plot(u(1),u(2),'bo')
+xlabel('x1')
+ylabel('x2')
+hold on
+fplot(@(x) -x+10,[-1 12],'r-')
+grid on
+fplot(@(x) 11, [-1 12],'c-')
+legend('solution','constraint 1','constraint 2')
+clear title
+title('Simplex solution to max(2*x1 + x2) with constraint 1 active')
+
+%% add infeasible constraint
+a = [1 1 1 0; 0 1 0 -1];
+b = [10; 11];
+c = [-2 -1 0 0]';
+[u] = Simplex(c,a,b);
+
+% plot solution
+NewFig('Simplex with Infeasible Constraint')
+plot(u(1),u(2),'bo')
+xlabel('x1')
+ylabel('x2')
+hold on
+fplot(@(x) -x+10,[-1 12],'r-')
+grid on
+fplot(@(x) 11, [-1 12],'c-')
+legend('solution','constraint 1','constraint 2')
+title('Simplex solution to max(2*x1 + x2) with both constraints active')
+
+%% relax infeasible constraint
+a = [1 1 1 0; 0 1 0 -1];
+b = [10; 11];
+c = [-2 -1 0 0]';
+[u,flag,s] = Simplex( c, a, b, [], [], [], 1, 1, 1 );
+
+% plot solution
+NewFig('Simplex with Constraint Relaxation')
+plot(u(1),u(2),'bo')
+xlabel('x1')
+ylabel('x2')
+hold on
+fplot(@(x) -x+10,[-1 12],'r-')
+grid on
+fplot(@(x) 11, [-1 12],'c-')
+legend('solution','constraint 1','constraint 2')
+title('Simplex solution to max(2*x1 + x2) with 2nd constraint relaxed')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   2023-06-30 $
+% $Id: cd77183852de0c7d9d036e08f4c47cbf439bbe29 $
+
+##### SOURCE END #####
+--></body></html>
