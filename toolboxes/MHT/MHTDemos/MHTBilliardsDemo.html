@@ -1,0 +1,622 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>MHT billiard demo.</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-01-14"><meta name="DC.source" content="MHTBilliardsDemo.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>MHT billiard demo.</h1><!--introduction--><p>This models billiard balls that can bounce of the walls of an enclosure. The model is two double integrators but because of the bounce there is considerable model uncertainty in position and velocity. The sensor outputs the x and y position of each ball with noise. See also KFBilliardsDemo which demonstrates the filter by itself.</p><p>The state vector is [x;vX;y;vY].</p><p>The demo uses the Kalman Filter (KF).</p><p>------------------------------------------------------------------------- See also BilliardCollision, RHSBilliards, ScanToTrackBilliards -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initialize</a></li><li><a href="#3">Simulate</a></li><li><a href="#4">Implement MHT</a></li><li><a href="#5">Plot the hypothesized trajectories against the simulation</a></li></ul></div><p>-------------------------------------------------------------------------</p><pre class="codeinput"><span class="comment">%	Copyright (c) 2013 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">% -------------------------------------------------------------------------</span>
+</pre><h2>Initialize<a name="2"></a></h2><p>-----------</p><pre class="codeinput"><span class="comment">% Control screen output</span>
+<span class="comment">%----------------------</span>
+printHypotheses   = 1;
+printTrackUpdates = 0;
+makePlots         = 1;
+
+<span class="comment">% Set the seed for the random number generators.</span>
+<span class="comment">% If the seed is not set each run will be different.</span>
+<span class="comment">%---------------------------------------------------</span>
+seed = 45198;
+rng(seed);
+
+<span class="comment">% The number of balls and the random initial position and velocity</span>
+<span class="comment">%-----------------------------------------------------------------</span>
+d.nBalls	= 2;
+sigP      = 0.4;
+sigV      = 1;
+sigMeas   = 0.00000001;
+
+<span class="comment">% Enclosure limits</span>
+<span class="comment">%-----------------</span>
+d.xLim      = [-1 1];
+d.yLim      = [-1 1];
+
+<span class="comment">% Time step setup</span>
+<span class="comment">%----------------</span>
+dT          = 0.1;
+tEnd        = 8;
+
+<span class="comment">% Set the initial state</span>
+<span class="comment">%----------------------</span>
+x           = zeros(4*d.nBalls,1);
+rN          = rand(4*d.nBalls,1);
+
+<span class="keyword">for</span> k = 1:d.nBalls
+  j           = 4*k-3;
+  x(j  ,1)    = sigP*(rN(j  ) - 0.5);
+  x(j+1,1)    = sigV*(rN(j+1) - 0.5);
+  x(j+2,1)    = sigP*(rN(j+2) - 0.5);
+  x(j+3,1)    = sigV*(rN(j+3) - 0.5);
+<span class="keyword">end</span>
+
+<span class="comment">% For initializing the Kalman Filter</span>
+<span class="comment">%-----------------------------------</span>
+x0 = x;
+
+<span class="comment">% Set the number of time steps</span>
+<span class="comment">%-----------------------------</span>
+n  = ceil(tEnd/dT);
+
+<span class="comment">% Plotting</span>
+<span class="comment">%---------</span>
+xP = zeros(length(x),n);
+</pre><h2>Simulate<a name="3"></a></h2><p>---------</p><pre class="codeinput">fprintf(1,<span class="string">'\nRunning the simulation...'</span>);
+
+<span class="comment">% Sensor measurements</span>
+<span class="comment">%--------------------</span>
+nM	= 2*d.nBalls;
+y   = zeros(nM,n);
+iY  = zeros(nM,1);
+
+<span class="keyword">for</span> k = 1:d.nBalls
+  j       = 2*k-1;
+  iY(j  )	= 4*k-3;
+  iY(j+1)	= 4*k-1;
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> k = 1:n
+
+    <span class="comment">% Collisions</span>
+    <span class="comment">%-----------</span>
+    x       = BilliardCollision( x, d );
+
+    <span class="comment">% Plotting</span>
+    <span class="comment">%---------</span>
+    xP(:,k)	= x;
+
+    <span class="comment">% Integrate</span>
+    <span class="comment">%----------</span>
+    x       = RK4(@RHSBilliards, x, dT, 0, d );
+
+    <span class="comment">% Measurements</span>
+    <span class="comment">%-------------</span>
+    y(:,k)  = x(iY) + sigMeas*randn(nM,1);
+
+<span class="keyword">end</span>
+fprintf(1,<span class="string">'DONE.\n'</span>);
+
+<span class="comment">% Plot the simulation results</span>
+<span class="comment">%----------------------------</span>
+hB = NewFig( <span class="string">'Billiard Balls'</span> );
+c  = <span class="string">'bgrcmyk'</span>;
+kX = 1;
+kY = 3;
+s  = cell(1,d.nBalls);
+l = [];
+<span class="keyword">for</span> k = 1:d.nBalls
+	plot(xP(kX,1),xP(kY,1),[<span class="string">'o'</span>,c(k)])
+  hold <span class="string">on</span>
+
+  l(k) = plot(xP(kX,:),xP(kY,:),c(k));
+  kX = kX + 4;
+  kY = kY + 4;
+  s{k} = sprintf(<span class="string">'Ball %d'</span>,k);
+<span class="keyword">end</span>
+
+XLabelS(<span class="string">'x (m)'</span>);
+YLabelS(<span class="string">'y (m)'</span>);
+set(gca,<span class="string">'ylim'</span>,d.yLim,<span class="string">'xlim'</span>,d.xLim);
+legend(l,s)
+grid
+</pre><pre class="codeoutput">
+Running the simulation...DONE.
+</pre><img vspace="5" hspace="5" src="MHTBilliardsDemo_01.png" alt=""> <h2>Implement MHT<a name="4"></a></h2><p>--------------</p><pre class="codeinput"><span class="comment">% Covariances</span>
+<span class="comment">%------------</span>
+r0      = sigMeas^2*[1;1];      <span class="comment">% Measurement covariance</span>
+q0      = [1;60;1;60];          <span class="comment">% The baseline plant covariance diagonal</span>
+p0      = [0.1;1;0.1;1];        <span class="comment">% Initial state covariance matrix diagonal</span>
+
+<span class="comment">% Plant model</span>
+<span class="comment">%------------</span>
+a       = [1 dT;0 1];
+b       = [dT^2/2;dT];
+zA      = zeros(2,2);
+zB      = zeros(2,1);
+
+<span class="comment">% Create the Kalman Filter data structures</span>
+<span class="comment">%-----------------------------------------</span>
+<span class="keyword">for</span> k = 1:d.nBalls
+  kf(k) = KFInitialize( <span class="string">'kf'</span>, <span class="string">'m'</span>, x0(4*k-3:4*k), <span class="string">'x'</span>, x0(4*k-3:4*k),<span class="keyword">...</span>
+                              <span class="string">'a'</span>, [a zA;zA a], <span class="string">'b'</span>, [b zB;zB b],<span class="string">'u'</span>,[0;0],<span class="keyword">...</span>
+                              <span class="string">'h'</span>, [1 0 0 0;0 0 1 0], <span class="string">'p'</span>, diag(p0), <span class="keyword">...</span>
+                              <span class="string">'q'</span>, diag(q0),<span class="string">'r'</span>, diag(r0) );
+<span class="keyword">end</span>
+
+<span class="comment">% Create the track data data structure</span>
+<span class="comment">%-------------------------------------</span>
+mhtData = MHTInitialize(<span class="string">'probability false alarm'</span>, 0.001,<span class="keyword">...</span>
+                        <span class="string">'probability of signal if target present'</span>, 0.999,<span class="keyword">...</span>
+                        <span class="string">'probability of signal if target absent'</span>,  0.001,<span class="keyword">...</span>
+                        <span class="string">'probability of detection'</span>, 1, <span class="keyword">...</span>
+                        <span class="string">'measurement volume'</span>, 1.0, <span class="keyword">...</span>
+                        <span class="string">'number of scans'</span>, 3, <span class="keyword">...</span>
+                        <span class="string">'gate'</span>, 0.2,<span class="keyword">...</span>
+                        <span class="string">'m best'</span>, 2,<span class="keyword">...</span>
+                        <span class="string">'number of tracks'</span>, 1,<span class="keyword">...</span>
+                        <span class="string">'scan to track function'</span>,@ScanToTrackBilliards,<span class="keyword">...</span>
+                        <span class="string">'scan to track data'</span>,struct(<span class="string">'r'</span>,diag(r0),<span class="string">'p'</span>,diag(p0)),<span class="keyword">...</span>
+                        <span class="string">'distance function'</span>,@MHTDistance,<span class="keyword">...</span>
+                        <span class="string">'hypothesis scan last'</span>, 0,<span class="keyword">...</span>
+                        <span class="string">'filter data'</span>,kf(1),<span class="keyword">...</span>
+                        <span class="string">'prune tracks'</span>, 1,<span class="keyword">...</span>
+                        <span class="string">'remove duplicate tracks across all trees'</span>,1,<span class="keyword">...</span>
+                        <span class="string">'average score history weight'</span>,0.01,<span class="keyword">...</span>
+                        <span class="string">'filter type'</span>,<span class="string">'kf'</span>);
+
+<span class="comment">% Create the tracks</span>
+<span class="comment">%------------------</span>
+clear <span class="string">trk</span>
+<span class="keyword">for</span> k = 1:d.nBalls
+    trk(k) = MHTInitializeTrk( kf(k) );
+<span class="keyword">end</span>
+
+<span class="comment">% Size arrays</span>
+<span class="comment">%------------</span>
+b = MHTTrkToB( trk );
+
+TOMHTTreeAnimation( <span class="string">'initialize'</span>, trk );
+TOMHTTreeAnimation( <span class="string">'update'</span>, trk );
+
+<span class="comment">% Initialize MHT GUI</span>
+<span class="comment">%-------------------</span>
+MHTGUI;
+MLog(<span class="string">'init'</span>)
+MLog(<span class="string">'name'</span>,<span class="string">'Billiards Demo'</span>)
+
+t = 0;
+
+<span class="keyword">for</span> k = 1:n
+
+  <span class="keyword">if</span>( printTrackUpdates )
+    fprintf(1,<span class="string">'\nScan %d\n\n'</span>,k);
+    <span class="keyword">for</span> j = 1:length(trk)
+      fprintf(1,<span class="string">'%d: Track %d meas %d\n'</span>,j, trk(j).iD, trk(j).meas);
+    <span class="keyword">end</span>
+    pause
+  <span class="keyword">end</span>
+
+  <span class="comment">% Get the measurements - zScan.data</span>
+  <span class="comment">%----------------------------------</span>
+  z = reshape( y(:,k), 2, d.nBalls );
+  zScan = AddScan( z(:,1) );
+  <span class="keyword">for</span> j = 2:size(z,2)
+    zScan = AddScan( z(:,j),[],[],[],zScan);
+  <span class="keyword">end</span>
+
+  <span class="comment">% Manage the tracks and generate hypotheses</span>
+  <span class="comment">%------------------------------------------</span>
+  [b, trk, sol, hyp, mhtData] = MHTTrackMgmt( b, trk, zScan, mhtData, k, t );
+
+  <span class="comment">% Display the hypothesis</span>
+  <span class="comment">%-----------------------</span>
+  <span class="keyword">if</span> (printHypotheses)
+    MHTHypothesisDisplay( hyp, trk, k, t );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Update MHTGUI display</span>
+  <span class="comment">%----------------------</span>
+  MHTGUI(trk,sol,<span class="string">'hide'</span>);
+
+  <span class="comment">% Animate the tree</span>
+  <span class="comment">%-----------------</span>
+  <span class="keyword">if</span>( ~isempty(zScan) &amp;&amp; makePlots )
+    TOMHTTreeAnimation( <span class="string">'update'</span>, trk );
+  <span class="keyword">end</span>
+
+  t = t + dT;
+<span class="keyword">end</span>
+
+<span class="comment">% Show the GUI</span>
+<span class="comment">%-------------</span>
+MHTGUI;
+</pre><img vspace="5" hspace="5" src="MHTBilliardsDemo_02.png" alt=""> <img vspace="5" hspace="5" src="MHTBilliardsDemo_03.png" alt=""> <img vspace="5" hspace="5" src="MHTBilliardsDemo_04.png" alt=""> <h2>Plot the hypothesized trajectories against the simulation<a name="5"></a></h2><p>----------------------------------------------------------</p><pre class="codeinput">NewFig( <span class="string">'Hypotheses'</span> );
+hold <span class="string">on</span>
+kX = 1;
+kY = 3;
+s  = cell(1,d.nBalls);
+h = [];
+c  = <span class="string">'grcmygrcmy'</span>;
+kk = 0;
+<span class="keyword">for</span> j = 1:length(hyp.trackIndex)
+  kk = hyp.trackIndex(j);
+  l(j) = plot(trk(kk).mHist(1,:),trk(kk).mHist(3,:),[c(j) <span class="string">'-'</span>],<span class="keyword">...</span>
+    <span class="string">'linewidth'</span>,2);
+  h{j} = sprintf(<span class="string">'Track %d'</span>,trk(kk).treeID);
+<span class="keyword">end</span>
+<span class="keyword">for</span> k = 1:d.nBalls
+  <span class="comment">% Plot the simulated data in blue</span>
+	plot(xP(kX,1),xP(kY,1),[<span class="string">'o'</span>])
+  plot(xP(kX,:),xP(kY,:));
+  kX = kX + 4;
+  kY = kY + 4;
+<span class="keyword">end</span>
+plot(d.xLim,[1;1]*d.yLim,<span class="string">'k'</span>);
+plot([1;1]*d.xLim,d.yLim,<span class="string">'k'</span>)
+
+XLabelS(<span class="string">'x (m)'</span>);
+YLabelS(<span class="string">'y (m)'</span>);
+<span class="comment">%set(gca,'ylim',d.yLim,'xlim',d.xLim);</span>
+legend(l,h)
+grid
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MHTBilliardsDemo_05.png" alt=""> <p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% MHT billiard demo.
+%
+% This models billiard balls that can bounce of the walls of an 
+% enclosure. The model is two double integrators but because of the 
+% bounce there is considerable model uncertainty in position and
+% velocity. The sensor outputs the x and y position of each ball
+% with noise. See also KFBilliardsDemo which demonstrates the filter by
+% itself.
+%
+% The state vector is [x;vX;y;vY].
+%
+% The demo uses the Kalman Filter (KF). 
+%   
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% See also BilliardCollision, RHSBilliards, ScanToTrackBilliards
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	Copyright (c) 2013 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Initialize
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Control screen output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+printHypotheses   = 1;
+printTrackUpdates = 0;
+makePlots         = 1;
+
+% Set the seed for the random number generators. 
+% If the seed is not set each run will be different.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+seed = 45198;
+rng(seed);
+
+% The number of balls and the random initial position and velocity
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- 
+d.nBalls	= 2;
+sigP      = 0.4;
+sigV      = 1;
+sigMeas   = 0.00000001;
+
+% Enclosure limits
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.xLim      = [-1 1];
+d.yLim      = [-1 1];
+
+% Time step setup
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT          = 0.1;
+tEnd        = 8;
+
+% Set the initial state
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+x           = zeros(4*d.nBalls,1);
+rN          = rand(4*d.nBalls,1);
+
+for k = 1:d.nBalls
+  j           = 4*k-3;
+  x(j  ,1)    = sigP*(rN(j  ) - 0.5);
+  x(j+1,1)    = sigV*(rN(j+1) - 0.5);
+  x(j+2,1)    = sigP*(rN(j+2) - 0.5);
+  x(j+3,1)    = sigV*(rN(j+3) - 0.5);
+end
+
+% For initializing the Kalman Filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x0 = x;
+
+% Set the number of time steps
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+n  = ceil(tEnd/dT);
+
+% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP = zeros(length(x),n);
+
+%% Simulate
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+fprintf(1,'\nRunning the simulation...');
+
+% Sensor measurements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nM	= 2*d.nBalls;
+y   = zeros(nM,n);
+iY  = zeros(nM,1);
+
+for k = 1:d.nBalls
+  j       = 2*k-1;
+  iY(j  )	= 4*k-3;
+  iY(j+1)	= 4*k-1;
+end
+
+for k = 1:n
+    
+    % Collisions
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    x       = BilliardCollision( x, d );
+    
+    % Plotting
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    xP(:,k)	= x;
+  
+    % Integrate
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    x       = RK4(@RHSBilliards, x, dT, 0, d );
+     
+    % Measurements
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    y(:,k)  = x(iY) + sigMeas*randn(nM,1);
+   
+end
+fprintf(1,'DONE.\n');
+
+% Plot the simulation results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+hB = NewFig( 'Billiard Balls' );
+c  = 'bgrcmyk';
+kX = 1;
+kY = 3;
+s  = cell(1,d.nBalls);
+l = [];
+for k = 1:d.nBalls
+	plot(xP(kX,1),xP(kY,1),['o',c(k)])
+  hold on
+
+  l(k) = plot(xP(kX,:),xP(kY,:),c(k));
+  kX = kX + 4;
+  kY = kY + 4;
+  s{k} = sprintf('Ball %d',k);
+end
+
+XLabelS('x (m)');
+YLabelS('y (m)');
+set(gca,'ylim',d.yLim,'xlim',d.xLim);
+legend(l,s)
+grid
+
+%% Implement MHT
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Covariances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r0      = sigMeas^2*[1;1];      % Measurement covariance
+q0      = [1;60;1;60];          % The baseline plant covariance diagonal
+p0      = [0.1;1;0.1;1];        % Initial state covariance matrix diagonal
+
+% Plant model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+a       = [1 dT;0 1];
+b       = [dT^2/2;dT];
+zA      = zeros(2,2);
+zB      = zeros(2,1);
+
+% Create the Kalman Filter data structures
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:d.nBalls
+  kf(k) = KFInitialize( 'kf', 'm', x0(4*k-3:4*k), 'x', x0(4*k-3:4*k),...
+                              'a', [a zA;zA a], 'b', [b zB;zB b],'u',[0;0],...
+                              'h', [1 0 0 0;0 0 1 0], 'p', diag(p0), ...
+                              'q', diag(q0),'r', diag(r0) );
+end                          
+    
+% Create the track data data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+mhtData = MHTInitialize('probability false alarm', 0.001,...
+                        'probability of signal if target present', 0.999,...
+                        'probability of signal if target absent',  0.001,...
+                        'probability of detection', 1, ...
+                        'measurement volume', 1.0, ...
+                        'number of scans', 3, ...
+                        'gate', 0.2,...
+                        'm best', 2,...
+                        'number of tracks', 1,...
+                        'scan to track function',@ScanToTrackBilliards,...
+                        'scan to track data',struct('r',diag(r0),'p',diag(p0)),...
+                        'distance function',@MHTDistance,...
+                        'hypothesis scan last', 0,...
+                        'filter data',kf(1),...
+                        'prune tracks', 1,...
+                        'remove duplicate tracks across all trees',1,...
+                        'average score history weight',0.01,...
+                        'filter type','kf');
+                    
+% Create the tracks
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear trk
+for k = 1:d.nBalls
+    trk(k) = MHTInitializeTrk( kf(k) );
+end
+ 
+% Size arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+b = MHTTrkToB( trk );
+
+TOMHTTreeAnimation( 'initialize', trk );
+TOMHTTreeAnimation( 'update', trk );
+
+% Initialize MHT GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+MHTGUI;
+MLog('init')
+MLog('name','Billiards Demo')
+
+t = 0;
+
+for k = 1:n
+    
+  if( printTrackUpdates )
+    fprintf(1,'\nScan %d\n\n',k);
+    for j = 1:length(trk)
+      fprintf(1,'%d: Track %d meas %d\n',j, trk(j).iD, trk(j).meas);
+    end
+    pause
+  end
+
+  % Get the measurements - zScan.data
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  z = reshape( y(:,k), 2, d.nBalls );
+  zScan = AddScan( z(:,1) );
+  for j = 2:size(z,2)
+    zScan = AddScan( z(:,j),[],[],[],zScan);
+  end
+
+  % Manage the tracks and generate hypotheses
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [b, trk, sol, hyp, mhtData] = MHTTrackMgmt( b, trk, zScan, mhtData, k, t );
+
+  % Display the hypothesis
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if (printHypotheses)
+    MHTHypothesisDisplay( hyp, trk, k, t );
+  end
+
+  % Update MHTGUI display
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  MHTGUI(trk,sol,'hide');
+
+  % Animate the tree
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( ~isempty(zScan) && makePlots )
+    TOMHTTreeAnimation( 'update', trk );
+  end
+
+  t = t + dT;
+end
+
+% Show the GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+MHTGUI;
+
+%% Plot the hypothesized trajectories against the simulation
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+NewFig( 'Hypotheses' );
+hold on
+kX = 1;
+kY = 3;
+s  = cell(1,d.nBalls);
+h = [];
+c  = 'grcmygrcmy';
+kk = 0;
+for j = 1:length(hyp.trackIndex)
+  kk = hyp.trackIndex(j);
+  l(j) = plot(trk(kk).mHist(1,:),trk(kk).mHist(3,:),[c(j) '-'],...
+    'linewidth',2);
+  h{j} = sprintf('Track %d',trk(kk).treeID);
+end
+for k = 1:d.nBalls
+  % Plot the simulated data in blue
+	plot(xP(kX,1),xP(kY,1),['o'])
+  plot(xP(kX,:),xP(kY,:));
+  kX = kX + 4;
+  kY = kY + 4;
+end
+plot(d.xLim,[1;1]*d.yLim,'k');
+plot([1;1]*d.xLim,d.yLim,'k')
+
+XLabelS('x (m)');
+YLabelS('y (m)');
+%set(gca,'ylim',d.yLim,'xlim',d.xLim);
+legend(l,h)
+grid
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2014-01-14 09:54:11 -0500 (Tue, 14 Jan 2014) $
+% $Revision: 36713 $
+
+
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,629 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>UKF automobile demo.</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-01-14"><meta name="DC.source" content="UKFAutomobileDemo.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>UKF automobile demo.</h1><!--introduction--><p>This models a car driving near a car with radar. The cars are at different speeds and the track car performs a passing and lane change maneuver.</p><p>The demo uses the Unscented Kalman Filter (UKF).</p><p>The simulation is run first and then the UKF estimates the trajectory of the tracked car. The demo also computes the MHT distance for the tracked car. The estimator starts with an estimated state of zero, meaning the tracked car and car with radar coincide. This leads to a large MHT distance at the start.</p><p>The car maneuvers and initial states can be modified.</p><p>-------------------------------------------------------------------------  See also AutoRadar, AutomobilePassing, AutomobileLaneChange,  RHSAutomobile, RHSAutomobileXY, AutoRadarUKF -------------------------------------------------------------------------</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initialize</a></li><li><a href="#3">Simulate</a></li><li><a href="#4">Implement UKF</a></li><li><a href="#5">Plotting</a></li></ul></div><p>------------------------------------------------------------------------- Copyright (c) 2013 Princeton Satellite Systems, Inc. All rights reserved. -------------------------------------------------------------------------</p><h2>Initialize<a name="2"></a></h2><p>-----------</p><pre class="codeinput"><span class="comment">% Set the seed for the random number generators.</span>
+<span class="comment">% If the seed is not set each run will be different.</span>
+<span class="comment">%---------------------------------------------------</span>
+seed = 45198;
+rng(seed);
+
+<span class="comment">% Car control</span>
+<span class="comment">%------------</span>
+laneChange = 1;
+
+<span class="comment">% Clear the data structure</span>
+<span class="comment">%-------------------------</span>
+clear <span class="string">d</span>
+
+<span class="comment">% Car 1 has the radar</span>
+<span class="comment">%--------------------</span>
+d.car(1).mass       = 1513; <span class="comment">% Mass (kg)</span>
+d.car(1).delta      = 0; <span class="comment">% Steering angle (rad)</span>
+d.car(1).r          = [  1.17 1.17 -1.68 -1.68;<span class="keyword">...</span>
+                        -0.77 0.77 -0.77  0.77]; <span class="comment">% Positions of the tires</span>
+d.car(1).cDF        = 0.25; <span class="comment">% Front drag coefficient</span>
+d.car(1).cDS        = 0.5; <span class="comment">% Side drag coefficient</span>
+d.car(1).cF         = 0.01; <span class="comment">% Ordinary car tires on concrete</span>
+d.car(1).radiusTire	= 0.4572; <span class="comment">% m</span>
+d.car(1).torque     = d.car(1).radiusTire*200.0; <span class="comment">% N</span>
+d.car(1).inr        = 2443.26; <span class="comment">% Inertia (kg-m^2)</span>
+d.car(1).x          = [0;0;0;0;0;0]; <span class="comment">% Initial state</span>
+d.car(1).fRR        = [0.013 6.5e-6]; <span class="comment">% Rolling resistance</span>
+d.car(1).dim        = [1.17+1.68 2*0.77];
+d.car(1).h          = 2/0.77; <span class="comment">% Height dimension for drag</span>
+d.car(1).areaF      = d.car(1).dim(2)*d.car(1).h;
+d.car(1).areaS      = d.car(1).dim(1)*d.car(1).h;
+d.car(1).errOld     = 0; <span class="comment">% For the control</span>
+d.car(1).passState  = 0; <span class="comment">% For the control</span>
+
+<span class="comment">% Make the other car identical</span>
+<span class="comment">%-----------------------------</span>
+d.car(2)            = d.car(1);
+nAuto               = length(d.car);
+
+<span class="comment">% Velocity set points for the cars</span>
+<span class="comment">%---------------------------------</span>
+vSet                = [12 13];
+
+<span class="comment">% Time step setup</span>
+<span class="comment">%----------------</span>
+dT                  = 0.1;
+tEnd                = 20*60;
+tLaneChange         = 10*60;
+tEndPassing         =  6*60;
+n                   = ceil(tEnd/dT);
+
+<span class="comment">% Car initial states</span>
+<span class="comment">%-------------------</span>
+x                   = [140; 0;12;0;0;0;<span class="keyword">...</span>
+                         0; 0;11;0;0;0];
+
+<span class="comment">% Radar - the radar model has a field of view and maximum range</span>
+<span class="comment">% Range drop off or S/N is not modeled</span>
+<span class="comment">%--------------------------------------------------------------</span>
+m                   = length(x)-1;
+dRadar.kR           = [ 7:6:m; 8:6:m]; <span class="comment">% State position indices</span>
+dRadar.kV           = [ 9:6:m;10:6:m]; <span class="comment">% State velocity indices</span>
+dRadar.kT           = 11:6:m; <span class="comment">% State yaw angle indices</span>
+dRadar.noise        = 0.1*[0.02;0.001;0.001]; <span class="comment">% [range; range rate; azimuth]</span>
+dRadar.fOV          = pi/4; <span class="comment">% Field of view</span>
+dRadar.maxRange     = inf;
+dRadar.noLimits     = 0; <span class="comment">% Limits are checked (fov and range)</span>
+
+<span class="comment">% Plotting</span>
+<span class="comment">%---------</span>
+yP = zeros(3*(nAuto-1),n);
+vP = zeros(nAuto-1,n);
+
+xP = zeros(length(x)+2*nAuto,n);
+s  = 1:6*nAuto;
+</pre><h2>Simulate<a name="3"></a></h2><p>---------</p><pre class="codeinput">t = (0:(n-1))*dT;
+
+fprintf(1,<span class="string">'\nRunning the simulation...'</span>);
+
+<span class="keyword">for</span> k = 1:n
+
+    <span class="comment">% Plotting</span>
+    <span class="comment">%---------</span>
+    xP(s,k)     = x;
+    j           = s(end)+1;
+
+    <span class="keyword">for</span> i = 1:nAuto
+        p           = 6*i-5;
+        d.car(i).x  = x(p:p+5);
+        xP(j:j+1,k) = [d.car(i).delta;d.car(i).torque];
+        j           = j + 2;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Get radar measurements</span>
+    <span class="comment">%-----------------------</span>
+    dRadar.theta        = d.car(1).x(5);
+    dRadar.t            = t(k);
+    dRadar.xR           = x(1:2);
+    dRadar.vR           = x(3:4);
+    [yP(:,k), vP(:,k)]	= AutoRadar( x, dRadar );
+
+	  <span class="comment">%------------------</span>
+    <span class="comment">% Implement Control</span>
+    <span class="comment">%------------------</span>
+
+    <span class="comment">% For all but the passing car control the velocity</span>
+    <span class="comment">%-------------------------------------------------</span>
+	  d.car(1).torque = -10*(d.car(1).x(3) - vSet(1));
+
+    <span class="comment">% The active car</span>
+    <span class="comment">%----------------</span>
+    <span class="keyword">if</span>( t(k) &lt; tEndPassing )
+        d.car(2)	= AutomobilePassing( d.car(2), d.car(1), 3, 1.3, 10 );
+    <span class="keyword">elseif</span> ( t(k) &gt; tLaneChange &amp;&amp; laneChange )
+        d.car(2)	= AutomobileLaneChange( d.car(2), 10, 3, 12 );
+    <span class="keyword">else</span>
+        d.car(2).torque = -10*(d.car(2).x(3) - vSet(2));
+    <span class="keyword">end</span>
+
+    <span class="comment">% Integrate</span>
+    <span class="comment">%----------</span>
+    x           = RK4(@RHSAutomobile, x, dT, 0, d );
+
+<span class="keyword">end</span>
+fprintf(1,<span class="string">'DONE.\n'</span>);
+
+<span class="comment">% The state of the radar host car</span>
+<span class="comment">%--------------------------------</span>
+xRadar = xP(1:6,:);
+
+<span class="comment">% Plot the simulation results</span>
+<span class="comment">%----------------------------</span>
+NewFig( <span class="string">'Auto'</span> )
+kX = 1:6:length(x);
+kY = 2:6:length(x);
+c  = <span class="string">'bgrcmyk'</span>;
+
+j  = floor(linspace(1,n,20));
+
+[t, tL] = TimeLabl( t );
+
+<span class="keyword">for</span> k = 1:nAuto
+    plot(xP(kX(k),j),xP(kY(k),j),[c(k) <span class="string">'.'</span>]);
+    hold <span class="string">on</span>
+<span class="keyword">end</span>
+
+legend(<span class="string">'Auto 1'</span>,<span class="string">'Auto 2'</span>);
+
+<span class="keyword">for</span> k = 1:nAuto
+    plot(xP(kX(k),:),xP(kY(k),:),c(k));
+<span class="keyword">end</span>
+
+
+XLabelS(<span class="string">'x (m)'</span>);
+YLabelS(<span class="string">'y (m)'</span>);
+set(gca,<span class="string">'ylim'</span>,[-5 5]);
+grid
+
+<span class="comment">% Plot the radar results but ignore cars that are not observed</span>
+<span class="comment">%-------------------------------------------------------------</span>
+<span class="keyword">for</span> k = 1:nAuto-1
+    j   = 3*k-2:3*k;
+    sL  = sprintf(<span class="string">'Radar: Auto %d'</span>,k);
+    b   = mean(yP(j(1),:));
+    <span class="keyword">if</span>( b ~= 0 )
+        Plot2D(t,[yP(j,:);vP(k,:)],tL,{<span class="string">'Range (m)'</span> <span class="string">'Range Rate (m/s)'</span> <span class="string">'Azimuth (rad)'</span> <span class="string">'Valid'</span>},sL);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+Running the simulation...DONE.
+</pre><img vspace="5" hspace="5" src="UKFAutomobileDemo_01.png" alt=""> <img vspace="5" hspace="5" src="UKFAutomobileDemo_02.png" alt=""> <h2>Implement UKF<a name="4"></a></h2><p>--------------</p><pre class="codeinput"><span class="comment">% Covariances</span>
+<span class="comment">%------------</span>
+r0      = diag(dRadar.noise.^2);	<span class="comment">% Measurement 1-sigma</span>
+q0      = [1e-7;1e-7;.1;.1];        <span class="comment">% The baseline plant covariance diagonal</span>
+p0      = [5;0.4;1;0.01].^2;        <span class="comment">% Initial state covariance matrix diagonal</span>
+
+<span class="comment">% Each step is one scan</span>
+<span class="comment">%----------------------</span>
+ukf     = KFInitialize(<span class="string">'ukf'</span>,<span class="string">'f'</span>,@RHSAutomobileXY,<span class="string">'alpha'</span>,1,<span class="keyword">...</span>
+                             <span class="string">'kappa'</span>,0,<span class="string">'beta'</span>,2,<span class="string">'dT'</span>,dT,<span class="string">'fData'</span>,struct(<span class="string">'f'</span>,0),<span class="keyword">...</span>
+                             <span class="string">'p'</span>,diag(p0),<span class="string">'q'</span>,diag(q0),<span class="string">'x'</span>,[0;0;0;0],<span class="keyword">...</span>
+                             <span class="string">'m'</span>,[0;0;0;0]);
+
+<span class="comment">% Size arrays</span>
+<span class="comment">%------------</span>
+k1          = find( vP &gt; 0 );
+k1          = k1(1);
+
+<span class="comment">% Limit to when the radar is tracking</span>
+<span class="comment">%------------------------------------</span>
+n           = n - k1 + 1;
+yP          = yP(:,k1:end);
+xP          = xP(:,k1:end);
+
+pUKF        = zeros(4,n);
+xUKF        = zeros(4,n);
+dMHTU       = zeros(1,n);
+t           = (0:(n-1))*dT;
+
+<span class="keyword">for</span> k = 1:n
+
+    <span class="comment">% Prediction step</span>
+    <span class="comment">%----------------</span>
+	ukf.t               = t(k);
+	ukf                 = UKFPredict( ukf );
+
+    <span class="comment">% Update step</span>
+    <span class="comment">%------------</span>
+	ukf.y.data          = yP(:,k);
+    ukf.y.param.hFun    = @AutoRadarUKF;
+    ukf.y.param.hData	= struct(<span class="string">'theta'</span>,0);
+    ukf.y.param.r       = r0;
+	ukf                 = UKFUpdate( ukf );
+
+    <span class="comment">% Compute the MHT distance</span>
+    <span class="comment">%-------------------------</span>
+	dMHTU(1,k)          = MHTDistanceUKF( ukf );
+
+	<span class="comment">% Store for plotting</span>
+	<span class="comment">%-------------------</span>
+	pUKF(:,k)           = diag(ukf.p);
+	xUKF(:,k)           = ukf.m;
+
+<span class="keyword">end</span>
+
+<span class="comment">% Transform the velocities into the inertial frame</span>
+<span class="comment">%-------------------------------------------------</span>
+<span class="keyword">for</span> k = 1:n
+	c           = cos(xP(5,k));
+    s           = sin(xP(5,k));
+    cCarToI     = [c -s;s c];
+    xP(3:4,k)	= cCarToI*xP(3:4,k);
+
+	c           = cos(xP(11,k));
+    s           = sin(xP(11,k));
+    cCarToI     = [c -s;s c];
+    xP(9:10,k)	= cCarToI*xP(9:10,k);
+<span class="keyword">end</span>
+
+<span class="comment">% Relative position</span>
+<span class="comment">%------------------</span>
+dX = xP(7:10,:) - xP(1:4,:);
+</pre><h2>Plotting<a name="5"></a></h2><p>---------</p><pre class="codeinput">[t,tL] = TimeLabl(t);
+
+<span class="comment">% Plot just select states</span>
+<span class="comment">%------------------------</span>
+k   = [1:4 7:10];
+yL	= {<span class="string">'p_x'</span> <span class="string">'p_y'</span> <span class="string">'p_{v_x}'</span> <span class="string">'p_{v_y}'</span>};
+
+Plot2D(t,pUKF,      tL,yL,<span class="string">'Covariance'</span>);
+Plot2D(t,[xUKF;dX],	tL,{<span class="string">'x'</span> <span class="string">'y'</span> <span class="string">'v_x'</span> <span class="string">'v_y'</span>},<span class="string">'UKF State: Blue is UKF, Green is Truth'</span>,<span class="string">'lin'</span>, <span class="keyword">...</span>
+                       {<span class="string">'[1 5]'</span> <span class="string">'[2 6]'</span> <span class="string">'[3 7]'</span> <span class="string">'[4 8]'</span>});
+Plot2D(t,xP(k,:),	tL,{<span class="string">'x'</span> <span class="string">'y'</span> <span class="string">'v_x'</span> <span class="string">'v_y'</span>},<span class="string">'Car States'</span>,<span class="string">'lin'</span>,{<span class="string">'[1 5]'</span> <span class="string">'[2 6]'</span> <span class="string">'[3 7]'</span> <span class="string">'[4 8]'</span>});
+Plot2D(t,dMHTU,     tL,<span class="string">'d'</span>,<span class="string">'MHT Distance UKF'</span>,<span class="string">'ylog'</span>);
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="UKFAutomobileDemo_03.png" alt=""> <img vspace="5" hspace="5" src="UKFAutomobileDemo_04.png" alt=""> <img vspace="5" hspace="5" src="UKFAutomobileDemo_05.png" alt=""> <img vspace="5" hspace="5" src="UKFAutomobileDemo_06.png" alt=""> <p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% UKF automobile demo.
+%
+% This models a car driving near a car with radar. The cars
+% are at different speeds and the track car performs a passing and lane
+% change maneuver.
+%
+% The demo uses the Unscented Kalman Filter (UKF). 
+%
+% The simulation is run first and then the UKF estimates the trajectory
+% of the tracked car. The demo also computes the MHT distance for the
+% tracked car. The estimator starts with an estimated state of zero,
+% meaning the tracked car and car with radar coincide. This leads to 
+% a large MHT distance at the start.
+%
+% The car maneuvers and initial states can be modified. 
+%   
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%  See also AutoRadar, AutomobilePassing, AutomobileLaneChange,
+%  RHSAutomobile, RHSAutomobileXY, AutoRadarUKF
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Copyright (c) 2013 Princeton Satellite Systems, Inc.
+% All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Initialize
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Set the seed for the random number generators. 
+% If the seed is not set each run will be different.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+seed = 45198;
+rng(seed);
+
+% Car control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+laneChange = 1;
+
+% Clear the data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+clear d
+
+% Car 1 has the radar
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.car(1).mass       = 1513; % Mass (kg)
+d.car(1).delta      = 0; % Steering angle (rad)
+d.car(1).r          = [  1.17 1.17 -1.68 -1.68;...
+                        -0.77 0.77 -0.77  0.77]; % Positions of the tires
+d.car(1).cDF        = 0.25; % Front drag coefficient
+d.car(1).cDS        = 0.5; % Side drag coefficient
+d.car(1).cF         = 0.01; % Ordinary car tires on concrete
+d.car(1).radiusTire	= 0.4572; % m
+d.car(1).torque     = d.car(1).radiusTire*200.0; % N
+d.car(1).inr        = 2443.26; % Inertia (kg-m^2)
+d.car(1).x          = [0;0;0;0;0;0]; % Initial state
+d.car(1).fRR        = [0.013 6.5e-6]; % Rolling resistance
+d.car(1).dim        = [1.17+1.68 2*0.77];
+d.car(1).h          = 2/0.77; % Height dimension for drag
+d.car(1).areaF      = d.car(1).dim(2)*d.car(1).h;
+d.car(1).areaS      = d.car(1).dim(1)*d.car(1).h;
+d.car(1).errOld     = 0; % For the control
+d.car(1).passState  = 0; % For the control
+
+% Make the other car identical
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.car(2)            = d.car(1);
+nAuto               = length(d.car);
+
+% Velocity set points for the cars
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+vSet                = [12 13];
+
+% Time step setup
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dT                  = 0.1;
+tEnd                = 20*60;
+tLaneChange         = 10*60;
+tEndPassing         =  6*60;
+n                   = ceil(tEnd/dT);
+
+% Car initial states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x                   = [140; 0;12;0;0;0;...
+                         0; 0;11;0;0;0];
+
+% Radar - the radar model has a field of view and maximum range
+% Range drop off or S/N is not modeled
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m                   = length(x)-1;
+dRadar.kR           = [ 7:6:m; 8:6:m]; % State position indices
+dRadar.kV           = [ 9:6:m;10:6:m]; % State velocity indices
+dRadar.kT           = 11:6:m; % State yaw angle indices
+dRadar.noise        = 0.1*[0.02;0.001;0.001]; % [range; range rate; azimuth]
+dRadar.fOV          = pi/4; % Field of view
+dRadar.maxRange     = inf;
+dRadar.noLimits     = 0; % Limits are checked (fov and range)
+
+% Plotting
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+yP = zeros(3*(nAuto-1),n);
+vP = zeros(nAuto-1,n);
+
+xP = zeros(length(x)+2*nAuto,n);
+s  = 1:6*nAuto;
+
+%% Simulate
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+t = (0:(n-1))*dT;
+
+fprintf(1,'\nRunning the simulation...');
+
+for k = 1:n
+    
+    % Plotting
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    xP(s,k)     = x;
+    j           = s(end)+1;
+    
+    for i = 1:nAuto
+        p           = 6*i-5;
+        d.car(i).x  = x(p:p+5);
+        xP(j:j+1,k) = [d.car(i).delta;d.car(i).torque];
+        j           = j + 2;
+    end
+    
+    % Get radar measurements
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    dRadar.theta        = d.car(1).x(5);
+    dRadar.t            = t(k);
+    dRadar.xR           = x(1:2);
+    dRadar.vR           = x(3:4);
+    [yP(:,k), vP(:,k)]	= AutoRadar( x, dRadar );
+    
+	  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH 
+    % Implement Control
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH 
+    
+    % For all but the passing car control the velocity
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	  d.car(1).torque = -10*(d.car(1).x(3) - vSet(1));
+    
+    % The active car
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    if( t(k) < tEndPassing )
+        d.car(2)	= AutomobilePassing( d.car(2), d.car(1), 3, 1.3, 10 );
+    elseif ( t(k) > tLaneChange && laneChange )
+        d.car(2)	= AutomobileLaneChange( d.car(2), 10, 3, 12 );
+    else
+        d.car(2).torque = -10*(d.car(2).x(3) - vSet(2));
+    end
+    
+    % Integrate
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    x           = RK4(@RHSAutomobile, x, dT, 0, d );
+    
+end
+fprintf(1,'DONE.\n');
+
+% The state of the radar host car
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xRadar = xP(1:6,:);
+
+% Plot the simulation results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+NewFig( 'Auto' )
+kX = 1:6:length(x);
+kY = 2:6:length(x);
+c  = 'bgrcmyk';
+
+j  = floor(linspace(1,n,20));
+
+[t, tL] = TimeLabl( t );
+
+for k = 1:nAuto
+    plot(xP(kX(k),j),xP(kY(k),j),[c(k) '.']);
+    hold on
+end
+
+legend('Auto 1','Auto 2');
+
+for k = 1:nAuto
+    plot(xP(kX(k),:),xP(kY(k),:),c(k));
+end
+
+
+XLabelS('x (m)');
+YLabelS('y (m)');
+set(gca,'ylim',[-5 5]);
+grid
+
+% Plot the radar results but ignore cars that are not observed
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:nAuto-1
+    j   = 3*k-2:3*k;
+    sL  = sprintf('Radar: Auto %d',k);
+    b   = mean(yP(j(1),:));
+    if( b ~= 0 )
+        Plot2D(t,[yP(j,:);vP(k,:)],tL,{'Range (m)' 'Range Rate (m/s)' 'Azimuth (rad)' 'Valid'},sL);
+    end
+end
+
+%% Implement UKF
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% Covariances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r0      = diag(dRadar.noise.^2);	% Measurement 1-sigma
+q0      = [1e-7;1e-7;.1;.1];        % The baseline plant covariance diagonal
+p0      = [5;0.4;1;0.01].^2;        % Initial state covariance matrix diagonal
+
+% Each step is one scan
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+ukf     = KFInitialize('ukf','f',@RHSAutomobileXY,'alpha',1,...
+                             'kappa',0,'beta',2,'dT',dT,'fData',struct('f',0),...
+                             'p',diag(p0),'q',diag(q0),'x',[0;0;0;0],...
+                             'm',[0;0;0;0]);
+
+% Size arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+k1          = find( vP > 0 );
+k1          = k1(1);
+
+% Limit to when the radar is tracking
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+n           = n - k1 + 1;
+yP          = yP(:,k1:end);
+xP          = xP(:,k1:end);
+
+pUKF        = zeros(4,n);
+xUKF        = zeros(4,n);
+dMHTU       = zeros(1,n);
+t           = (0:(n-1))*dT;
+
+for k = 1:n
+    
+    % Prediction step
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	ukf.t               = t(k);   
+	ukf                 = UKFPredict( ukf );   
+    
+    % Update step
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+	ukf.y.data          = yP(:,k);
+    ukf.y.param.hFun    = @AutoRadarUKF;
+    ukf.y.param.hData	= struct('theta',0);
+    ukf.y.param.r       = r0;
+	ukf                 = UKFUpdate( ukf );
+        
+    % Compute the MHT distance
+    %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	dMHTU(1,k)          = MHTDistanceUKF( ukf );
+    
+	% Store for plotting
+	%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	pUKF(:,k)           = diag(ukf.p);
+	xUKF(:,k)           = ukf.m;
+    
+end
+
+% Transform the velocities into the inertial frame
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+for k = 1:n
+	c           = cos(xP(5,k));
+    s           = sin(xP(5,k));
+    cCarToI     = [c -s;s c];
+    xP(3:4,k)	= cCarToI*xP(3:4,k);
+    
+	c           = cos(xP(11,k));
+    s           = sin(xP(11,k));
+    cCarToI     = [c -s;s c];
+    xP(9:10,k)	= cCarToI*xP(9:10,k);
+end  
+    
+% Relative position
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dX = xP(7:10,:) - xP(1:4,:);
+
+%% Plotting
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[t,tL] = TimeLabl(t);
+
+% Plot just select states
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+k   = [1:4 7:10];
+yL	= {'p_x' 'p_y' 'p_{v_x}' 'p_{v_y}'};
+
+Plot2D(t,pUKF,      tL,yL,'Covariance');
+Plot2D(t,[xUKF;dX],	tL,{'x' 'y' 'v_x' 'v_y'},'UKF State: Blue is UKF, Green is Truth','lin', ...
+                       {'[1 5]' '[2 6]' '[3 7]' '[4 8]'});
+Plot2D(t,xP(k,:),	tL,{'x' 'y' 'v_x' 'v_y'},'Car States','lin',{'[1 5]' '[2 6]' '[3 7]' '[4 8]'});
+Plot2D(t,dMHTU,     tL,'d','MHT Distance UKF','ylog');
+ 
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2014-01-13 12:03:59 -0500 (Mon, 13 Jan 2014) $
+% $Revision: 36693 $
+
+
+
+##### SOURCE END #####
+--></body></html>

@@ -1,0 +1,563 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>One dimensional MHT test, two vehicles, random accels, multiple sensors</title><meta name="generator" content="MATLAB 7.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-01-14"><meta name="DC.source" content="MHT1DDemoMS.m"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>One dimensional MHT test, two vehicles, random accels, multiple sensors</h1><!--introduction--><p>The vehicles also have a steady acceleration. The vehicles start a distance apart determined by a uniform random number between 0 and 1.</p><p>Initially, we do not know how many vehicles we have. The plant model has a position, velocity and acceleration state.</p><p>The simulation includes missed measurements and false alarms. There can be up to 1 false alarm per scan.</p><p>False alarms and missed measurement use a uniform random number generator.</p><pre>------------------------------------------------------------------------
+See also DoubleIntegratorWithAccel, ScanToTrack1D
+------------------------------------------------------------------------</pre><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">Initialize</a></li><li><a href="#3">Propagate the state vector</a></li><li><a href="#4">Create the MHT code</a></li><li><a href="#5">Plot the results</a></li></ul></div><p>------------------------------------------------------------------------- Copyright (c) 2013 Princeton Satellite Systems, Inc. All Rights Reserved. -------------------------------------------------------------------------</p><h2>Initialize<a name="2"></a></h2><p>-----------</p><pre class="codeinput"><span class="comment">% Set the seed for the random number generators.</span>
+<span class="comment">% If the seed is not set each run will be different.</span>
+<span class="comment">%---------------------------------------------------</span>
+seed = 45198;
+rng(seed);
+
+<span class="comment">% Control screen output</span>
+<span class="comment">%----------------------</span>
+printHypotheses   = 1;
+makePlots         = 1;
+
+<span class="comment">% Parameters</span>
+<span class="comment">%-----------</span>
+n       = 25;               <span class="comment">% Number of steps</span>
+pFA     = 0.1;              <span class="comment">% Probability of false alarm</span>
+rFA     = 1;                <span class="comment">% 1-sigma false alarm position relative to the</span>
+                            <span class="comment">% 1st vehicle</span>
+r0      = 1e-2;             <span class="comment">% Measurement 1-sigma</span>
+pMiss   = 0.01;             <span class="comment">% Probability of a missed measurement</span>
+dT      = 0.5;              <span class="comment">% The time step</span>
+aRand	= 0.0001;	        <span class="comment">% Random acceleration 1-sigma</span>
+q0      = [0.02;0.2;0.04];  <span class="comment">% The baseline plant covariance diagonal</span>
+                            <span class="comment">% without adding the random accelerations</span>
+p0      = [0.2;0.9;1];      <span class="comment">% Initial state covariance matrix diagonal</span>
+
+<span class="comment">% Initial state vector [x1;v1;a1;x2;v2;x2]</span>
+<span class="comment">%-----------------------------------------</span>
+x0      = [0;0;0.01;0.1 + rand;0;0.01];
+
+<span class="comment">% The time vector</span>
+<span class="comment">%----------------</span>
+t       = dT*(0:n-1);
+
+<span class="comment">% The state transition matrices for the Kalman Filter</span>
+<span class="comment">%----------------------------------------------------</span>
+[a, b]  = DoubleIntegratorWithAccel( dT );
+
+<span class="comment">% The random acceleration vector</span>
+<span class="comment">%-------------------------------</span>
+u       = aRand*randn(2,n);
+</pre><h2>Propagate the state vector<a name="3"></a></h2><p>---------------------------</p><pre class="codeinput">x       = zeros(6,n);
+x(:,1)  = x0;
+
+<span class="keyword">for</span> k = 1:length(t)-1
+    x(:,k+1) = [a*x(1:3,k) + b*u(1,k);<span class="keyword">...</span>
+                a*x(4:6,k) + b*u(2,k)];
+<span class="keyword">end</span>
+
+<span class="comment">% Measurements</span>
+<span class="comment">%-------------</span>
+r       = r0^2*eye(2);
+h       = [1 0 0 0 0 0;0 0 0 1 0 0];
+z       = h*x + r0*randn(2,n);
+zz      = h*x + r0*randn(2,n);
+
+<span class="comment">% False alarms</span>
+<span class="comment">%-------------</span>
+fA      = rand(1,n);
+jFA     = fA &lt; pFA;
+tFA     = t(jFA);
+zFA     = rFA*randn(size(tFA)) + x(1,jFA);
+
+<span class="comment">% Missed measurements</span>
+<span class="comment">%--------------------</span>
+fHit    = rand(2,n);
+j1      = fHit(1,:) &gt; pMiss;
+t1      = t(j1);
+j2      = fHit(2,:) &gt; pMiss;
+t2      = t(j2);
+z1      = z(1,j1);
+z2      = z(2,j2);
+zz1     = zz(1,j1);
+zz2     = zz(2,j2);
+
+<span class="comment">% Plot the simulation</span>
+<span class="comment">%--------------------</span>
+<span class="keyword">if</span>( makePlots )
+  <span class="comment">% Plot the simulation</span>
+  <span class="comment">%--------------------</span>
+  [t, tL]	= TimeLabl(t);
+  Plot2D(t,x,tL,{<span class="string">'x'</span> <span class="string">'v'</span> <span class="string">'a'</span> },<span class="string">'State for Two Vehicles'</span>,<span class="string">'lin'</span>,{<span class="string">'[1 4]'</span> <span class="string">'[2 5]'</span> <span class="string">'[3 6]'</span>});
+  set(gca,<span class="string">'ylim'</span>,[0 0.02]);
+
+  <span class="comment">% Plot the measurements and positions</span>
+  <span class="comment">%------------------------------------</span>
+  NewFig(<span class="string">'Measurements'</span>)
+  plot(t1,z1,<span class="string">'m.'</span>,t1,zz1,<span class="string">'m*'</span>);
+  hold <span class="string">on</span>
+  plot(t2,z2,<span class="string">'c.'</span>,t2,zz2,<span class="string">'c*'</span>);
+  plot(tFA,zFA,<span class="string">'k.'</span>);
+  plot(t,x(1,:),<span class="string">'m-'</span>)
+  plot(t,x(4,:),<span class="string">'c-'</span>)
+  XLabelS(tL)
+  YLabelS(<span class="string">'z'</span>)
+  TitleS(<span class="string">'Measurements'</span>)
+  grid
+  <span class="keyword">if</span>( ~isempty(zFA) )
+    legend(<span class="string">'z_1'</span>, <span class="string">'zz_1'</span>, <span class="string">'z_2'</span>, <span class="string">'zz_2'</span>, <span class="string">'z_{fa}'</span>, <span class="string">'x_1'</span>, <span class="string">'x_2'</span>,<span class="string">'location'</span>,<span class="string">'northwest'</span>)
+  <span class="keyword">else</span>
+    legend(<span class="string">'z_1'</span>, <span class="string">'zz_1'</span>, <span class="string">'z_2'</span>, <span class="string">'zz_2'</span>,           <span class="string">'x_1'</span>, <span class="string">'x_2'</span>,<span class="string">'location'</span>,<span class="string">'northwest'</span>)
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="MHT1DDemoMS_01.png" alt=""> <img vspace="5" hspace="5" src="MHT1DDemoMS_02.png" alt=""> <h2>Create the MHT code<a name="4"></a></h2><p>--------------------</p><pre class="codeinput"><span class="comment">% The covariances</span>
+<span class="comment">%----------------</span>
+r           = r(1,1);
+p           = diag(p0);
+q           = diag([0.5*aRand*dT^2;aRand*dT;aRand].^2 + q0);
+
+<span class="comment">% Create the Kalman Filter data structure</span>
+<span class="comment">%----------------------------------------</span>
+f = KFInitialize( <span class="string">'kf'</span>, <span class="string">'m'</span>, [0;0;0],  <span class="string">'x'</span>, [0;0;0], <span class="string">'a'</span>, a, <span class="string">'b'</span>, b, <span class="string">'u'</span>,0,<span class="keyword">...</span>
+                        <span class="string">'h'</span>, h(1,1:3), <span class="string">'p'</span>, p, <span class="string">'q'</span>, q,<span class="string">'r'</span>, r );
+
+[mhtData, trk] = MHTInitialize(	<span class="string">'probability false alarm'</span>, 0.001,<span class="keyword">...</span>
+                                <span class="string">'probability of signal if target present'</span>, 0.999,<span class="keyword">...</span>
+                                <span class="string">'probability of signal if target absent'</span>, 0.001,<span class="keyword">...</span>
+                                <span class="string">'probability of detection'</span>, 1, <span class="keyword">...</span>
+                                <span class="string">'measurement volume'</span>, 1.0, <span class="keyword">...</span>
+                                <span class="string">'number of scans'</span>, 3, <span class="keyword">...</span>
+                                <span class="string">'gate'</span>, 0.2,<span class="keyword">...</span>
+                                <span class="string">'m best'</span>, 2,<span class="keyword">...</span>
+                                <span class="string">'number of tracks'</span>, 1,<span class="keyword">...</span>
+                                <span class="string">'scan to track function'</span>,@ScanToTrack1D,<span class="keyword">...</span>
+                                <span class="string">'scan to track data'</span>,struct(<span class="string">'v'</span>,0),<span class="keyword">...</span>
+                                <span class="string">'distance function'</span>,@MHTDistance,<span class="keyword">...</span>
+                                <span class="string">'hypothesis scan last'</span>, 0,<span class="keyword">...</span>
+                                <span class="string">'prune tracks'</span>, 1,<span class="keyword">...</span>
+                                <span class="string">'filter type'</span>,<span class="string">'kf'</span>,<span class="keyword">...</span>
+                                <span class="string">'filter data'</span>, f,<span class="keyword">...</span>
+                                <span class="string">'remove duplicate tracks across all trees'</span>,1,<span class="keyword">...</span>
+                                <span class="string">'average score history weight'</span>,0.01,<span class="keyword">...</span>
+                                <span class="string">'create track'</span>, <span class="string">''</span>);
+
+<span class="comment">% Add false alarms</span>
+<span class="comment">%-----------------</span>
+zFA(jFA)        = zFA;
+nT              = zeros(1,n);
+
+<span class="comment">% Size arrays</span>
+<span class="comment">%------------</span>
+m               = zeros(3,n);
+p               = zeros(3,n);
+scan            = cell(1,n);
+b               = MHTTrkToB( trk );
+
+TOMHTTreeAnimation( <span class="string">'initialize'</span>, trk );
+TOMHTTreeAnimation( <span class="string">'update'</span>, trk );
+
+<span class="comment">% Initialize MHT GUI</span>
+<span class="comment">%-------------------</span>
+MHTGUI;
+MLog(<span class="string">'init'</span>)
+MLog(<span class="string">'name'</span>,<span class="string">'MHT 1D Demo'</span>)
+
+t = 0;
+
+sensorType = 1;
+sensorID1 = 1;
+sensorID2 = 2;
+
+<span class="keyword">for</span> k = 1:n
+
+  <span class="comment">% Get the measurements if they exist</span>
+  <span class="comment">%-----------------------------------</span>
+	<span class="keyword">if</span>( j1(k) )
+    zScan = AddScan( z(1,k), sensorType, sensorID1 );
+    zScan = AddScan( zz(1,k), sensorType, sensorID2, [], zScan );
+  <span class="keyword">else</span>
+    zScan = [];
+	<span class="keyword">end</span>
+
+	<span class="keyword">if</span>( j2(k) )
+    zScan = AddScan( z(2,k), sensorType, sensorID1, [], zScan );
+    zScan = AddScan( zz(2,k), sensorType, sensorID2, [], zScan );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Add false alarms</span>
+  <span class="comment">%-----------------</span>
+  <span class="keyword">if</span>( jFA(k) )
+      zScan =  AddScan( zFA(k), [], [], [], zScan );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Manage the tracks</span>
+  <span class="comment">%------------------</span>
+  [b, trk, sol, hyp, mhtData] = MHTTrackMgmt( b, trk, zScan, mhtData, k, t );
+
+  <span class="comment">% Display hypothesis</span>
+  <span class="comment">%-------------------</span>
+  <span class="keyword">if</span>(printHypotheses)
+    MHTHypothesisDisplay( hyp, trk, k, t );
+  <span class="keyword">end</span>
+
+  <span class="comment">% Update MHTGUI display</span>
+  <span class="comment">%----------------------</span>
+  MHTGUI(trk,sol,<span class="string">'hide'</span>);
+
+  <span class="comment">% A guess for the initial velocity of any new track</span>
+  <span class="comment">%--------------------------------------------------</span>
+  <span class="keyword">for</span> j = 1:length(trk)
+      mhtData.fScanToTrackData.v =  mhtData.fScanToTrackData.v + trk(j).m(1);
+  <span class="keyword">end</span>
+  mhtData.fScanToTrackData.v =  mhtData.fScanToTrackData.v/length(trk);
+
+  <span class="comment">% Animate the tree</span>
+  <span class="comment">%-----------------</span>
+  <span class="keyword">if</span>( ~isempty(zScan) &amp;&amp; makePlots )
+      TOMHTTreeAnimation( <span class="string">'update'</span>, trk );
+  <span class="keyword">end</span>
+
+  t = t + dT;
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="MHT1DDemoMS_03.png" alt=""> <img vspace="5" hspace="5" src="MHT1DDemoMS_04.png" alt=""> <img vspace="5" hspace="5" src="MHT1DDemoMS_05.png" alt=""> <h2>Plot the results<a name="5"></a></h2><p>-----------------</p><pre class="codeinput"><span class="keyword">if</span>( makePlots )
+  [t,tL] = TimeLabl((0:(n-1))*dT);
+  yL = {<span class="string">'x_1'</span> <span class="string">'v_1'</span> <span class="string">'a_1'</span> <span class="string">'x_2'</span> <span class="string">'v_2'</span> <span class="string">'a_2'</span>};
+	Plot2D(t,x(1:6,:),tL,yL,<span class="string">'True States'</span>);
+  <span class="keyword">if</span>(~isempty(hyp))
+    xE  = [trk(hyp(1).trackIndex(1)).mHist; trk(hyp(1).trackIndex(2)).mHist];
+    Plot2D(t,xE,tL,yL,<span class="string">'Estimated States'</span>);
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+</pre><img vspace="5" hspace="5" src="MHT1DDemoMS_06.png" alt=""> <img vspace="5" hspace="5" src="MHT1DDemoMS_07.png" alt=""> <p class="footer"><br>
+      Published with MATLAB&reg; 7.13<br></p></div><!--
+##### SOURCE BEGIN #####
+%% One dimensional MHT test, two vehicles, random accels, multiple sensors
+%
+% The vehicles also have a steady acceleration.
+% The vehicles start a distance apart determined by a uniform random
+% number between 0 and 1.
+%
+% Initially, we do not know how many vehicles we have.
+% The plant model has a position, velocity and acceleration state.
+%
+% The simulation includes missed measurements and false alarms. There can
+% be up to 1 false alarm per scan.
+%
+% False alarms and missed measurement use a uniform random number
+% generator.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also DoubleIntegratorWithAccel, ScanToTrack1D
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% Copyright (c) 2013 Princeton Satellite Systems, Inc.
+% All Rights Reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Initialize
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Set the seed for the random number generators. 
+% If the seed is not set each run will be different.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+seed = 45198;
+rng(seed);
+
+% Control screen output
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+printHypotheses   = 1;
+makePlots         = 1;
+
+% Parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+n       = 25;               % Number of steps
+pFA     = 0.1;              % Probability of false alarm
+rFA     = 1;                % 1-sigma false alarm position relative to the
+                            % 1st vehicle
+r0      = 1e-2;             % Measurement 1-sigma
+pMiss   = 0.01;             % Probability of a missed measurement
+dT      = 0.5;              % The time step
+aRand	= 0.0001;	        % Random acceleration 1-sigma
+q0      = [0.02;0.2;0.04];  % The baseline plant covariance diagonal
+                            % without adding the random accelerations
+p0      = [0.2;0.9;1];      % Initial state covariance matrix diagonal
+
+% Initial state vector [x1;v1;a1;x2;v2;x2]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x0      = [0;0;0.01;0.1 + rand;0;0.01];   
+
+% The time vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t       = dT*(0:n-1);
+
+% The state transition matrices for the Kalman Filter
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[a, b]  = DoubleIntegratorWithAccel( dT );
+
+% The random acceleration vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+u       = aRand*randn(2,n);
+
+%% Propagate the state vector
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x       = zeros(6,n);
+x(:,1)  = x0;
+
+for k = 1:length(t)-1
+    x(:,k+1) = [a*x(1:3,k) + b*u(1,k);...
+                a*x(4:6,k) + b*u(2,k)];
+end
+
+% Measurements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+r       = r0^2*eye(2);
+h       = [1 0 0 0 0 0;0 0 0 1 0 0];
+z       = h*x + r0*randn(2,n);
+zz      = h*x + r0*randn(2,n);
+
+% False alarms
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+fA      = rand(1,n);
+jFA     = fA < pFA;
+tFA     = t(jFA);
+zFA     = rFA*randn(size(tFA)) + x(1,jFA);
+
+% Missed measurements
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+fHit    = rand(2,n);
+j1      = fHit(1,:) > pMiss;
+t1      = t(j1);
+j2      = fHit(2,:) > pMiss;
+t2      = t(j2);
+z1      = z(1,j1);
+z2      = z(2,j2);
+zz1     = zz(1,j1);
+zz2     = zz(2,j2);
+
+% Plot the simulation
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+if( makePlots )
+  % Plot the simulation
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [t, tL]	= TimeLabl(t);
+  Plot2D(t,x,tL,{'x' 'v' 'a' },'State for Two Vehicles','lin',{'[1 4]' '[2 5]' '[3 6]'});
+  set(gca,'ylim',[0 0.02]);
+
+  % Plot the measurements and positions
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  NewFig('Measurements')
+  plot(t1,z1,'m.',t1,zz1,'m*');
+  hold on
+  plot(t2,z2,'c.',t2,zz2,'c*');
+  plot(tFA,zFA,'k.');
+  plot(t,x(1,:),'m-')
+  plot(t,x(4,:),'c-')
+  XLabelS(tL)
+  YLabelS('z')
+  TitleS('Measurements')
+  grid
+  if( ~isempty(zFA) )
+    legend('z_1', 'zz_1', 'z_2', 'zz_2', 'z_{fa}', 'x_1', 'x_2','location','northwest')
+  else
+    legend('z_1', 'zz_1', 'z_2', 'zz_2',           'x_1', 'x_2','location','northwest')
+  end
+end
+
+%% Create the MHT code
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% The covariances
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+r           = r(1,1);
+p           = diag(p0);
+q           = diag([0.5*aRand*dT^2;aRand*dT;aRand].^2 + q0);
+
+% Create the Kalman Filter data structure
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+f = KFInitialize( 'kf', 'm', [0;0;0],  'x', [0;0;0], 'a', a, 'b', b, 'u',0,...
+                        'h', h(1,1:3), 'p', p, 'q', q,'r', r );
+
+[mhtData, trk] = MHTInitialize(	'probability false alarm', 0.001,...
+                                'probability of signal if target present', 0.999,...
+                                'probability of signal if target absent', 0.001,...
+                                'probability of detection', 1, ...
+                                'measurement volume', 1.0, ...
+                                'number of scans', 3, ...
+                                'gate', 0.2,...
+                                'm best', 2,...
+                                'number of tracks', 1,...
+                                'scan to track function',@ScanToTrack1D,...
+                                'scan to track data',struct('v',0),...
+                                'distance function',@MHTDistance,...
+                                'hypothesis scan last', 0,...
+                                'prune tracks', 1,...
+                                'filter type','kf',...
+                                'filter data', f,...
+                                'remove duplicate tracks across all trees',1,...
+                                'average score history weight',0.01,...
+                                'create track', '');                           
+                            
+% Add false alarms
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+zFA(jFA)        = zFA;
+nT              = zeros(1,n);
+
+% Size arrays
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+m               = zeros(3,n);
+p               = zeros(3,n);
+scan            = cell(1,n);
+b               = MHTTrkToB( trk );
+
+TOMHTTreeAnimation( 'initialize', trk );
+TOMHTTreeAnimation( 'update', trk );
+
+% Initialize MHT GUI
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+MHTGUI;
+MLog('init')
+MLog('name','MHT 1D Demo')
+
+t = 0;
+
+sensorType = 1;
+sensorID1 = 1;
+sensorID2 = 2;
+
+for k = 1:n
+    
+  % Get the measurements if they exist
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+	if( j1(k) )
+    zScan = AddScan( z(1,k), sensorType, sensorID1 );
+    zScan = AddScan( zz(1,k), sensorType, sensorID2, [], zScan );
+  else
+    zScan = [];
+	end
+    
+	if( j2(k) )
+    zScan = AddScan( z(2,k), sensorType, sensorID1, [], zScan );
+    zScan = AddScan( zz(2,k), sensorType, sensorID2, [], zScan );
+  end
+  
+  % Add false alarms
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( jFA(k) )
+      zScan =  AddScan( zFA(k), [], [], [], zScan );
+  end
+
+  % Manage the tracks
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  [b, trk, sol, hyp, mhtData] = MHTTrackMgmt( b, trk, zScan, mhtData, k, t );
+        
+  % Display hypothesis
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if(printHypotheses)
+    MHTHypothesisDisplay( hyp, trk, k, t );
+  end
+
+  % Update MHTGUI display
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  MHTGUI(trk,sol,'hide');
+
+  % A guess for the initial velocity of any new track
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  for j = 1:length(trk)
+      mhtData.fScanToTrackData.v =  mhtData.fScanToTrackData.v + trk(j).m(1);
+  end
+  mhtData.fScanToTrackData.v =  mhtData.fScanToTrackData.v/length(trk);    
+
+  % Animate the tree
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  if( ~isempty(zScan) && makePlots )
+      TOMHTTreeAnimation( 'update', trk );
+  end
+
+  t = t + dT;
+end
+
+%% Plot the results
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+if( makePlots )
+  [t,tL] = TimeLabl((0:(n-1))*dT);
+  yL = {'x_1' 'v_1' 'a_1' 'x_2' 'v_2' 'a_2'};
+	Plot2D(t,x(1:6,:),tL,yL,'True States');
+  if(~isempty(hyp))
+    xE  = [trk(hyp(1).trackIndex(1)).mHist; trk(hyp(1).trackIndex(2)).mHist];
+    Plot2D(t,xE,tL,yL,'Estimated States');
+  end
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date: 2014-01-14 09:54:11 -0500 (Tue, 14 Jan 2014) $
+% $Revision: 36713 $
+
+
+
+##### SOURCE END #####
+--></body></html>
