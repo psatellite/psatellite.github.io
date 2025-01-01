@@ -1,0 +1,437 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Simulate a horizontal axis 3 blade wind turbine.</title>
+<meta name="generator" content="MATLAB 23.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2023-11-14">
+<meta name="DC.source" content="HAWTSim.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Simulate a horizontal axis 3 blade wind turbine.</h1>
+<!--introduction-->
+<p>This simulation demonstrates linear quadratic regulator control of the turbine speed. This does not model the yaw control. Blade pitch is held fixed.</p>
+<pre>------------------------------------------------------------------------
+See also QCR, Plot2D, TimeLabl, Jacobian, RK4, TorqueHAWT,
+WindDeterministic, WindStochastic
+------------------------------------------------------------------------</pre>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Simulation parameters</a>
+</li>
+<li>
+<a href="#3">Model parameters</a>
+</li>
+<li>
+<a href="#4">Generator</a>
+</li>
+<li>
+<a href="#5">Wind model</a>
+</li>
+<li>
+<a href="#6">Turbine model</a>
+</li>
+<li>
+<a href="#7">States</a>
+</li>
+<li>
+<a href="#8">Simulation loop</a>
+</li>
+<li>
+<a href="#9">Plot</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2007 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Simulation parameters</h2>
+<pre class="codeinput">
+<span class="comment">%----------------------</span>
+nSim     = 2000;
+dT       = 0.001;
+</pre>
+<h2 id="3">Model parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------</span>
+rTurbine = 3;
+angle    = 0;
+</pre>
+<h2 id="4">Generator</h2>
+<pre class="codeinput">
+<span class="comment">%----------</span>
+d.rS     = 4.3;
+d.lMD    = 27e-3;
+d.lMQ    = d.lMD;
+d.inr    = 1;
+d.p      = 2; <span class="comment">% Pole pairs</span>
+d.psi    = 0.272;
+</pre>
+<h2 id="5">Wind model</h2>
+<pre class="codeinput">
+<span class="comment">%-----------</span>
+d.tau       = 1;
+d.n         = 3; <span class="comment">% blades/harmonics</span>
+d.dT        = dT;
+d.sigmaWind = 0.5;
+wMean       = 13;
+d.dTF       = rTurbine/wMean;
+windFactor  = 0*0.3;
+omegaWind   = 10;
+d.wMean     = wMean;
+d.wHarm     = 0.01;
+WindStochastic( <span class="string">'init'</span>, d );
+</pre>
+<h2 id="6">Turbine model</h2>
+<pre class="codeinput">
+<span class="comment">%--------------</span>
+d.rTurbine  = rTurbine;
+d.beta      = 0;
+d.rho       = 1.225;
+d.startup   = 0.01; <span class="comment">% Wind power to torque at startup</span>
+</pre>
+<h2 id="7">States</h2>
+<pre class="codeinput">
+<span class="comment">%-------</span>
+omegaW  = d.wMean*8/d.rTurbine;
+p       = 2*d.p;
+d.wind  = wMean;
+iQW     = (2/(3*p*d.psi))*TorqueHAWT( omegaW, d );
+current = [0;iQW];
+x       = [angle;omegaW;current];
+d.u     = [-p*omegaW*d.lMD*iQW;d.rS*iQW + p*omegaW*d.psi];
+a       = Jacobian( <span class="string">'HAWTRHS'</span>, x, 0, d );
+disp(<span class="string">'These are the linearized state matrix and input matrices about the operating point.'</span>)
+a       = a(2:4,2:4)
+b       = [0 0;1 0;0 1]/d.lMD
+aA      = [0 0 1.5*p*d.psi/d.inr;p*iQW -d.rS/d.lMD p*omegaW;-p*d.psi/d.lMD -p*omegaW -d.rS/d.lMD];
+disp(<span class="string">'The linear quadratic gain matrix at the operating point.'</span>)
+kR      = QCR( a, b, diag([1 0.1 0.1]), eye(2) )
+disp(<span class="string">'The closed loop eigenvalues with the linear quadratic controller.'</span>)
+eig( a - b*kR)
+
+xP     = zeros(11,nSim);
+t      = 0;
+
+disp(<span class="string">'Running the simulation which only models the mean wind.'</span>)
+disp(<span class="string">'The generator control feedforwards the expected control voltage and then controls about that voltage'</span>)
+disp(<span class="string">'With the linear quadratic regulator. We assume that we measure all states including turbine rotational speed'</span>)
+disp(<span class="string">'and generator currents.'</span>)
+disp(<span class="string">'Control is done by applying direct and quadrature voltages.'</span>)
+</pre>
+<pre class="codeoutput">These are the linearized state matrix and input matrices about the operating point.
+
+a =
+
+      -17.761            0       -1.632
+            0      -159.25          400
+            0         -400      -159.26
+
+
+b =
+
+            0            0
+       37.037            0
+            0       37.037
+
+The linear quadratic gain matrix at the operating point.
+
+kR =
+
+    0.0035545     0.011626  -5.1864e-06
+   -0.0015768  -5.1864e-06     0.011615
+
+The closed loop eigenvalues with the linear quadratic controller.
+
+ans =
+
+      -17.761 +          0i
+      -159.69 +        400i
+      -159.69 -        400i
+
+Running the simulation which only models the mean wind.
+The generator control feedforwards the expected control voltage and then controls about that voltage
+With the linear quadratic regulator. We assume that we measure all states including turbine rotational speed
+and generator currents.
+Control is done by applying direct and quadrature voltages.
+</pre>
+<h2 id="8">Simulation loop</h2>
+<pre class="codeinput">
+<span class="comment">%----------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Measurements</span>
+  <span class="comment">%-------------</span>
+  d.angle = x(1);
+
+  <span class="comment">% Wind</span>
+  <span class="comment">%-----</span>
+  d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+  d.wind  = WindStochastic( <span class="string">'run'</span>, d ) + WindDeterministic( d );
+
+  <span class="comment">% Generator Control</span>
+  <span class="comment">%------------------</span>
+  omegaW = d.wMean*8/d.rTurbine;
+  p      = 2*d.p;
+  iQW    = (2/(3*p*d.psi))*TorqueHAWT( omegaW, d );
+
+  <span class="comment">% The nonlinear feedforward based on the set point (omegaW)</span>
+  <span class="comment">% based on windspeed and desired tip speed ratio</span>
+  <span class="comment">%----------------------------------------------------------</span>
+  uFF    = [-p*omegaW*d.lMD*iQW;d.rS*iQW + p*omegaW*d.psi];
+
+  <span class="comment">% The LQ controller about the set point for speed and current</span>
+  <span class="comment">%------------------------------------------------------------</span>
+  uR     = -kR*(x(2:4) - [omegaW;0;iQW]);
+  d.u    = uFF + uR;
+
+  <span class="comment">% Plot</span>
+  <span class="comment">%-----</span>
+  [torque, power] = TorqueHAWT( x(2), d );
+  xP(:,k) = [x;d.wind;uFF;uR;torque;power];
+
+  <span class="comment">% RHS</span>
+  <span class="comment">%----</span>
+  x = RK4( <span class="string">'HAWTRHS'</span>, x, dT, 0, d );
+  t = t + dT;
+<span class="keyword">end</span>
+
+[t, tL] = TimeLabl( nSim, dT );
+</pre>
+<h2 id="9">Plot</h2>
+<pre class="codeinput">
+<span class="comment">%------</span>
+xL = {<span class="string">'Angle'</span>,  <span class="string">'Rate'</span>,  <span class="string">'I_d'</span>, <span class="string">'I_q'</span>, <span class="string">'Wind Speed'</span>,  <span class="string">'uFF_d'</span>, <span class="string">'uFF_q'</span> <span class="string">'uR_d'</span> <span class="string">'uR_q'</span> <span class="string">'torque'</span> <span class="string">'power'</span>};
+Plot2D( t, xP(1:4,:), tL, xL(1:4), <span class="string">'HAWT Sim 1'</span> )
+Plot2D( t, xP([5 10 11] ,:), tL, xL([5 10 11]), <span class="string">'HAWT Sim 2'</span> )
+Plot2D( t, xP(6:9 ,:), tL, xL(6:9), <span class="string">'HAWT Sim 3'</span> )
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% $Date$</span>
+<span class="comment">% $Id: dd4dc449cd47341251c4d9962e6e3f53f6cadc0e $</span>
+</pre>
+<img vspace="5" hspace="5" src="HAWTSim_01.png" alt=""> <img vspace="5" hspace="5" src="HAWTSim_02.png" alt=""> <img vspace="5" hspace="5" src="HAWTSim_03.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Simulate a horizontal axis 3 blade wind turbine.
+%
+% This simulation demonstrates linear quadratic regulator control of the 
+% turbine speed. This does not model the yaw control. 
+% Blade pitch is held fixed.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also QCR, Plot2D, TimeLabl, Jacobian, RK4, TorqueHAWT, 
+%  WindDeterministic, WindStochastic
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2007 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim     = 2000;
+dT       = 0.001;
+
+%% Model parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rTurbine = 3;
+angle    = 0;
+
+%% Generator
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.rS     = 4.3;
+d.lMD    = 27e-3;
+d.lMQ    = d.lMD;
+d.inr    = 1;
+d.p      = 2; % Pole pairs
+d.psi    = 0.272;
+
+%% Wind model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.tau       = 1;
+d.n         = 3; % blades/harmonics
+d.dT        = dT;
+d.sigmaWind = 0.5;
+wMean       = 13;
+d.dTF       = rTurbine/wMean;
+windFactor  = 0*0.3;
+omegaWind   = 10;
+d.wMean     = wMean;
+d.wHarm     = 0.01;
+WindStochastic( 'init', d );
+
+%% Turbine model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.rTurbine  = rTurbine;
+d.beta      = 0;
+d.rho       = 1.225;
+d.startup   = 0.01; % Wind power to torque at startup
+
+%% States
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+omegaW  = d.wMean*8/d.rTurbine;
+p       = 2*d.p;
+d.wind  = wMean;
+iQW     = (2/(3*p*d.psi))*TorqueHAWT( omegaW, d );
+current = [0;iQW];
+x       = [angle;omegaW;current];
+d.u     = [-p*omegaW*d.lMD*iQW;d.rS*iQW + p*omegaW*d.psi];
+a       = Jacobian( 'HAWTRHS', x, 0, d );
+disp('These are the linearized state matrix and input matrices about the operating point.')
+a       = a(2:4,2:4)
+b       = [0 0;1 0;0 1]/d.lMD
+aA      = [0 0 1.5*p*d.psi/d.inr;p*iQW -d.rS/d.lMD p*omegaW;-p*d.psi/d.lMD -p*omegaW -d.rS/d.lMD];
+disp('The linear quadratic gain matrix at the operating point.')
+kR      = QCR( a, b, diag([1 0.1 0.1]), eye(2) )
+disp('The closed loop eigenvalues with the linear quadratic controller.')
+eig( a - b*kR)
+
+xP     = zeros(11,nSim);
+t      = 0;
+
+disp('Running the simulation which only models the mean wind.')
+disp('The generator control feedforwards the expected control voltage and then controls about that voltage')
+disp('With the linear quadratic regulator. We assume that we measure all states including turbine rotational speed')
+disp('and generator currents.')
+disp('Control is done by applying direct and quadrature voltages.')
+
+%% Simulation loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim
+    
+  % Measurements
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.angle = x(1);
+  
+  % Wind
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+  d.wind  = WindStochastic( 'run', d ) + WindDeterministic( d );
+  
+  % Generator Control
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  omegaW = d.wMean*8/d.rTurbine;
+  p      = 2*d.p;
+  iQW    = (2/(3*p*d.psi))*TorqueHAWT( omegaW, d );
+  
+  % The nonlinear feedforward based on the set point (omegaW)
+  % based on windspeed and desired tip speed ratio
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  uFF    = [-p*omegaW*d.lMD*iQW;d.rS*iQW + p*omegaW*d.psi];
+  
+  % The LQ controller about the set point for speed and current
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  uR     = -kR*(x(2:4) - [omegaW;0;iQW]);
+  d.u    = uFF + uR;
+  
+  % Plot
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [torque, power] = TorqueHAWT( x(2), d );
+  xP(:,k) = [x;d.wind;uFF;uR;torque;power];
+  
+  % RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4( 'HAWTRHS', x, dT, 0, d );
+  t = t + dT;
+end
+
+[t, tL] = TimeLabl( nSim, dT );
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+xL = {'Angle',  'Rate',  'I_d', 'I_q', 'Wind Speed',  'uFF_d', 'uFF_q' 'uR_d' 'uR_q' 'torque' 'power'};
+Plot2D( t, xP(1:4,:), tL, xL(1:4), 'HAWT Sim 1' )
+Plot2D( t, xP([5 10 11] ,:), tL, xL([5 10 11]), 'HAWT Sim 2' )
+Plot2D( t, xP(6:9 ,:), tL, xL(6:9), 'HAWT Sim 3' )
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date$
+% $Id: dd4dc449cd47341251c4d9962e6e3f53f6cadc0e $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Simulate a doubly fed inductance generator.</title>
+<meta name="generator" content="MATLAB 23.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2023-11-14">
+<meta name="DC.source" content="DFIGSim.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Simulate a doubly fed inductance generator.</h1>
+<!--introduction-->
+<p>Doubly fed induction generators are popular for large wind turbines. Doubly fed means we feed both the rotor and stator. This demo is done with both rotor and stator in Direct Quadrature (DQ) coordinates. The controller computes an equilibrium solution then employs a linear quadratic regulator about that solution. This controller controls reactive and active power. ------------------------------------------------------------------------ See also Plot2D, TimeLabl, RK4, DFIGEquilibrium, DFIGRHS, TorqueHAWT, WindDeterministic, WindStochastic ------------------------------------------------------------------------</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Simulation parameters</a>
+</li>
+<li>
+<a href="#3">Wind turbine parameters</a>
+</li>
+<li>
+<a href="#4">Reference reactive power</a>
+</li>
+<li>
+<a href="#5">Model parameters</a>
+</li>
+<li>
+<a href="#6">Generator parameters</a>
+</li>
+<li>
+<a href="#7">Wind model</a>
+</li>
+<li>
+<a href="#8">Turbine model</a>
+</li>
+<li>
+<a href="#9">Wind</a>
+</li>
+<li>
+<a href="#10">Find the equilibrium solution</a>
+</li>
+<li>
+<a href="#11">Simulation loop</a>
+</li>
+<li>
+<a href="#12">Plot</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%---------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2008, 2010 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%---------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Simulation parameters</h2>
+<pre class="codeinput">
+<span class="comment">%----------------------</span>
+nSim       = 100;
+dT         = 0.0001;
+</pre>
+<h2 id="3">Wind turbine parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-------------------------</span>
+fGrid      = 60;
+rTurbine   = 50;
+wMean      = 12.5;
+d.p        = 2; <span class="comment">% Number of pole pairs</span>
+omegaW     = 8*wMean/rTurbine;
+omegaGrid  = fGrid*60;<span class="comment">% In rpm</span>
+rpsToRPM   = 30/pi
+omegaW     = rpsToRPM*omegaW;
+nGearbox   = omegaW/(omegaGrid/d.p)
+omegaM     = omegaW/nGearbox;
+</pre>
+<pre class="codeoutput">
+rpsToRPM =
+
+       9.5493
+
+
+nGearbox =
+
+      0.01061
+
+</pre>
+<h2 id="4">Reference reactive power</h2>
+<pre class="codeinput">
+<span class="comment">%-------------------------</span>
+qRef       = 0;
+</pre>
+<h2 id="5">Model parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------</span>
+angle    = 0;
+
+<span class="comment">% Rs = 0.05 ohm; Rr = 0.38 ohm; M = 47.3 mH; Ls = 50 mH;</span>
+<span class="comment">% Lr = 50 mH ; J = 0.5 kg.m^2; f = 0.0035 N.m.s-1</span>
+</pre>
+<h2 id="6">Generator parameters</h2>
+<pre class="codeinput">
+<span class="comment">%---------------------</span>
+d.lM     = 47.3e-3;   <span class="comment">% Mutual inductance (H)</span>
+d.lR     = 50e-3;     <span class="comment">% Rotor inductance  (H)</span>
+d.lS     = 50e-3;     <span class="comment">% Stator inductance (H)</span>
+d.rR     = 0.38;      <span class="comment">% Rotor resistance  (Ohm)</span>
+d.rS     = 0.05;      <span class="comment">% Stator resistance (Ohm)</span>
+d.u      = [120;120;0;0]; <span class="comment">% Phase voltages    [uDR;uDQ;uDS;uQS] (V)</span>
+d.omega  = 2*pi*fGrid;<span class="comment">% Synchronous speed (rad/s)</span>
+d.tM     = 0;         <span class="comment">% Mechanical torque (Nm)</span>
+d.j      = 0.5;       <span class="comment">% Inertia           (kg-m^2)</span>
+</pre>
+<h2 id="7">Wind model</h2>
+<pre class="codeinput">
+<span class="comment">%-----------</span>
+d.tau       = 1;
+d.n         = 3; <span class="comment">% blades/harmonics</span>
+d.dT        = dT;
+d.sigmaWind = 0.5;
+d.dTF       = rTurbine/wMean;
+windFactor  = 0*0.3;
+omegaWind   = 10;
+d.wMean     = wMean;
+d.wHarm     = 0.01;
+WindStochastic( <span class="string">'init'</span>, d );
+</pre>
+<h2 id="8">Turbine model</h2>
+<pre class="codeinput">
+<span class="comment">%--------------</span>
+d.rTurbine  = rTurbine;
+d.beta      = 0;
+d.rho       = 1.225;
+d.startup   = 0.02;
+
+xP          = zeros(17,nSim);
+t           = 0;
+</pre>
+<h2 id="9">Wind</h2>
+<pre class="codeinput">
+<span class="comment">%-----</span>
+d.angle = 0;
+d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+d.wind  = WindStochastic( <span class="string">'run'</span>, d ) + WindDeterministic( d );
+</pre>
+<h2 id="10">Find the equilibrium solution</h2>
+<pre class="codeinput">
+<span class="comment">%-------------------------------</span>
+[d.tM, power]       = TorqueHAWT( omegaM, d );
+
+[uR, x]  = DFIGEquilibrium( qRef, omegaM, d )
+d.u(3:4) = uR;
+</pre>
+<pre class="codeoutput">
+uR =
+
+   4.4714e+05
+  -4.5154e+05
+
+
+x =
+
+      -912.08
+      -912.08
+       1885.5
+       1866.9
+         1800
+            0
+
+</pre>
+<h2 id="11">Simulation loop</h2>
+<pre class="codeinput">
+<span class="comment">%----------------</span>
+<span class="keyword">for</span> k = 1:nSim
+
+  d.angle = x(6);
+
+  <span class="comment">% Wind</span>
+  <span class="comment">%-----</span>
+  d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+  d.wind  = WindStochastic( <span class="string">'run'</span>, d ) + WindDeterministic( d );
+
+  <span class="comment">% Plot</span>
+  <span class="comment">%-----</span>
+  [xDot, tE, q, p] = DFIGRHS( x, t, d );
+  xP(:,k)          = [x;d.wind;d.u;q;p;d.tM;power];
+
+  <span class="comment">% RHS</span>
+  <span class="comment">%----</span>
+  x = RK4( <span class="string">'DFIGRHS'</span>, x, dT, 0, d );
+  t = t + dT;
+<span class="keyword">end</span>
+
+[t, tL] = TimeLabl( nSim, dT );
+</pre>
+<h2 id="12">Plot</h2>
+<pre class="codeinput">
+<span class="comment">%-------</span>
+xL = {<span class="string">'I_{ds}'</span>, <span class="string">'I_{qs}'</span>, <span class="string">'I_{dr}'</span>, <span class="string">'I_{qr}'</span>,<span class="string">'Rate'</span>,<span class="string">'Angle'</span>,<span class="string">'Wind Speed'</span>,<span class="keyword">...</span>
+      <span class="string">'u_{ds}'</span>, <span class="string">'u_{qs}'</span>, <span class="string">'u_{dr}'</span>, <span class="string">'u_{qr}'</span>,<span class="string">'q_s'</span>, <span class="string">'q_r'</span>,  <span class="string">'p_s'</span>, <span class="string">'p_r'</span>,<span class="keyword">...</span>
+      <span class="string">'torque'</span>, <span class="string">'power'</span>};
+
+k = [12 14 16 17];
+Plot2D( t, xP( 1: 4,  :), tL, xL( 1: 4), <span class="string">'DFIG Current'</span>  )
+Plot2D( t, xP( 5: 7 , :), tL, xL( 5: 7), <span class="string">'DFIG Rate'</span>   )
+Plot2D( t, xP( 8:11 , :), tL, xL( 8:11), <span class="string">'DFIG Control'</span>)
+Plot2D( t, xP(k, :), tL, xL(k),<span class="string">'DFIG Power'</span>  )
+
+
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% $Date$</span>
+<span class="comment">% $Id: 235032ab9664ff4a36906f7cbf315e1cd13f9d68 $</span>
+</pre>
+<img vspace="5" hspace="5" src="DFIGSim_01.png" alt=""> <img vspace="5" hspace="5" src="DFIGSim_02.png" alt=""> <img vspace="5" hspace="5" src="DFIGSim_03.png" alt=""> <img vspace="5" hspace="5" src="DFIGSim_04.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Simulate a doubly fed inductance generator.
+% Doubly fed induction generators are popular for large wind turbines.
+% Doubly fed means we feed both the rotor and stator.
+% This demo is done with both rotor and stator in Direct Quadrature (DQ)
+% coordinates. The controller computes an equilibrium solution then
+% employs a linear quadratic regulator about that solution.
+% This controller controls reactive and active power.
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Plot2D, TimeLabl, RK4, DFIGEquilibrium, DFIGRHS, TorqueHAWT, 
+%  WindDeterministic, WindStochastic
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%   Copyright (c) 2008, 2010 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+nSim       = 100;
+dT         = 0.0001;
+
+%% Wind turbine parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+fGrid      = 60;
+rTurbine   = 50;
+wMean      = 12.5;
+d.p        = 2; % Number of pole pairs
+omegaW     = 8*wMean/rTurbine;
+omegaGrid  = fGrid*60;% In rpm
+rpsToRPM   = 30/pi
+omegaW     = rpsToRPM*omegaW;
+nGearbox   = omegaW/(omegaGrid/d.p)
+omegaM     = omegaW/nGearbox;
+
+%% Reference reactive power
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+qRef       = 0;
+
+%% Model parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+angle    = 0;
+
+% Rs = 0.05 ohm; Rr = 0.38 ohm; M = 47.3 mH; Ls = 50 mH; 
+% Lr = 50 mH ; J = 0.5 kg.m^2; f = 0.0035 N.m.s-1 
+
+%% Generator parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.lM     = 47.3e-3;   % Mutual inductance (H)
+d.lR     = 50e-3;     % Rotor inductance  (H)
+d.lS     = 50e-3;     % Stator inductance (H)
+d.rR     = 0.38;      % Rotor resistance  (Ohm)
+d.rS     = 0.05;      % Stator resistance (Ohm)
+d.u      = [120;120;0;0]; % Phase voltages    [uDR;uDQ;uDS;uQS] (V)
+d.omega  = 2*pi*fGrid;% Synchronous speed (rad/s)
+d.tM     = 0;         % Mechanical torque (Nm)
+d.j      = 0.5;       % Inertia           (kg-m^2)
+
+%% Wind model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.tau       = 1;
+d.n         = 3; % blades/harmonics
+d.dT        = dT;
+d.sigmaWind = 0.5;
+d.dTF       = rTurbine/wMean;
+windFactor  = 0*0.3;
+omegaWind   = 10;
+d.wMean     = wMean;
+d.wHarm     = 0.01;
+WindStochastic( 'init', d );
+
+%% Turbine model
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.rTurbine  = rTurbine;
+d.beta      = 0;
+d.rho       = 1.225;
+d.startup   = 0.02;
+
+xP          = zeros(17,nSim);
+t           = 0;
+
+%% Wind
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+d.angle = 0;
+d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+d.wind  = WindStochastic( 'run', d ) + WindDeterministic( d );
+
+%% Find the equilibrium solution
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[d.tM, power]       = TorqueHAWT( omegaM, d );
+
+[uR, x]  = DFIGEquilibrium( qRef, omegaM, d )
+d.u(3:4) = uR;
+
+%% Simulation loop
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for k = 1:nSim
+    
+  d.angle = x(6);
+      
+  % Wind
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.wMean = wMean*(1 - windFactor*sin(omegaWind*t));
+  d.wind  = WindStochastic( 'run', d ) + WindDeterministic( d );
+  
+  % Plot
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  [xDot, tE, q, p] = DFIGRHS( x, t, d );
+  xP(:,k)          = [x;d.wind;d.u;q;p;d.tM;power];
+  
+  % RHS
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4( 'DFIGRHS', x, dT, 0, d );
+  t = t + dT;
+end
+
+[t, tL] = TimeLabl( nSim, dT );
+
+%% Plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xL = {'I_{ds}', 'I_{qs}', 'I_{dr}', 'I_{qr}','Rate','Angle','Wind Speed',...
+      'u_{ds}', 'u_{qs}', 'u_{dr}', 'u_{qr}','q_s', 'q_r',  'p_s', 'p_r',...
+      'torque', 'power'};
+  
+k = [12 14 16 17];
+Plot2D( t, xP( 1: 4,  :), tL, xL( 1: 4), 'DFIG Current'  )
+Plot2D( t, xP( 5: 7 , :), tL, xL( 5: 7), 'DFIG Rate'   )
+Plot2D( t, xP( 8:11 , :), tL, xL( 8:11), 'DFIG Control')
+Plot2D( t, xP(k, :), tL, xL(k),'DFIG Power'  )
+
+
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date$
+% $Id: 235032ab9664ff4a36906f7cbf315e1cd13f9d68 $
+
+##### SOURCE END #####
+-->
+</body>
+</html>
