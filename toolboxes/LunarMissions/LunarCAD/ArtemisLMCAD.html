@@ -1,0 +1,536 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Design a fully reusable lunar lander</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="ArtemisLMCAD.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Design a fully reusable lunar lander</h1>
+<!--introduction-->
+<p>Can land and takeoff using one fuel load. Carries the Orion to and from the moon. Uses two BE-3U engines. Also demonstrates adding an obj file as a subassembly. See LoadOrionFile to see how to get the obj file into a CAD data structure format. Creates Artemis.obj and Artemis.mtl files.</p>
+<p>See also: MassVolH2O2, DisplayLatexTable, BuildCADModel, CreateComponent, ExportOBJ</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Flag to add Orion</a>
+</li>
+<li>
+<a href="#3">Create the 3D model</a>
+</li>
+<li>
+<a href="#4">Add Components</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2019 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2019.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Flag to add Orion</h2>
+<pre class="codeinput">addOrion    = true;
+
+<span class="comment">% https://space.skyrocket.de/doc_sdat/orion-mpcv.htm</span>
+massOrion   = 25848;    <span class="comment">% kg</span>
+deltaV      = 2*1.8;    <span class="comment">% km/s landing and takeoff each leg</span>
+fTank       = 0.05;     <span class="comment">% Fraction of mass</span>
+massPay     = 2000;     <span class="comment">% Delivered by a cargo vehicle to lunar orbit</span>
+altitude    = 15;       <span class="comment">% Orion must reach this altitude to dock</span>
+accel       = 13.4496;  <span class="comment">% m/s from LunarLandingOptimize3DLeastSquares.m</span>
+
+massOP      = massOrion + massPay; <span class="comment">% Cargo</span>
+
+<span class="comment">% https://en.wikipedia.org/wiki/Apollo_Lunar_Module</span>
+massDryD    = 10334 - 8200;
+massAscent  = 4700; <span class="comment">% Lunar module</span>
+
+<span class="comment">% Estimate the mass of the non payload dry mass from Apollo masses</span>
+mRLM        = massDryD/massAscent;
+mStruct     = mRLM*massOP;
+mDry        = mStruct + massOP;
+
+<span class="comment">% Best an H2/O2 engine can do</span>
+fR          = 0.6; <span class="comment">% Mass ratio of O2 to H2</span>
+iSp         = 467;
+uE          = iSp*9.806;
+
+mR          = exp(deltaV*1000/uE);
+mFuel       = (mR-1)*mDry;
+mTotal      = mDry + mFuel;
+
+thrustMax   = mTotal*accel;
+
+[mH2, mO2, vH2, vO2] = MassVolH2O2( mFuel, fR );
+
+nO2Tanks    = 2;
+rO2         = (3*vO2/(4*pi*nO2Tanks))^(1/3);
+rMajH2      = 2.8;
+rMinH2      = sqrt(vH2/2/(2*rMajH2))/pi;
+
+<span class="comment">% Solar array</span>
+rS          = rMajH2 + rMinH2 + 0.3;
+hS          = 4.2*rMinH2;
+
+<span class="comment">% Spectrolab's Space Solar Panels (without the substrate) are specified as:</span>
+rhoS        = 2.06; <span class="comment">% 6 mil thickness</span>
+eff         = 0.3;
+power       = 2*sin(pi/2)*hS*rS*eff*1367;
+
+clear <span class="string">s</span>
+
+k = 1;
+s{k,1} = <span class="string">'Maximum acceleration'</span>;    s{k,2} = sprintf(<span class="string">'%12.2f m/s$^2$'</span>,mTotal);        k = k + 1;
+s{k,1} = <span class="string">'Maximum thrust'</span>;         	s{k,2} = sprintf(<span class="string">'%12.2f kN'</span>,accel*mTotal/1000);	k = k + 1;
+s{k,1} = <span class="string">'BE-3U thrust'</span>;            s{k,2} = sprintf(<span class="string">'%12.2f kN'</span>,2*710);              k = k + 1;
+s{k,1} = <span class="string">'Mass total'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,mTotal);             k = k + 1;
+s{k,1} = <span class="string">'Mass fuel'</span>;               s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,mFuel);              k = k + 1;
+s{k,1} = <span class="string">'Mass Orion'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,massOrion);          k = k + 1;
+s{k,1} = <span class="string">'Mass structure'</span>;          s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,mStruct);            k = k + 1;
+s{k,1} = <span class="string">'Mass payload'</span>;            s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,massPay);            k = k + 1;
+s{k,1} = <span class="string">'I$_{sp}$'</span>;                s{k,2} = sprintf(<span class="string">'%12.2f s'</span>,iSp);                 k = k + 1;
+s{k,1} = <span class="string">'$\Delta v$'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f m/s'</span>,deltaV*1000);       k = k + 1;
+s{k,1} = <span class="string">'Altitude'</span>;                s{k,2} = sprintf(<span class="string">'%12.2f km'</span>,altitude);           k = k + 1;
+s{k,1} = <span class="string">'Mass H$_2$'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,mH2);                k = k + 1;
+s{k,1} = <span class="string">'Mass O$_2$'</span>;              s{k,2} = sprintf(<span class="string">'%12.2f kg'</span>,mO2);                k = k + 1;
+s{k,1} = <span class="string">'Volume H$_2$'</span>;            s{k,2} = sprintf(<span class="string">'%12.2f m$^3$'</span>,vH2);             k = k + 1;
+s{k,1} = <span class="string">'Volume O$_2$'</span>;            s{k,2} = sprintf(<span class="string">'%12.2f m$^3$'</span>,vO2);             k = k + 1;
+s{k,1} = <span class="string">'Radius Major H$_2$ tank'</span>;	s{k,2} = sprintf(<span class="string">'%12.2f m'</span>,rMajH2);              k = k + 1;
+s{k,1} = <span class="string">'Radius Minor H$_2$ tank'</span>;	s{k,2} = sprintf(<span class="string">'%12.2f m'</span>,rMinH2);              k = k + 1;
+s{k,1} = <span class="string">'Radius O$_2$ tank'</span>;       s{k,2} = sprintf(<span class="string">'%12.2f m'</span>,rO2);                 k = k + 1;
+s{k,1} = <span class="string">'Number of O$_2$ tanks'</span>; 	s{k,2} = sprintf(<span class="string">'%d'</span>,nO2Tanks);                  k = k + 1;
+s{k,1} = <span class="string">'Solar power'</span>;             s{k,2} = sprintf(<span class="string">'%12.2f kW'</span>,power/1000);         k = k + 1;
+
+<span class="comment">% Diameter of Apollo LM 4.22 m</span>
+
+DisplayLatexTable(s)
+CreateLatexTable(s,<span class="string">'LM'</span>)
+</pre>
+<pre class="codeoutput">   Maximum acceleration     88875.60 m/s$^2$ 
+         Maximum thrust           1195.34 kN 
+           BE-3U thrust           1420.00 kN 
+             Mass total          88875.60 kg 
+              Mass fuel          48383.42 kg 
+             Mass Orion          25848.00 kg 
+         Mass structure          12644.18 kg 
+           Mass payload           2000.00 kg 
+               I$_{sp}$             467.00 s 
+             $\Delta v$          3600.00 m/s 
+               Altitude             15.00 km 
+             Mass H$_2$          30239.64 kg 
+             Mass O$_2$          18143.78 kg 
+           Volume H$_2$         424.71 m$^3$ 
+           Volume O$_2$          15.90 m$^3$ 
+Radius Major H$_2$ tank               2.80 m 
+Radius Minor H$_2$ tank               1.96 m 
+      Radius O$_2$ tank               1.24 m 
+  Number of O$_2$ tanks                    2 
+            Solar power             34.17 kW 
+</pre>
+<h2 id="3">Create the 3D model</h2>
+<pre class="codeinput">BuildCADModel( <span class="string">'initialize'</span> );
+
+<span class="comment">% Add spacecraft properties</span>
+BuildCADModel( <span class="string">'set name'</span> , <span class="string">'Lunar Lander'</span> );
+BuildCADModel( <span class="string">'set units'</span>, <span class="string">'mks'</span>  );
+
+<span class="comment">% Create bodies first</span>
+m = CreateBody( <span class="string">'make'</span>, <span class="string">'name'</span>, <span class="string">'Core'</span> );
+BuildCADModel(<span class="string">'add body'</span>, m );
+
+<span class="comment">% This creates the connections between the bodies</span>
+BuildCADModel( <span class="string">'compute paths'</span> );
+</pre>
+<img vspace="5" hspace="5" src="ArtemisLMCAD_01.png" alt=""> <h2 id="4">Add Components</h2>
+<pre class="codeinput">
+<span class="comment">% Cylindrical solar panel</span>
+[v, f] = Frustrum( rS, rS, hS, 20, 1, 1 );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'vertex'</span>,v,<span class="string">'face'</span>,f,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'Solar Cylinder'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;-hS/4], <span class="string">'mass'</span>, 2*pi*rS*hS*rhoS, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+
+<span class="comment">% Toroidal H2 tank</span>
+[v, f] = Torus( rMajH2, rMinH2, 20 );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'vertex'</span>,v,<span class="string">'face'</span>,f,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'H2 Tank'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, (1+fTank)*mH2/2, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'vertex'</span>,v,<span class="string">'face'</span>,f,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'H2 Tank'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;2*rMinH2], <span class="string">'mass'</span>, (1+fTank)*mH2/2, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% O2 Tank</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'sphere'</span>,<span class="string">'radius'</span>,rO2,<span class="string">'n'</span>,20,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'O2 Tank'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, (1+fTank)*mO2/2, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'sphere'</span>,<span class="string">'radius'</span>,rO2,<span class="string">'n'</span>,20,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'gold foil'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'O2 Tank'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;2*rO2], <span class="string">'mass'</span>, (1+fTank)*mO2/2, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Support truss</span>
+w      = 2.1*rO2;
+[v, f] = Truss( [0;0;-2.2], [0;0;4.2*rMinH2], w, 3, 0.05*w );
+
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>,<span class="string">'vertex'</span>,v,<span class="string">'face'</span>,f,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'black'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'Support Truss'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;0], <span class="string">'mass'</span>, 100, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Payload storage</span>
+m = CreateComponent( <span class="string">'make'</span>, <span class="string">'box'</span>,<span class="string">'x'</span>,8,<span class="string">'y'</span>,8,<span class="string">'z'</span>,4,<span class="keyword">...</span>
+                     <span class="string">'faceColor'</span>, <span class="string">'aluminum'</span>,<span class="string">'inside'</span>,0,<span class="string">'name'</span>,<span class="string">'Payload'</span>,<span class="keyword">...</span>
+                     <span class="string">'rA'</span>, [0;0;-4.4], <span class="string">'mass'</span>, 1000, <span class="string">'body'</span>, 1 );
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Legs</span>
+rL        = 35;
+[v, f]    = LandingLegsCAD(<span class="string">'scale'</span>,0.1,<span class="string">'xy spacing'</span>,rL);
+
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'v'</span>,v,<span class="string">'f'</span>,f,<span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, [1 0.84 0] ,<span class="string">'rA'</span>, [0;0;-6],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, <span class="string">'Landing Legs'</span>,<span class="string">'inside'</span>,0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% BE-3U Engines</span>
+dExit  = 2;
+l      = 2.0;
+uPlume = [0;0;-1];
+rC     = 0.1;
+lC     = 0.3;
+lOC    = 0.02;
+n      = 12;
+[v,f]  = ThrusterCAD( uPlume, dExit, l, n, rC, lC, lOC );
+
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'v'</span>,v,<span class="string">'f'</span>,f,<span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'steel'</span> ,<span class="string">'rA'</span>, [-1.5;0;-6],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, <span class="string">'Engine 1'</span>,<span class="string">'inside'</span>,0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+m         = CreateComponent( <span class="string">'make'</span>, <span class="string">'generic'</span>, <span class="string">'v'</span>,v,<span class="string">'f'</span>,f,<span class="keyword">...</span>
+                             <span class="string">'faceColor'</span>, <span class="string">'steel'</span> ,<span class="string">'rA'</span>, [1.5;0;-6],<span class="keyword">...</span>
+                             <span class="string">'name'</span>, <span class="string">'Engine 2'</span>,<span class="string">'inside'</span>,0);
+BuildCADModel( <span class="string">'add component'</span>, m );
+
+<span class="comment">% Orion. This must be a mat file containing a component data structure.</span>
+<span class="comment">% Use LoadCAD to create the datastructure</span>
+<span class="keyword">if</span>( addOrion )
+  BuildCADModel( <span class="string">'add subassembly'</span>, <span class="string">'OrionNew'</span>, 1, [0;0;4.5*rMinH2-1.678], eye(3) );
+<span class="keyword">end</span>
+
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'propulsion'</span>, {<span class="string">'engine'</span>,<span class="string">'tank'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'payload'</span>,    {<span class="string">'payload'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'structure'</span>,  {<span class="string">'truss'</span>, <span class="string">'legs'</span>} );
+BuildCADModel( <span class="string">'add subsystem'</span>, <span class="string">'power'</span>,      {<span class="string">'solar'</span>} );
+
+BuildCADModel( <span class="string">'show vehicle'</span> );
+
+g = BuildCADModel( <span class="string">'get model'</span>);
+ExportOBJ( g, FileFullpath(<span class="string">'Artemis'</span>) );
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 4644cd606fc4b220b2f6f2d4b1b5e3fafa2c5265 $</span>
+</pre>
+<img vspace="5" hspace="5" src="ArtemisLMCAD_02.png" alt=""> <img vspace="5" hspace="5" src="ArtemisLMCAD_03.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Design a fully reusable lunar lander
+% Can land and takeoff using one fuel load. Carries the Orion to and from
+% the moon. Uses two BE-3U engines. Also demonstrates adding an obj file as a
+% subassembly. See LoadOrionFile to see how to get the obj file into a CAD
+% data structure format. Creates Artemis.obj and Artemis.mtl files.
+%
+% See also: MassVolH2O2, DisplayLatexTable, BuildCADModel, CreateComponent,
+% ExportOBJ
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2019 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2019.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Flag to add Orion
+addOrion    = true;
+
+% https://space.skyrocket.de/doc_sdat/orion-mpcv.htm
+massOrion   = 25848;    % kg
+deltaV      = 2*1.8;    % km/s landing and takeoff each leg
+fTank       = 0.05;     % Fraction of mass
+massPay     = 2000;     % Delivered by a cargo vehicle to lunar orbit
+altitude    = 15;       % Orion must reach this altitude to dock
+accel       = 13.4496;  % m/s from LunarLandingOptimize3DLeastSquares.m
+
+massOP      = massOrion + massPay; % Cargo
+
+% https://en.wikipedia.org/wiki/Apollo_Lunar_Module
+massDryD    = 10334 - 8200;
+massAscent  = 4700; % Lunar module
+
+% Estimate the mass of the non payload dry mass from Apollo masses
+mRLM        = massDryD/massAscent;
+mStruct     = mRLM*massOP;
+mDry        = mStruct + massOP;
+
+% Best an H2/O2 engine can do
+fR          = 0.6; % Mass ratio of O2 to H2
+iSp         = 467;
+uE          = iSp*9.806;
+
+mR          = exp(deltaV*1000/uE);
+mFuel       = (mR-1)*mDry;
+mTotal      = mDry + mFuel;
+
+thrustMax   = mTotal*accel;
+
+[mH2, mO2, vH2, vO2] = MassVolH2O2( mFuel, fR );
+
+nO2Tanks    = 2;
+rO2         = (3*vO2/(4*pi*nO2Tanks))^(1/3);
+rMajH2      = 2.8;
+rMinH2      = sqrt(vH2/2/(2*rMajH2))/pi;
+
+% Solar array
+rS          = rMajH2 + rMinH2 + 0.3;
+hS          = 4.2*rMinH2;
+
+% Spectrolab's Space Solar Panels (without the substrate) are specified as:
+rhoS        = 2.06; % 6 mil thickness
+eff         = 0.3;
+power       = 2*sin(pi/2)*hS*rS*eff*1367;
+
+clear s
+
+k = 1;
+s{k,1} = 'Maximum acceleration';    s{k,2} = sprintf('%12.2f m/s$^2$',mTotal);        k = k + 1;
+s{k,1} = 'Maximum thrust';         	s{k,2} = sprintf('%12.2f kN',accel*mTotal/1000);	k = k + 1;
+s{k,1} = 'BE-3U thrust';            s{k,2} = sprintf('%12.2f kN',2*710);              k = k + 1;
+s{k,1} = 'Mass total';              s{k,2} = sprintf('%12.2f kg',mTotal);             k = k + 1;
+s{k,1} = 'Mass fuel';               s{k,2} = sprintf('%12.2f kg',mFuel);              k = k + 1;
+s{k,1} = 'Mass Orion';              s{k,2} = sprintf('%12.2f kg',massOrion);          k = k + 1;
+s{k,1} = 'Mass structure';          s{k,2} = sprintf('%12.2f kg',mStruct);            k = k + 1;
+s{k,1} = 'Mass payload';            s{k,2} = sprintf('%12.2f kg',massPay);            k = k + 1;
+s{k,1} = 'I$_{sp}$';                s{k,2} = sprintf('%12.2f s',iSp);                 k = k + 1;
+s{k,1} = '$\Delta v$';              s{k,2} = sprintf('%12.2f m/s',deltaV*1000);       k = k + 1;
+s{k,1} = 'Altitude';                s{k,2} = sprintf('%12.2f km',altitude);           k = k + 1;
+s{k,1} = 'Mass H$_2$';              s{k,2} = sprintf('%12.2f kg',mH2);                k = k + 1;
+s{k,1} = 'Mass O$_2$';              s{k,2} = sprintf('%12.2f kg',mO2);                k = k + 1;
+s{k,1} = 'Volume H$_2$';            s{k,2} = sprintf('%12.2f m$^3$',vH2);             k = k + 1;
+s{k,1} = 'Volume O$_2$';            s{k,2} = sprintf('%12.2f m$^3$',vO2);             k = k + 1;
+s{k,1} = 'Radius Major H$_2$ tank';	s{k,2} = sprintf('%12.2f m',rMajH2);              k = k + 1;
+s{k,1} = 'Radius Minor H$_2$ tank';	s{k,2} = sprintf('%12.2f m',rMinH2);              k = k + 1;
+s{k,1} = 'Radius O$_2$ tank';       s{k,2} = sprintf('%12.2f m',rO2);                 k = k + 1;
+s{k,1} = 'Number of O$_2$ tanks'; 	s{k,2} = sprintf('%d',nO2Tanks);                  k = k + 1;
+s{k,1} = 'Solar power';             s{k,2} = sprintf('%12.2f kW',power/1000);         k = k + 1;
+
+% Diameter of Apollo LM 4.22 m
+
+DisplayLatexTable(s)
+CreateLatexTable(s,'LM')
+
+
+%% Create the 3D model
+BuildCADModel( 'initialize' );
+
+% Add spacecraft properties
+BuildCADModel( 'set name' , 'Lunar Lander' );
+BuildCADModel( 'set units', 'mks'  );
+
+% Create bodies first
+m = CreateBody( 'make', 'name', 'Core' );
+BuildCADModel('add body', m );
+
+% This creates the connections between the bodies
+BuildCADModel( 'compute paths' );
+
+%% Add Components
+
+% Cylindrical solar panel
+[v, f] = Frustrum( rS, rS, hS, 20, 1, 1 );
+
+m = CreateComponent( 'make', 'generic','vertex',v,'face',f,...
+                     'faceColor', 'gold foil','inside',0,'name','Solar Cylinder',...
+                     'rA', [0;0;-hS/4], 'mass', 2*pi*rS*hS*rhoS, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+
+% Toroidal H2 tank
+[v, f] = Torus( rMajH2, rMinH2, 20 );
+
+m = CreateComponent( 'make', 'generic','vertex',v,'face',f,...
+                     'faceColor', 'gold foil','inside',0,'name','H2 Tank',...
+                     'rA', [0;0;0], 'mass', (1+fTank)*mH2/2, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'generic','vertex',v,'face',f,...
+                     'faceColor', 'gold foil','inside',0,'name','H2 Tank',...
+                     'rA', [0;0;2*rMinH2], 'mass', (1+fTank)*mH2/2, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% O2 Tank
+m = CreateComponent( 'make', 'sphere','radius',rO2,'n',20,...
+                     'faceColor', 'gold foil','inside',0,'name','O2 Tank',...
+                     'rA', [0;0;0], 'mass', (1+fTank)*mO2/2, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+m = CreateComponent( 'make', 'sphere','radius',rO2,'n',20,...
+                     'faceColor', 'gold foil','inside',0,'name','O2 Tank',...
+                     'rA', [0;0;2*rO2], 'mass', (1+fTank)*mO2/2, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Support truss
+w      = 2.1*rO2;
+[v, f] = Truss( [0;0;-2.2], [0;0;4.2*rMinH2], w, 3, 0.05*w );
+
+m = CreateComponent( 'make', 'generic','vertex',v,'face',f,...
+                     'faceColor', 'black','inside',0,'name','Support Truss',...
+                     'rA', [0;0;0], 'mass', 100, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Payload storage
+m = CreateComponent( 'make', 'box','x',8,'y',8,'z',4,...
+                     'faceColor', 'aluminum','inside',0,'name','Payload',...
+                     'rA', [0;0;-4.4], 'mass', 1000, 'body', 1 );
+BuildCADModel( 'add component', m );
+
+% Legs
+rL        = 35;
+[v, f]    = LandingLegsCAD('scale',0.1,'xy spacing',rL);
+
+m         = CreateComponent( 'make', 'generic', 'v',v,'f',f,...
+                             'faceColor', [1 0.84 0] ,'rA', [0;0;-6],...
+                             'name', 'Landing Legs','inside',0);
+BuildCADModel( 'add component', m );
+
+% BE-3U Engines
+dExit  = 2;
+l      = 2.0;
+uPlume = [0;0;-1];
+rC     = 0.1;
+lC     = 0.3;
+lOC    = 0.02;
+n      = 12;
+[v,f]  = ThrusterCAD( uPlume, dExit, l, n, rC, lC, lOC );
+
+m         = CreateComponent( 'make', 'generic', 'v',v,'f',f,...
+                             'faceColor', 'steel' ,'rA', [-1.5;0;-6],...
+                             'name', 'Engine 1','inside',0);
+BuildCADModel( 'add component', m );
+
+m         = CreateComponent( 'make', 'generic', 'v',v,'f',f,...
+                             'faceColor', 'steel' ,'rA', [1.5;0;-6],...
+                             'name', 'Engine 2','inside',0);
+BuildCADModel( 'add component', m );
+
+% Orion. This must be a mat file containing a component data structure. 
+% Use LoadCAD to create the datastructure
+if( addOrion )
+  BuildCADModel( 'add subassembly', 'OrionNew', 1, [0;0;4.5*rMinH2-1.678], eye(3) );
+end
+
+BuildCADModel( 'add subsystem', 'propulsion', {'engine','tank'} );
+BuildCADModel( 'add subsystem', 'payload',    {'payload'} );
+BuildCADModel( 'add subsystem', 'structure',  {'truss', 'legs'} );
+BuildCADModel( 'add subsystem', 'power',      {'solar'} );
+
+BuildCADModel( 'show vehicle' );
+
+g = BuildCADModel( 'get model');
+ExportOBJ( g, FileFullpath('Artemis') );
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   ArtemisLMCAD.m $
+% $Id: 4644cd606fc4b220b2f6f2d4b1b5e3fafa2c5265 $
+##### SOURCE END #####
+-->
+</body>
+</html>

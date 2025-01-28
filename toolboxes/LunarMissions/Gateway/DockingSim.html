@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Gateway docking simulation</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="DockingSim.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Gateway docking simulation</h1>
+<!--introduction-->
+<p>Loads the stored MassProps.mat.</p>
+<p>See also: PID3Axis, PIDMIMO, RHSSGCMG, RK4, TimeHistory</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">User inputs</a>
+</li>
+<li>
+<a href="#3">Script control</a>
+</li>
+<li>
+<a href="#4">Read in the Gateway and Orion inertia</a>
+</li>
+<li>
+<a href="#5">Design the controller</a>
+</li>
+<li>
+<a href="#6">Simulation</a>
+</li>
+<li>
+<a href="#7">Plot</a>
+</li>
+<li>
+<a href="#8">Print to file</a>
+</li>
+<li>
+<a href="#9">Docking</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2022 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2023.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">User inputs</h2>
+<pre class="codeinput">tEnd      = 500; <span class="comment">% s</span>
+dT        = 0.1; <span class="comment">% s</span>
+
+<span class="comment">% Disturbance torque</span>
+tD        = [0.02;0;0]; <span class="comment">% Nm</span>
+kD        = [100 200 300]; <span class="comment">% Doublet times</span>
+
+<span class="comment">% Docking</span>
+kDock    = 500;
+
+<span class="comment">% Target quaternion and Orion residual angular rates</span>
+qTarget    = [1;0;0;0];
+omegaOrion = [1;1;1]*1e-6;
+
+printFigs = false; <span class="comment">% create PDFs of figures</span>
+</pre>
+<h2 id="3">Script control</h2>
+<pre class="codeinput">
+<span class="keyword">if</span>( printFigs )
+  close <span class="string">all</span>
+<span class="keyword">end</span>
+</pre>
+<h2 id="4">Read in the Gateway and Orion inertia</h2>
+<pre class="codeinput">s = load(<span class="string">'MassProps.mat'</span>);
+
+nSim   = floor(tEnd/dT);
+x      = [1;zeros(12,1)];
+xP     = zeros(length(x)+6,nSim);
+</pre>
+<h2 id="5">Design the controller</h2>
+<pre class="codeinput">dC = PID3Axis;
+dC.q_desired_state = qTarget;
+dC.inertia = s.inrG;
+dC.dT = dT;
+[dC.a, dC.b, dC.c, dC.d] = PIDMIMO(1,1,0.01,200,0.05,dT);
+</pre>
+<h2 id="6">Simulation</h2>
+<p>Default data structure</p>
+<pre class="codeinput">dRHS     = RHSSGCMG;
+dRHS.inr = s.inrG;
+
+<span class="keyword">for</span> k = 1:nSim
+  <span class="comment">% Attitude control</span>
+  [tC, dC] = PID3Axis( x(1:4), dC );
+  <span class="keyword">if</span>( k &gt; kD(1) &amp;&amp; k &lt; kD(2))
+    dRHS.torque = tD;
+  <span class="keyword">elseif</span>( k &gt; kD(2) &amp;&amp; k &lt; kD(3))
+    dRHS.torque = -tD;
+  <span class="keyword">else</span>
+    dRHS.torque = [0;0;0];
+  <span class="keyword">end</span>
+
+  <span class="keyword">if</span>( k == kDock )
+    [x(5:7),inr] = Docking(x(5:7),s,omegaOrion);
+    dRHS.inr     = inr;
+    dC.inertia   = inr;
+  <span class="keyword">end</span>
+
+  dRHS.tC  = -tC;
+
+  xP(:,k)  = [x;dRHS.tC;dRHS.torque];
+  x        = RK4(@RHSSGCMG,x,dT,0,dRHS);
+<span class="keyword">end</span>
+</pre>
+<h2 id="7">Plot</h2>
+<pre class="codeinput">yL = {<span class="string">'q_s'</span> <span class="string">'q_x'</span> <span class="string">'q_y'</span> <span class="string">'q_z'</span> <span class="string">'\omega_x'</span> <span class="string">'\omega_y'</span> <span class="string">'\omega_z'</span><span class="keyword">...</span>
+      <span class="string">'\Omega_{1_y}'</span> <span class="string">'\Omega_{1_z}'</span> <span class="string">'\Omega_{2_y}'</span> <span class="string">'\Omega_{2_z}'</span><span class="keyword">...</span>
+      <span class="string">'\Omega_{3_y}'</span> <span class="string">'\Omega_{3_z}'</span> <span class="string">'t_{C_1}'</span> <span class="string">'t_{C_2}'</span> <span class="string">'t_{C_3}'</span><span class="keyword">...</span>
+      <span class="string">'t_{D_x}'</span> <span class="string">'t_{D_y}'</span> <span class="string">'t_{D_z}'</span>};
+
+t = (0:nSim-1)*dT;
+
+k = 1:4;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Quaternion'</span>); k = 5:7;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Body Rates'</span>); k = 8:13;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'CMG Rates'</span>); k = 14:19;
+TimeHistory(t,xP(k,:),yL(k),<span class="string">'Torques'</span>);
+</pre>
+<img vspace="5" hspace="5" src="DockingSim_01.png" alt=""> <img vspace="5" hspace="5" src="DockingSim_02.png" alt=""> <img vspace="5" hspace="5" src="DockingSim_03.png" alt=""> <img vspace="5" hspace="5" src="DockingSim_04.png" alt=""> <h2 id="8">Print to file</h2>
+<pre class="codeinput">
+<span class="keyword">if</span>( printFigs )
+  <span class="keyword">for</span> k = 1:4
+    PrintFig(1,4,k,sprintf(<span class="string">'DS%d'</span>,k));
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> [omega,inr] = Docking( omegaOld, s, omegaOrion )
+</pre>
+<h2 id="9">Docking</h2>
+<pre class="codeinput">rO = [-4;0;0];
+rG = [ 7;0;0];
+mO = 33446;
+mG = 40000;
+
+c     = (mO*rO + mG*rG)/(mO+mG);
+inr   = s.inrG + s.inrO - mO*SkewSq(rO-c) - mG*SkewSq(rG-c);
+omega = inr\(s.inrG*omegaOld + s.inrO*omegaOrion);
+</pre>
+<pre class="codeinput">
+<span class="keyword">end</span>
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: e062aedbc41ada792d3afd9f1bf6243e0164dc43 $</span>
+</pre>
+<p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Gateway docking simulation
+% Loads the stored MassProps.mat. 
+%
+% See also: PID3Axis, PIDMIMO, RHSSGCMG, RK4, TimeHistory
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2022 Princeton Satellite Systems, Inc. 
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2023.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% User inputs
+tEnd      = 500; % s
+dT        = 0.1; % s
+
+% Disturbance torque
+tD        = [0.02;0;0]; % Nm
+kD        = [100 200 300]; % Doublet times
+
+% Docking
+kDock    = 500;
+
+% Target quaternion and Orion residual angular rates
+qTarget    = [1;0;0;0];
+omegaOrion = [1;1;1]*1e-6;
+
+printFigs = false; % create PDFs of figures
+
+%% Script control
+if( printFigs )
+  close all
+end
+
+%% Read in the Gateway and Orion inertia
+s = load('MassProps.mat');
+
+nSim   = floor(tEnd/dT);
+x      = [1;zeros(12,1)];
+xP     = zeros(length(x)+6,nSim);
+
+%% Design the controller
+dC = PID3Axis;
+dC.q_desired_state = qTarget;
+dC.inertia = s.inrG;
+dC.dT = dT;
+[dC.a, dC.b, dC.c, dC.d] = PIDMIMO(1,1,0.01,200,0.05,dT);
+
+%% Simulation
+% Default data structure
+dRHS     = RHSSGCMG;
+dRHS.inr = s.inrG;
+
+for k = 1:nSim
+  % Attitude control
+  [tC, dC] = PID3Axis( x(1:4), dC );
+  if( k > kD(1) && k < kD(2))
+    dRHS.torque = tD;
+  elseif( k > kD(2) && k < kD(3))
+    dRHS.torque = -tD;
+  else
+    dRHS.torque = [0;0;0];
+  end
+
+  if( k == kDock )
+    [x(5:7),inr] = Docking(x(5:7),s,omegaOrion);
+    dRHS.inr     = inr;
+    dC.inertia   = inr;
+  end
+
+  dRHS.tC  = -tC;
+
+  xP(:,k)  = [x;dRHS.tC;dRHS.torque];
+  x        = RK4(@RHSSGCMG,x,dT,0,dRHS);
+end
+
+
+%% Plot
+yL = {'q_s' 'q_x' 'q_y' 'q_z' '\omega_x' '\omega_y' '\omega_z'...
+      '\Omega_{1_y}' '\Omega_{1_z}' '\Omega_{2_y}' '\Omega_{2_z}'...
+      '\Omega_{3_y}' '\Omega_{3_z}' 't_{C_1}' 't_{C_2}' 't_{C_3}'...
+      't_{D_x}' 't_{D_y}' 't_{D_z}'};
+
+t = (0:nSim-1)*dT;
+
+k = 1:4;
+TimeHistory(t,xP(k,:),yL(k),'Quaternion'); k = 5:7;
+TimeHistory(t,xP(k,:),yL(k),'Body Rates'); k = 8:13;
+TimeHistory(t,xP(k,:),yL(k),'CMG Rates'); k = 14:19;
+TimeHistory(t,xP(k,:),yL(k),'Torques'); 
+
+%% Print to file
+if( printFigs )
+  for k = 1:4
+    PrintFig(1,4,k,sprintf('DS%d',k));
+  end
+end
+
+function [omega,inr] = Docking( omegaOld, s, omegaOrion )
+%% Docking
+
+rO = [-4;0;0];
+rG = [ 7;0;0];
+mO = 33446;
+mG = 40000;
+
+c     = (mO*rO + mG*rG)/(mO+mG);
+inr   = s.inrG + s.inrO - mO*SkewSq(rO-c) - mG*SkewSq(rG-c);
+omega = inr\(s.inrG*omegaOld + s.inrO*omegaOrion);
+
+end
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   DockingSim.m $
+% $Id: e062aedbc41ada792d3afd9f1bf6243e0164dc43 $
+
+
+##### SOURCE END #####
+-->
+</body>
+</html>

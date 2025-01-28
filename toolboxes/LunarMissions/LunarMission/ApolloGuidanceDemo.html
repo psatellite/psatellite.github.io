@@ -1,0 +1,531 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Apollo lunar descent guidance demo</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="ApolloGuidanceDemo.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Apollo lunar descent guidance demo</h1>
+<p>See also: ApolloLunarDescentGuidance</p>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+tEnd  = 300;
+dT    = 1;
+n     = ceil(tEnd/dT);
+h     = 15;
+r     = h+1738;
+v     = sqrt(Constant(<span class="string">'mu moon'</span>)/r)*1000;
+x     = [1000*h;0;492000;0;0;-v];
+xP    = zeros(9,n);
+mode  = cell(n,1);
+t     = 0;
+dG    = ApolloLunarDescentGuidance;
+fC    = 1/(r*1000);
+gM    = fC*v^2;
+
+<span class="keyword">for</span> k = 1:n
+  [aCG,dG]	= ApolloLunarDescentGuidance( x, t, dG );
+  xP(:,k)   = [x;aCG];
+  mode{k}   = dG.mode;
+  x         = RK4(@RHS,x,dT,0,aCG,fC,gM);
+  t         = t + dT;
+<span class="keyword">end</span>
+
+[t,tL] = TimeLabl((0:(k-1))*dT);
+
+yL = {<span class="string">'R_{G_x} (m)'</span>     <span class="string">'R_{G_y} (m)'</span>,      <span class="string">'R_{G_z} (m)'</span>,<span class="keyword">...</span>
+      <span class="string">'V_{G_x} (m/s)'</span>   <span class="string">'V_{G_y} (m/s)'</span>,    <span class="string">'V_{G_z} (m/s)'</span>,<span class="keyword">...</span>
+      <span class="string">'A_{G_x} (m/s^2)'</span> <span class="string">'A_{G_y} (m/s^2)'</span>,  <span class="string">'A_{G_z} (m/s^2)'</span>};
+
+h = xP(1,:);
+z = xP(3,:);
+NewFig(<span class="string">'Trajectory'</span>)
+plot(z,h);
+grid <span class="string">on</span>
+text(z(1),1.01*h(1),mode{1});
+text(z(1),0.99*h(1),sprintf(<span class="string">'t = %4.1f min'</span>,t(1)));
+
+<span class="keyword">for</span> k = 2:n
+  <span class="keyword">if</span>( ~strcmp(mode{k},mode{k-1}) )
+    text(z(k),1.01*h(k),mode{k});
+    text(z(k),0.99*h(k),sprintf(<span class="string">'t = %4.1f min'</span>,t(k)));
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+text(z(n),h(n),sprintf(<span class="string">'t = %4.1f min'</span>,t(n)));
+
+Plot2D(t,xP(1:3,:),tL,yL(1:3),<span class="string">'R_G'</span>);
+Plot2D(t,xP(4:6,:),tL,yL(4:6),<span class="string">'V_G'</span>);
+Plot2D(t,xP(7:9,:),tL,yL(7:9),<span class="string">'A_G'</span>);
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Right hand side</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="keyword">function</span> xDot = RHS(x,~,aCG,fC,gM)
+
+a     = [fC*x(6)^2 - gM;0;0];
+xDot	= [x(4:6);aCG+a];
+
+<span class="keyword">end</span>
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% $Date$</span>
+<span class="comment">% $Id: e81e416d77672edbf7906fe2eee310623f3dc4e5 $</span>
+</pre>
+<pre class="codeoutput">t =      0.0 mode: P63 rG = [15000.00     0.00 492000.00] aCG = [   -2.31     0.00    -2.26]
+t =      1.0 mode: P63 rG = [14998.85     0.00 490326.51] aCG = [   -2.28     0.00    -2.20]
+t =      2.0 mode: P63 rG = [14995.40     0.00 488650.78] aCG = [   -2.26     0.00    -2.15]
+t =      3.0 mode: P63 rG = [14989.69     0.00 486972.88] aCG = [   -2.24     0.00    -2.10]
+t =      4.0 mode: P63 rG = [14981.75     0.00 485292.85] aCG = [   -2.21     0.00    -2.04]
+t =      5.0 mode: P63 rG = [14971.60     0.00 483610.75] aCG = [   -2.19     0.00    -1.99]
+t =      6.0 mode: P63 rG = [14959.26     0.00 481926.64] aCG = [   -2.17     0.00    -1.94]
+t =      7.0 mode: P63 rG = [14944.78     0.00 480240.56] aCG = [   -2.14     0.00    -1.88]
+t =      8.0 mode: P63 rG = [14928.16     0.00 478552.58] aCG = [   -2.12     0.00    -1.83]
+t =      9.0 mode: P63 rG = [14909.45     0.00 476862.73] aCG = [   -2.10     0.00    -1.78]
+t =     10.0 mode: P63 rG = [14888.67     0.00 475171.09] aCG = [   -2.07     0.00    -1.72]
+t =     11.0 mode: P63 rG = [14865.83     0.00 473477.69] aCG = [   -2.05     0.00    -1.67]
+t =     12.0 mode: P63 rG = [14840.98     0.00 471782.60] aCG = [   -2.03     0.00    -1.62]
+t =     13.0 mode: P63 rG = [14814.13     0.00 470085.86] aCG = [   -2.01     0.00    -1.57]
+t =     14.0 mode: P63 rG = [14785.31     0.00 468387.53] aCG = [   -1.98     0.00    -1.52]
+t =     15.0 mode: P63 rG = [14754.55     0.00 466687.65] aCG = [   -1.96     0.00    -1.46]
+t =     16.0 mode: P63 rG = [14721.87     0.00 464986.29] aCG = [   -1.94     0.00    -1.41]
+t =     17.0 mode: P63 rG = [14687.29     0.00 463283.49] aCG = [   -1.92     0.00    -1.36]
+t =     18.0 mode: P63 rG = [14650.85     0.00 461579.30] aCG = [   -1.90     0.00    -1.31]
+t =     19.0 mode: P63 rG = [14612.56     0.00 459873.78] aCG = [   -1.87     0.00    -1.26]
+t =     20.0 mode: P63 rG = [14572.45     0.00 458166.97] aCG = [   -1.85     0.00    -1.21]
+t =     21.0 mode: P63 rG = [14530.55     0.00 456458.93] aCG = [   -1.83     0.00    -1.16]
+t =     22.0 mode: P63 rG = [14486.87     0.00 454749.70] aCG = [   -1.81     0.00    -1.11]
+t =     23.0 mode: P63 rG = [14441.45     0.00 453039.34] aCG = [   -1.79     0.00    -1.06]
+t =     24.0 mode: P63 rG = [14394.30     0.00 451327.90] aCG = [   -1.77     0.00    -1.01]
+t =     25.0 mode: P63 rG = [14345.44     0.00 449615.43] aCG = [   -1.75     0.00    -0.96]
+t =     26.0 mode: P63 rG = [14294.91     0.00 447901.98] aCG = [   -1.73     0.00    -0.91]
+t =     27.0 mode: P63 rG = [14242.73     0.00 446187.59] aCG = [   -1.70     0.00    -0.86]
+t =     28.0 mode: P63 rG = [14188.90     0.00 444472.32] aCG = [   -1.68     0.00    -0.81]
+t =     29.0 mode: P63 rG = [14133.47     0.00 442756.21] aCG = [   -1.66     0.00    -0.76]
+t =     30.0 mode: P63 rG = [14076.45     0.00 441039.32] aCG = [   -1.64     0.00    -0.71]
+t =     31.0 mode: P63 rG = [14017.87     0.00 439321.69] aCG = [   -1.62     0.00    -0.66]
+t =     32.0 mode: P63 rG = [13957.74     0.00 437603.38] aCG = [   -1.60     0.00    -0.61]
+t =     33.0 mode: P63 rG = [13896.08     0.00 435884.43] aCG = [   -1.58     0.00    -0.57]
+t =     34.0 mode: P63 rG = [13832.93     0.00 434164.88] aCG = [   -1.56     0.00    -0.52]
+t =     35.0 mode: P63 rG = [13768.29     0.00 432444.80] aCG = [   -1.54     0.00    -0.47]
+t =     36.0 mode: P63 rG = [13702.20     0.00 430724.22] aCG = [   -1.52     0.00    -0.42]
+t =     37.0 mode: P63 rG = [13634.66     0.00 429003.19] aCG = [   -1.50     0.00    -0.38]
+t =     38.0 mode: P63 rG = [13565.71     0.00 427281.76] aCG = [   -1.48     0.00    -0.33]
+t =     39.0 mode: P63 rG = [13495.37     0.00 425559.98] aCG = [   -1.46     0.00    -0.28]
+t =     40.0 mode: P63 rG = [13423.64     0.00 423837.90] aCG = [   -1.44     0.00    -0.23]
+t =     41.0 mode: P63 rG = [13350.56     0.00 422115.55] aCG = [   -1.42     0.00    -0.19]
+t =     42.0 mode: P63 rG = [13276.14     0.00 420393.00] aCG = [   -1.40     0.00    -0.14]
+t =     43.0 mode: P63 rG = [13200.41     0.00 418670.28] aCG = [   -1.39     0.00    -0.10]
+t =     44.0 mode: P63 rG = [13123.38     0.00 416947.44] aCG = [   -1.37     0.00    -0.05]
+t =     45.0 mode: P63 rG = [13045.07     0.00 415224.54] aCG = [   -1.35     0.00    -0.00]
+t =     46.0 mode: P63 rG = [12965.50     0.00 413501.60] aCG = [   -1.33     0.00     0.04]
+t =     47.0 mode: P63 rG = [12884.69     0.00 411778.68] aCG = [   -1.31     0.00     0.09]
+t =     48.0 mode: P63 rG = [12802.67     0.00 410055.83] aCG = [   -1.29     0.00     0.13]
+t =     49.0 mode: P63 rG = [12719.44     0.00 408333.09] aCG = [   -1.27     0.00     0.18]
+t =     50.0 mode: P63 rG = [12635.03     0.00 406610.51] aCG = [   -1.25     0.00     0.22]
+t =     51.0 mode: P63 rG = [12549.45     0.00 404888.13] aCG = [   -1.23     0.00     0.27]
+t =     52.0 mode: P63 rG = [12462.73     0.00 403165.99] aCG = [   -1.22     0.00     0.31]
+t =     53.0 mode: P63 rG = [12374.87     0.00 401444.14] aCG = [   -1.20     0.00     0.36]
+t =     54.0 mode: P63 rG = [12285.91     0.00 399722.63] aCG = [   -1.18     0.00     0.40]
+t =     55.0 mode: P63 rG = [12195.86     0.00 398001.50] aCG = [   -1.16     0.00     0.44]
+t =     56.0 mode: P63 rG = [12104.73     0.00 396280.79] aCG = [   -1.14     0.00     0.49]
+t =     57.0 mode: P63 rG = [12012.54     0.00 394560.54] aCG = [   -1.12     0.00     0.53]
+t =     58.0 mode: P63 rG = [11919.31     0.00 392840.81] aCG = [   -1.11     0.00     0.58]
+t =     59.0 mode: P63 rG = [11825.06     0.00 391121.63] aCG = [   -1.09     0.00     0.62]
+t =     60.0 mode: P63 rG = [11729.80     0.00 389403.05] aCG = [   -1.07     0.00     0.66]
+t =     61.0 mode: P63 rG = [11633.55     0.00 387685.11] aCG = [   -1.05     0.00     0.70]
+t =     62.0 mode: P63 rG = [11536.33     0.00 385967.85] aCG = [   -1.03     0.00     0.75]
+t =     63.0 mode: P63 rG = [11438.15     0.00 384251.32] aCG = [   -1.02     0.00     0.79]
+t =     64.0 mode: P63 rG = [11339.04     0.00 382535.55] aCG = [   -1.00     0.00     0.83]
+t =     65.0 mode: P63 rG = [11238.99     0.00 380820.60] aCG = [   -0.98     0.00     0.87]
+t =     66.0 mode: P63 rG = [11138.04     0.00 379106.50] aCG = [   -0.96     0.00     0.92]
+t =     67.0 mode: P63 rG = [11036.20     0.00 377393.30] aCG = [   -0.95     0.00     0.96]
+t =     68.0 mode: P63 rG = [10933.49     0.00 375681.03] aCG = [   -0.93     0.00     1.00]
+t =     69.0 mode: P63 rG = [10829.91     0.00 373969.74] aCG = [   -0.91     0.00     1.04]
+t =     70.0 mode: P63 rG = [10725.48     0.00 372259.46] aCG = [   -0.89     0.00     1.08]
+t =     71.0 mode: P63 rG = [10620.23     0.00 370550.25] aCG = [   -0.88     0.00     1.12]
+t =     72.0 mode: P63 rG = [10514.16     0.00 368842.14] aCG = [   -0.86     0.00     1.16]
+t =     73.0 mode: P63 rG = [10407.30     0.00 367135.18] aCG = [   -0.84     0.00     1.20]
+t =     74.0 mode: P63 rG = [10299.65     0.00 365429.39] aCG = [   -0.82     0.00     1.24]
+t =     75.0 mode: P63 rG = [10191.23     0.00 363724.83] aCG = [   -0.81     0.00     1.28]
+t =     76.0 mode: P63 rG = [10082.05     0.00 362021.53] aCG = [   -0.79     0.00     1.32]
+t =     77.0 mode: P63 rG = [ 9972.14     0.00 360319.54] aCG = [   -0.77     0.00     1.36]
+t =     78.0 mode: P63 rG = [ 9861.49     0.00 358618.89] aCG = [   -0.76     0.00     1.40]
+t =     79.0 mode: P63 rG = [ 9750.14     0.00 356919.62] aCG = [   -0.74     0.00     1.44]
+t =     80.0 mode: P63 rG = [ 9638.09     0.00 355221.77] aCG = [   -0.72     0.00     1.48]
+t =     81.0 mode: P63 rG = [ 9525.36     0.00 353525.39] aCG = [   -0.71     0.00     1.52]
+t =     82.0 mode: P63 rG = [ 9411.95     0.00 351830.51] aCG = [   -0.69     0.00     1.56]
+t =     83.0 mode: P63 rG = [ 9297.89     0.00 350137.16] aCG = [   -0.67     0.00     1.60]
+t =     84.0 mode: P63 rG = [ 9183.19     0.00 348445.39] aCG = [   -0.66     0.00     1.64]
+t =     85.0 mode: P63 rG = [ 9067.87     0.00 346755.24] aCG = [   -0.64     0.00     1.67]
+t =     86.0 mode: P63 rG = [ 8951.92     0.00 345066.75] aCG = [   -0.62     0.00     1.71]
+t =     87.0 mode: P63 rG = [ 8835.38     0.00 343379.94] aCG = [   -0.61     0.00     1.75]
+t =     88.0 mode: P63 rG = [ 8718.24     0.00 341694.87] aCG = [   -0.59     0.00     1.79]
+t =     89.0 mode: P63 rG = [ 8600.54     0.00 340011.57] aCG = [   -0.57     0.00     1.82]
+t =     90.0 mode: P63 rG = [ 8482.27     0.00 338330.07] aCG = [   -0.56     0.00     1.86]
+t =     91.0 mode: P63 rG = [ 8363.45     0.00 336650.41] aCG = [   -0.54     0.00     1.90]
+t =     92.0 mode: P63 rG = [ 8244.09     0.00 334972.64] aCG = [   -0.52     0.00     1.94]
+t =     93.0 mode: P63 rG = [ 8124.21     0.00 333296.78] aCG = [   -0.51     0.00     1.97]
+t =     94.0 mode: P63 rG = [ 8003.82     0.00 331622.87] aCG = [   -0.49     0.00     2.01]
+t =     95.0 mode: P63 rG = [ 7882.93     0.00 329950.96] aCG = [   -0.48     0.00     2.04]
+t =     96.0 mode: P63 rG = [ 7761.56     0.00 328281.07] aCG = [   -0.46     0.00     2.08]
+t =     97.0 mode: P63 rG = [ 7639.71     0.00 326613.24] aCG = [   -0.44     0.00     2.12]
+t =     98.0 mode: P63 rG = [ 7517.40     0.00 324947.52] aCG = [   -0.43     0.00     2.15]
+t =     99.0 mode: P63 rG = [ 7394.64     0.00 323283.92] aCG = [   -0.41     0.00     2.19]
+t =    100.0 mode: P63 rG = [ 7271.45     0.00 321622.50] aCG = [   -0.39     0.00     2.22]
+t =    101.0 mode: P63 rG = [ 7147.83     0.00 319963.28] aCG = [   -0.38     0.00     2.26]
+t =    102.0 mode: P63 rG = [ 7023.79     0.00 318306.31] aCG = [   -0.36     0.00     2.29]
+t =    103.0 mode: P63 rG = [ 6899.35     0.00 316651.60] aCG = [   -0.35     0.00     2.33]
+t =    104.0 mode: P63 rG = [ 6774.53     0.00 314999.21] aCG = [   -0.33     0.00     2.36]
+t =    105.0 mode: P63 rG = [ 6649.32     0.00 313349.17] aCG = [   -0.31     0.00     2.40]
+t =    106.0 mode: P63 rG = [ 6523.75     0.00 311701.50] aCG = [   -0.30     0.00     2.43]
+t =    107.0 mode: P63 rG = [ 6397.82     0.00 310056.24] aCG = [   -0.28     0.00     2.46]
+t =    108.0 mode: P63 rG = [ 6271.54     0.00 308413.44] aCG = [   -0.27     0.00     2.50]
+t =    109.0 mode: P63 rG = [ 6144.94     0.00 306773.11] aCG = [   -0.25     0.00     2.53]
+t =    110.0 mode: P63 rG = [ 6018.01     0.00 305135.30] aCG = [   -0.24     0.00     2.56]
+t =    111.0 mode: P63 rG = [ 5890.77     0.00 303500.04] aCG = [   -0.22     0.00     2.60]
+t =    112.0 mode: P63 rG = [ 5763.23     0.00 301867.35] aCG = [   -0.20     0.00     2.63]
+t =    113.0 mode: P63 rG = [ 5635.40     0.00 300237.29] aCG = [   -0.19     0.00     2.66]
+t =    114.0 mode: P63 rG = [ 5507.29     0.00 298609.87] aCG = [   -0.17     0.00     2.70]
+t =    115.0 mode: P63 rG = [ 5378.92     0.00 296985.13] aCG = [   -0.16     0.00     2.73]
+t =    116.0 mode: P63 rG = [ 5250.29     0.00 295363.10] aCG = [   -0.14     0.00     2.76]
+t =    117.0 mode: P63 rG = [ 5121.41     0.00 293743.82] aCG = [   -0.13     0.00     2.79]
+t =    118.0 mode: P63 rG = [ 4992.29     0.00 292127.31] aCG = [   -0.11     0.00     2.82]
+t =    119.0 mode: P63 rG = [ 4862.95     0.00 290513.61] aCG = [   -0.09     0.00     2.86]
+t =    120.0 mode: P63 rG = [ 4733.40     0.00 288902.76] aCG = [   -0.08     0.00     2.89]
+t =    121.0 mode: P63 rG = [ 4603.64     0.00 287294.77] aCG = [   -0.06     0.00     2.92]
+t =    122.0 mode: P63 rG = [ 4473.69     0.00 285689.69] aCG = [   -0.05     0.00     2.95]
+t =    123.0 mode: P63 rG = [ 4343.55     0.00 284087.54] aCG = [   -0.03     0.00     2.98]
+t =    124.0 mode: P63 rG = [ 4213.24     0.00 282488.36] aCG = [   -0.02     0.00     3.01]
+t =    125.0 mode: P63 rG = [ 4082.77     0.00 280892.17] aCG = [   -0.00     0.00     3.04]
+t =    126.0 mode: P63 rG = [ 3952.14     0.00 279299.01] aCG = [    0.01     0.00     3.07]
+t =    127.0 mode: P63 rG = [ 3821.36     0.00 277708.91] aCG = [    0.03     0.00     3.10]
+t =    128.0 mode: P63 rG = [ 3690.46     0.00 276121.89] aCG = [    0.04     0.00     3.13]
+t =    129.0 mode: P63 rG = [ 3559.43     0.00 274537.99] aCG = [    0.06     0.00     3.16]
+t =    130.0 mode: P63 rG = [ 3428.28     0.00 272957.24] aCG = [    0.08     0.00     3.19]
+t =    131.0 mode: P63 rG = [ 3297.03     0.00 271379.66] aCG = [    0.09     0.00     3.22]
+t =    132.0 mode: P63 rG = [ 3165.68     0.00 269805.29] aCG = [    0.11     0.00     3.25]
+t =    133.0 mode: P63 rG = [ 3034.25     0.00 268234.15] aCG = [    0.12     0.00     3.28]
+t =    134.0 mode: P63 rG = [ 2902.75     0.00 266666.28] aCG = [    0.14     0.00     3.31]
+t =    135.0 mode: P63 rG = [ 2771.17     0.00 265101.70] aCG = [    0.15     0.00     3.34]
+t =    136.0 mode: P63 rG = [ 2639.54     0.00 263540.44] aCG = [    0.17     0.00     3.36]
+t =    137.0 mode: P63 rG = [ 2507.86     0.00 261982.53] aCG = [    0.18     0.00     3.39]
+t =    138.0 mode: P63 rG = [ 2376.15     0.00 260427.99] aCG = [    0.20     0.00     3.42]
+t =    139.0 mode: P63 rG = [ 2244.40     0.00 258876.87] aCG = [    0.21     0.00     3.45]
+t =    140.0 mode: P63 rG = [ 2112.64     0.00 257329.17] aCG = [    0.23     0.00     3.47]
+t =    141.0 mode: P63 rG = [ 1980.86     0.00 255784.94] aCG = [    0.24     0.00     3.50]
+t =    142.0 mode: P63 rG = [ 1849.09     0.00 254244.20] aCG = [    0.26     0.00     3.53]
+t =    143.0 mode: P63 rG = [ 1717.32     0.00 252706.97] aCG = [    0.28     0.00     3.56]
+t =    144.0 mode: P63 rG = [ 1585.57     0.00 251173.28] aCG = [    0.29     0.00     3.58]
+t =    145.0 mode: P63 rG = [ 1453.84     0.00 249643.17] aCG = [    0.31     0.00     3.61]
+t =    146.0 mode: P63 rG = [ 1322.15     0.00 248116.65] aCG = [    0.32     0.00     3.64]
+t =    147.0 mode: P63 rG = [ 1190.50     0.00 246593.76] aCG = [    0.34     0.00     3.66]
+t =    148.0 mode: P63 rG = [ 1058.91     0.00 245074.51] aCG = [    0.35     0.00     3.69]
+t =    149.0 mode: P63 rG = [  927.38     0.00 243558.94] aCG = [    0.37     0.00     3.71]
+t =    150.0 mode: P63 rG = [  795.92     0.00 242047.07] aCG = [    0.38     0.00     3.74]
+t =    151.0 mode: P63 rG = [  664.54     0.00 240538.93] aCG = [    0.40     0.00     3.77]
+t =    152.0 mode: P63 rG = [  533.24     0.00 239034.54] aCG = [    0.41     0.00     3.79]
+t =    153.0 mode: P63 rG = [  402.04     0.00 237533.92] aCG = [    0.43     0.00     3.82]
+t =    154.0 mode: P63 rG = [  270.95     0.00 236037.11] aCG = [    0.44     0.00     3.84]
+t =    155.0 mode: P63 rG = [  139.98     0.00 234544.13] aCG = [    0.46     0.00     3.86]
+t =    156.0 mode: P63 rG = [    9.12     0.00 233055.00] aCG = [    0.47     0.00     3.89]
+t =    157.0 mode: P63 rG = [ -121.60     0.00 231569.75] aCG = [    0.49     0.00     3.91]
+t =    158.0 mode: P63 rG = [ -252.18     0.00 230088.40] aCG = [    0.50     0.00     3.94]
+t =    159.0 mode: P63 rG = [ -382.62     0.00 228610.97] aCG = [    0.52     0.00     3.96]
+t =    160.0 mode: P63 rG = [ -512.89     0.00 227137.50] aCG = [    0.53     0.00     3.99]
+t =    161.0 mode: P63 rG = [ -643.01     0.00 225668.00] aCG = [    0.55     0.00     4.01]
+t =    162.0 mode: P63 rG = [ -772.94     0.00 224202.49] aCG = [    0.56     0.00     4.03]
+t =    163.0 mode: P63 rG = [ -902.70     0.00 222741.01] aCG = [    0.58     0.00     4.06]
+t =    164.0 mode: P63 rG = [-1032.26     0.00 221283.57] aCG = [    0.59     0.00     4.08]
+t =    165.0 mode: P63 rG = [-1161.62     0.00 219830.19] aCG = [    0.61     0.00     4.10]
+t =    166.0 mode: P63 rG = [-1290.78     0.00 218380.91] aCG = [    0.62     0.00     4.12]
+t =    167.0 mode: P63 rG = [-1419.72     0.00 216935.73] aCG = [    0.64     0.00     4.15]
+t =    168.0 mode: P63 rG = [-1548.44     0.00 215494.69] aCG = [    0.65     0.00     4.17]
+t =    169.0 mode: P63 rG = [-1676.92     0.00 214057.81] aCG = [    0.67     0.00     4.19]
+t =    170.0 mode: P63 rG = [-1805.16     0.00 212625.11] aCG = [    0.68     0.00     4.21]
+t =    171.0 mode: P63 rG = [-1933.16     0.00 211196.61] aCG = [    0.70     0.00     4.23]
+t =    172.0 mode: P63 rG = [-2060.89     0.00 209772.32] aCG = [    0.71     0.00     4.25]
+t =    173.0 mode: P63 rG = [-2188.36     0.00 208352.29] aCG = [    0.73     0.00     4.28]
+t =    174.0 mode: P63 rG = [-2315.56     0.00 206936.52] aCG = [    0.74     0.00     4.30]
+t =    175.0 mode: P63 rG = [-2442.47     0.00 205525.03] aCG = [    0.76     0.00     4.32]
+t =    176.0 mode: P63 rG = [-2569.10     0.00 204117.85] aCG = [    0.77     0.00     4.34]
+t =    177.0 mode: P63 rG = [-2695.43     0.00 202715.00] aCG = [    0.79     0.00     4.36]
+t =    178.0 mode: P63 rG = [-2821.45     0.00 201316.50] aCG = [    0.81     0.00     4.38]
+t =    179.0 mode: P63 rG = [-2947.15     0.00 199922.36] aCG = [    0.82     0.00     4.40]
+t =    180.0 mode: P63 rG = [-3072.54     0.00 198532.61] aCG = [    0.84     0.00     4.42]
+t =    181.0 mode: P63 rG = [-3197.59     0.00 197147.28] aCG = [    0.85     0.00     4.44]
+t =    182.0 mode: P63 rG = [-3322.31     0.00 195766.37] aCG = [    0.87     0.00     4.46]
+t =    183.0 mode: P63 rG = [-3446.68     0.00 194389.90] aCG = [    0.88     0.00     4.48]
+t =    184.0 mode: P63 rG = [-3570.69     0.00 193017.91] aCG = [    0.90     0.00     4.50]
+t =    185.0 mode: P63 rG = [-3694.34     0.00 191650.40] aCG = [    0.91     0.00     4.51]
+t =    186.0 mode: P63 rG = [-3817.62     0.00 190287.39] aCG = [    0.93     0.00     4.53]
+t =    187.0 mode: P63 rG = [-3940.53     0.00 188928.91] aCG = [    0.94     0.00     4.55]
+t =    188.0 mode: P63 rG = [-4063.04     0.00 187574.98] aCG = [    0.95     0.00     4.57]
+t =    189.0 mode: P63 rG = [-4185.16     0.00 186225.60] aCG = [    0.97     0.00     4.59]
+t =    190.0 mode: P63 rG = [-4306.88     0.00 184880.80] aCG = [    0.98     0.00     4.61]
+t =    191.0 mode: P63 rG = [-4428.19     0.00 183540.60] aCG = [    1.00     0.00     4.62]
+t =    192.0 mode: P63 rG = [-4549.09     0.00 182205.02] aCG = [    1.01     0.00     4.64]
+t =    193.0 mode: P63 rG = [-4669.55     0.00 180874.06] aCG = [    1.03     0.00     4.66]
+t =    194.0 mode: P63 rG = [-4789.59     0.00 179547.76] aCG = [    1.04     0.00     4.68]
+t =    195.0 mode: P63 rG = [-4909.18     0.00 178226.12] aCG = [    1.06     0.00     4.69]
+t =    196.0 mode: P63 rG = [-5028.32     0.00 176909.17] aCG = [    1.07     0.00     4.71]
+t =    197.0 mode: P63 rG = [-5147.00     0.00 175596.92] aCG = [    1.09     0.00     4.73]
+t =    198.0 mode: P63 rG = [-5265.22     0.00 174289.39] aCG = [    1.10     0.00     4.74]
+t =    199.0 mode: P63 rG = [-5382.97     0.00 172986.59] aCG = [    1.12     0.00     4.76]
+t =    200.0 mode: P63 rG = [-5500.24     0.00 171688.54] aCG = [    1.13     0.00     4.77]
+t =    201.0 mode: P63 rG = [-5617.02     0.00 170395.25] aCG = [    1.15     0.00     4.79]
+t =    202.0 mode: P63 rG = [-5733.30     0.00 169106.75] aCG = [    1.16     0.00     4.81]
+t =    203.0 mode: P63 rG = [-5849.08     0.00 167823.05] aCG = [    1.18     0.00     4.82]
+t =    204.0 mode: P63 rG = [-5964.34     0.00 166544.16] aCG = [    1.19     0.00     4.84]
+t =    205.0 mode: P63 rG = [-6079.09     0.00 165270.10] aCG = [    1.21     0.00     4.85]
+t =    206.0 mode: P63 rG = [-6193.31     0.00 164000.88] aCG = [    1.22     0.00     4.87]
+t =    207.0 mode: P63 rG = [-6307.00     0.00 162736.52] aCG = [    1.24     0.00     4.88]
+t =    208.0 mode: P63 rG = [-6420.14     0.00 161477.04] aCG = [    1.25     0.00     4.90]
+t =    209.0 mode: P63 rG = [-6532.73     0.00 160222.44] aCG = [    1.27     0.00     4.91]
+t =    210.0 mode: P63 rG = [-6644.77     0.00 158972.75] aCG = [    1.28     0.00     4.92]
+t =    211.0 mode: P63 rG = [-6756.24     0.00 157727.97] aCG = [    1.30     0.00     4.94]
+t =    212.0 mode: P63 rG = [-6867.13     0.00 156488.12] aCG = [    1.31     0.00     4.95]
+t =    213.0 mode: P63 rG = [-6977.45     0.00 155253.22] aCG = [    1.32     0.00     4.96]
+t =    214.0 mode: P63 rG = [-7087.18     0.00 154023.27] aCG = [    1.34     0.00     4.98]
+t =    215.0 mode: P63 rG = [-7196.31     0.00 152798.30] aCG = [    1.35     0.00     4.99]
+t =    216.0 mode: P63 rG = [-7304.84     0.00 151578.31] aCG = [    1.37     0.00     5.00]
+t =    217.0 mode: P63 rG = [-7412.75     0.00 150363.31] aCG = [    1.38     0.00     5.02]
+t =    218.0 mode: P63 rG = [-7520.05     0.00 149153.33] aCG = [    1.40     0.00     5.03]
+t =    219.0 mode: P63 rG = [-7626.72     0.00 147948.37] aCG = [    1.41     0.00     5.04]
+t =    220.0 mode: P63 rG = [-7732.76     0.00 146748.44] aCG = [    1.43     0.00     5.05]
+t =    221.0 mode: P63 rG = [-7838.16     0.00 145553.57] aCG = [    1.44     0.00     5.07]
+t =    222.0 mode: P63 rG = [-7942.91     0.00 144363.75] aCG = [    1.45     0.00     5.08]
+t =    223.0 mode: P63 rG = [-8047.00     0.00 143179.00] aCG = [    1.47     0.00     5.09]
+t =    224.0 mode: P63 rG = [-8150.42     0.00 141999.33] aCG = [    1.48     0.00     5.10]
+t =    225.0 mode: P63 rG = [-8253.18     0.00 140824.76] aCG = [    1.50     0.00     5.11]
+t =    226.0 mode: P63 rG = [-8355.26     0.00 139655.30] aCG = [    1.51     0.00     5.12]
+t =    227.0 mode: P63 rG = [-8456.65     0.00 138490.95] aCG = [    1.53     0.00     5.13]
+t =    228.0 mode: P63 rG = [-8557.34     0.00 137331.73] aCG = [    1.54     0.00     5.14]
+t =    229.0 mode: P63 rG = [-8657.34     0.00 136177.64] aCG = [    1.55     0.00     5.15]
+t =    230.0 mode: P63 rG = [-8756.62     0.00 135028.71] aCG = [    1.57     0.00     5.16]
+t =    231.0 mode: P63 rG = [-8855.19     0.00 133884.93] aCG = [    1.58     0.00     5.17]
+t =    232.0 mode: P63 rG = [-8953.04     0.00 132746.32] aCG = [    1.60     0.00     5.18]
+t =    233.0 mode: P63 rG = [-9050.16     0.00 131612.90] aCG = [    1.61     0.00     5.19]
+t =    234.0 mode: P63 rG = [-9146.53     0.00 130484.65] aCG = [    1.63     0.00     5.20]
+t =    235.0 mode: P63 rG = [-9242.17     0.00 129361.61] aCG = [    1.64     0.00     5.21]
+t =    236.0 mode: P63 rG = [-9337.05     0.00 128243.78] aCG = [    1.65     0.00     5.22]
+t =    237.0 mode: P63 rG = [-9431.16     0.00 127131.16] aCG = [    1.67     0.00     5.23]
+t =    238.0 mode: P63 rG = [-9524.52     0.00 126023.77] aCG = [    1.68     0.00     5.24]
+t =    239.0 mode: P63 rG = [-9617.09     0.00 124921.61] aCG = [    1.69     0.00     5.25]
+t =    240.0 mode: P63 rG = [-9708.89     0.00 123824.69] aCG = [    1.71     0.00     5.26]
+t =    241.0 mode: P63 rG = [-9799.89     0.00 122733.03] aCG = [    1.72     0.00     5.26]
+t =    242.0 mode: P63 rG = [-9890.10     0.00 121646.62] aCG = [    1.74     0.00     5.27]
+t =    243.0 mode: P63 rG = [-9979.51     0.00 120565.48] aCG = [    1.75     0.00     5.28]
+t =    244.0 mode: P63 rG = [-10068.10     0.00 119489.62] aCG = [    1.76     0.00     5.29]
+t =    245.0 mode: P63 rG = [-10155.88     0.00 118419.04] aCG = [    1.78     0.00     5.29]
+t =    246.0 mode: P63 rG = [-10242.83     0.00 117353.75] aCG = [    1.79     0.00     5.30]
+t =    247.0 mode: P63 rG = [-10328.95     0.00 116293.76] aCG = [    1.80     0.00     5.31]
+t =    248.0 mode: P63 rG = [-10414.23     0.00 115239.07] aCG = [    1.82     0.00     5.31]
+t =    249.0 mode: P63 rG = [-10498.67     0.00 114189.69] aCG = [    1.83     0.00     5.32]
+t =    250.0 mode: P63 rG = [-10582.25     0.00 113145.63] aCG = [    1.84     0.00     5.33]
+t =    251.0 mode: P63 rG = [-10664.97     0.00 112106.89] aCG = [    1.86     0.00     5.33]
+t =    252.0 mode: P63 rG = [-10746.83     0.00 111073.49] aCG = [    1.87     0.00     5.34]
+t =    253.0 mode: P63 rG = [-10827.81     0.00 110045.42] aCG = [    1.88     0.00     5.35]
+t =    254.0 mode: P63 rG = [-10907.91     0.00 109022.69] aCG = [    1.90     0.00     5.35]
+t =    255.0 mode: P63 rG = [-10987.12     0.00 108005.31] aCG = [    1.91     0.00     5.36]
+t =    256.0 mode: P63 rG = [-11065.43     0.00 106993.29] aCG = [    1.92     0.00     5.36]
+t =    257.0 mode: P63 rG = [-11142.85     0.00 105986.62] aCG = [    1.94     0.00     5.37]
+t =    258.0 mode: P63 rG = [-11219.36     0.00 104985.32] aCG = [    1.95     0.00     5.37]
+t =    259.0 mode: P63 rG = [-11294.95     0.00 103989.38] aCG = [    1.96     0.00     5.38]
+t =    260.0 mode: P63 rG = [-11369.62     0.00 102998.82] aCG = [    1.97     0.00     5.38]
+t =    261.0 mode: P63 rG = [-11443.36     0.00 102013.64] aCG = [    1.99     0.00     5.38]
+t =    262.0 mode: P63 rG = [-11516.17     0.00 101033.84] aCG = [    2.00     0.00     5.39]
+t =    263.0 mode: P63 rG = [-11588.03     0.00 100059.43] aCG = [    2.01     0.00     5.39]
+t =    264.0 mode: P63 rG = [-11658.95     0.00 99090.41] aCG = [    2.02     0.00     5.40]
+t =    265.0 mode: P63 rG = [-11728.91     0.00 98126.78] aCG = [    2.04     0.00     5.40]
+t =    266.0 mode: P63 rG = [-11797.91     0.00 97168.54] aCG = [    2.05     0.00     5.40]
+t =    267.0 mode: P63 rG = [-11865.95     0.00 96215.71] aCG = [    2.06     0.00     5.41]
+t =    268.0 mode: P63 rG = [-11933.00     0.00 95268.29] aCG = [    2.07     0.00     5.41]
+t =    269.0 mode: P63 rG = [-11999.08     0.00 94326.27] aCG = [    2.09     0.00     5.41]
+t =    270.0 mode: P63 rG = [-12064.17     0.00 93389.66] aCG = [    2.10     0.00     5.41]
+t =    271.0 mode: P63 rG = [-12128.27     0.00 92458.47] aCG = [    2.11     0.00     5.42]
+t =    272.0 mode: P63 rG = [-12191.37     0.00 91532.68] aCG = [    2.12     0.00     5.42]
+t =    273.0 mode: P63 rG = [-12253.46     0.00 90612.32] aCG = [    2.13     0.00     5.42]
+t =    274.0 mode: P63 rG = [-12314.55     0.00 89697.38] aCG = [    2.14     0.00     5.42]
+t =    275.0 mode: P63 rG = [-12374.61     0.00 88787.85] aCG = [    2.16     0.00     5.42]
+t =    276.0 mode: P63 rG = [-12433.65     0.00 87883.75] aCG = [    2.17     0.00     5.42]
+t =    277.0 mode: P63 rG = [-12491.66     0.00 86985.08] aCG = [    2.18     0.00     5.43]
+t =    278.0 mode: P63 rG = [-12548.63     0.00 86091.82] aCG = [    2.19     0.00     5.43]
+t =    279.0 mode: P63 rG = [-12604.57     0.00 85204.00] aCG = [    2.20     0.00     5.43]
+t =    280.0 mode: P63 rG = [-12659.45     0.00 84321.60] aCG = [    2.21     0.00     5.43]
+t =    281.0 mode: P63 rG = [-12713.28     0.00 83444.63] aCG = [    2.22     0.00     5.43]
+t =    282.0 mode: P63 rG = [-12766.05     0.00 82573.09] aCG = [    2.24     0.00     5.43]
+t =    283.0 mode: P63 rG = [-12817.76     0.00 81706.98] aCG = [    2.25     0.00     5.43]
+t =    284.0 mode: P63 rG = [-12868.40     0.00 80846.30] aCG = [    2.26     0.00     5.43]
+t =    285.0 mode: P63 rG = [-12917.96     0.00 79991.04] aCG = [    2.27     0.00     5.43]
+t =    286.0 mode: P63 rG = [-12966.44     0.00 79141.22] aCG = [    2.28     0.00     5.43]
+t =    287.0 mode: P63 rG = [-13013.83     0.00 78296.82] aCG = [    2.29     0.00     5.43]
+t =    288.0 mode: P63 rG = [-13060.13     0.00 77457.85] aCG = [    2.30     0.00     5.43]
+t =    289.0 mode: P63 rG = [-13105.33     0.00 76624.30] aCG = [    2.31     0.00     5.42]
+t =    290.0 mode: P63 rG = [-13149.43     0.00 75796.19] aCG = [    2.32     0.00     5.42]
+t =    291.0 mode: P63 rG = [-13192.42     0.00 74973.49] aCG = [    2.33     0.00     5.42]
+t =    292.0 mode: P63 rG = [-13234.30     0.00 74156.22] aCG = [    2.34     0.00     5.42]
+t =    293.0 mode: P63 rG = [-13275.06     0.00 73344.37] aCG = [    2.35     0.00     5.42]
+t =    294.0 mode: P63 rG = [-13314.70     0.00 72537.94] aCG = [    2.36     0.00     5.42]
+t =    295.0 mode: P63 rG = [-13353.21     0.00 71736.92] aCG = [    2.37     0.00     5.41]
+t =    296.0 mode: P63 rG = [-13390.58     0.00 70941.32] aCG = [    2.38     0.00     5.41]
+t =    297.0 mode: P63 rG = [-13426.82     0.00 70151.14] aCG = [    2.39     0.00     5.41]
+t =    298.0 mode: P63 rG = [-13461.92     0.00 69366.36] aCG = [    2.40     0.00     5.41]
+t =    299.0 mode: P63 rG = [-13495.86     0.00 68586.99] aCG = [    2.41     0.00     5.40]
+</pre>
+<img vspace="5" hspace="5" src="ApolloGuidanceDemo_01.png" alt=""> <img vspace="5" hspace="5" src="ApolloGuidanceDemo_02.png" alt=""> <img vspace="5" hspace="5" src="ApolloGuidanceDemo_03.png" alt=""> <img vspace="5" hspace="5" src="ApolloGuidanceDemo_04.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Apollo lunar descent guidance demo
+% See also: ApolloLunarDescentGuidance
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+tEnd  = 300;
+dT    = 1;
+n     = ceil(tEnd/dT);
+h     = 15;
+r     = h+1738;
+v     = sqrt(Constant('mu moon')/r)*1000;
+x     = [1000*h;0;492000;0;0;-v];
+xP    = zeros(9,n);
+mode  = cell(n,1);
+t     = 0;
+dG    = ApolloLunarDescentGuidance;
+fC    = 1/(r*1000);
+gM    = fC*v^2;
+
+for k = 1:n
+  [aCG,dG]	= ApolloLunarDescentGuidance( x, t, dG );
+  xP(:,k)   = [x;aCG];
+  mode{k}   = dG.mode; 
+  x         = RK4(@RHS,x,dT,0,aCG,fC,gM); 
+  t         = t + dT;
+end
+
+[t,tL] = TimeLabl((0:(k-1))*dT);
+  
+yL = {'R_{G_x} (m)'     'R_{G_y} (m)',      'R_{G_z} (m)',...
+      'V_{G_x} (m/s)'   'V_{G_y} (m/s)',    'V_{G_z} (m/s)',...
+      'A_{G_x} (m/s^2)' 'A_{G_y} (m/s^2)',  'A_{G_z} (m/s^2)'};
+
+h = xP(1,:);
+z = xP(3,:);
+NewFig('Trajectory')
+plot(z,h);
+grid on
+text(z(1),1.01*h(1),mode{1});
+text(z(1),0.99*h(1),sprintf('t = %4.1f min',t(1)));
+
+for k = 2:n
+  if( ~strcmp(mode{k},mode{k-1}) )
+    text(z(k),1.01*h(k),mode{k});
+    text(z(k),0.99*h(k),sprintf('t = %4.1f min',t(k)));
+  end
+end
+text(z(n),h(n),sprintf('t = %4.1f min',t(n)));
+
+Plot2D(t,xP(1:3,:),tL,yL(1:3),'R_G');
+Plot2D(t,xP(4:6,:),tL,yL(4:6),'V_G');
+Plot2D(t,xP(7:9,:),tL,yL(7:9),'A_G');
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Right hand side
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+function xDot = RHS(x,~,aCG,fC,gM)
+
+a     = [fC*x(6)^2 - gM;0;0]; 
+xDot	= [x(4:6);aCG+a];
+
+end
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date$
+% $Id: e81e416d77672edbf7906fe2eee310623f3dc4e5 $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

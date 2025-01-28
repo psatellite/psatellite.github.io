@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Simulate proximity operations around an asteroid.</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="AsteroidProxOpsDemo.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Simulate proximity operations around an asteroid.</h1>
+<!--introduction-->
+<p>The spacecraft has 3-axis thruster control. Ideal attitude sensing is assumed. The PID controller produces a torque vector which is applied directly to the spacecraft. The control keeps the body X axis aligned towards the asteroid as the maneuver takes place. The initial relative velocity is zero; it takes about 3 minutes to achieve the target velocity, and another few minutes for the attitude rates to settle.</p>
+<p>The 3D plot shows the resulting trajectory along with the force vector in green and the sensor vector (body X) in red.</p>
+<p>See also Inertias, CircularManeuver, PID3Axis, RHSRigidBody6DOF, LoadCAD, DrawCAD</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Simulation parameters</a>
+</li>
+<li>
+<a href="#3">Design the maneuver</a>
+</li>
+<li>
+<a href="#4">Simulate</a>
+</li>
+<li>
+<a href="#5">Plot the results</a>
+</li>
+</ul>
+</div>
+<p>-------------------------------------------------------------------------- Copyright (c) 2013-2014 Princeton Satellite Systems, Inc. All rights reserved. -------------------------------------------------------------------------- Since version 2014.1 --------------------------------------------------------------------------</p>
+<pre class="codeinput">
+<span class="comment">% This prevents problems if d is defined as a double in the workspace</span>
+<span class="comment">%--------------------------------------------------------------------</span>
+clear <span class="string">d</span>
+</pre>
+<h2 id="2">Simulation parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------------</span>
+periodOrbit = 60;   <span class="comment">% min</span>
+nPeriods    = 1;
+dT          = 1;    <span class="comment">% s</span>
+rOrbit      = 500;	<span class="comment">% m</span>
+el          = 0;    <span class="comment">% Elevation of orbit with respect to the xy-plane</span>
+thrust      = 0.1;  <span class="comment">% Thrust level for the tangential burn</span>
+d.mass      = 20;   <span class="comment">% kg</span>
+
+<span class="comment">% Compute the time parameters</span>
+<span class="comment">%----------------------------</span>
+tEnd        = nPeriods*periodOrbit*60;
+nSim        = ceil(tEnd/dT);
+
+<span class="comment">% Spacecraft model - 6U CubeSat</span>
+<span class="comment">%------------------------------</span>
+d.inertia   = Inertias( d.mass, [0.3 0.2 0.1], <span class="string">'box'</span>, 1 ); <span class="comment">% kg-m^2</span>
+
+<span class="comment">% State vector [r;v;q;omega]</span>
+<span class="comment">%---------------------------</span>
+x           = [rOrbit;0;0; 0;0;0; 1;0;0;0;0;0;0];
+
+<span class="comment">% Orbit normal assuming we always start in the xy-plane</span>
+<span class="comment">%------------------------------------------------------</span>
+u           = Unit(x(1:3));
+az          = atan2(u(2),u(1));
+uT          = [sin(az)*cos(el);cos(az)*cos(el);sin(el)];
+
+<span class="comment">% Set up the control</span>
+<span class="comment">%-------------------</span>
+dC              = PID3Axis; <span class="comment">% Default data structure</span>
+dC.mode         = 1;        <span class="comment">% 1 = align two vectors</span>
+dC.body_vector	= [1;0;0];  <span class="comment">% align X axis</span>
+dC.inertia      = d.inertia;
+</pre>
+<h2 id="3">Design the maneuver</h2>
+<p>Compute the required force and impulse to achieve the desired orbital period</p>
+<pre class="codeinput">
+<span class="comment">%---------------------</span>
+[fR, iT] = CircularManeuver( periodOrbit, rOrbit, d.mass );
+fprintf(<span class="string">'Radial force       = %12.2f N\n'</span>,fR);
+fprintf(<span class="string">'Tangential impulse = %12.2f Ns\n'</span>,iT);
+</pre>
+<pre class="codeoutput">Radial force       =         0.03 N
+Tangential impulse =        17.45 Ns
+</pre>
+<h2 id="4">Simulate</h2>
+<pre class="codeinput">
+<span class="comment">%---------</span>
+
+<span class="comment">% Plotting vectors</span>
+<span class="comment">%-----------------</span>
+xP          = zeros(length(x)+7,nSim);
+fP          = zeros(3,nSim);
+
+<span class="comment">% Time vector</span>
+<span class="comment">%------------</span>
+t = (0:(nSim-1))*dT;
+
+<span class="keyword">for</span> k = 1:nSim
+
+  <span class="comment">% Align with nadir - i.e. towards the asteroid</span>
+  <span class="comment">%---------------------------------------------</span>
+  qECIToBody      = x(7:10);
+  uR              = Unit(x(1:3));
+  dC.eci_vector   = -uR;
+  [d.torque, dC]	= PID3Axis( qECIToBody, dC );
+
+  <span class="comment">% Find the pointing error</span>
+  <span class="comment">%------------------------</span>
+  body_vector_eci = QTForm( qECIToBody, dC.body_vector );
+  arg             = body_vector_eci'*dC.eci_vector;
+
+  <span class="keyword">if</span>( abs(arg) &gt; 1 )
+      arg = sign(arg);
+  <span class="keyword">end</span>
+  err = acos(arg);
+
+  <span class="comment">% Burn until the tangential impulse is complete</span>
+  <span class="comment">%----------------------------------------------</span>
+  <span class="keyword">if</span>( iT &gt; 0 )
+      fT	= thrust;
+      iT 	= iT - thrust*dT;
+  <span class="keyword">else</span>
+      fT  = 0;
+  <span class="keyword">end</span>
+
+  <span class="comment">% The total force vector</span>
+  <span class="comment">%-----------------------</span>
+  d.force = fT*uT - fR*uR;
+  fP(:,k) = d.force;
+
+  <span class="comment">% Store for plotting</span>
+  <span class="comment">%-------------------</span>
+  xP(:,k) = [x;d.force;d.torque;err];
+
+  <span class="comment">% Integrate</span>
+  <span class="comment">%----------</span>
+  x = RK4(@RHSRigidBody6DOF,x,dT,t(k),d);
+
+<span class="keyword">end</span>
+</pre>
+<h2 id="5">Plot the results</h2>
+<pre class="codeinput">
+<span class="comment">%------------------</span>
+[t,tL] = TimeLabl(t);
+
+yL = {<span class="string">'x (km)'</span>,<span class="string">'y (km)'</span>,<span class="string">'z (km)'</span>,<span class="string">'v_x (km)'</span>,<span class="string">'v_y (km)'</span>,<span class="string">'v_z (km)'</span>};
+Plot2D( t, xP(1:6,:), tL, yL, <span class="string">'Relative State'</span> )
+
+yL = {<span class="string">'q_s'</span>, <span class="string">'q_x'</span>, <span class="string">'q_y'</span>, <span class="string">'q_z'</span> <span class="string">'err'</span>};
+Plot2D( t, xP( [7:10 20],:), tL, yL, <span class="string">'Quaternion'</span> );
+
+yL = {<span class="string">'\omega_x'</span>,<span class="string">'\omega_y'</span>,<span class="string">'\omega_z'</span>};
+Plot2D( t, xP(11:13,:), tL, yL, <span class="string">'Attitude Rate'</span>);
+
+yL = {<span class="string">'f_x (N)'</span> <span class="string">'f_y (N)'</span> <span class="string">'f_z (N)'</span> <span class="string">'t_x (Nm)'</span> <span class="string">'t_y (Nm)'</span> <span class="string">'t_z (Nm)'</span>};
+Plot2D( t, xP(14:19,:), tL, {<span class="string">'Force (N)'</span>,<span class="string">'Torque (Nm)'</span>}, <span class="string">'Force and Torque'</span>,<span class="keyword">...</span>
+  <span class="string">'lin'</span>,{[1 2 3],[4 5 6]});
+
+<span class="comment">% 3D plot</span>
+<span class="comment">%--------</span>
+g = LoadCAD(<span class="string">'Apophis.obj'</span>,[],[],160);
+DrawCAD( g );
+set(gcf,<span class="string">'name'</span>,<span class="string">'Apophis Proximity Operations'</span>)
+hold <span class="string">on</span>
+plot3(xP(1,:),xP(2,:),xP(3,:));
+xlabel(<span class="string">'X (m) '</span>)
+ylabel(<span class="string">'Y (m) '</span>)
+zlabel(<span class="string">'Z (m) '</span>)
+
+<span class="comment">% Add the force vectors</span>
+<span class="comment">%----------------------</span>
+dN      = nSim/20;
+j       = 1:dN:nSim;
+
+fPMag   = log10(Mag(fP));
+fP      = Unit(fP);
+xP0     = xP(:,j);
+fPs     = [fP(1,:).*fPMag;fP(2,:).*fPMag;fP(3,:).*fPMag];
+
+quiver3(xP0(1,:),xP0(2,:),xP0(3,:),fPs(1,j),fPs(2,j),fPs(3,j),0.5,<span class="string">'r'</span>);
+
+<span class="comment">% Add the sensor vectors in green</span>
+<span class="comment">%--------------------------------</span>
+sP    = QTForm( xP0(7:10,:), [1;0;0] );
+quiver3(xP0(1,:),xP0(2,:),xP0(3,:),sP(1,:),sP(2,:),sP(3,:),0.5,<span class="string">'g'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 2b142e3ee2c90bb968f83c9a8a37c01b8c4a9456 $</span>
+</pre>
+<img vspace="5" hspace="5" src="AsteroidProxOpsDemo_01.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProxOpsDemo_02.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProxOpsDemo_03.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProxOpsDemo_04.png" alt=""> <img vspace="5" hspace="5" src="AsteroidProxOpsDemo_05.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Simulate proximity operations around an asteroid.
+%
+% The spacecraft has 3-axis thruster control. Ideal attitude sensing is
+% assumed. The PID controller produces a torque vector which is applied
+% directly to the spacecraft. The control keeps the body X axis aligned
+% towards the asteroid as the maneuver takes place. The initial relative
+% velocity is zero; it takes about 3 minutes to achieve the target
+% velocity, and another few minutes for the attitude rates to settle.
+%
+% The 3D plot shows the resulting trajectory along with the force vector
+% in green and the sensor vector (body X) in red.
+%
+%
+% See also Inertias, CircularManeuver, PID3Axis, RHSRigidBody6DOF,
+% LoadCAD, DrawCAD
+
+%%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2013-2014 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Since version 2014.1
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+% This prevents problems if d is defined as a double in the workspace
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+clear d
+
+%% Simulation parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+periodOrbit = 60;   % min
+nPeriods    = 1;
+dT          = 1;    % s
+rOrbit      = 500;	% m
+el          = 0;    % Elevation of orbit with respect to the xy-plane
+thrust      = 0.1;  % Thrust level for the tangential burn
+d.mass      = 20;   % kg
+
+% Compute the time parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+tEnd        = nPeriods*periodOrbit*60;
+nSim        = ceil(tEnd/dT);
+
+% Spacecraft model - 6U CubeSat
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+d.inertia   = Inertias( d.mass, [0.3 0.2 0.1], 'box', 1 ); % kg-m^2
+
+% State vector [r;v;q;omega]
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+x           = [rOrbit;0;0; 0;0;0; 1;0;0;0;0;0;0];
+
+% Orbit normal assuming we always start in the xy-plane
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+u           = Unit(x(1:3));
+az          = atan2(u(2),u(1));
+uT          = [sin(az)*cos(el);cos(az)*cos(el);sin(el)];
+
+% Set up the control
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH- 
+dC              = PID3Axis; % Default data structure
+dC.mode         = 1;        % 1 = align two vectors
+dC.body_vector	= [1;0;0];  % align X axis
+dC.inertia      = d.inertia;
+
+%% Design the maneuver
+% Compute the required force and impulse to achieve the desired orbital
+% period
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+[fR, iT] = CircularManeuver( periodOrbit, rOrbit, d.mass );
+fprintf('Radial force       = %12.2f N\n',fR);
+fprintf('Tangential impulse = %12.2f Ns\n',iT);
+
+%% Simulate
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+% Plotting vectors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+xP          = zeros(length(x)+7,nSim);
+fP          = zeros(3,nSim);
+
+% Time vector
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+t = (0:(nSim-1))*dT;
+
+for k = 1:nSim
+    
+  % Align with nadir - i.e. towards the asteroid
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  qECIToBody      = x(7:10);
+  uR              = Unit(x(1:3));
+  dC.eci_vector   = -uR;
+  [d.torque, dC]	= PID3Axis( qECIToBody, dC );
+
+  % Find the pointing error
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  body_vector_eci = QTForm( qECIToBody, dC.body_vector );
+  arg             = body_vector_eci'*dC.eci_vector;
+    
+  if( abs(arg) > 1 )
+      arg = sign(arg);
+  end
+  err = acos(arg);
+
+  % Burn until the tangential impulse is complete
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  if( iT > 0 )
+      fT	= thrust;
+      iT 	= iT - thrust*dT;
+  else
+      fT  = 0;
+  end
+
+  % The total force vector
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  d.force = fT*uT - fR*uR;
+  fP(:,k) = d.force;
+
+  % Store for plotting
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+  xP(:,k) = [x;d.force;d.torque;err];
+
+  % Integrate
+  %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+  x = RK4(@RHSRigidBody6DOF,x,dT,t(k),d);
+
+end
+
+
+%% Plot the results
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[t,tL] = TimeLabl(t);
+
+yL = {'x (km)','y (km)','z (km)','v_x (km)','v_y (km)','v_z (km)'};
+Plot2D( t, xP(1:6,:), tL, yL, 'Relative State' )
+
+yL = {'q_s', 'q_x', 'q_y', 'q_z' 'err'};
+Plot2D( t, xP( [7:10 20],:), tL, yL, 'Quaternion' );
+
+yL = {'\omega_x','\omega_y','\omega_z'};
+Plot2D( t, xP(11:13,:), tL, yL, 'Attitude Rate');
+
+yL = {'f_x (N)' 'f_y (N)' 'f_z (N)' 't_x (Nm)' 't_y (Nm)' 't_z (Nm)'};
+Plot2D( t, xP(14:19,:), tL, {'Force (N)','Torque (Nm)'}, 'Force and Torque',...
+  'lin',{[1 2 3],[4 5 6]});
+
+% 3D plot
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+g = LoadCAD('Apophis.obj',[],[],160);
+DrawCAD( g );
+set(gcf,'name','Apophis Proximity Operations')
+hold on
+plot3(xP(1,:),xP(2,:),xP(3,:));
+xlabel('X (m) ')
+ylabel('Y (m) ')
+zlabel('Z (m) ')
+
+% Add the force vectors
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+dN      = nSim/20;
+j       = 1:dN:nSim;
+
+fPMag   = log10(Mag(fP));
+fP      = Unit(fP);
+xP0     = xP(:,j);
+fPs     = [fP(1,:).*fPMag;fP(2,:).*fPMag;fP(3,:).*fPMag];
+
+quiver3(xP0(1,:),xP0(2,:),xP0(3,:),fPs(1,j),fPs(2,j),fPs(3,j),0.5,'r');
+
+% Add the sensor vectors in green
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+sP    = QTForm( xP0(7:10,:), [1;0;0] );
+quiver3(xP0(1,:),xP0(2,:),xP0(3,:),sP(1,:),sP(2,:),sP(3,:),0.5,'g');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   AsteroidProxOpsDemo.m $
+% $Id: 2b142e3ee2c90bb968f83c9a8a37c01b8c4a9456 $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

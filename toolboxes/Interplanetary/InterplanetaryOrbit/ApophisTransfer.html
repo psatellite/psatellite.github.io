@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Compute a transfer from earth orbit to the asteroid Apophis.</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="ApophisTransfer.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Compute a transfer from earth orbit to the asteroid Apophis.</h1>
+<!--introduction-->
+<p>This uses LambertOpt to search for an optimal start and transfer time given the initial positions of the bodies.</p>
+<p>See also Constant, LambertOpt, DVTransfer, PlotLambertTransfer</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Setup</a>
+</li>
+<li>
+<a href="#3">Find the transfer</a>
+</li>
+<li>
+<a href="#4">Plot the result</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%-------------------------------------------------------------------------------</span>
+<span class="comment">%	  Copyright (c) 2009 Princeton Satellite Systems, Inc. All rights reserved.</span>
+<span class="comment">%   Since version 8.</span>
+<span class="comment">%-------------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Setup</h2>
+<pre class="codeinput">
+<span class="comment">% Constants</span>
+<span class="comment">%----------</span>
+au       = Constant(<span class="string">'au'</span>);
+mu       = Constant(<span class="string">'mu sun'</span>);
+dayToSec = 86400;
+
+<span class="comment">% Time span</span>
+<span class="comment">%----------</span>
+days = linspace(0,360);
+t    = days*dayToSec;
+t0    = 30*dayToSec;
+dTMax = 450*dayToSec;
+
+<span class="comment">% Apophis 9/3/2009</span>
+<span class="comment">%-----------------</span>
+rA = [-1.060134642006718E+00;  2.449001979592227E-01; -3.851125553252051E-02]*au;
+vA = [-2.431064866762155E-03; -1.470948647780653E-02;  7.209696094968381E-04]*au/dayToSec;
+
+<span class="comment">% Earth 9/3/09</span>
+<span class="comment">%-------------</span>
+rE = [9.509007838786436E-01; -3.366237648105087E-01;  3.499785524900624E-06]*au;
+vE = [5.457896569254231E-03;  1.614834039489075E-02; -9.428607986007231E-07]*au/dayToSec;
+</pre>
+<h2 id="3">Find the transfer</h2>
+<pre class="codeinput">
+<span class="comment">%------------------</span>
+[dV, tOptimal, elT] = LambertOpt( rE, vE, rA, vA, [t0 dTMax], mu );
+
+fprintf(<span class="string">'Optimal start time: %g days\n'</span>,tOptimal(1)/86400);
+fprintf(<span class="string">'Optimal transfer time: %g days\n'</span>,tOptimal(2)/86400);
+fprintf(<span class="string">'Minimum DV: %g km/s\n'</span>,dV.total);
+
+xEnew = RK45( @FOrb,[rE;vE],tOptimal(1),tOptimal(1),0,1e-6,0,<span class="string">'car'</span>,[],mu);
+xAnew = RK45( @FOrb,[rA;vA],tOptimal(1),tOptimal(1), 0,1e-6,0,<span class="string">'car'</span>,[],mu);
+</pre>
+<pre class="codeoutput"> 
+Optimization terminated:
+ the current x satisfies the termination criteria using OPTIONS.TolX of 1.000000e+00 
+ and F(X) satisfies the convergence criteria using OPTIONS.TolFun of 1.000000e-04 
+
+Optimal start time: -32.9655 days
+Optimal transfer time: 384.239 days
+Minimum DV: 11.5524 km/s
+</pre>
+<h2 id="4">Plot the result</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------</span>
+PlotLambertTransfer(xEnew(1:3), xEnew(4:6), xAnew(1:3), xAnew(4:6), tOptimal(2), dV, elT, mu);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 64b8e5ca5a7267a0398219af16b631079d75f835 $</span>
+</pre>
+<img vspace="5" hspace="5" src="ApophisTransfer_01.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Compute a transfer from earth orbit to the asteroid Apophis.
+% This uses LambertOpt to search for an optimal start and transfer
+% time given the initial positions of the bodies.
+%
+% See also Constant, LambertOpt, DVTransfer, PlotLambertTransfer 
+%
+%%
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%	  Copyright (c) 2009 Princeton Satellite Systems, Inc. All rights reserved.
+%   Since version 8.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%% Setup
+
+% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+au       = Constant('au');
+mu       = Constant('mu sun');
+dayToSec = 86400;
+
+% Time span
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+days = linspace(0,360);
+t    = days*dayToSec;
+t0    = 30*dayToSec;
+dTMax = 450*dayToSec;
+
+% Apophis 9/3/2009
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rA = [-1.060134642006718E+00;  2.449001979592227E-01; -3.851125553252051E-02]*au;
+vA = [-2.431064866762155E-03; -1.470948647780653E-02;  7.209696094968381E-04]*au/dayToSec;
+
+% Earth 9/3/09
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+rE = [9.509007838786436E-01; -3.366237648105087E-01;  3.499785524900624E-06]*au; 
+vE = [5.457896569254231E-03;  1.614834039489075E-02; -9.428607986007231E-07]*au/dayToSec;
+
+%% Find the transfer
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+[dV, tOptimal, elT] = LambertOpt( rE, vE, rA, vA, [t0 dTMax], mu );
+
+fprintf('Optimal start time: %g days\n',tOptimal(1)/86400);
+fprintf('Optimal transfer time: %g days\n',tOptimal(2)/86400);
+fprintf('Minimum DV: %g km/s\n',dV.total);
+
+xEnew = RK45( @FOrb,[rE;vE],tOptimal(1),tOptimal(1),0,1e-6,0,'car',[],mu);
+xAnew = RK45( @FOrb,[rA;vA],tOptimal(1),tOptimal(1), 0,1e-6,0,'car',[],mu);
+
+%% Plot the result
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+PlotLambertTransfer(xEnew(1:3), xEnew(4:6), xAnew(1:3), xAnew(4:6), tOptimal(2), dV, elT, mu);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   ApophisTransfer.m $
+% $Id: 64b8e5ca5a7267a0398219af16b631079d75f835 $
+##### SOURCE END #####
+-->
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Low-thrust Pluto trajectory</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-27">
+<meta name="DC.source" content="LowThrustPlanar.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Low-thrust Pluto trajectory</h1>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% See also: TrajectoryOptimization, FLowThrust2D, CostLowThrust2D,</span>
+<span class="comment">% Plot2DTrajectory</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+disp(<span class="string">'Low-thrust Mars demo using Simplex'</span>)
+d.method         = <span class="string">'downhill simplex'</span>;
+d.repeat         = 1;
+lbFToKg          = Constant(<span class="string">'lb force to kg'</span>);
+aU               = Constant(<span class="string">'au'</span>);
+muSun            = Constant(<span class="string">'mu sun'</span>);
+secInDay         = 86400;
+m0               = 10000*lbFToKg; <span class="comment">% kg</span>
+[name,a]         = Planets(<span class="string">'rad'</span>,4); <span class="comment">% Mars</span>
+aF               = aU*a(1);
+v0               = VOrbit(aU,aU,muSun);
+vF               = VOrbit(aF,aF,muSun);
+d.d.mu           = Constant(<span class="string">'mu sun'</span>);
+d.d.mDot         = 6.7727e-5;
+d.d.thrust       = 0.002;
+d.d.rhsFun       = @FLowThrust2D;
+d.d.plotFun      = @Plot2DTrajectory;
+d.d.stateTol     = 1e-12;
+d.d.funTol       = 1e-12;
+d.d.nIts         = 10000;
+d.d.costFun      = @CostLowThrust2D;
+d.d.lambda0      = [0;0.5;2]*1e5;
+d.d.x0           = [aU;0;v0;m0];
+d.d.xF           = [aF;0;vF];
+d.d.rF           = d.d.xF(1); <span class="comment">% for plotting</span>
+d.d.data.absTol  = 1e-10;
+d.d.data.relTol  = 2.5e-8;
+d.d.data.maxStep = 0.1;
+d.d.tEnd         = 300*secInDay;
+d.d.errorScale   = [1; 3e6; 1e7; 1e-2];
+
+
+[lambda,xF,tF] = TrajectoryOptimization( d );
+disp(<span class="string">'Initial costate guess:'</span>)
+disp(d.d.lambda0)
+disp(<span class="string">'Costate returned by Simplex:'</span>)
+disp(lambda{1})
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: bde1ce7872f10a80fd906ced2c552ef66c9f68de $</span>
+</pre>
+<pre class="codeoutput">Low-thrust Mars demo using Simplex
+Case 1: Method: downhill simplex
+ 
+ Iteration   Func-count         f(x)         Procedure
+     0            1      5.15502e+07         
+     1            4      5.12213e+07         initial simplex
+     2            6      5.03997e+07         expand
+     3            7      5.03997e+07         reflect
+     4            9      4.94165e+07         expand
+     5           11      4.81477e+07         expand
+     6           12      4.81477e+07         reflect
+     7           14      4.60287e+07         expand
+     8           16      4.43102e+07         expand
+     9           17      4.43102e+07         reflect
+    10           19       4.1764e+07         expand
+    11           21      4.02932e+07         expand
+    12           22      4.02932e+07         reflect
+    13           24      3.86808e+07         expand
+    14           26      3.78078e+07         expand
+    15           27      3.78078e+07         reflect
+    16           29      3.71304e+07         expand
+    17           31      3.66683e+07         expand
+    18           32      3.66683e+07         reflect
+    19           34      3.64195e+07         expand
+    20           36      3.61857e+07         expand
+    21           37      3.61857e+07         reflect
+    22           38      3.61857e+07         reflect
+    23           40      3.59954e+07         expand
+    24           41      3.59954e+07         reflect
+    25           43      3.58524e+07         expand
+    26           44      3.58524e+07         reflect
+    27           46      3.57379e+07         expand
+    28           48      3.56071e+07         expand
+    29           50      3.52983e+07         expand
+    30           51      3.52983e+07         reflect
+    31           53      3.50756e+07         expand
+    32           55      3.46915e+07         expand
+    33           57      3.45757e+07         reflect
+    34           58      3.45757e+07         reflect
+    35           60      3.45215e+07         contract outside
+    36           62      3.45159e+07         reflect
+    37           64      3.45159e+07         contract inside
+    38           65      3.45159e+07         reflect
+    39           67      3.45159e+07         contract inside
+    40           72      3.45159e+07         shrink
+    41           74      3.45159e+07         contract outside
+    42           76      3.45145e+07         reflect
+    43           78      3.45145e+07         contract inside
+    44           80      3.45145e+07         contract outside
+    45           81      3.45145e+07         reflect
+    46           86      3.45145e+07         shrink
+    47           87      3.45145e+07         reflect
+    48           89      3.45145e+07         contract inside
+    49           90      3.45145e+07         reflect
+    50           92      3.45145e+07         contract inside
+    51           94      3.45144e+07         reflect
+    52           96      3.45144e+07         contract inside
+    53          101      3.45144e+07         shrink
+    54          102      3.45144e+07         reflect
+    55          104      3.45134e+07         contract inside
+    56          106      3.45131e+07         reflect
+    57          108      3.45131e+07         contract inside
+    58          110      3.45131e+07         contract inside
+    59          112      3.45131e+07         contract inside
+    60          114      3.45131e+07         contract inside
+    61          116      3.45131e+07         contract inside
+    62          118      3.45131e+07         contract inside
+    63          120      3.45131e+07         contract inside
+    64          121      3.45131e+07         reflect
+    65          123      3.45131e+07         contract inside
+    66          125      3.45131e+07         contract inside
+    67          127      3.45131e+07         contract inside
+    68          129      3.45131e+07         contract inside
+    69          131      3.45131e+07         contract inside
+    70          133      3.45131e+07         contract inside
+    71          135      3.45131e+07         contract inside
+    72          137      3.45131e+07         contract inside
+    73          139      3.45131e+07         contract inside
+    74          141      3.45131e+07         contract inside
+    75          143      3.45131e+07         contract inside
+    76          145      3.45131e+07         contract inside
+    77          147      3.45131e+07         contract inside
+    78          149      3.45131e+07         reflect
+    79          151      3.45131e+07         contract inside
+    80          153      3.45131e+07         contract inside
+    81          155      3.45131e+07         contract inside
+    82          157      3.45131e+07         contract inside
+    83          158      3.45131e+07         reflect
+    84          160      3.45131e+07         contract inside
+    85          162      3.45131e+07         contract inside
+    86          164      3.45131e+07         contract inside
+    87          166      3.45131e+07         contract inside
+    88          168      3.45131e+07         contract inside
+    89          170      3.45131e+07         contract inside
+    90          172      3.45131e+07         contract inside
+    91          174      3.45131e+07         contract inside
+    92          176      3.45131e+07         contract inside
+    93          177      3.45131e+07         reflect
+    94          179      3.45131e+07         contract inside
+    95          181      3.45131e+07         expand
+    96          183      3.45131e+07         contract inside
+    97          185      3.45131e+07         contract inside
+    98          186      3.45131e+07         reflect
+    99          188      3.45131e+07         expand
+   100          190      3.45131e+07         reflect
+   101          192      3.45131e+07         contract inside
+   102          194      3.45131e+07         expand
+   103          196      3.45131e+07         contract inside
+   104          197      3.45131e+07         reflect
+   105          199      3.45131e+07         expand
+   106          201      3.45131e+07         expand
+   107          203      3.45131e+07         expand
+   108          205      3.45131e+07         expand
+   109          207      3.45131e+07         expand
+   110          209      3.45131e+07         expand
+   111          211      3.45131e+07         expand
+   112          213      3.45131e+07         expand
+   113          215      3.45131e+07         expand
+   114          217      3.45131e+07         expand
+   115          219       3.4513e+07         expand
+   116          220       3.4513e+07         reflect
+   117          222       3.4513e+07         contract outside
+   118          224       3.4513e+07         contract inside
+   119          225       3.4513e+07         reflect
+   120          227       3.4513e+07         contract inside
+   121          229       3.4513e+07         contract inside
+   122          231       3.4513e+07         contract inside
+   123          233       3.4513e+07         contract inside
+   124          235       3.4513e+07         reflect
+   125          237       3.4513e+07         expand
+   126          238       3.4513e+07         reflect
+   127          240       3.4513e+07         expand
+   128          241       3.4513e+07         reflect
+   129          242       3.4513e+07         reflect
+   130          244       3.4513e+07         expand
+   131          246       3.4513e+07         expand
+   132          247       3.4513e+07         reflect
+   133          249       3.4513e+07         expand
+   134          250       3.4513e+07         reflect
+   135          252       3.4513e+07         expand
+   136          254       3.4513e+07         reflect
+   137          256       3.4513e+07         expand
+   138          258       3.4513e+07         contract inside
+   139          260       3.4513e+07         contract inside
+   140          262       3.4513e+07         reflect
+   141          264       3.4513e+07         contract inside
+   142          266       3.4513e+07         contract inside
+   143          268       3.4513e+07         contract inside
+   144          270       3.4513e+07         contract inside
+   145          272       3.4513e+07         contract inside
+   146          274       3.4513e+07         contract inside
+   147          276       3.4513e+07         contract inside
+   148          278       3.4513e+07         contract inside
+   149          280       3.4513e+07         contract inside
+   150          282       3.4513e+07         contract inside
+   151          284       3.4513e+07         contract inside
+   152          286       3.4513e+07         contract inside
+   153          288       3.4513e+07         contract inside
+   154          290       3.4513e+07         contract inside
+   155          292       3.4513e+07         reflect
+   156          294       3.4513e+07         contract inside
+   157          296       3.4513e+07         contract inside
+   158          298       3.4513e+07         contract inside
+   159          300       3.4513e+07         contract inside
+   160          302       3.4513e+07         contract inside
+   161          304       3.4513e+07         contract inside
+   162          306       3.4513e+07         contract inside
+   163          308       3.4513e+07         reflect
+   164          310       3.4513e+07         contract inside
+   165          312       3.4513e+07         contract inside
+   166          314       3.4513e+07         contract inside
+   167          316       3.4513e+07         reflect
+   168          317       3.4513e+07         reflect
+   169          319       3.4513e+07         contract inside
+   170          321       3.4513e+07         contract inside
+   171          323       3.4513e+07         contract inside
+   172          325       3.4513e+07         contract inside
+   173          326       3.4513e+07         reflect
+   174          328       3.4513e+07         contract inside
+   175          330       3.4513e+07         contract outside
+   176          332       3.4513e+07         expand
+   177          334       3.4513e+07         contract inside
+   178          336       3.4513e+07         contract inside
+   179          338       3.4513e+07         reflect
+   180          340       3.4513e+07         contract inside
+   181          342       3.4513e+07         reflect
+   182          344       3.4513e+07         contract inside
+   183          346       3.4513e+07         contract inside
+   184          348       3.4513e+07         expand
+   185          350       3.4513e+07         contract inside
+   186          352       3.4513e+07         contract outside
+   187          353       3.4513e+07         reflect
+   188          355       3.4513e+07         reflect
+   189          357       3.4513e+07         reflect
+   190          359       3.4513e+07         contract inside
+   191          360       3.4513e+07         reflect
+   192          362       3.4513e+07         contract inside
+   193          367       3.4513e+07         shrink
+   194          372       3.4513e+07         shrink
+   195          377       3.4513e+07         shrink
+   196          378       3.4513e+07         reflect
+   197          383       3.4513e+07         shrink
+   198          385       3.4513e+07         contract outside
+   199          390       3.4513e+07         shrink
+   200          391       3.4513e+07         reflect
+   201          392       3.4513e+07         reflect
+   202          397       3.4513e+07         shrink
+   203          402       3.4513e+07         shrink
+   204          404       3.4513e+07         contract outside
+   205          406       3.4513e+07         contract inside
+   206          408       3.4513e+07         reflect
+   207          413       3.4513e+07         shrink
+   208          414       3.4513e+07         reflect
+   209          419       3.4513e+07         shrink
+   210          420       3.4513e+07         reflect
+   211          421       3.4513e+07         reflect
+   212          423       3.4513e+07         reflect
+   213          428       3.4513e+07         shrink
+   214          433       3.4513e+07         shrink
+   215          434       3.4513e+07         reflect
+   216          435       3.4513e+07         reflect
+   217          440       3.4513e+07         shrink
+   218          441       3.4513e+07         reflect
+   219          446       3.4513e+07         shrink
+   220          451       3.4513e+07         shrink
+   221          452       3.4513e+07         reflect
+   222          453       3.4513e+07         reflect
+   223          454       3.4513e+07         reflect
+   224          456       3.4513e+07         contract inside
+   225          461       3.4513e+07         shrink
+   226          462       3.4513e+07         reflect
+   227          463       3.4513e+07         reflect
+   228          465       3.4513e+07         contract inside
+   229          470       3.4513e+07         shrink
+   230          471       3.4513e+07         reflect
+   231          472       3.4513e+07         reflect
+   232          473       3.4513e+07         reflect
+   233          478       3.4513e+07         shrink
+   234          480       3.4513e+07         reflect
+   235          485       3.4513e+07         shrink
+   236          490       3.4513e+07         shrink
+   237          495       3.4513e+07         shrink
+   238          496       3.4513e+07         reflect
+   239          501       3.4513e+07         shrink
+   240          503       3.4513e+07         contract inside
+   241          504       3.4513e+07         reflect
+   242          509       3.4513e+07         shrink
+   243          510       3.4513e+07         reflect
+   244          511       3.4513e+07         reflect
+   245          512       3.4513e+07         reflect
+   246          513       3.4513e+07         reflect
+   247          515       3.4513e+07         contract inside
+   248          520       3.4513e+07         shrink
+   249          522       3.4513e+07         contract outside
+   250          527       3.4513e+07         shrink
+   251          532       3.4513e+07         shrink
+   252          534       3.4513e+07         contract inside
+   253          535       3.4513e+07         reflect
+   254          537       3.4513e+07         contract inside
+   255          539       3.4513e+07         contract inside
+   256          544       3.4513e+07         shrink
+   257          549       3.4513e+07         shrink
+   258          550       3.4513e+07         reflect
+   259          551       3.4513e+07         reflect
+   260          552       3.4513e+07         reflect
+   261          553       3.4513e+07         reflect
+   262          558       3.4513e+07         shrink
+   263          559       3.4513e+07         reflect
+   264          560       3.4513e+07         reflect
+   265          565       3.4513e+07         shrink
+   266          566       3.4513e+07         reflect
+   267          571       3.4513e+07         shrink
+   268          573       3.4513e+07         contract inside
+   269          578       3.4513e+07         shrink
+   270          580       3.4513e+07         contract inside
+   271          585       3.4513e+07         shrink
+   272          586       3.4513e+07         reflect
+   273          587       3.4513e+07         reflect
+   274          589       3.4513e+07         contract inside
+   275          590       3.4513e+07         reflect
+   276          595       3.4513e+07         shrink
+   277          596       3.4513e+07         reflect
+   278          597       3.4513e+07         reflect
+   279          602       3.4513e+07         shrink
+   280          603       3.4513e+07         reflect
+   281          608       3.4513e+07         shrink
+   282          609       3.4513e+07         reflect
+   283          614       3.4513e+07         shrink
+   284          615       3.4513e+07         reflect
+   285          617       3.4513e+07         contract inside
+   286          619       3.4513e+07         contract outside
+ 
+Optimization terminated:
+ the current x satisfies the termination criteria using OPTIONS.TolX of 1.000000e-12 
+ and F(X) satisfies the convergence criteria using OPTIONS.TolFun of 1.000000e-12 
+
+Radial     position error = 14162705.8210 (km)
+Radial     velocity error =       9.7753 (km/s)
+Tangential velocity error =       1.0224 (km/s)
+    Time of minimum error =       5.6089 month
+Initial costate guess:
+           0
+       50000
+      200000
+
+Costate returned by Simplex:
+      0.40819
+  -8.5576e+06
+   9.0827e+06
+
+</pre>
+<img vspace="5" hspace="5" src="LowThrustPlanar_01.png" alt=""> <img vspace="5" hspace="5" src="LowThrustPlanar_02.png" alt=""> <img vspace="5" hspace="5" src="LowThrustPlanar_03.png" alt=""> <img vspace="5" hspace="5" src="LowThrustPlanar_04.png" alt=""> <img vspace="5" hspace="5" src="LowThrustPlanar_05.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Low-thrust Pluto trajectory
+%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% See also: TrajectoryOptimization, FLowThrust2D, CostLowThrust2D,
+% Plot2DTrajectory
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+disp('Low-thrust Mars demo using Simplex')
+d.method         = 'downhill simplex';
+d.repeat         = 1;
+lbFToKg          = Constant('lb force to kg');
+aU               = Constant('au');
+muSun            = Constant('mu sun');
+secInDay         = 86400;
+m0               = 10000*lbFToKg; % kg
+[name,a]         = Planets('rad',4); % Mars
+aF               = aU*a(1);
+v0               = VOrbit(aU,aU,muSun);
+vF               = VOrbit(aF,aF,muSun);
+d.d.mu           = Constant('mu sun');
+d.d.mDot         = 6.7727e-5;
+d.d.thrust       = 0.002;
+d.d.rhsFun       = @FLowThrust2D;
+d.d.plotFun      = @Plot2DTrajectory;
+d.d.stateTol     = 1e-12;
+d.d.funTol       = 1e-12;
+d.d.nIts         = 10000;
+d.d.costFun      = @CostLowThrust2D;
+d.d.lambda0      = [0;0.5;2]*1e5;
+d.d.x0           = [aU;0;v0;m0];
+d.d.xF           = [aF;0;vF];
+d.d.rF           = d.d.xF(1); % for plotting
+d.d.data.absTol  = 1e-10;
+d.d.data.relTol  = 2.5e-8;
+d.d.data.maxStep = 0.1;
+d.d.tEnd         = 300*secInDay;
+d.d.errorScale   = [1; 3e6; 1e7; 1e-2];
+
+
+[lambda,xF,tF] = TrajectoryOptimization( d );
+disp('Initial costate guess:')
+disp(d.d.lambda0)
+disp('Costate returned by Simplex:')
+disp(lambda{1})
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   LowThrustPlanar.m $
+% $Id: bde1ce7872f10a80fd906ced2c552ef66c9f68de $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

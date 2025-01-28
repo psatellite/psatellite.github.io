@@ -1,0 +1,506 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Mars 3D optimal trajectory with a linear regulator</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="MarsOptimalTrajectory.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Mars 3D optimal trajectory with a linear regulator</h1>
+<!--introduction-->
+<p>Starts with plotting the Earth and Mars orbits. It then uses an optimal regulator to do the transfer with a linearized orbit. This nulls the error but has no limits on acceleration so requires a high delta-V.</p>
+<pre>------------------------------------------------------------------------
+See also Constant, PlanetPosJPL, NewFig, JD2Date, ECI2Hills,
+OrbRate, RHSLinOrb, QCR, RK4, TimeHistory
+------------------------------------------------------------------------</pre>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Constants</a>
+</li>
+<li>
+<a href="#3">Initialize the planetary ephemerides</a>
+</li>
+<li>
+<a href="#4">Time</a>
+</li>
+<li>
+<a href="#5">Use a linear quadratic regulator with a linearized orbit to simulate the trajectory</a>
+</li>
+<li>
+<a href="#6">Nonlinear simulation</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2023.1 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2023.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Constants</h2>
+<pre class="codeinput">dayToSec = 86400;
+MU       = Constant(<span class="string">'mu sun'</span>);
+</pre>
+<h2 id="3">Initialize the planetary ephemerides</h2>
+<pre class="codeinput">PlanetPosJPL( <span class="string">'initialize'</span>, [3 4] );
+</pre>
+<h2 id="4">Time</h2>
+<pre class="codeinput">jD0   = Date2JD([2024 4 4]);
+nYr   = 1;
+nDays = nYr*365.25;
+t     = 0:nDays;
+jD    = jD0 + t;
+
+nS     = length(jD);
+rMars  = zeros(3,nS);
+rEarth = zeros(3,nS);
+vMars  = zeros(3,nS);
+vEarth = zeros(3,nS);
+
+<span class="keyword">for</span> k = 1:nS
+  [r,~,v]     = PlanetPosJPL( <span class="string">'update'</span>, jD(k), 1 );
+  rEarth(:,k) = r(:,1);
+  vEarth(:,k) = v(:,1);
+  rMars(:,k)  = r(:,2);
+  vMars(:,k)  = v(:,2);
+<span class="keyword">end</span>
+
+NewFig(<span class="string">'Mars and Earth'</span>)
+plot3(rEarth(1,:),rEarth(2,:),rEarth(3,:),<span class="string">'b'</span>);
+hold <span class="string">on</span>
+plot3(rMars(1,:),rMars(2,:),rMars(3,:),<span class="string">'r'</span>);
+XLabelS(<span class="string">'x (au)'</span>);
+YLabelS(<span class="string">'y (au)'</span>);
+ZLabelS(<span class="string">'z (au)'</span>);
+axis <span class="string">image</span>
+grid <span class="string">on</span>
+rotate3d <span class="string">on</span>
+plot3(rEarth(1,1),rEarth(2,1),rEarth(3,1),<span class="string">'ob'</span>);
+hold <span class="string">on</span>
+dS = JD2Date(jD0);
+title(sprintf(<span class="string">'Start date %d/%d/%d'</span>,dS(2),dS(3),dS(1)));
+plot3(rMars(1,1),rMars(2,1),rMars(3,1),<span class="string">'or'</span>);
+
+hold <span class="string">off</span>
+legend(<span class="string">'Earth'</span>,<span class="string">'Mars'</span>,<span class="string">'Earth Start'</span>, <span class="string">'Mars Start'</span>)
+</pre>
+<img vspace="5" hspace="5" src="MarsOptimalTrajectory_01.png" alt=""> <h2 id="5">Use a linear quadratic regulator with a linearized orbit to simulate the trajectory</h2>
+<pre class="codeinput">
+<span class="comment">% Find Hills Coordinates for Mars</span>
+xM = RelativeOrbitState([rEarth(:,1);vEarth(:,1)],[rMars(:,1);vMars(:,1)]);
+n  = OrbRate(Mag(rEarth(:,1)),Mag(rEarth(:,1)),MU);
+<span class="comment">% Todo: confirm we can recreate the inertial orbit of Mars, or at least</span>
+<span class="comment">% compare</span>
+
+x    = zeros(6,1);
+dT   = 200; <span class="comment">% s</span>
+tEnd = nYr*365.25*dayToSec;
+nSim = floor(tEnd/dT);
+xP   = zeros(13,nSim);
+u    = zeros(3,1);
+
+<span class="comment">% Linearize around the Earth's orbit; assumes small x, z</span>
+[~,a,b] = RHSLinOrb(zeros(6,1),0,n,u);
+
+<span class="comment">% Find the optimal gains</span>
+<span class="comment">% Create the linear quadratic regulator. Pick a large value for the control</span>
+<span class="comment">% weight</span>
+gain = 1e28;
+kOpt = QCR(a,b,eye(6),eye(3)*gain)
+
+<span class="comment">% Check the eigenvalues</span>
+DispWithTitle(eig(a-b*kOpt),<span class="string">'Controller Eigenvalues'</span>)
+
+<span class="comment">% Linearized continous orbit RHS</span>
+funRHS = @(x,t,u) a*x + b*u ;
+
+<span class="comment">% Simulate</span>
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Mars Optimal Trajectory'</span>, nSim );
+t = 0;
+<span class="keyword">for</span> k = 1:nSim
+  xP(:,k) = [xM;x;Mag(u)];
+  xM      = RK4(funRHS,xM,dT,0,zeros(3,1));
+  u       = kOpt*(xM-x);
+  x       = RK4(funRHS,x,dT,0,u);
+  TimeDisplay( <span class="string">'update'</span> );
+<span class="keyword">end</span>
+TimeDisplay( <span class="string">'close'</span> );
+
+<span class="comment">% Plot the linear solution</span>
+<span class="comment">% The required control acceleration is the magnitude of u, |u|</span>
+
+fprintf(<span class="string">'Delta-V, linearized: %g km/s\n'</span>,trapz(xP(13,:))*dT)
+
+yL = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span><span class="keyword">...</span>
+      <span class="string">'|u| (km/s^2)'</span>};
+
+t = (0:nSim-1)*dT;
+k = 1:6;
+TimeHistory(t,xP(k,:),yL(1:6),<span class="string">'Mars'</span>);
+k = 7:12;
+TimeHistory(t,xP(k,:),yL(1:6),<span class="string">'Spacecraft'</span>);
+e = xP(1:6,:) - xP(7:12,:);
+TimeHistory(t,[e;xP(13,:)],yL([1 4:7]),<span class="string">'Linearized Error and |u|'</span>,{[1 2 3],4,5,6,7},<span class="keyword">...</span>
+  {yL(1:3),{},{},{},{}});
+</pre>
+<pre class="codeoutput">
+kOpt =
+
+    6.107e-14  -8.7476e-15  -5.7204e-29   1.3463e-07   1.1424e-07  -3.9822e-22
+   1.0435e-13  -4.8455e-15   3.6456e-29   1.1424e-07   2.6119e-07   -1.098e-21
+  -1.7608e-29   4.7334e-30   1.2423e-15  -1.7577e-22  -1.9347e-23   4.9847e-08
+
+Controller Eigenvalues
+  -7.3109e-08 + 2.3871e-07i
+  -7.3109e-08 - 2.3871e-07i
+   -1.248e-07 + 5.9708e-08i
+   -1.248e-07 - 5.9708e-08i
+  -2.4923e-08 + 2.0061e-07i
+  -2.4923e-08 - 2.0061e-07i
+
+Delta-V, linearized: 15.2919 km/s
+</pre>
+<img vspace="5" hspace="5" src="MarsOptimalTrajectory_02.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTrajectory_03.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTrajectory_04.png" alt=""> <h2 id="6">Nonlinear simulation</h2>
+<p>See how the linear controller performs with nonlinear dynamics.</p>
+<pre class="codeinput">
+<span class="comment">% Time</span>
+nSim = floor(tEnd/dT);
+t  = (0:nSim-1)*dT;
+jD = jD0 + t/86400;
+
+<span class="comment">% Initialization</span>
+x0    = [rEarth(:,1);vEarth(:,1)];
+rE    = zeros(3,nSim);
+vE    = zeros(3,nSim);
+rMars = zeros(3,nSim);
+vMars = zeros(3,nSim);
+xP    = zeros(15,nSim);
+
+<span class="comment">% Simulate</span>
+x    = x0(:,1);
+TimeDisplay( <span class="string">'initialize'</span>, <span class="string">'Mars Nonlinear Optimal Trajectory'</span>, nSim );
+<span class="keyword">for</span> k = 1:nSim
+  <span class="comment">% Obtain planet states</span>
+  [r,~,v]     = PlanetPosJPL( <span class="string">'update'</span>, jD(k), 1 );
+  rE(:,k)     = r(:,1);
+  vE(:,k)     = v(:,1);
+  rMars(:,k)  = r(:,2);
+  vMars(:,k)  = v(:,2);
+  x0 = [rE(:,k);vE(:,k)];
+  <span class="comment">% Get the relative state</span>
+  xM      = RelativeOrbitState(x0,[rMars(:,k);vMars(:,k)]);
+  xH      = RelativeOrbitState(x0,x);
+  <span class="comment">% Calculate the linear control and rotate it</span>
+  cH      = GetHillsMats( rE(:,k), vE(:,k) );
+  uH      = cH'*kOpt*(xM - xH);
+  xP(:,k) = [x;xM;uH];
+  <span class="comment">% Integrate the nonlinear orbit</span>
+  x       = RK4(@FOrbCart,x,dT,0,uH,MU);
+  TimeDisplay( <span class="string">'update'</span> );
+<span class="keyword">end</span>
+TimeDisplay( <span class="string">'close'</span> );
+
+yL = {<span class="string">'x (km)'</span> <span class="string">'y (km)'</span> <span class="string">'z (km)'</span> <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span>, <span class="string">'|u|'</span>};
+
+TimeHistory(t,xP(7:12,:),yL(1:6),<span class="string">'Mars in Hills Frame'</span>);
+
+e = xP(1:6,:) - [rMars;vMars];
+u = Mag(xP(13:15,:));
+TimeHistory(t,[e;u],yL,<span class="string">'Error'</span>);
+yL = {<span class="string">'u_x (km/s^2)'</span> <span class="string">'u_y (km/s^2)'</span> <span class="string">'u_z (km/s^2)'</span>};
+
+TimeHistory(t,xP(13:15,:),yL,<span class="string">'u'</span>);
+
+fprintf(<span class="string">'Delta-V, nonlinear: %g km/s\n'</span>,trapz(u)*dT)
+
+Plot3D(rEarth,<span class="string">'x'</span>,<span class="string">'y'</span>,<span class="string">'z'</span>,<span class="string">'Nonlinear Transfer'</span>);
+hold <span class="string">on</span>
+plot3(rEarth(1,1),rEarth(2,1),rEarth(3,1),<span class="string">'bo'</span>);
+plot3(rMars(1,:),rMars(2,:),rMars(3,:),<span class="string">'r'</span>);
+plot3(rMars(1,end),rMars(2,end),rMars(3,end),<span class="string">'rx'</span>);
+plot3(xP(1,:),xP(2,:),xP(3,:),<span class="string">'g'</span>,<span class="string">'linewidth'</span>,2);
+legend(<span class="string">'Earth'</span>,<span class="string">'Mars'</span>,<span class="string">'Transfer'</span>)
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 45f2292f0443b52c613978433b5d21a12b280b44 $</span>
+</pre>
+<pre class="codeoutput">Delta-V, nonlinear: 30.3052 km/s
+</pre>
+<img vspace="5" hspace="5" src="MarsOptimalTrajectory_05.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTrajectory_06.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTrajectory_07.png" alt=""> <img vspace="5" hspace="5" src="MarsOptimalTrajectory_08.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Mars 3D optimal trajectory with a linear regulator
+% Starts with plotting the Earth and Mars orbits. It then uses an
+% optimal regulator to do the transfer with a linearized orbit. This nulls
+% the error but has no limits on acceleration so requires a high delta-V.
+%
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%  See also Constant, PlanetPosJPL, NewFig, JD2Date, ECI2Hills, 
+%  OrbRate, RHSLinOrb, QCR, RK4, TimeHistory
+%  REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%% 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2023.1 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2023.1 
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Constants
+dayToSec = 86400;
+MU       = Constant('mu sun');
+
+%% Initialize the planetary ephemerides
+PlanetPosJPL( 'initialize', [3 4] );
+
+%% Time
+jD0   = Date2JD([2024 4 4]);
+nYr   = 1;
+nDays = nYr*365.25;
+t     = 0:nDays;
+jD    = jD0 + t;
+
+nS     = length(jD);
+rMars  = zeros(3,nS);
+rEarth = zeros(3,nS);
+vMars  = zeros(3,nS);
+vEarth = zeros(3,nS);
+
+for k = 1:nS
+  [r,~,v]     = PlanetPosJPL( 'update', jD(k), 1 );
+  rEarth(:,k) = r(:,1);
+  vEarth(:,k) = v(:,1);
+  rMars(:,k)  = r(:,2);
+  vMars(:,k)  = v(:,2);
+end
+
+NewFig('Mars and Earth')
+plot3(rEarth(1,:),rEarth(2,:),rEarth(3,:),'b');
+hold on
+plot3(rMars(1,:),rMars(2,:),rMars(3,:),'r');
+XLabelS('x (au)');
+YLabelS('y (au)');
+ZLabelS('z (au)');
+axis image
+grid on
+rotate3d on
+plot3(rEarth(1,1),rEarth(2,1),rEarth(3,1),'ob');
+hold on
+dS = JD2Date(jD0);
+title(sprintf('Start date %d/%d/%d',dS(2),dS(3),dS(1)));
+plot3(rMars(1,1),rMars(2,1),rMars(3,1),'or');
+
+hold off
+legend('Earth','Mars','Earth Start', 'Mars Start')
+
+%% Use a linear quadratic regulator with a linearized orbit to simulate the trajectory
+
+% Find Hills Coordinates for Mars
+xM = RelativeOrbitState([rEarth(:,1);vEarth(:,1)],[rMars(:,1);vMars(:,1)]);
+n  = OrbRate(Mag(rEarth(:,1)),Mag(rEarth(:,1)),MU);
+% Todo: confirm we can recreate the inertial orbit of Mars, or at least
+% compare
+
+x    = zeros(6,1);
+dT   = 200; % s
+tEnd = nYr*365.25*dayToSec;
+nSim = floor(tEnd/dT);
+xP   = zeros(13,nSim);
+u    = zeros(3,1);
+
+% Linearize around the Earth's orbit; assumes small x, z
+[~,a,b] = RHSLinOrb(zeros(6,1),0,n,u);
+
+% Find the optimal gains
+% Create the linear quadratic regulator. Pick a large value for the control
+% weight
+gain = 1e28;
+kOpt = QCR(a,b,eye(6),eye(3)*gain)
+
+% Check the eigenvalues
+DispWithTitle(eig(a-b*kOpt),'Controller Eigenvalues')
+
+% Linearized continous orbit RHS
+funRHS = @(x,t,u) a*x + b*u ;
+
+% Simulate
+TimeDisplay( 'initialize', 'Mars Optimal Trajectory', nSim );
+t = 0;
+for k = 1:nSim
+  xP(:,k) = [xM;x;Mag(u)];
+  xM      = RK4(funRHS,xM,dT,0,zeros(3,1));
+  u       = kOpt*(xM-x);
+  x       = RK4(funRHS,x,dT,0,u);
+  TimeDisplay( 'update' );
+end
+TimeDisplay( 'close' );
+
+% Plot the linear solution
+% The required control acceleration is the magnitude of u, |u|
+
+fprintf('Delta-V, linearized: %g km/s\n',trapz(xP(13,:))*dT)
+
+yL = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)'...
+      '|u| (km/s^2)'};
+
+t = (0:nSim-1)*dT;
+k = 1:6;
+TimeHistory(t,xP(k,:),yL(1:6),'Mars');
+k = 7:12;
+TimeHistory(t,xP(k,:),yL(1:6),'Spacecraft');
+e = xP(1:6,:) - xP(7:12,:);
+TimeHistory(t,[e;xP(13,:)],yL([1 4:7]),'Linearized Error and |u|',{[1 2 3],4,5,6,7},...
+  {yL(1:3),{},{},{},{}});
+
+%% Nonlinear simulation
+% See how the linear controller performs with nonlinear dynamics. 
+
+% Time
+nSim = floor(tEnd/dT);
+t  = (0:nSim-1)*dT;
+jD = jD0 + t/86400;
+
+% Initialization
+x0    = [rEarth(:,1);vEarth(:,1)];
+rE    = zeros(3,nSim);
+vE    = zeros(3,nSim);
+rMars = zeros(3,nSim);
+vMars = zeros(3,nSim);
+xP    = zeros(15,nSim);
+
+% Simulate
+x    = x0(:,1);
+TimeDisplay( 'initialize', 'Mars Nonlinear Optimal Trajectory', nSim );
+for k = 1:nSim
+  % Obtain planet states
+  [r,~,v]     = PlanetPosJPL( 'update', jD(k), 1 );
+  rE(:,k)     = r(:,1);
+  vE(:,k)     = v(:,1);
+  rMars(:,k)  = r(:,2);
+  vMars(:,k)  = v(:,2);
+  x0 = [rE(:,k);vE(:,k)];
+  % Get the relative state
+  xM      = RelativeOrbitState(x0,[rMars(:,k);vMars(:,k)]);
+  xH      = RelativeOrbitState(x0,x);
+  % Calculate the linear control and rotate it
+  cH      = GetHillsMats( rE(:,k), vE(:,k) );
+  uH      = cH'*kOpt*(xM - xH);
+  xP(:,k) = [x;xM;uH];
+  % Integrate the nonlinear orbit
+  x       = RK4(@FOrbCart,x,dT,0,uH,MU);
+  TimeDisplay( 'update' );
+end
+TimeDisplay( 'close' );
+
+yL = {'x (km)' 'y (km)' 'z (km)' 'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)', '|u|'};
+
+TimeHistory(t,xP(7:12,:),yL(1:6),'Mars in Hills Frame');
+
+e = xP(1:6,:) - [rMars;vMars];
+u = Mag(xP(13:15,:));
+TimeHistory(t,[e;u],yL,'Error');
+yL = {'u_x (km/s^2)' 'u_y (km/s^2)' 'u_z (km/s^2)'};
+
+TimeHistory(t,xP(13:15,:),yL,'u');
+
+fprintf('Delta-V, nonlinear: %g km/s\n',trapz(u)*dT)
+
+Plot3D(rEarth,'x','y','z','Nonlinear Transfer');
+hold on
+plot3(rEarth(1,1),rEarth(2,1),rEarth(3,1),'bo');
+plot3(rMars(1,:),rMars(2,:),rMars(3,:),'r');
+plot3(rMars(1,end),rMars(2,end),rMars(3,end),'rx');
+plot3(xP(1,:),xP(2,:),xP(3,:),'g','linewidth',2);
+legend('Earth','Mars','Transfer')
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   MarsOptimalTrajectory.m $
+% $Id: 45f2292f0443b52c613978433b5d21a12b280b44 $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

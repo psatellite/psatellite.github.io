@@ -1,0 +1,395 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Fastest possible Mars one-way trip with fusion propulsion</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-27">
+<meta name="DC.source" content="MarsFastOneWay.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Fastest possible Mars one-way trip with fusion propulsion</h1>
+<!--introduction-->
+<p>This performs a planar optimization for a large-payload trip to Mars.</p>
+<p>------------------------------------------------------------------------- See also PlanarHelioOptimal, SimulatePlanarHelioTrajectory, StraightLineReport -------------------------------------------------------------------------</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Setup</a>
+</li>
+<li>
+<a href="#3">Shortest possible trip</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Setup</h2>
+<pre class="codeinput">AU        = Constant(<span class="string">'au'</span>);
+YEAR      = 365.25*86400;
+uExhaust  = 80;    <span class="comment">% km/s</span>
+sigma     = 330;   <span class="comment">% W/kg</span>
+eta       = 1;     <span class="comment">% Total fusion power to thrust</span>
+fS        = 0.05;  <span class="comment">% tank fraction</span>
+dAU       = 1.5;
+
+payload   = 50000;  <span class="comment">% payload mass (kg)</span>
+nYears    = 100/365.25;  <span class="comment">% transit time in years</span>
+
+repeatPrevious = false;
+</pre>
+<h2 id="3">Shortest possible trip</h2>
+<pre class="codeinput">
+<span class="comment">% Default structure</span>
+d         = PlanarHelioOptimal;
+d.sigma   = sigma;        <span class="comment">% specific power, W/kg</span>
+d.eta     = eta;          <span class="comment">% thrust efficiency</span>
+d.uE      = uExhaust;     <span class="comment">% exhaust velocity, km/s</span>
+d.f       = fS;         <span class="comment">% fuel structural fraction (tanks)</span>
+d.dVF     = 0;            <span class="comment">% radial not tangential? can make soln WORSE</span>
+
+tRet      = nYears*YEAR;
+d.r0      = 1*AU;
+d.rF      = dAU*AU;
+d.tF      = nYears*YEAR;
+d.mP      = payload;         <span class="comment">% payload mass (kg)</span>
+d.scale   = [1;1e3;1e3];
+d.nPts    = 25;
+
+<span class="keyword">if</span> repeatPrevious
+	[phi, thrust, t, data] = PlanarHelioOptimal( d, 4000, <span class="string">'iter-detailed'</span>, thrust1, phi1 );
+<span class="keyword">else</span>
+  [phi, thrust, t, data] = PlanarHelioOptimal( d, 4000, <span class="string">'notify'</span> );
+<span class="keyword">end</span>
+[~,x1] = SimulatePlanarHelioTrajectory( data.mD, data.mF, thrust, d.uE,<span class="keyword">...</span>
+                                          d.r0, d.rF, d.mu, phi, t );
+h1 = findobj(<span class="string">'name'</span>,<span class="string">'Optimization PlotFcns'</span>);
+set(h1,<span class="string">'name'</span>,<span class="string">'Fast Mars Trip Optimization'</span>)
+
+data.fmincon
+
+ret.dT = d.tF;
+ret.dTheta = data.xEnd(end);
+
+fprintf(<span class="string">'Trip duration: %g days\n'</span>,d.tF/86400);
+fprintf(<span class="string">'Trip angle: %g deg\n'</span>,ret.dTheta*180/pi);
+fprintf(<span class="string">'Mars angle: %g deg\n'</span>,x1(2,end)*180/pi);
+
+rXY = x1(1,:).*[cos(x1(2,:));sin(x1(2,:))];
+dX  = rXY(:,2:end) - rXY(:,1:end-1);
+s   = sum(Mag(dX));
+fprintf(<span class="string">'Total distance traveled: %g AU\n\n'</span>,s);
+
+StraightLineReport(data)
+
+repeatPrevious = true;
+
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 5669bcb20a0529f7c03f9b2158065f6307f5ac8f $</span>
+</pre>
+<pre class="codeoutput">         1156       14.548        32.03       1.8349  -2.1828e-11
+
+         1156       14.548        32.03       1.8349  -2.1828e-11
+
+       325.29       4.5049       28.955       1.3777   9.5497e-12
+
+       321.14       4.3144       28.757       1.3824   1.6371e-11
+
+       321.64       2.5418       27.589       1.3886            0
+
+       321.92       1.7315       27.115       1.3888   1.2278e-11
+
+       322.57       1.1984       26.629       1.3973   1.9554e-11
+
+       324.44      0.98179        26.26       1.4024  -1.5007e-11
+
+       340.63          2.3         24.4       1.4395  -9.5497e-12
+
+       400.57       0.9812        24.51       1.4524  -2.4556e-11
+
+       382.24       1.5368       24.259       1.4611    1.728e-11
+
+       461.03       3.1485       24.442       1.4853  -1.8645e-11
+
+       495.13        1.418       23.828       1.4916  -3.0013e-11
+
+       548.55      0.85891       24.019       1.4964   1.0004e-11
+
+       620.12      0.15797       24.305       1.4975    5.457e-11
+
+       617.12      0.03756       24.353        1.499  -6.3665e-12
+
+       579.12       0.2724       24.326       1.5003   -3.638e-11
+
+       584.74    -0.010278       24.328       1.5001   1.9099e-11
+
+       575.53   0.00041651       24.319          1.5    1.728e-11
+
+       571.59   0.00014625       24.319          1.5            0
+
+       570.16   6.7186e-05       24.319          1.5  -1.9099e-11
+
+        570.2   9.6671e-05       24.319          1.5   -1.819e-11
+
+       569.75   -0.0001095       24.319          1.5  -2.4556e-11
+
+       569.29  -1.9337e-05       24.319          1.5   2.4556e-11
+
+       569.32  -8.8005e-06       24.319          1.5  -2.8194e-11
+
+       569.12  -2.4819e-06       24.319          1.5   2.4556e-11
+
+       569.15   7.8729e-07       24.319          1.5  -3.7289e-11
+
+        569.1   -1.205e-06       24.319          1.5   2.4556e-11
+
+       569.04  -1.9479e-07       24.319          1.5  -2.2737e-11
+
+       569.03   1.3791e-08       24.319          1.5   1.9099e-11
+
+       569.03  -3.5606e-08       24.319          1.5   -3.638e-11
+
+       569.03   4.4637e-08       24.319          1.5   -1.728e-11
+
+       569.02   4.1149e-08       24.319          1.5   1.0914e-11
+
+       569.02    4.913e-09       24.319          1.5   1.9099e-11
+
+       569.02  -1.8697e-08       24.319          1.5   2.0918e-11
+
+       569.02   1.6294e-08       24.319          1.5   1.9099e-11
+
+       569.01   7.0745e-05       24.319          1.5  -8.1855e-12
+
+       569.01   7.0745e-05       24.319          1.5  -8.1855e-12
+
+
+Planar optimization results:
+----------------------------
+Destination:		1.5 AU
+sigma:			330 W/kg
+uE:			80 km/s
+eta:			1
+f:			0.05
+Duration:		100.0 days
+Thrust:			569.0 N
+Distance error:		0.083 km
+Velocity errors:	[7.07445e-05;-2.78941e-06] km/s
+Payload:		50000 kg
+Engine:			68971.2 kg
+Dry mass:		122044 kg
+Fuel:			61453.3 kg
+Total mass:		183497 kg
+Total DV:		32.6255 km/s
+Power:			22.7605 MW
+Mars Angle:		76.5579 deg
+Earth Angle:		98.5626 deg
+
+ans = 
+
+  struct with fields:
+
+         iterations: 36
+          funcCount: 2182
+    constrviolation: 0.082825
+           stepsize: 1.5599e-06
+          algorithm: 'interior-point'
+      firstorderopt: 0.084235
+       cgiterations: 326
+            message: 'Local minimum possible. Constraints satisfied.&crarr;&crarr;fmincon stopped because the size of the current step is less than&crarr;the value of the step size tolerance and constraints are &crarr;satisfied to within the value of the constraint tolerance.&crarr;&crarr;&lt;stopping criteria details&gt;&crarr;&crarr;Optimization stopped because the relative changes in all elements of x are&crarr;less than options.StepTolerance = 1.000000e-06, and the relative maximum constraint&crarr;violation, 1.652958e-09, is less than options.ConstraintTolerance = 5.000000e-05.'
+       bestfeasible: []
+
+Trip duration: 100 days
+Trip angle: 76.5579 deg
+Mars angle: 76.5579 deg
+Total distance traveled: 1.69143 AU
+
+Report:
+           Inputs           --    -- 
+          Payload        50000    kg 
+      Travel time         0.27 years 
+   Specific Power         0.33 kW/kg 
+ Exhaust velocity           80  km/s 
+Thrust Efficiency         1.00       
+    Fuel Fraction         0.05       
+          Outputs           --    -- 
+           Thrust       569.01     N 
+       Total Mass    183497.17    kg 
+         Mass Dry    122043.84    kg 
+      Mass Engine     68971.18    kg 
+        Mass Fuel     61453.32    kg 
+        Flow Rate         7.11   g/s 
+            Power        22.76    MW 
+          Delta V        32.63  km/s 
+   Final Distance         1.50    AU 
+   Final Velocity        24.32  km/s 
+</pre>
+<img vspace="5" hspace="5" src="MarsFastOneWay_01.png" alt=""> <img vspace="5" hspace="5" src="MarsFastOneWay_02.png" alt=""> <img vspace="5" hspace="5" src="MarsFastOneWay_03.png" alt=""> <img vspace="5" hspace="5" src="MarsFastOneWay_04.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Fastest possible Mars one-way trip with fusion propulsion
+% This performs a planar optimization for a large-payload trip to Mars.
+%
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+% See also PlanarHelioOptimal, SimulatePlanarHelioTrajectory,
+% StraightLineReport
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Setup
+AU        = Constant('au');
+YEAR      = 365.25*86400;
+uExhaust  = 80;    % km/s
+sigma     = 330;   % W/kg
+eta       = 1;     % Total fusion power to thrust
+fS        = 0.05;  % tank fraction
+dAU       = 1.5;
+
+payload   = 50000;  % payload mass (kg)
+nYears    = 100/365.25;  % transit time in years
+
+repeatPrevious = false;
+
+%% Shortest possible trip
+
+% Default structure
+d         = PlanarHelioOptimal;
+d.sigma   = sigma;        % specific power, W/kg
+d.eta     = eta;          % thrust efficiency
+d.uE      = uExhaust;     % exhaust velocity, km/s
+d.f       = fS;         % fuel structural fraction (tanks)
+d.dVF     = 0;            % radial not tangential? can make soln WORSE
+
+tRet      = nYears*YEAR;
+d.r0      = 1*AU;
+d.rF      = dAU*AU;
+d.tF      = nYears*YEAR;
+d.mP      = payload;         % payload mass (kg)
+d.scale   = [1;1e3;1e3];
+d.nPts    = 25;
+
+if repeatPrevious
+	[phi, thrust, t, data] = PlanarHelioOptimal( d, 4000, 'iter-detailed', thrust1, phi1 );
+else
+  [phi, thrust, t, data] = PlanarHelioOptimal( d, 4000, 'notify' );
+end
+[~,x1] = SimulatePlanarHelioTrajectory( data.mD, data.mF, thrust, d.uE,...
+                                          d.r0, d.rF, d.mu, phi, t );
+h1 = findobj('name','Optimization PlotFcns');
+set(h1,'name','Fast Mars Trip Optimization')
+
+data.fmincon
+
+ret.dT = d.tF;
+ret.dTheta = data.xEnd(end);
+
+fprintf('Trip duration: %g days\n',d.tF/86400);
+fprintf('Trip angle: %g deg\n',ret.dTheta*180/pi);
+fprintf('Mars angle: %g deg\n',x1(2,end)*180/pi);
+
+rXY = x1(1,:).*[cos(x1(2,:));sin(x1(2,:))];
+dX  = rXY(:,2:end) - rXY(:,1:end-1);
+s   = sum(Mag(dX));
+fprintf('Total distance traveled: %g AU\n\n',s);
+
+StraightLineReport(data)
+
+repeatPrevious = true;
+
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   MarsFastOneWay.m $
+% $Id: 5669bcb20a0529f7c03f9b2158065f6307f5ac8f $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Asteroid Prospector Mars mission planning.</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="AsteroidProspectorMars.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Asteroid Prospector Mars mission planning.</h1>
+<!--introduction-->
+<p>The mission starts in a GPS orbit. The spacecraft has a Xenon ion engine. The script computes the velocity changes needed for the different mission phases. The transfer to Mars is burn-coast-burn because the time needed to do the delta-v is much smaller than the transfer time so the Hohmann transfer is a reasonable approximation.</p>
+<p>See also Constant, LowThrustEscape, OrbMnvrHohmann</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Constants</a>
+</li>
+<li>
+<a href="#3">Spacecraft parameters</a>
+</li>
+<li>
+<a href="#4">Computed velocity changes</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2014 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All Rights Reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since version 2014.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Constants</h2>
+<pre class="codeinput">
+<span class="comment">%-----------</span>
+radiusMars	        = Constant(<span class="string">'equatorial radius mars'</span>);
+radiusEarth         = Constant(<span class="string">'equatorial radius earth'</span>);
+muSun               = Constant(<span class="string">'mu sun'</span>);
+muEarth             = Constant(<span class="string">'mu earth'</span>);
+muMars              = Constant(<span class="string">'mu mars'</span>);
+g                   = 9.806; <span class="comment">% m/s^2</span>
+aU                  = Constant(<span class="string">'au'</span> );
+aEarth              = aU;
+aMars               = 1.5*aU;
+</pre>
+<h2 id="3">Spacecraft parameters</h2>
+<pre class="codeinput">
+<span class="comment">%-----------------------</span>
+thrust              = 1.9e-3;
+massDry             = 15;
+hEarth              = 20200; <span class="comment">% GPS</span>
+hMars               = 800;   <span class="comment">% Above the altitude</span>
+uE                  = 2.800*g; <span class="comment">% Busek Ion engine (km/s)</span>
+</pre>
+<h2 id="4">Computed velocity changes</h2>
+<pre class="codeinput">
+<span class="comment">%---------------------------</span>
+
+aEarthStart         = radiusEarth + hEarth;
+aMarsEnd            = radiusMars  + hMars;
+dVEarthEsc          = LowThrustEscape( muEarth, aEarthStart );
+dVMarsEnt           = LowThrustEscape( muMars, aMarsEnd );
+[dV, tOF]           = OrbMnvrHohmann( aEarth, aMars, muSun );
+
+dVTotal             = dV.total + dVEarthEsc + dVMarsEnt;
+massFuel            = massDry*(exp(dVTotal/uE) - 1);
+
+massInitial         = massFuel + massDry;
+accel               = thrust/massInitial;
+timeAccel           = dV.total/accel;
+
+fprintf(1,<span class="string">'Total delta V                  %8.2f (km/s)\n'</span>,dVTotal);
+fprintf(1,<span class="string">'Earth Escape delta V           %8.2f (km/s)\n'</span>,dVEarthEsc);
+fprintf(1,<span class="string">'Mars insertion delta V         %8.2f (km/s)\n'</span>,dVMarsEnt);
+fprintf(1,<span class="string">'Transfer delta V               %8.2f (km/s)\n'</span>,dV.total);
+fprintf(1,<span class="string">'Mass Fuel                      %8.2f (kg)\n'</span>,massFuel);
+fprintf(1,<span class="string">'Mass Dry                       %8.2f (kg)\n'</span>,massDry);
+fprintf(1,<span class="string">'Mars orbit altitude            %8.2f (km)\n'</span>,hMars);
+fprintf(1,<span class="string">'Transfer delta V Time Fraction     %8.2e\n'</span>,timeAccel/tOF);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 6b16105c39cb318ca041a9f00208c1beb031c421 $</span>
+</pre>
+<pre class="codeoutput">Total delta V                     12.48 (km/s)
+Earth Escape delta V               3.87 (km/s)
+Mars insertion delta V             3.19 (km/s)
+Transfer delta V                   5.41 (km/s)
+Mass Fuel                          8.63 (kg)
+Mass Dry                          15.00 (kg)
+Mars orbit altitude              800.00 (km)
+Transfer delta V Time Fraction     3.05e-03
+</pre>
+<p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Asteroid Prospector Mars mission planning.
+% The mission starts in a GPS orbit. The spacecraft has a Xenon ion engine.
+% The script computes the velocity changes needed for the different
+% mission phases. The transfer to Mars is burn-coast-burn because the
+% time needed to do the delta-v is much smaller than the transfer time
+% so the Hohmann transfer is a reasonable approximation.
+%
+% See also Constant, LowThrustEscape, OrbMnvrHohmann
+
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2014 Princeton Satellite Systems, Inc.
+%   All Rights Reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since version 2014.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+
+%% Constants
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+radiusMars	        = Constant('equatorial radius mars');
+radiusEarth         = Constant('equatorial radius earth');
+muSun               = Constant('mu sun');
+muEarth             = Constant('mu earth');
+muMars              = Constant('mu mars');
+g                   = 9.806; % m/s^2
+aU                  = Constant('au' );
+aEarth              = aU;
+aMars               = 1.5*aU;
+
+%% Spacecraft parameters
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+thrust              = 1.9e-3;
+massDry             = 15;
+hEarth              = 20200; % GPS
+hMars               = 800;   % Above the altitude 
+uE                  = 2.800*g; % Busek Ion engine (km/s)
+
+%% Computed velocity changes
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+aEarthStart         = radiusEarth + hEarth;
+aMarsEnd            = radiusMars  + hMars;
+dVEarthEsc          = LowThrustEscape( muEarth, aEarthStart );
+dVMarsEnt           = LowThrustEscape( muMars, aMarsEnd );
+[dV, tOF]           = OrbMnvrHohmann( aEarth, aMars, muSun );
+
+dVTotal             = dV.total + dVEarthEsc + dVMarsEnt;
+massFuel            = massDry*(exp(dVTotal/uE) - 1);
+
+massInitial         = massFuel + massDry;
+accel               = thrust/massInitial;             
+timeAccel           = dV.total/accel;
+
+fprintf(1,'Total delta V                  %8.2f (km/s)\n',dVTotal);
+fprintf(1,'Earth Escape delta V           %8.2f (km/s)\n',dVEarthEsc);
+fprintf(1,'Mars insertion delta V         %8.2f (km/s)\n',dVMarsEnt);
+fprintf(1,'Transfer delta V               %8.2f (km/s)\n',dV.total);
+fprintf(1,'Mass Fuel                      %8.2f (kg)\n',massFuel);
+fprintf(1,'Mass Dry                       %8.2f (kg)\n',massDry);
+fprintf(1,'Mars orbit altitude            %8.2f (km)\n',hMars);
+fprintf(1,'Transfer delta V Time Fraction     %8.2e\n',timeAccel/tOF);
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   AsteroidProspectorMars.m $
+% $Id: 6b16105c39cb318ca041a9f00208c1beb031c421 $
+
+
+##### SOURCE END #####
+-->
+</body>
+</html>

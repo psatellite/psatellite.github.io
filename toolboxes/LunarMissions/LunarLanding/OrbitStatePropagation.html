@@ -1,0 +1,279 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Compare the state transition matrix to numerical integration</title>
+<meta name="generator" content="MATLAB 23.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2024-08-07">
+<meta name="DC.source" content="OrbitStatePropagation.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Compare the state transition matrix to numerical integration</h1>
+<!--introduction-->
+<p>The first test compares the state propagation to the numerical integration in a circular orbit. The second test compares a simulation with a constant thrust. This applies a constant thrust to slow the orbital velocity causing the lander to descend. This script runs the nonlinear simulation and then compares the results with the state transition matrix approach that will be used in the optimizer.</p>
+<p>See also: PropagateState3D, RHSPlanet3D, RHSPlanet3DToAB</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">Initialize</a>
+</li>
+<li>
+<a href="#3">Control</a>
+</li>
+<li>
+<a href="#4">Nonlinear simulation</a>
+</li>
+<li>
+<a href="#5">Discrete time simulation</a>
+</li>
+<li>
+<a href="#6">Plot</a>
+</li>
+<li>
+<a href="#7">Constant thrust</a>
+</li>
+<li>
+<a href="#8">Nonlinear simulation</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2015 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2016.1</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">Initialize</h2>
+<pre class="codeinput">d         = RHSPlanet3D;
+dT        = 10;
+x         = [1753;0;0;0;0;sqrt(d.mu/1753);200];
+p         = Period(1753,d.mu);
+d.n       = ceil(p/dT);
+d.omega   = 0;
+</pre>
+<h2 id="3">Control</h2>
+<pre class="codeinput">d.alpha   = zeros(1,d.n);
+d.beta    = -ones(1,d.n)*pi/2;
+d.thrust  = zeros(1,d.n);
+d.accel   = <span class="string">''</span>;
+</pre>
+<h2 id="4">Nonlinear simulation</h2>
+<pre class="codeinput">xP        = PropagateState3D( x, dT*ones(1,d.n), d );
+</pre>
+<h2 id="5">Discrete time simulation</h2>
+<pre class="codeinput">xD        = zeros(6,d.n);
+xD(:,1)   = xP(1:6,1);
+<span class="keyword">for</span> k = 1:d.n
+  [a,b]   = RHSPlanet3DToAB( xP(:,k), d, dT );
+  u       = [ cos(d.alpha(k))*cos(d.beta(k));<span class="keyword">...</span>
+              sin(d.alpha(k))*cos(d.beta(k));<span class="keyword">...</span>
+              sin(d.beta(k))]*d.thrust(k);
+
+
+  xD(:,k+1) = a*xD(:,k) + b*u;
+<span class="keyword">end</span>
+xD        = [xD;Mag(xD(4:6,:)); Mag(xD(1:3,:)) - 1738];
+xP        = [xP;Mag(xP(4:6,:)); Mag(xP(1:3,:)) - 1738];
+</pre>
+<h2 id="6">Plot</h2>
+<pre class="codeinput">yL        = { <span class="string">'x (km)'</span>     <span class="string">'y (km)'</span>     <span class="string">'z (km)'</span><span class="keyword">...</span>
+              <span class="string">'v_x (km/s)'</span> <span class="string">'v_y (km/s)'</span> <span class="string">'v_z (km/s)'</span><span class="keyword">...</span>
+              <span class="string">'|v| (km/s)'</span> <span class="string">'h (km)'</span>};
+
+[t,tL]    = TimeLabl((0:d.n)*dT);
+lB        = {<span class="string">'[1 4]'</span> <span class="string">'[2 5]'</span> <span class="string">'[3 6]'</span>};
+
+Plot2D(t,xP(1:3,:),tL,yL(1:3),<span class="string">'Nonlinear Position'</span>);
+Plot2D(t,xP(4:6,:),tL,yL(4:6),<span class="string">'Nonlinear Velocity'</span>);
+Plot2D(t,[xP(1:3,:);xD(1:3,:)],tL,yL(1:3),<span class="string">'Position'</span>,<span class="string">'lin'</span>,lB);
+legend(<span class="string">'Nonlinear'</span>,<span class="string">'Linear'</span>)
+Plot2D(t,[xP(4:6,:);xD(4:6,:)],tL,yL(4:6),<span class="string">'Velocity'</span>,<span class="string">'lin'</span>,lB);
+legend(<span class="string">'Nonlinear'</span>,<span class="string">'Linear'</span>)
+lB        = {<span class="string">'[1 3]'</span> <span class="string">'[2 4]'</span> };
+Plot2D(t,[xP(7:8,:);xD(7:8,:)],tL,yL(7:8),<span class="string">'Altitude and velocity'</span>,<span class="string">'lin'</span>,lB);
+legend(<span class="string">'Nonlinear'</span>,<span class="string">'Linear'</span>)
+</pre>
+<img vspace="5" hspace="5" src="OrbitStatePropagation_01.png" alt=""> <img vspace="5" hspace="5" src="OrbitStatePropagation_02.png" alt=""> <img vspace="5" hspace="5" src="OrbitStatePropagation_03.png" alt=""> <img vspace="5" hspace="5" src="OrbitStatePropagation_04.png" alt=""> <img vspace="5" hspace="5" src="OrbitStatePropagation_05.png" alt=""> <h2 id="7">Constant thrust</h2>
+<pre class="codeinput">d.thrust  = 30*ones(1,d.n);
+</pre>
+<h2 id="8">Nonlinear simulation</h2>
+<pre class="codeinput">xP        = PropagateState3D( x, dT*ones(1,d.n), d );
+Plot2D(t,xP(1:3,:),tL,yL(1:3),<span class="string">'Nonlinear Position Constant Thrust'</span>);
+Plot2D(t,xP(4:6,:),tL,yL(4:6),<span class="string">'Nonlinear Velocity Constant Thrust'</span>);
+
+
+<span class="comment">%--------------------------------------</span>
+<span class="comment">% PSS internal file version information</span>
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: 2279065d5f280c59bb015b6647b2447cecf4490b $</span>
+</pre>
+<img vspace="5" hspace="5" src="OrbitStatePropagation_06.png" alt=""> <img vspace="5" hspace="5" src="OrbitStatePropagation_07.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Compare the state transition matrix to numerical integration
+% The first test compares the state propagation to the numerical 
+% integration in a circular orbit.
+% The second test compares a simulation with a constant thrust.
+% This applies a constant thrust to slow the orbital velocity causing
+% the lander to descend. This script runs the nonlinear simulation and
+% then compares the results with the state transition matrix approach
+% that will be used in the optimizer.
+%
+% See also: PropagateState3D, RHSPlanet3D, RHSPlanet3DToAB
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2015 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2016.1
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% Initialize
+d         = RHSPlanet3D;
+dT        = 10;
+x         = [1753;0;0;0;0;sqrt(d.mu/1753);200];
+p         = Period(1753,d.mu);
+d.n       = ceil(p/dT);
+d.omega   = 0;
+
+%% Control
+d.alpha   = zeros(1,d.n);
+d.beta    = -ones(1,d.n)*pi/2;
+d.thrust  = zeros(1,d.n);
+d.accel   = '';
+
+%% Nonlinear simulation
+xP        = PropagateState3D( x, dT*ones(1,d.n), d );
+
+%% Discrete time simulation
+xD        = zeros(6,d.n);
+xD(:,1)   = xP(1:6,1);
+for k = 1:d.n
+  [a,b]   = RHSPlanet3DToAB( xP(:,k), d, dT );
+  u       = [ cos(d.alpha(k))*cos(d.beta(k));...
+              sin(d.alpha(k))*cos(d.beta(k));...
+              sin(d.beta(k))]*d.thrust(k);
+            
+ 
+  xD(:,k+1) = a*xD(:,k) + b*u;
+end
+xD        = [xD;Mag(xD(4:6,:)); Mag(xD(1:3,:)) - 1738];
+xP        = [xP;Mag(xP(4:6,:)); Mag(xP(1:3,:)) - 1738];
+
+
+%% Plot
+yL        = { 'x (km)'     'y (km)'     'z (km)'...
+              'v_x (km/s)' 'v_y (km/s)' 'v_z (km/s)'...
+              '|v| (km/s)' 'h (km)'};
+    
+[t,tL]    = TimeLabl((0:d.n)*dT);
+lB        = {'[1 4]' '[2 5]' '[3 6]'};
+
+Plot2D(t,xP(1:3,:),tL,yL(1:3),'Nonlinear Position');
+Plot2D(t,xP(4:6,:),tL,yL(4:6),'Nonlinear Velocity');
+Plot2D(t,[xP(1:3,:);xD(1:3,:)],tL,yL(1:3),'Position','lin',lB);
+legend('Nonlinear','Linear')
+Plot2D(t,[xP(4:6,:);xD(4:6,:)],tL,yL(4:6),'Velocity','lin',lB);
+legend('Nonlinear','Linear')
+lB        = {'[1 3]' '[2 4]' };
+Plot2D(t,[xP(7:8,:);xD(7:8,:)],tL,yL(7:8),'Altitude and velocity','lin',lB);
+legend('Nonlinear','Linear')
+
+%% Constant thrust
+
+d.thrust  = 30*ones(1,d.n);
+
+%% Nonlinear simulation
+xP        = PropagateState3D( x, dT*ones(1,d.n), d );
+Plot2D(t,xP(1:3,:),tL,yL(1:3),'Nonlinear Position Constant Thrust');
+Plot2D(t,xP(4:6,:),tL,yL(4:6),'Nonlinear Velocity Constant Thrust');
+
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% PSS internal file version information
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   OrbitStatePropagation.m $
+% $Id: 2279065d5f280c59bb015b6647b2447cecf4490b $
+
+##### SOURCE END #####
+-->
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Set up and run the trajectory optimization for an asteroid intercept.</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="InterstellarAsteroid.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Set up and run the trajectory optimization for an asteroid intercept.</h1>
+<!--introduction-->
+<p>I1/'Oumuamua is a recent interstellar asteroid that passed through the solar system. This shows that a fusion powered spacecraft could have intercepted the asteroid. This demo requires the optimization toolbox.</p>
+<p>Simulation is in the gravity field of the sun. THe demo also sizes a spacecraft to perform the mission given the engine parameters and payload.</p>
+<p>See also: TrajectoryBetweenTwoPlanets, SpacecraftFromAccel</p>
+<!--/introduction-->
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#2">I1/'Oumuamua orbit</a>
+</li>
+<li>
+<a href="#3">Compute an optimal trajectory (fmincon)</a>
+</li>
+<li>
+<a href="#4">Size the spacecraft</a>
+</li>
+</ul>
+</div>
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2018 Princeton Satellite Systems, Inc.</span>
+<span class="comment">%   All rights reserved.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Since 2018.1</span>
+<span class="comment">%   2019.1 Update units of sigma to W/kg from kW/kg</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+</pre>
+<h2 id="2">I1/'Oumuamua orbit</h2>
+<pre class="codeinput">jD            = 2462576.5;<span class="comment">% A.D. 2030-Mar-16 00:00:00.0000 TDB</span>
+rA            = [ 1.008272975334536E+10;  1.579428200546252E+09; 4.311503526924462E+09];
+vA            = [ 2.428440175149515E+01;  3.623455975379303E+00; 1.063812980138126E+01];
+mu            = Constant(<span class="string">'mu sun'</span>);
+el0           = RV2El(rA,vA,mu);
+[r,v]         = RVOrbGen(el0,linspace(0,-12*365*86400,200),[],mu);
+au            = Constant(<span class="string">'au'</span>);
+Plot3D(r/au)
+
+<span class="comment">% Assume we could launch closer to when asteroid was detected (2018)</span>
+el            = RV2El(r(:,end),v(:,end),mu);
+jD0           = jD - 12*365;
+</pre>
+<img vspace="5" hspace="5" src="InterstellarAsteroid_01.png" alt=""> <h2 id="3">Compute an optimal trajectory (fmincon)</h2>
+<pre class="codeinput">years         = 23;  <span class="comment">% 50, 20</span>
+planet1       = 3;
+planet2       = struct;
+planet2.name  = <span class="string">'I1/''Oumuamua'</span>;
+planet2.el    = el;
+nSteps        = 40;
+clear <span class="string">InterpolateState</span>
+jDStart       = FindDepartureDate( jD0, planet1, planet2, years );
+s             = TrajectoryBetweenTwoPlanets( jDStart, planet1, planet2, years, nSteps );
+</pre>
+<pre class="codeoutput">                                            First-order      Norm of
+ Iter F-count            f(x)  Feasibility   optimality         step
+    0     241    3.107932e-06    8.207e+09    4.522e-07
+    1     482    2.244017e-06    2.517e+08    3.468e+04    3.734e-07
+    2     723    2.231092e-06    1.385e+07    2.844e+03    3.920e-08
+    3     964    2.233585e-06    3.432e+05    1.306e+02    2.808e-09
+    4    1205    2.233600e-06    1.750e+04    1.144e+01    6.521e-11
+
+Optimization stopped because the relative changes in all elements of x are
+less than options.StepTolerance = 1.000000e-10, but the relative maximum constraint
+violation, 2.132211e-06, exceeds options.ConstraintTolerance = 1.000000e-06.
+
+
+Consider enabling the interior point method feasibility mode.
+
+Nonoptimal solution, flag: -2
+         iterations: 4
+          funcCount: 1205
+    constrviolation: 17500
+           stepsize: 6.521e-11
+          algorithm: 'interior-point'
+      firstorderopt: 11.441
+       cgiterations: 0
+            message: 'Converged to an infeasible point.&crarr;&crarr;fmincon stopped because the size of the current step is less than&crarr;the value of the step size tolerance but constraints are not&crarr;satisfied to within the value of the constraint tolerance.&crarr;&crarr;&lt;stopping criteria details&gt;&crarr;&crarr;Optimization stopped because the relative changes in all elements of x are&crarr;less than options.StepTolerance = 1.000000e-10, but the relative maximum constraint&crarr;violation, 2.132211e-06, exceeds options.ConstraintTolerance = 1.000000e-06.'
+       bestfeasible: []
+
+Final Equality Constraints (km, km/s)
+      -2046.3
+       -17500
+       7208.2
+   1.8872e-06
+  -2.7098e-05
+   1.4219e-05
+
+</pre>
+<img vspace="5" hspace="5" src="InterstellarAsteroid_02.png" alt=""> <img vspace="5" hspace="5" src="InterstellarAsteroid_03.png" alt=""> <img vspace="5" hspace="5" src="InterstellarAsteroid_04.png" alt=""> <img vspace="5" hspace="5" src="InterstellarAsteroid_05.png" alt=""> <h2 id="4">Size the spacecraft</h2>
+<p>This will compute the power required to move the requested payload given the acceleration profile returned from the optimization. Not all combinations of parameters will converge.</p>
+<pre class="codeinput">sC = SpacecraftFromAccel;
+sC.uE    = 120;   <span class="comment">% exhaust velocity, km/s</span>
+sC.sigma = 1e3;   <span class="comment">% specific power, W/kg</span>
+sC.fS    = 0.04;  <span class="comment">% fuel structural fraction</span>
+sC.eff   = 0.3;  <span class="comment">% efficiency to jet thrust power</span>
+sC.mP    = 2000;  <span class="comment">% payload mass, kg</span>
+
+SpacecraftFromAccel(sC,s);
+
+
+<span class="comment">%--------------------------------------</span>
+
+<span class="comment">% $Id: f3e717ec99412ed845a96bdb6fab28568f2937e2 $</span>
+</pre>
+<pre class="codeoutput">Total mission DV:     40.5 km/s
+Max thrust power:    0.066 MW
+Total mass:         2945.5 kg
+Payload mass:     2000 kg
+Engine mass:      66 kg
+Fuel mass:        844 kg
+Structural mass:  34 kg
+Payload Fraction: 0.678995
+</pre>
+<img vspace="5" hspace="5" src="InterstellarAsteroid_06.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Set up and run the trajectory optimization for an asteroid intercept.
+% I1/'Oumuamua is a recent interstellar asteroid that passed through
+% the solar system. This shows that a fusion powered spacecraft could
+% have intercepted the asteroid. This demo requires the optimization toolbox.
+%
+% Simulation is in the gravity field of the sun. THe demo also sizes a
+% spacecraft to perform the mission given the engine parameters and
+% payload.
+%
+% See also: TrajectoryBetweenTwoPlanets, SpacecraftFromAccel
+%%
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Copyright (c) 2018 Princeton Satellite Systems, Inc.
+%   All rights reserved.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+%   Since 2018.1
+%   2019.1 Update units of sigma to W/kg from kW/kg
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+%% I1/'Oumuamua orbit 
+jD            = 2462576.5;% A.D. 2030-Mar-16 00:00:00.0000 TDB 
+rA            = [ 1.008272975334536E+10;  1.579428200546252E+09; 4.311503526924462E+09];
+vA            = [ 2.428440175149515E+01;  3.623455975379303E+00; 1.063812980138126E+01];
+mu            = Constant('mu sun');
+el0           = RV2El(rA,vA,mu);
+[r,v]         = RVOrbGen(el0,linspace(0,-12*365*86400,200),[],mu);
+au            = Constant('au');
+Plot3D(r/au)
+
+% Assume we could launch closer to when asteroid was detected (2018)
+el            = RV2El(r(:,end),v(:,end),mu);
+jD0           = jD - 12*365;
+
+%% Compute an optimal trajectory (fmincon)
+years         = 23;  % 50, 20
+planet1       = 3;
+planet2       = struct;
+planet2.name  = 'I1/''Oumuamua';
+planet2.el    = el;
+nSteps        = 40;
+clear InterpolateState
+jDStart       = FindDepartureDate( jD0, planet1, planet2, years );
+s             = TrajectoryBetweenTwoPlanets( jDStart, planet1, planet2, years, nSteps );
+
+%% Size the spacecraft
+% This will compute the power required to move the requested payload given
+% the acceleration profile returned from the optimization. Not all
+% combinations of parameters will converge.
+
+sC = SpacecraftFromAccel;
+sC.uE    = 120;   % exhaust velocity, km/s
+sC.sigma = 1e3;   % specific power, W/kg
+sC.fS    = 0.04;  % fuel structural fraction
+sC.eff   = 0.3;  % efficiency to jet thrust power
+sC.mP    = 2000;  % payload mass, kg
+
+SpacecraftFromAccel(sC,s);
+
+  
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% $Date:   InterstellarAsteroid.m $
+% $Id: f3e717ec99412ed845a96bdb6fab28568f2937e2 $
+##### SOURCE END #####
+-->
+</body>
+</html>
