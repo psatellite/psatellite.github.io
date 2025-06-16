@@ -4,13 +4,12 @@ Testing the ease of creating an index file using markdown. This can use the GitH
 
 For our [MATLAB](https://www.mathworks.com/products/matlab.html) toolboxes, this site hosts an API of function and demo headers and published toolbox demos.
 
-## Spacecraft Control Toolbox
+## Spacecraft Design Toolbox
 
-* [CubeSat Toolbox](../CubeSat/index.html)
-* [SCT Professional Edition](../SCTPro/index.html)
+* [Spacecraft Design Toolbox](../SCTPro/index.html)
 
 ### Add-on modules
-These can be added to the Professional edition.
+These can be added to the toolbox.
 * [Formation Flying module](../FormationFlying/)
 * [Launch Vehicle module](../LaunchVehicle/)
 * Optical Navigation
@@ -19,7 +18,7 @@ These can be added to the Professional edition.
 
 ## Aircraft Control Toolbox
 
-* [ACT Pro](../ACTPro/)
+* [Aircraft Toolbox](../ACTPro/)
 
 ## Fusion Energy
 APIs for the FusionEngine and Coils modules.
