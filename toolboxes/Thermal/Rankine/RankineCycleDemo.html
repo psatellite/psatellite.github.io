@@ -1,13 +1,18 @@
-
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-   <!--
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Analysis of an ideal Brayton cycle</title><meta name="generator" content="MATLAB 9.6"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-10-17"><meta name="DC.source" content="SimpleBraytonCycle.m"><style type="text/css">
-html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+      -->
+<title>Simple Rankine Cycle demo</title>
+<meta name="generator" content="MATLAB 24.1">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2025-01-22">
+<meta name="DC.source" content="RankineCycleDemo.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
 html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
@@ -23,7 +28,7 @@ a:visited { color:#004aa0; text-decoration:none; }
 
 p { padding:0px; margin:0px 0px 20px; }
 img { padding:0px; margin:0px 0px 20px; border:none; }
-p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
 
 ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
 ul li { padding:0px; margin:0px 0px 7px 0px; }
@@ -52,6 +57,7 @@ span.comment { color:#228B22 }
 span.string { color:#A020F0 }
 span.untermstring { color:#B20000 }
 span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
 
 .footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
 .footer p { margin:0px; }
@@ -66,93 +72,67 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h1>Analysis of an ideal Brayton cycle</h1><!--introduction--><p>Assumes the compressor and turbine are 100% efficient. The cycle points are:</p><pre class="language-matlab">1 - compressor inlet
-2 - compressor outlet
-3 - turbine inlet
-4 - turbine outlet
-</pre><p>Note: t2 = t4 in this ideal cycle.</p><p>See also BraytonIdeal</p><!--/introduction--><pre class="codeinput"><span class="comment">%--------------------------------------------------------------------------</span>
-<span class="comment">%   Copyright (c) 2016 Princeton Satellite Systems, Inc.</span>
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Simple Rankine Cycle demo</h1>
+<!--introduction-->
+<p>This models the most basic Rankine Cycle. The steam tables need to accessible to this script.</p>
+<!--/introduction-->
+<pre class="codeinput">
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">%   Copyright (c) 2023 Princeton Satellite Systems, Inc.</span>
 <span class="comment">%   All rights reserved.</span>
 <span class="comment">%--------------------------------------------------------------------------</span>
-<span class="comment">%   Since 2017.1</span>
+<span class="comment">%   Since 2023.1</span>
 <span class="comment">%--------------------------------------------------------------------------</span>
 
-<span class="comment">% The working fluid is Helium</span>
-name  = <span class="string">'He'</span>;
-gamma = 1.659;   <span class="comment">% Ratio of specific heats</span>
-cP    = 5190;    <span class="comment">% Thermal capacity (J/kg-deg-K)</span>
 
-<span class="comment">% Look at a range of pressure ratios</span>
-pR    = [linspace(2,10,50) linspace(10.1,40,50)];
+<span class="comment">% The Rankine cycle is defined by the maximum and minimum cycle pressures.</span>
+pressureMin = 0.008; <span class="comment">% MPa</span>
+pressureMax = 6.0; <span class="comment">% MPa</span>
 
-<span class="comment">% Input power</span>
-qR    = 7.8e6;
-
-<span class="comment">% Temperature at compressor (selected according to operating temperature of</span>
-<span class="comment">% General Electric Ceramic Matrix Composite (CMC) turbine blades)</span>
-<span class="comment">% "SiC CMCs can withstand temperatures greater than 2400 F/1316 C"</span>
-t3    = 1316 + 273; <span class="comment">% convert C to deg-K</span>
-
-<span class="comment">% Calculate the ideal Brayton cycle and plot</span>
-[eff, mDot, t] = BraytonIdeal( gamma, pR, cP, t3, qR );
-
-Plot2D( pR, [eff;mDot], <span class="string">'Pressure Ratio'</span>, {<span class="string">'Thermal Efficiency'</span> <span class="string">'Mass Flow (kg/s)'</span>}, <span class="string">'Ideal Brayton'</span> );
-Plot2D( pR, t, <span class="string">'Pressure Ratio'</span>, <span class="string">'Temperatures (deg-K)'</span>, <span class="string">'Ideal Brayton'</span> );
-legend(<span class="string">'1'</span>,<span class="string">'2'</span>,<span class="string">'3'</span>,<span class="string">'4'</span>);
-
+<span class="comment">% Display the block diagram and the temperature entropy diagrams</span>
+RankineCycle(pressureMax,pressureMin);
 
 <span class="comment">%--------------------------------------</span>
-</pre><img vspace="5" hspace="5" src="SimpleBraytonCycle_01.png" alt=""> <img vspace="5" hspace="5" src="SimpleBraytonCycle_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019a</a><br></p></div><!--
-##### SOURCE BEGIN #####
-%% Analysis of an ideal Brayton cycle
-% Assumes the compressor and turbine are 100% efficient.
-% The cycle points are:
-%  
-%   1 - compressor inlet
-%   2 - compressor outlet
-%   3 - turbine inlet
-%   4 - turbine outlet
-%  
-% Note: t2 = t4 in this ideal cycle.
-%
-% See also BraytonIdeal
-%%
 
+<span class="comment">% $Id: ad771d3d0c3ba866e1f66d7456afc673f17c8826 $</span>
+</pre>
+<img vspace="5" hspace="5" src="RankineCycleDemo_01.png" alt=""> <img vspace="5" hspace="5" src="RankineCycleDemo_02.png" alt=""> <p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024a</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Simple Rankine Cycle demo
+%
+% This models the most basic Rankine Cycle. The steam tables need to 
+% accessible to this script.
+%%
 %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
-%   Copyright (c) 2016 Princeton Satellite Systems, Inc.
+%   Copyright (c) 2023 Princeton Satellite Systems, Inc. 
 %   All rights reserved.
 %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
-%   Since 2017.1
+%   Since 2023.1
 %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
 
-% The working fluid is Helium
-name  = 'He';
-gamma = 1.659;   % Ratio of specific heats
-cP    = 5190;    % Thermal capacity (J/kg-deg-K)
 
-% Look at a range of pressure ratios
-pR    = [linspace(2,10,50) linspace(10.1,40,50)];
+% The Rankine cycle is defined by the maximum and minimum cycle pressures.
+pressureMin = 0.008; % MPa
+pressureMax = 6.0; % MPa
 
-% Input power
-qR    = 7.8e6;
-
-% Temperature at compressor (selected according to operating temperature of
-% General Electric Ceramic Matrix Composite (CMC) turbine blades)
-% "SiC CMCs can withstand temperatures greater than 2400 F/1316 C"
-t3    = 1316 + 273; % convert C to deg-K
-
-% Calculate the ideal Brayton cycle and plot
-[eff, mDot, t] = BraytonIdeal( gamma, pR, cP, t3, qR );
-
-Plot2D( pR, [eff;mDot], 'Pressure Ratio', {'Thermal Efficiency' 'Mass Flow (kg/s)'}, 'Ideal Brayton' );
-Plot2D( pR, t, 'Pressure Ratio', 'Temperatures (deg-K)', 'Ideal Brayton' );
-legend('1','2','3','4');
-
+% Display the block diagram and the temperature entropy diagrams
+RankineCycle(pressureMax,pressureMin);
 
 %REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
-% $Date: 2017-05-25 11:23:23 -0400 (Thu, 25 May 2017) $
-% $Revision: 44684 $
-
+% $Date:   2023-06-12 $
+% $Id: ad771d3d0c3ba866e1f66d7456afc673f17c8826 $
 
 ##### SOURCE END #####
---></body></html>
+-->
+</body>
+</html>
