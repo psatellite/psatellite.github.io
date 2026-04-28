@@ -1,244 +1,427 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<STYLE TYPE="text/css">
-td.link{font-family: Cambria; font-size: 12pt;}
-td.bio{font-family: Cambria; font-size: 12pt;}
-td.cl{height: 20; cellpadding: 5; cellspacing: 5;}
-h1{text-align: left;}
-h2{font-family: Cambria; color: #990000;}
-h3{font-family: Cambria; color: #990000; font-size: 18pt; }
-table.cl{font-family: Cambria; background-color: #e1e6f2;
-font-size: 14pt; border: 0; cellpadding: 5; cellspacing: 5;}
-</STYLE>
-<title>Propulsion Functions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propulsion Module — Spacecraft Design Toolbox</title>
+<style>
+:root {
+  --blue:#0070AD; --blue-dark:#004f7c; --blue-darker:#003557;
+  --blue-light:#3a96c9; --blue-faint:#eef6fb; --blue-xl:#c8e6f5;
+  --white:#fff; --gray-50:#f7f9fb; --gray-100:#f0f4f8;
+  --gray-200:#dde4ed; --gray-400:#8fa3b8; --gray-600:#4a5c70; --gray-800:#1b2a3b;
+  --shadow-sm:0 1px 4px rgba(0,80,140,.08);
+  --r-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+
+.header{
+  background-image:url('Guides/images/headers/Propulsion.png'),url('Guides/images/headers/Propulsion.jpg'),url('Guides/images/background.png');
+  background-size:cover,cover,cover;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center center,center center,center center;
+  background-color:var(--blue-darker);
+  position:relative;
+}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}
+.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+
+#search-results{display:none;margin-bottom:36px;}
+#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}
+.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);}
+.rc{display:grid;grid-template-columns:minmax(0,230px) 1fr 130px;align-items:baseline;padding:10px 18px;border-bottom:1px solid var(--gray-100);color:inherit;gap:16px;transition:background .12s;}
+.rc:last-child{border-bottom:none;}
+.rc:hover{background:var(--blue-faint);}
+.rc-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+
+.explorer{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+
+.content-pane{overflow:hidden;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;}
+.fn-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;align-items:baseline;padding:9px 20px;border-bottom:1px solid var(--gray-100);gap:16px;color:inherit;transition:background .12s;cursor:pointer;}
+.fn-row:last-child{border-bottom:none;}
+.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fn-row-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+
+@media(max-width:700px){
+  .header-inner,.search-outer,.main{padding-left:18px;padding-right:18px;}
+  .header-title{font-size:22px;}
+  .explorer{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--gray-200);display:flex;flex-wrap:wrap;gap:4px;padding:10px;}
+  .side-item{border-left:none;border-radius:20px;border:1.5px solid var(--gray-200);}
+  .side-item.active{border-color:var(--blue);}
+  .rc{grid-template-columns:1fr;gap:4px;}
+  .rc-folder{text-align:left;}
+}
+</style>
 </head>
 <body>
-<div class=page>
 
-<table width="600"><tr><td width="50%"><h1>Propulsion Module</h1></td>
-<td width="50%"><img src="Guides/images/PSSLogo.jpg"></td></tr></table>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">Propulsion Module</h1>
+    <p class="header-sub">Chemical, electric, gas, nuclear, and multistage rocket propulsion design and analysis.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>thrust</strong>, <strong>electric</strong>, <strong>Isp</strong>, <strong>nozzle</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-<h2>Directory List</h2>
-<a name="top"></a>
-<table border="1" cellpadding="0"><tr><td>
-<table class="cl" width="600">
-<tr><td class="cl" width="33%"><a href="PropulsionFunctions.html#Chemical">Chemical</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Demos/Chemical">Demos/Chemical</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Demos/Electric">Demos/Electric</a></td></tr>
- <tr><td class="cl" width="33%"><a href="PropulsionFunctions.html#Demos/Rocket">Demos/Rocket</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Demos/Utilities">Demos/Utilities</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Electric">Electric</a></td></tr>
- <tr><td class="cl" width="33%"><a href="PropulsionFunctions.html#Gas">Gas</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#MultiStage">MultiStage</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Nuclear">Nuclear</a></td></tr>
- <tr><td class="cl" width="33%"><a href="PropulsionFunctions.html#Rocket">Rocket</a></td>
- <td class="cl" width="33%"><a href="PropulsionFunctions.html#Utilities">Utilities</a></td>
- <td width="33%"></td></tr>
-</table></td></tr></table><br><hr>
+<main class="main">
 
-<h3><a name="Chemical"></a>Chemical</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/DesignUpperStageHeader.html">DesignUpperStage</a> </td>
-<td class="bio"> Design an upper stage using RocketMass and create a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/FuelsHeader.html">Fuels</a> </td>
-<td class="bio"> Computes molecular weight, ratio of specific heats and gas constant </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MassVolH2O2Header.html">MassVolH2O2</a> </td>
-<td class="bio"> H2/O2 mass and volume. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/QRFuelHeader.html">QRFuel</a> </td>
-<td class="bio"> The lower heating value for fuels. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/QRHydrocarbonHeader.html">QRHydrocarbon</a> </td>
-<td class="bio"> The lower heating value for a hydrocarbon fuel. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/QRHydrogenHeader.html">QRHydrogen</a> </td>
-<td class="bio"> The lower heating value for H2 + 1/2 O2 -> H20. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketH2O2Header.html">RocketH2O2</a> </td>
-<td class="bio"> H2/O2 rocket model. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
 
-<h3><a name="Demos/Chemical"></a>Demos/Chemical</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ColdGasDemoHeader.html">ColdGasDemo</a> </td>
-<td class="bio"> Demonstrate cold gas propulsion </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/DesignThrusterHeader.html">DesignThruster</a> </td>
-<td class="bio"> Demonstrate thruster design </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/PropulsionSystemDesignLEOHeader.html">PropulsionSystemDesignLEO</a> </td>
-<td class="bio"> Design a propulsion system for a low-earth orbit satellite </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/TBlodownHeader.html">TBlodown</a> </td>
-<td class="bio"> Demonstrate blow down. Most satellites use unregulated blowdown systems. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/TSolidHeader.html">TSolid</a> </td>
-<td class="bio"> Demonstrate a solid rocket motor. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="Chemical">Chemical <span class="side-count">7</span></div>
+        <div class="side-item" data-folder="DemosChemical">Demos/Chemical <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="DemosElectric">Demos/Electric <span class="side-count">2</span></div>
+        <div class="side-item" data-folder="DemosRocket">Demos/Rocket <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="DemosUtilities">Demos/Utilities <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="Electric">Electric <span class="side-count">13</span></div>
+        <div class="side-item" data-folder="Gas">Gas <span class="side-count">11</span></div>
+        <div class="side-item" data-folder="MultiStage">MultiStage <span class="side-count">6</span></div>
+        <div class="side-item" data-folder="Nuclear">Nuclear <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="Rocket">Rocket <span class="side-count">20</span></div>
+        <div class="side-item" data-folder="Utilities">Utilities <span class="side-count">3</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">Chemical</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
 
-<h3><a name="Demos/Electric"></a>Demos/Electric</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ElectricPropulsionDemoHeader.html">ElectricPropulsionDemo</a> </td>
-<td class="bio"> Design an electric powered transfer vehicle. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/OptimalElectricSpacecraftHeader.html">OptimalElectricSpacecraft</a> </td>
-<td class="bio"> Generate the optimal electric propulsion system for a given delta-V. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+</main>
 
-<h3><a name="Demos/Rocket"></a>Demos/Rocket</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SLSLaunchAnalysisHeader.html">SLSLaunchAnalysis</a> </td>
-<td class="bio"> Artemis Launch Analysis </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Back to Toolbox Index</a>
+</footer>
 
-<h3><a name="Demos/Utilities"></a>Demos/Utilities</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/OrionPropulsionDesignHeader.html">OrionPropulsionDesign</a> </td>
-<td class="bio"> Layout thrusters for the Orion capsule. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
 
-<h3><a name="Electric"></a>Electric</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/EVToVHeader.html">EVToV</a> </td>
-<td class="bio"> Convert electron volts to velocity. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ElectricPropulsionDesignHeader.html">ElectricPropulsionDesign</a> </td>
-<td class="bio"> Design an electric propulsion system. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ElectricThrustHeader.html">ElectricThrust</a> </td>
-<td class="bio"> Compute the electric propulsion thrust from power and specific impulse. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ElectricThrusterPowerHeader.html">ElectricThrusterPower</a> </td>
-<td class="bio"> Compute the electric propulsion power from thrust and specific impulse. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/FElectricPropulsionHeader.html">FElectricPropulsion</a> </td>
-<td class="bio"> Computes the total mass, fuel mass and power for an electric thruster. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/HallThrusterArrayHeader.html">HallThrusterArray</a> </td>
-<td class="bio"> Create a PPPL Hall thruster array picture. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/HallThrusterEfficiencyHeader.html">HallThrusterEfficiency</a> </td>
-<td class="bio"> Hall thruster efficiency model with random walk </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/KEVToJHeader.html">KEVToJ</a> </td>
-<td class="bio"> Convert keV to J. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/OptimalVehicleHeader.html">OptimalVehicle</a> </td>
-<td class="bio"> Finds an electric thrust propelled mass-optimal vehicle. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SpecificPowerHeader.html">SpecificPower</a> </td>
-<td class="bio"> Computes the specific power of engine/power plant combinations </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/TElecHeader.html">TElec</a> </td>
-<td class="bio"> Computes the thrust and specific impulse of an electric thruster. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/TVDesignHeader.html">TVDesign</a> </td>
-<td class="bio"> Design an electric transfer vehicle from delta-V. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/VToEVHeader.html">VToEV</a> </td>
-<td class="bio"> Convert velocity to electron volts. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<script>
+const SECTIONS = {
+  Chemical: {
+    label: 'Chemical',
+    items: [
+      {name:'DesignUpperStage', desc:'Design an upper stage using RocketMass and create a CAD model.',                  url:'PropulsionHeaders/DesignUpperStageHeader.html'},
+      {name:'Fuels',            desc:'Computes molecular weight, ratio of specific heats and gas constant.',           url:'PropulsionHeaders/FuelsHeader.html'},
+      {name:'MassVolH2O2',      desc:'H2/O2 mass and volume.',                                                         url:'PropulsionHeaders/MassVolH2O2Header.html'},
+      {name:'QRFuel',           desc:'The lower heating value for fuels.',                                             url:'PropulsionHeaders/QRFuelHeader.html'},
+      {name:'QRHydrocarbon',    desc:'The lower heating value for a hydrocarbon fuel.',                                url:'PropulsionHeaders/QRHydrocarbonHeader.html'},
+      {name:'QRHydrogen',       desc:'The lower heating value for H2 + 1/2 O2 -> H20.',                               url:'PropulsionHeaders/QRHydrogenHeader.html'},
+      {name:'RocketH2O2',       desc:'H2/O2 rocket model.',                                                           url:'PropulsionHeaders/RocketH2O2Header.html'},
+    ]
+  },
+  DemosChemical: {
+    label: 'Demos/Chemical',
+    items: [
+      {name:'ColdGasDemo',                desc:'Demonstrate cold gas propulsion.',                                     url:'PropulsionHeaders/ColdGasDemoHeader.html'},
+      {name:'DesignThruster',             desc:'Demonstrate thruster design.',                                         url:'PropulsionHeaders/DesignThrusterHeader.html'},
+      {name:'PropulsionSystemDesignLEO',  desc:'Design a propulsion system for a low-earth orbit satellite.',         url:'PropulsionHeaders/PropulsionSystemDesignLEOHeader.html'},
+      {name:'TBlodown',                   desc:'Demonstrate blow down. Most satellites use unregulated blowdown systems.', url:'PropulsionHeaders/TBlodownHeader.html'},
+      {name:'TSolid',                     desc:'Demonstrate a solid rocket motor.',                                   url:'PropulsionHeaders/TSolidHeader.html'},
+    ]
+  },
+  DemosElectric: {
+    label: 'Demos/Electric',
+    items: [
+      {name:'ElectricPropulsionDemo',    desc:'Design an electric powered transfer vehicle.',                          url:'PropulsionHeaders/ElectricPropulsionDemoHeader.html'},
+      {name:'OptimalElectricSpacecraft', desc:'Generate the optimal electric propulsion system for a given delta-V.', url:'PropulsionHeaders/OptimalElectricSpacecraftHeader.html'},
+    ]
+  },
+  DemosRocket: {
+    label: 'Demos/Rocket',
+    items: [
+      {name:'SLSLaunchAnalysis', desc:'Artemis Launch Analysis.',                                                      url:'PropulsionHeaders/SLSLaunchAnalysisHeader.html'},
+    ]
+  },
+  DemosUtilities: {
+    label: 'Demos/Utilities',
+    items: [
+      {name:'OrionPropulsionDesign', desc:'Layout thrusters for the Orion capsule.',                                  url:'PropulsionHeaders/OrionPropulsionDesignHeader.html'},
+    ]
+  },
+  Electric: {
+    label: 'Electric',
+    items: [
+      {name:'EVToV',                   desc:'Convert electron volts to velocity.',                                     url:'PropulsionHeaders/EVToVHeader.html'},
+      {name:'ElectricPropulsionDesign',desc:'Design an electric propulsion system.',                                   url:'PropulsionHeaders/ElectricPropulsionDesignHeader.html'},
+      {name:'ElectricThrust',          desc:'Compute the electric propulsion thrust from power and specific impulse.', url:'PropulsionHeaders/ElectricThrustHeader.html'},
+      {name:'ElectricThrusterPower',   desc:'Compute the electric propulsion power from thrust and specific impulse.', url:'PropulsionHeaders/ElectricThrusterPowerHeader.html'},
+      {name:'FElectricPropulsion',     desc:'Computes the total mass, fuel mass and power for an electric thruster.',  url:'PropulsionHeaders/FElectricPropulsionHeader.html'},
+      {name:'HallThrusterArray',       desc:'Create a PPPL Hall thruster array picture.',                             url:'PropulsionHeaders/HallThrusterArrayHeader.html'},
+      {name:'HallThrusterEfficiency',  desc:'Hall thruster efficiency model with random walk.',                        url:'PropulsionHeaders/HallThrusterEfficiencyHeader.html'},
+      {name:'KEVToJ',                  desc:'Convert keV to J.',                                                       url:'PropulsionHeaders/KEVToJHeader.html'},
+      {name:'OptimalVehicle',          desc:'Finds an electric thrust propelled mass-optimal vehicle.',               url:'PropulsionHeaders/OptimalVehicleHeader.html'},
+      {name:'SpecificPower',           desc:'Computes the specific power of engine/power plant combinations.',         url:'PropulsionHeaders/SpecificPowerHeader.html'},
+      {name:'TElec',                   desc:'Computes the thrust and specific impulse of an electric thruster.',       url:'PropulsionHeaders/TElecHeader.html'},
+      {name:'TVDesign',                desc:'Design an electric transfer vehicle from delta-V.',                       url:'PropulsionHeaders/TVDesignHeader.html'},
+      {name:'VToEV',                   desc:'Convert velocity to electron volts.',                                     url:'PropulsionHeaders/VToEVHeader.html'},
+    ]
+  },
+  Gas: {
+    label: 'Gas',
+    items: [
+      {name:'AreaRatioFromMach',    desc:'Computes the area ratio from Mach Number.',                                  url:'PropulsionHeaders/AreaRatioFromMachHeader.html'},
+      {name:'BloDownMass',          desc:'Generates a blowdown curve of mass vs pressure.',                            url:'PropulsionHeaders/BloDownMassHeader.html'},
+      {name:'CombTemp',             desc:'Computes the combustion temperature of a gas mixture.',                      url:'PropulsionHeaders/CombTempHeader.html'},
+      {name:'Gamma',                desc:'Computes the ratio of specific heats of a gas mixture.',                    url:'PropulsionHeaders/GammaHeader.html'},
+      {name:'GasMass',              desc:'Generates a blowdown curve of mass vs pressure.',                           url:'PropulsionHeaders/GasMassHeader.html'},
+      {name:'IsentropicExpansion',  desc:'Computes isentropic expansion.',                                            url:'PropulsionHeaders/IsentropicExpansionHeader.html'},
+      {name:'MachFromAreaRatio',    desc:'Computes the Mach number from area ratio. The throat is at Mach 1.',        url:'PropulsionHeaders/MachFromAreaRatioHeader.html'},
+      {name:'MachNumber',           desc:'Compute the Mach number.',                                                  url:'PropulsionHeaders/MachNumberHeader.html'},
+      {name:'MolWt',                desc:'Computes the molecular weight of a gas mixture.',                           url:'PropulsionHeaders/MolWtHeader.html'},
+      {name:'SpeedSnd',             desc:'Compute the speed of sound.',                                               url:'PropulsionHeaders/SpeedSndHeader.html'},
+      {name:'VolumeToPressureBD',   desc:'Generates the final pressure.',                                             url:'PropulsionHeaders/VolumeToPressureBDHeader.html'},
+    ]
+  },
+  MultiStage: {
+    label: 'MultiStage',
+    items: [
+      {name:'EP2M',  desc:'Converts structural and payload ratios into masses.',                                       url:'PropulsionHeaders/EP2MHeader.html'},
+      {name:'EPPS',  desc:'Payload and structural mass ratios for parallel stages.',                                   url:'PropulsionHeaders/EPPSHeader.html'},
+      {name:'M2EP',  desc:'Converts masses to structural and payload ratios.',                                         url:'PropulsionHeaders/M2EPHeader.html'},
+      {name:'M2MS',  desc:'Converts total, final and payload masses to stage masses and ratios.',                      url:'PropulsionHeaders/M2MSHeader.html'},
+      {name:'MS2M',  desc:'Converts stage and payload masses to total masses and final masses.',                       url:'PropulsionHeaders/MS2MHeader.html'},
+      {name:'MSTOR', desc:'Computes the multistage tradeoff ratios.',                                                  url:'PropulsionHeaders/MSTORHeader.html'},
+    ]
+  },
+  Nuclear: {
+    label: 'Nuclear',
+    items: [
+      {name:'NuclearThermalUE', desc:'Compute the exhaust velocity for a nuclear rocket with H2 fuel.',               url:'PropulsionHeaders/NuclearThermalUEHeader.html'},
+    ]
+  },
+  Rocket: {
+    label: 'Rocket',
+    items: [
+      {name:'ColdGas',                desc:'Determines performance of a cold gas rocket.',                            url:'PropulsionHeaders/ColdGasHeader.html'},
+      {name:'IdealRkt',               desc:'Computes the thrust and exhaust velocity for an ideal rocket.',           url:'PropulsionHeaders/IdealRktHeader.html'},
+      {name:'Isp2V',                  desc:'Compute specific impulse from exhaust velocity.',                         url:'PropulsionHeaders/Isp2VHeader.html'},
+      {name:'MassEquivalentDV',       desc:'Computes the constant mass that will produce the same delta-V.',          url:'PropulsionHeaders/MassEquivalentDVHeader.html'},
+      {name:'MinimumExhaustVelocity', desc:'Finds the minimum exhaust velocity based on the structural ratio.',       url:'PropulsionHeaders/MinimumExhaustVelocityHeader.html'},
+      {name:'Plume',                  desc:'Compute the plume forces and torques on a set of elemental areas.',       url:'PropulsionHeaders/PlumeHeader.html'},
+      {name:'RocketChemical',         desc:'Computes the thrust and exhaust velocity of a chemical rocket.',          url:'PropulsionHeaders/RocketChemicalHeader.html'},
+      {name:'RocketFromUEAndT',       desc:'Computes the thrust and exhaust velocity as a function of pressure.',     url:'PropulsionHeaders/RocketFromUEAndTHeader.html'},
+      {name:'RocketMass',             desc:'Compute masses for a single stage to produce the required delta-v.',      url:'PropulsionHeaders/RocketMassHeader.html'},
+      {name:'RocketModel',            desc:'Generic rocket model as a function of altitude.',                         url:'PropulsionHeaders/RocketModelHeader.html'},
+      {name:'RocketVariableUEAndT',   desc:'Computes the thrust and exhaust velocity given one pair [uE0,t0].',       url:'PropulsionHeaders/RocketVariableUEAndTHeader.html'},
+      {name:'SolidR',                 desc:'Computes the RHS of the dynamical equations for a solid rocket engine.',  url:'PropulsionHeaders/SolidRHeader.html'},
+      {name:'SolidRocketInertia',     desc:'Computes the inertia and inertia derivative for a solid rocket.',         url:'PropulsionHeaders/SolidRocketInertiaHeader.html'},
+      {name:'TCoeff',                 desc:'Computes the ideal thrust coefficient for a nozzle with a diverging portion.', url:'PropulsionHeaders/TCoeffHeader.html'},
+      {name:'ThrustToAStar',          desc:'Computes throat area (A*) for a given thrust.',                          url:'PropulsionHeaders/ThrustToAStarHeader.html'},
+      {name:'UE',                     desc:'Computes the ideal exhaust velocity of a rocket.',                        url:'PropulsionHeaders/UEHeader.html'},
+      {name:'UEO2H2',                 desc:'Computes the exhaust velocity of a O2/H2 rocket.',                       url:'PropulsionHeaders/UEO2H2Header.html'},
+      {name:'UEQR',                   desc:'Computes the exhaust velocity of a rocket from fuel lower heating value.',url:'PropulsionHeaders/UEQRHeader.html'},
+      {name:'V2Isp',                  desc:'Compute specific impulse from exhaust velocity.',                         url:'PropulsionHeaders/V2IspHeader.html'},
+      {name:'VolumeToDimension',      desc:'Computes the dimensions of a tank given four possible tank types.',       url:'PropulsionHeaders/VolumeToDimensionHeader.html'},
+    ]
+  },
+  Utilities: {
+    label: 'Utilities',
+    items: [
+      {name:'RocketEquationRelativistic', desc:'The rocket equation including special relativity.',                   url:'PropulsionHeaders/RocketEquationRelativisticHeader.html'},
+      {name:'SphericalTankFluidHeight',   desc:'Compute the height of fuel in a spherical fuel tank.',               url:'PropulsionHeaders/SphericalTankFluidHeightHeader.html'},
+      {name:'ThrusterLayout',             desc:'Tool for thruster layout.',                                          url:'PropulsionHeaders/ThrusterLayoutHeader.html'},
+    ]
+  }
+};
 
-<h3><a name="Gas"></a>Gas</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/AreaRatioFromMachHeader.html">AreaRatioFromMach</a> </td>
-<td class="bio"> Computes the area ratio from Mach Number. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/BloDownMassHeader.html">BloDownMass</a> </td>
-<td class="bio"> Generates a blowdown curve of mass vs pressure. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/CombTempHeader.html">CombTemp</a> </td>
-<td class="bio"> Computes the combustion temperature of a gas mixture. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/GammaHeader.html">Gamma</a> </td>
-<td class="bio"> Computes the ratio of specific heats of a gas mixture. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/GasMassHeader.html">GasMass</a> </td>
-<td class="bio"> Generates a blowdown curve of mass vs pressure. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/IsentropicExpansionHeader.html">IsentropicExpansion</a> </td>
-<td class="bio"> Computes isentropic expansion. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MachFromAreaRatioHeader.html">MachFromAreaRatio</a> </td>
-<td class="bio"> Computes the Mach number from area ratio. The throat is at Mach 1. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MachNumberHeader.html">MachNumber</a> </td>
-<td class="bio"> Compute the Mach number </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MolWtHeader.html">MolWt</a> </td>
-<td class="bio"> Computes the molecular weight of a gas mixture. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SpeedSndHeader.html">SpeedSnd</a> </td>
-<td class="bio"> Compute the speed of sound. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/VolumeToPressureBDHeader.html">VolumeToPressureBD</a> </td>
-<td class="bio"> Generates the final pressure </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+const INDEX = [];
+Object.entries(SECTIONS).forEach(([key, sec]) => {
+  sec.items.forEach(item => INDEX.push({...item, folder: sec.label}));
+});
 
-<h3><a name="MultiStage"></a>MultiStage</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/EP2MHeader.html">EP2M</a> </td>
-<td class="bio"> Converts structural and payload ratios into masses. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/EPPSHeader.html">EPPS</a> </td>
-<td class="bio"> Payload and structural mass ratios for parallel stages. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/M2EPHeader.html">M2EP</a> </td>
-<td class="bio"> Converts masses to structural and payload ratios. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/M2MSHeader.html">M2MS</a> </td>
-<td class="bio"> Converts total, final and payload masses to stage masses and ratios. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MS2MHeader.html">MS2M</a> </td>
-<td class="bio"> Converts stage and payload masses to total masses and final masses. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MSTORHeader.html">MSTOR</a> </td>
-<td class="bio"> Computes the multistage tradeoff ratios. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+const overlay = document.getElementById('detail-overlay');
+const panel   = document.getElementById('detail-panel');
+const iframe  = document.getElementById('detail-iframe');
+const dtitle  = document.getElementById('detail-title');
+const dclose  = document.getElementById('detail-close');
 
-<h3><a name="Nuclear"></a>Nuclear</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/NuclearThermalUEHeader.html">NuclearThermalUE</a> </td>
-<td class="bio"> Compute the exhaust velocity for a nuclear rocket with H2 fuel. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+function openPanel(name, url) {
+  dtitle.textContent = name;
+  iframe.src = url;
+  overlay.classList.add('open');
+  panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-<h3><a name="Rocket"></a>Rocket</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ColdGasHeader.html">ColdGas</a> </td>
-<td class="bio"> Determines performance of a cold gas rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/IdealRktHeader.html">IdealRkt</a> </td>
-<td class="bio"> Computes the thrust and exhaust velocity for an ideal rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/Isp2VHeader.html">Isp2V</a> </td>
-<td class="bio"> Compute specific impulse from exhaust velocity </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MassEquivalentDVHeader.html">MassEquivalentDV</a> </td>
-<td class="bio"> Computes the constant mass that will produce the same delta-V. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/MinimumExhaustVelocityHeader.html">MinimumExhaustVelocity</a> </td>
-<td class="bio"> Finds the minimum exhaust velocity based on the structural ratio. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/PlumeHeader.html">Plume</a> </td>
-<td class="bio"> Compute the plume forces and torques on a set of elemental areas. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketChemicalHeader.html">RocketChemical</a> </td>
-<td class="bio"> Computes the thrust and exhaust velocity of a chemical rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketFromUEAndTHeader.html">RocketFromUEAndT</a> </td>
-<td class="bio"> Computes the thrust and exhaust velocity as a function of pressure. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketMassHeader.html">RocketMass</a> </td>
-<td class="bio"> Compute masses for a single stage to produce the required delta-v. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketModelHeader.html">RocketModel</a> </td>
-<td class="bio"> Generic rocket model as a function of altitude. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketVariableUEAndTHeader.html">RocketVariableUEAndT</a> </td>
-<td class="bio"> Computes the thrust and exhaust velocity given one pair [uE0,t0]. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SolidRHeader.html">SolidR</a> </td>
-<td class="bio"> Computes the right hand side of the dynamical equations for a solid rocket engine </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SolidRocketInertiaHeader.html">SolidRocketInertia</a> </td>
-<td class="bio"> Computes the inertia and inertia derivative for a solid rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/TCoeffHeader.html">TCoeff</a> </td>
-<td class="bio"> Computes the ideal thrust coefficient for a nozzle with a diverging portion. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ThrustToAStarHeader.html">ThrustToAStar</a> </td>
-<td class="bio"> Computes throat area (A*) for a given thrust </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/UEHeader.html">UE</a> </td>
-<td class="bio"> Computes the ideal exhaust velocity of a rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/UEO2H2Header.html">UEO2H2</a> </td>
-<td class="bio"> Computes the exhaust velocity of a O2/H2 rocket. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/UEQRHeader.html">UEQR</a> </td>
-<td class="bio"> Computes the exhaust velocity of a rocket from fuel lower heating value </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/V2IspHeader.html">V2Isp</a> </td>
-<td class="bio"> Compute specific impulse from exhaust velocity </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/VolumeToDimensionHeader.html">VolumeToDimension</a> </td>
-<td class="bio"> Computes the dimensions of a tank. Four types may be entered: </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+function closePanel() {
+  panel.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  iframe.src = 'about:blank';
+}
 
-<h3><a name="Utilities"></a>Utilities</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="PropulsionHeaders/RocketEquationRelativisticHeader.html">RocketEquationRelativistic</a> </td>
-<td class="bio"> The rocket equation including special relativity. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/SphericalTankFluidHeightHeader.html">SphericalTankFluidHeight</a> </td>
-<td class="bio"> Compute the height of fuel in a spherical fuel tank. </td></tr>
-<tr><td class="link" width="200"><a href="PropulsionHeaders/ThrusterLayoutHeader.html">ThrusterLayout</a> </td>
-<td class="bio"> Tool for thruster layout. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
-<p> <a href="FunctionIndex.html">Back</a> to Functions main page</p></div></body></html>
+dclose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+function renderFolder(key) {
+  const sec = SECTIONS[key];
+  document.getElementById('pane-title').textContent = sec.label;
+  document.getElementById('pane-count').textContent = sec.items.length + ' entries';
+  const list = document.getElementById('fn-list');
+  list.innerHTML = sec.items.map(item =>
+    `<div class="fn-row" data-url="${item.url}" data-name="${item.name}">
+      <span class="fn-row-name">${item.name}</span>
+      <span class="fn-row-desc">${item.desc}</span>
+    </div>`
+  ).join('');
+  list.querySelectorAll('.fn-row').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    renderFolder(el.dataset.folder);
+  });
+});
+
+renderFolder('Chemical');
+
+const inp     = document.getElementById('search-input');
+const clr     = document.getElementById('search-clear');
+const resDiv  = document.getElementById('search-results');
+const resMeta = document.getElementById('results-meta');
+const resList = document.getElementById('results-list');
+const statusEl= document.getElementById('search-status');
+const browseEl= document.getElementById('browse-content');
+
+clr.style.display = 'none';
+
+function run() {
+  const q = inp.value.trim().toLowerCase();
+  if (!q) {
+    resDiv.classList.remove('active');
+    browseEl.style.display = '';
+    statusEl.textContent = 'Showing all entries.';
+    clr.style.display = 'none';
+    return;
+  }
+  clr.style.display = '';
+  browseEl.style.display = 'none';
+  resDiv.classList.add('active');
+
+  const terms = q.split(/\s+/);
+  const hits = INDEX.filter(i =>
+    terms.every(t => i.name.toLowerCase().includes(t) || i.desc.toLowerCase().includes(t) || i.folder.toLowerCase().includes(t))
+  );
+  statusEl.textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''} found.`;
+  resMeta.innerHTML = hits.length
+    ? `<strong>${hits.length}</strong> result${hits.length !== 1 ? 's' : ''} for &ldquo;<strong>${q}</strong>&rdquo;`
+    : `No results for <strong>"${q}"</strong>.`;
+
+  resList.innerHTML = hits.length ? hits.map(h =>
+    `<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">
+      <span class="rc-name">${h.name}</span>
+      <span class="rc-desc">${h.desc}</span>
+      <span class="rc-folder">${h.folder}</span>
+    </div>`
+  ).join('') : `<div class="no-results">No matches — try a different keyword.</div>`;
+
+  resList.querySelectorAll('.rc[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+inp.addEventListener('input', run);
+clr.addEventListener('click', () => { inp.value = ''; run(); inp.focus(); });
+</script>
+</body>
+</html>

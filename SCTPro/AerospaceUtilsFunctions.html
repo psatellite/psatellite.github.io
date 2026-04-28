@@ -1,402 +1,528 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<STYLE TYPE="text/css">
-td.link{font-family: Cambria; font-size: 12pt;}
-td.bio{font-family: Cambria; font-size: 12pt;}
-td.cl{height: 20; cellpadding: 5; cellspacing: 5;}
-h1{text-align: left;}
-h2{font-family: Cambria; color: #990000;}
-h3{font-family: Cambria; color: #990000; font-size: 18pt; }
-table.cl{font-family: Cambria; background-color: #e1e6f2;
-font-size: 14pt; border: 0; cellpadding: 5; cellspacing: 5;}
-</STYLE>
-<title>AerospaceUtils Functions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AerospaceUtils Module — Spacecraft Design Toolbox</title>
+<style>
+:root {
+  --blue:#0070AD; --blue-dark:#004f7c; --blue-darker:#003557;
+  --blue-light:#3a96c9; --blue-faint:#eef6fb; --blue-xl:#c8e6f5;
+  --white:#fff; --gray-50:#f7f9fb; --gray-100:#f0f4f8;
+  --gray-200:#dde4ed; --gray-400:#8fa3b8; --gray-600:#4a5c70; --gray-800:#1b2a3b;
+  --shadow-sm:0 1px 4px rgba(0,80,140,.08); --shadow:0 4px 18px rgba(0,80,140,.11);
+  --r:10px; --r-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+
+/* HEADER */
+.header{
+  background-image:url('Guides/images/headers/AerospaceUtils.png'),url('Guides/images/headers/AerospaceUtils.jpg'),url('Guides/images/background.png');
+  background-size:cover,cover,cover;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center center,center center,center center;
+  background-color:var(--blue-darker);
+  position:relative;
+}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}
+.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+
+/* SEARCH */
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+
+/* SEARCH RESULTS */
+#search-results{display:none;margin-bottom:36px;}
+#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}
+.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);}
+.rc{display:grid;grid-template-columns:200px 1fr 110px;align-items:baseline;padding:10px 18px;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit;gap:16px;transition:background .12s;}
+.rc:last-child{border-bottom:none;}
+.rc:hover{background:var(--blue-faint);}
+.rc-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;}
+.rc-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+
+/* EXPLORER LAYOUT */
+#browse-content{}
+.explorer{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+
+/* SIDEBAR */
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+
+/* CONTENT PANE */
+.content-pane{overflow:hidden;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;}
+.fn-row{display:grid;grid-template-columns:190px 1fr;align-items:baseline;padding:9px 20px;border-bottom:1px solid var(--gray-100);gap:16px;text-decoration:none;color:inherit;transition:background .12s;}
+.fn-row:last-child{border-bottom:none;}
+.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;}
+.fn-row-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+
+/* data items (no link) */
+.fn-row.data{cursor:default;}
+.fn-row.data:hover{background:transparent;}
+.fn-row.data .fn-row-name{color:var(--gray-800);}
+
+/* DETAIL PANEL */
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+.fn-row{cursor:pointer;}
+
+/* FOOTER */
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+
+@media(max-width:700px){
+  .header-inner,.search-outer,.main{padding-left:18px;padding-right:18px;}
+  .header-title{font-size:22px;}
+  .explorer{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--gray-200);display:flex;flex-wrap:wrap;gap:4px;padding:10px;}
+  .side-item{border-left:none;border-radius:20px;border:1.5px solid var(--gray-200);}
+  .side-item.active{border-color:var(--blue);}
+  .rc{grid-template-columns:1fr;gap:4px;}
+  .rc-folder{text-align:left;}
+}
+</style>
 </head>
 <body>
-<div class=page>
 
-<table width="600"><tr><td width="50%"><h1>AerospaceUtils Module</h1></td>
-<td width="50%"><img src="Guides/images/PSSLogo.jpg"></td></tr></table>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">AerospaceUtils Module</h1>
+    <p class="header-sub">Atmospheric models, CAD tools, coordinate transforms, and visualization utilities.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions and data files…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>atmosphere</strong>, <strong>quaternion</strong>, <strong>CAD</strong>, <strong>coordinate</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-<h2>Directory List</h2>
-<a name="top"></a>
-<table border="1" cellpadding="0"><tr><td>
-<table class="cl" width="600">
-<tr><td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#AeroData">AeroData</a></td>
- <td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#AtmosphericCalculations">AtmosphericCalculations</a></td>
- <td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#CAD">CAD</a></td></tr>
- <tr><td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#ComponentModels">ComponentModels</a></td>
- <td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#Coord">Coord</a></td>
- <td class="cl" width="33%"><a href="AerospaceUtilsFunctions.html#Visualization">Visualization</a></td></tr>
- </table></td></tr></table><br><hr>
+<main class="main">
 
-<h3><a name="AeroData"></a>AeroData</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="bio">Artemis.obj</td><td class="bio">Artemis lunar lander OBJ file</td></tr>
-<tr><td class="bio">AtmData.mat</td><td class="bio">Atmospheric data binary file</td></tr>
-<tr><td class="bio">AtmData.txt</td><td class="bio">Atmospheric data text file</td></tr>
-<tr><td class="bio">Cube.mtl</td><td class="bio">Materials data for Cube.</td></tr>
-<tr><td class="bio">Cube.obj</td><td class="bio">OBJ model of a cube.</td></tr>
-<tr><td class="bio">Satellite.mtl</td><td class="bio">Satellite model materials data.</td></tr>
-<tr><td class="bio">Satellite.obj</td><td class="bio">Satellite model with two solar wings.</td></tr>
-<tr><td class="bio">SimpleSC.mat</td><td class="bio">Simple MAT file for demos.</td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <!-- Search results -->
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
 
-<h3><a name="AtmosphericCalculations"></a>AtmosphericCalculations</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AirDataHeader.html">AirData</a> </td>
-<td class="bio"> Computes air data based on a simplified standard atmosphere model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmDens1Header.html">AtmDens1</a> </td>
-<td class="bio"> Computes the atmospheric density using an exponential model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmDens2Header.html">AtmDens2</a> </td>
-<td class="bio"> Computes the Earth's atmospheric density using scale heights. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmGammaHeader.html">AtmGamma</a> </td>
-<td class="bio"> Computes the ratio of specific heats for air. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmJ70Header.html">AtmJ70</a> </td>
-<td class="bio"> Computes the atmospheric density using Jacchia's 1970 model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmSndHeader.html">AtmSnd</a> </td>
-<td class="bio"> Computes the speed of sound in the atmosphere. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AtmTempHeader.html">AtmTemp</a> </td>
-<td class="bio"> Computes the atmospheric temperature using a simplified model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BaromExpHeader.html">BaromExp</a> </td>
-<td class="bio"> Computes the barometric exponent. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DiffusionExpHeader.html">DiffusionExp</a> </td>
-<td class="bio"> Computes the diffusion exponent. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/JacchiaLineberryHeader.html">JacchiaLineberry</a> </td>
-<td class="bio"> Jacchia-Lineberry model of the upper atmosphere. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ReynoldsNumberHeader.html">ReynoldsNumber</a> </td>
-<td class="bio"> Reynold's number as a function of atmospheric density. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SutherlandsLawHeader.html">SutherlandsLaw</a> </td>
-<td class="bio"> Sutherland's law for dynamic viscosity. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TemperatureStagnationHeader.html">TemperatureStagnation</a> </td>
-<td class="bio"> Compute the stagnation temperature in the earth's atmosphere. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <!-- Explorer -->
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="AeroData">AeroData <span class="side-count">8</span></div>
+        <div class="side-item" data-folder="AtmosphericCalculations">AtmosphericCalc <span class="side-count">13</span></div>
+        <div class="side-item" data-folder="CAD">CAD <span class="side-count">49</span></div>
+        <div class="side-item" data-folder="ComponentModels">ComponentModels <span class="side-count">54</span></div>
+        <div class="side-item" data-folder="Coord">Coord <span class="side-count">38</span></div>
+        <div class="side-item" data-folder="Visualization">Visualization <span class="side-count">6</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">AeroData</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
 
-<h3><a name="CAD"></a>CAD</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AddThermalDevicesHeader.html">AddThermalDevices</a> </td>
-<td class="bio"> Add a heater and thermistor to each component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AreaTriMeshHeader.html">AreaTriMesh</a> </td>
-<td class="bio"> Computes the area of a triangle mesh. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AutoCADColorHeader.html">AutoCADColor</a> </td>
-<td class="bio"> Converts an AutoCAD color into a [r,g,b] color. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BHingeHeader.html">BHinge</a> </td>
-<td class="bio"> Compute a transformation matrix from a bHinge data structure. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BinaryToStringHeader.html">BinaryToString</a> </td>
-<td class="bio"> Converts a bit array to a string. [1 0 1 0] will become 0101. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BodyPlugInHeader.html">BodyPlugIn</a> </td>
-<td class="bio"> Create the CAD body GUI plug in. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BoundingBoxHeader.html">BoundingBox</a> </td>
-<td class="bio"> Compute a bounding box for a component </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BuildCADModelHeader.html">BuildCADModel</a> </td>
-<td class="bio"> Build a model of a spacecraft using repeated calls to this function. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CADColorHeader.html">CADColor</a> </td>
-<td class="bio"> Color a CAD Model. This function can be used only to change the colors </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CADNotebookHeader.html">CADNotebook</a> </td>
-<td class="bio"> Work with a model using the CAD data structure. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CentroidOBJFileHeader.html">CentroidOBJFile</a> </td>
-<td class="bio"> Computes the centroid of an obj file. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CombineOBJFilesHeader.html">CombineOBJFiles</a> </td>
-<td class="bio"> Combines obj files and writes a new file. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ComponentPlugInHeader.html">ComponentPlugIn</a> </td>
-<td class="bio"> Create an component GUI plug in. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ComponentPopupHeader.html">ComponentPopup</a> </td>
-<td class="bio"> Draw a component </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CreateBodyHeader.html">CreateBody</a> </td>
-<td class="bio"> Create a body with hinge data. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CreateCADReportHeader.html">CreateCADReport</a> </td>
-<td class="bio"> Creates CAD model report. It will create HTML tables or formatted output. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CreateCADTableHeader.html">CreateCADTable</a> </td>
-<td class="bio"> Creates a CAD Report by subystem </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CreateComponentHeader.html">CreateComponent</a> </td>
-<td class="bio"> Create a CAD component. This function has a built-in demo. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CreateReportHeader.html">CreateReport</a> </td>
-<td class="bio"> Creates power and mass reports from a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CrossSectionHeader.html">CrossSection</a> </td>
-<td class="bio"> Determine cross-sectional area from CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DevicePropertiesHeader.html">DeviceProperties</a> </td>
-<td class="bio"> Generates default properties for specific devices. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DimHeader.html">Dim</a> </td>
-<td class="bio"> Set the transparency for components of a particular name. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ExportCADHeader.html">ExportCAD</a> </td>
-<td class="bio"> Export a CAD file to a text file. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ExportDSimHeader.html">ExportDSim</a> </td>
-<td class="bio"> Export fields required by DSim. This routine will create three files. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ExportDXFHeader.html">ExportDXF</a> </td>
-<td class="bio"> Export a DXF file. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ExportOBJHeader.html">ExportOBJ</a> </td>
-<td class="bio"> Export an OBJ file. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ExportVerticesToOBJHeader.html">ExportVerticesToOBJ</a> </td>
-<td class="bio"> Export an OBJ file from vertex and face data. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/FindComponentsHeader.html">FindComponents</a> </td>
-<td class="bio"> Find the indices of components containing a particular string </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ForceAndTorqueEnvelopeHeader.html">ForceAndTorqueEnvelope</a> </td>
-<td class="bio"> Computes the force and torque envelope. n is the number of samples. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/GenericPropertiesHeader.html">GenericProperties</a> </td>
-<td class="bio"> Generates generic properties for CAD components. The types are: </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/GetCADPowerHeader.html">GetCADPower</a> </td>
-<td class="bio"> Compute the total and directed solar array power from a CAD model </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/GetCADVFHeader.html">GetCADVF</a> </td>
-<td class="bio"> Return a single set of vertices "v" and faces "f" for the CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/GetCADVFRotatedHeader.html">GetCADVFRotated</a> </td>
-<td class="bio"> Return a single set of vertices "v" and faces "f" for the CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/GetSubsystemMassHeader.html">GetSubsystemMass</a> </td>
-<td class="bio"> Compute the total mass in the requested subsystem </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/HSRCADHeader.html">HSRCAD</a> </td>
-<td class="bio"> Finds the visible surfaces given a vertex and face list. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LoadCADHeader.html">LoadCAD</a> </td>
-<td class="bio"> Load a 3D CAD file. Handles .dxf, .obj and .3DMF files. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LoadOBJFileHeader.html">LoadOBJFile</a> </td>
-<td class="bio"> Load a 3D CAD file. Handles .obj </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/MassBudgetHeader.html">MassBudget</a> </td>
-<td class="bio"> Create a mass budget for a flight vehicle. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/MassBudgetInputHeader.html">MassBudgetInput</a> </td>
-<td class="bio"> Create a data structure for MassBudget. Enter parameter pairs. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/MatlabColorToObjHeader.html">MatlabColorToObj</a> </td>
-<td class="bio"> Convert Matlab color parameters to obj parameters. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelBoxCADHeader.html">PanelBoxCAD</a> </td>
-<td class="bio"> Build a box with panels. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RotateOBJFileHeader.html">RotateOBJFile</a> </td>
-<td class="bio"> Rotates and scales an obj file name.obj. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SetCADQuaternionHeader.html">SetCADQuaternion</a> </td>
-<td class="bio"> Set the inertial attitude of a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SetCADRotationHeader.html">SetCADRotation</a> </td>
-<td class="bio"> Set CAD model rotations using parameter/value pairs. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SetCADStateHeader.html">SetCADState</a> </td>
-<td class="bio"> Set the inertial state of a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TesselatePolygonHeader.html">TesselatePolygon</a> </td>
-<td class="bio"> Tesselate polygons by breaking them into triangles. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TreeBldCADHeader.html">TreeBldCAD</a> </td>
-<td class="bio"> Take the CAD data and create the body array for Tree. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TreeDrawHeader.html">TreeDraw</a> </td>
-<td class="bio"> Update the 3D drawing data structure. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TriMesh3DMFHeader.html">TriMesh3DMF</a> </td>
-<td class="bio"> Generate a 3DMF for a trimesh. This function will append ".t3d" to the file. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+</main>
 
-<h3><a name="ComponentModels"></a>ComponentModels</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AddCubesatComponentHeader.html">AddCubesatComponent</a> </td>
-<td class="bio"> Add a component to a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AirCoreTorquerModelHeader.html">AirCoreTorquerModel</a> </td>
-<td class="bio"> Get vertices and faces for an air core magnetic torquer CAD component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AntennaPatchHeader.html">AntennaPatch</a> </td>
-<td class="bio"> Get vertices and faces for an antenna CAD component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ArrayPatchHeader.html">ArrayPatch</a> </td>
-<td class="bio"> Get vertices and faces for solar array CAD models. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CameraModelHeader.html">CameraModel</a> </td>
-<td class="bio"> Get CAD vertices and faces for a star camera model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ChairModelHeader.html">ChairModel</a> </td>
-<td class="bio"> CAD vertices and faces for an astronaut chair component </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CircuitBoardHeader.html">CircuitBoard</a> </td>
-<td class="bio"> Get vertices and faces for a circuit board CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CompactPCIChassisHeader.html">CompactPCIChassis</a> </td>
-<td class="bio"> Get vertices and faces for a CompactPCI 3U Chassis CAD component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CurvedArrowsHeader.html">CurvedArrows</a> </td>
-<td class="bio"> Generate CAD vertices for a curved 3d arrow through points p. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CylindricalTankHeader.html">CylindricalTank</a> </td>
-<td class="bio"> A cylindrical tank with spherical end caps </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DeltaWingHeader.html">DeltaWing</a> </td>
-<td class="bio"> Get vertices and faces for a single or double delta wing CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DrawCanadarm3Header.html">DrawCanadarm3</a> </td>
-<td class="bio"> Get vertices and faces for a Canadarm3, or animate it </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ECAMC50Header.html">ECAMC50</a> </td>
-<td class="bio"> Get CAD vertices and face for an ECAM-C50 camera model </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ESPAArrayHeader.html">ESPAArray</a> </td>
-<td class="bio"> Vertices and faces for an ESPA Array </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ESPABusHeader.html">ESPABus</a> </td>
-<td class="bio"> Generate CAD vertices and faces for an ESPA bus </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/FuselageHeader.html">Fuselage</a> </td>
-<td class="bio"> Get vertices and faces for a fuselage CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/HallThrusterModelHeader.html">HallThrusterModel</a> </td>
-<td class="bio"> Get CAD vertices and faces for a Hall thruster. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ICONSHeader.html">ICONS</a> </td>
-<td class="bio"> Get CAD vertices and faces for the Integrated Communications and Navigation Sensor. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LAETR308CADHeader.html">LAETR308CAD</a> </td>
-<td class="bio"> Generate CAD vertices and faces for a Northrop Grumman TR-308 engine. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LaserRangefinderHeader.html">LaserRangefinder</a> </td>
-<td class="bio"> Vertices and faces for a laser range finder </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LiftingBodyHeader.html">LiftingBody</a> </td>
-<td class="bio"> Get vertices and faces for a lifting body CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LunarModuleFirstStageHeader.html">LunarModuleFirstStage</a> </td>
-<td class="bio"> Get CAD vertices and faces for a lunar module first stage. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LunarModuleSecondStageHeader.html">LunarModuleSecondStage</a> </td>
-<td class="bio"> Generates a CAD component for a lunar module ascent stage. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/MR107SHeader.html">MR107S</a> </td>
-<td class="bio"> Get CAD vertices and faces for the MR 107S thruster model </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/MarsAeroshellHeader.html">MarsAeroshell</a> </td>
-<td class="bio"> CAD vertices and faces for a Mars aeroshell for entry </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/NoseConeHeader.html">NoseCone</a> </td>
-<td class="bio"> Get CAD vertices and faces for a nose cone. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/Nozzle2DHeader.html">Nozzle2D</a> </td>
-<td class="bio"> Get vertices and faces for a 2D Nozzle CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/NuclearReactorModelHeader.html">NuclearReactorModel</a> </td>
-<td class="bio"> Get CAD vertices and faces for an SP-100 based space nuclear reactor. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelHeader.html">Panel</a> </td>
-<td class="bio"> Get CAD vertices and faces for a panel in the x, y plane. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelFrameHeader.html">PanelFrame</a> </td>
-<td class="bio"> Get CAD vertices and faces for a frame for a honeycomb panel. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelWithCenterHoleHeader.html">PanelWithCenterHole</a> </td>
-<td class="bio"> Get CAD vertices and faces for a panel with a center hole. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelWithCutoutHeader.html">PanelWithCutout</a> </td>
-<td class="bio"> Get CAD vertices and faces for a panel with a cutout. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PanelsHeader.html">Panels</a> </td>
-<td class="bio"> Draw panels for a spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/PartialThickDiskHeader.html">PartialThickDisk</a> </td>
-<td class="bio"> CAD vertices and faces for a partial thick disk. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/R40BEngineHeader.html">R40BEngine</a> </td>
-<td class="bio"> Generates an RB40B engine CAD model </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/REAModelHeader.html">REAModel</a> </td>
-<td class="bio"> Get CAD vertices and faces for General Dynamics REAs. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RWAArrayHeader.html">RWAArray</a> </td>
-<td class="bio"> Get CAD components for an array of four reaction wheels. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RWAModelHeader.html">RWAModel</a> </td>
-<td class="bio"> Get CAD vertices and properties for a specific RWA model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RoundedRectangleHeader.html">RoundedRectangle</a> </td>
-<td class="bio"> Create an outline of a rounded rectangle </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SCMGHeader.html">SCMG</a> </td>
-<td class="bio"> Get CAD vertices and faces for a single-axis control moment gyro. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SHELSFlangeHeader.html">SHELSFlange</a> </td>
-<td class="bio"> Get CAD vertices and faces for the SHELS Flange component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SHELSInterfaceHeader.html">SHELSInterface</a> </td>
-<td class="bio"> Get  vertices and faces for the SHELS Interface CAD components. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SaturnsRingsHeader.html">SaturnsRings</a> </td>
-<td class="bio"> Get CAD vertices and faces for the rings of Saturn. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SimpleFuselageHeader.html">SimpleFuselage</a> </td>
-<td class="bio"> Get CAD vertices and faces for a simple fuselage. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SolarWingSupportHeader.html">SolarWingSupport</a> </td>
-<td class="bio"> Get CAD vertices and faces for a triangle strut for a solar wing. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/StarCameraBasicModelHeader.html">StarCameraBasicModel</a> </td>
-<td class="bio"> Get vertices and faces for a basic star camera CAD component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/StarCameraModelHeader.html">StarCameraModel</a> </td>
-<td class="bio"> Get CAD vertices and faces for various star cameras. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SurfaceOfRevolutionHeader.html">SurfaceOfRevolution</a> </td>
-<td class="bio"> Generate CAD vertices and faces for a surface of revolution about z. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TPlateHeader.html">TPlate</a> </td>
-<td class="bio"> Generate CAD vertices and faces for a T-shaped plate. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ThrusterCADHeader.html">ThrusterCAD</a> </td>
-<td class="bio"> Get CAD vertices and faces for a thruster model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ThrusterPatchHeader.html">ThrusterPatch</a> </td>
-<td class="bio"> Get vertices and faces for a thruster CAD component. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TubeBetweenPointsHeader.html">TubeBetweenPoints</a> </td>
-<td class="bio"> Generate CAD vertices and faces for a tube going from x1 to x2 </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/USR30MotorHeader.html">USR30Motor</a> </td>
-<td class="bio"> Generate CAD vertices and faces for a motor model. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/WingHeader.html">Wing</a> </td>
-<td class="bio"> Generate vertices and faces for a wing. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/XenonTankHeader.html">XenonTank</a> </td>
-<td class="bio"> Generate a Xenon Tank CAD model based on the ETS VIII Tank. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/XenonTankSupportHeader.html">XenonTankSupport</a> </td>
-<td class="bio"> Generate CAD vertices for a Xenon Tank support based on the ETS VIII Tank. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Back to Toolbox Index</a>
+</footer>
 
-<h3><a name="Coord"></a>Coord</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AzCoElToUHeader.html">AzCoElToU</a> </td>
-<td class="bio"> Converts azimuth and coelevation to a unit vector. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AzElRangeRangeDotToRVHeader.html">AzElRangeRangeDotToRV</a> </td>
-<td class="bio"> Compute r, v from range, range rate, az and el. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/AzElToUHeader.html">AzElToU</a> </td>
-<td class="bio"> Converts azimuth and elevation to a unit vector. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/BankAngleHeader.html">BankAngle</a> </td>
-<td class="bio"> Bank angle computations </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/CoordinateTransformHeader.html">CoordinateTransform</a> </td>
-<td class="bio"> Transform between selected coordinate frames and representations. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DownrangeAndAltFromTargetHeader.html">DownrangeAndAltFromTarget</a> </td>
-<td class="bio"> Finds the altitude and downrange from a target on a planet. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ECEFToLLAHeader.html">ECEFToLLA</a> </td>
-<td class="bio"> Compute latitude, longitude, altitude from ECEF position. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ECIToEFHeader.html">ECIToEF</a> </td>
-<td class="bio"> Computes the matrix from mean of Aries 2000 to the earth fixed frame. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/EFToLatLonAltHeader.html">EFToLatLonAlt</a> </td>
-<td class="bio"> Convert an earth fixed position vector to [latitude;longitude;altitude] </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/FLagrangeHeader.html">FLagrange</a> </td>
-<td class="bio"> Lagrange point RHS. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/Gc2GdLatHeader.html">Gc2GdLat</a> </td>
-<td class="bio"> Convert geocentric latitude to geodetic latitude. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/Gd2GcLatHeader.html">Gd2GcLat</a> </td>
-<td class="bio"> Convert geodetic latitude to geocentric latitude </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/HorizonAngleHeader.html">HorizonAngle</a> </td>
-<td class="bio"> Angle between the horizon and a vector from rG to rS. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/IntersectPlanetHeader.html">IntersectPlanet</a> </td>
-<td class="bio"> Altitude of the nearest point to a sphere. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LLAToECEFHeader.html">LLAToECEF</a> </td>
-<td class="bio"> Compute ECEF position from latitude, longitude, altitude. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LatLonAltToEFHeader.html">LatLonAltToEF</a> </td>
-<td class="bio"> Convert [latitude;longitude;altitude] to an earth fixed position vector. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/LatLonToRHeader.html">LatLonToR</a> </td>
-<td class="bio"> Converts geodetic latitude and longitude to r for an ellipsoidal planet. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/OmegaFromUHeader.html">OmegaFromU</a> </td>
-<td class="bio"> Finds a total angular rate from a set of unit vectors. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/OmegaLVLHHeader.html">OmegaLVLH</a> </td>
-<td class="bio"> Generate the LVLH angular rate vector. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/Q2RADecHeader.html">Q2RADec</a> </td>
-<td class="bio"> Compute right ascension and declination of a vector from a quaternion. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QAcqHeader.html">QAcq</a> </td>
-<td class="bio"> Given at least three vectors computes the initial quaternion. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QAlignHeader.html">QAlign</a> </td>
-<td class="bio"> Rotate about a body axis to align a body vector with an inertial vector. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QFrom2UHeader.html">QFrom2U</a> </td>
-<td class="bio"> Finds a quaternion with u1 aligned with u1ECI and u2 close to u2ECI. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QHillsHeader.html">QHills</a> </td>
-<td class="bio"> Generate the quaternion that transforms from the ECI to the Hills frame. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QIToBDotHeader.html">QIToBDot</a> </td>
-<td class="bio"> Computes the time derivative of a quaternion. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QLVLHHeader.html">QLVLH</a> </td>
-<td class="bio"> Generate the quaternions that transform from ECI to LVLH coordinates. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QLatLonHeader.html">QLatLon</a> </td>
-<td class="bio"> Generate the quaternions that transform from ECI to a lat/long frame </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QNadirPointHeader.html">QNadirPoint</a> </td>
-<td class="bio"> Generate a quaternion that points a body vector uB towards nadir. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QRotateToAlignHeader.html">QRotateToAlign</a> </td>
-<td class="bio"> Rotate about an axis to align "ua" as close as possible to target "ut" </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QSLERPHeader.html">QSLERP</a> </td>
-<td class="bio"> Interpolate a quaternion using the SLERP algorithm. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/QToPFTargetHeader.html">QToPFTarget</a> </td>
-<td class="bio"> Generate a quaternion to go to a planet fixed lat/long target. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/R2LatLonHeader.html">R2LatLon</a> </td>
-<td class="bio"> Computes geocentric latitude and longitude from r </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RVToRADecHeader.html">RVToRADec</a> </td>
-<td class="bio"> Computes right ascension and declination and their rates. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RaDec2QHeader.html">RaDec2Q</a> </td>
-<td class="bio"> Right ascension and declination to a quaternion. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/RollPitchToQECIHeader.html">RollPitchToQECI</a> </td>
-<td class="bio"> Convert roll, pitch, r and v to QECIToBody </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SunAzElHeader.html">SunAzEl</a> </td>
-<td class="bio"> Approx. azimuth and elevation of the sun for a time and place on earth. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/TargetFromRPVDHeader.html">TargetFromRPVD</a> </td>
-<td class="bio"> Finds a target on a planet. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/U2AzElHeader.html">U2AzEl</a> </td>
-<td class="bio"> Converts a unit vector to azimuth and elevation. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/U2RADecHeader.html">U2RADec</a> </td>
-<td class="bio"> Computes the right ascension and declination from a unit vector. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
 
-<h3><a name="Visualization"></a>Visualization</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/Draw2DViewPlugInHeader.html">Draw2DViewPlugIn</a> </td>
-<td class="bio"> Draw the spacecraft CAD components in a 2D representation. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DrawPatchHeader.html">DrawPatch</a> </td>
-<td class="bio"> Draw a series of patches. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DrawSCPlanPlugInHeader.html">DrawSCPlanPlugIn</a> </td>
-<td class="bio"> Draw a spacecraft CAD model in a plain 3D box with Gouraud lighting. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/DrawSpacecraftPatchesHeader.html">DrawSpacecraftPatches</a> </td>
-<td class="bio"> Draw the spacecraft CAD model using patches. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/ShowCADHeader.html">ShowCAD</a> </td>
-<td class="bio"> Display a stored CAD model in a plain 3D box using DrawSCPlanPlugIn. </td></tr>
-<tr><td class="link" width="200"><a href="AerospaceUtilsHeaders/SpacecraftPlugInHeader.html">SpacecraftPlugIn</a> </td>
-<td class="bio"> Create a Spacecraft GUI plug in. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
-<p> <a href="FunctionIndex.html">Back</a> to Functions main page</p></div></body></html>
+<script>
+const SECTIONS = {
+  AeroData: {
+    label: 'AeroData',
+    items: [
+      {name:'Artemis.obj',      desc:'Artemis lunar lander OBJ file',                        url:null},
+      {name:'AtmData.mat',      desc:'Atmospheric data binary file',                          url:null},
+      {name:'AtmData.txt',      desc:'Atmospheric data text file',                            url:null},
+      {name:'Cube.mtl',         desc:'Materials data for Cube',                               url:null},
+      {name:'Cube.obj',         desc:'OBJ model of a cube',                                   url:null},
+      {name:'Satellite.mtl',    desc:'Satellite model materials data',                        url:null},
+      {name:'Satellite.obj',    desc:'Satellite model with two solar wings',                  url:null},
+      {name:'SimpleSC.mat',     desc:'Simple MAT file for demos',                             url:null},
+    ]
+  },
+  AtmosphericCalculations: {
+    label: 'AtmosphericCalculations',
+    items: [
+      {name:'AirData',               desc:'Computes air data based on a simplified standard atmosphere model.',              url:'AerospaceUtilsHeaders/AirDataHeader.html'},
+      {name:'AtmDens1',              desc:'Computes the atmospheric density using an exponential model.',                    url:'AerospaceUtilsHeaders/AtmDens1Header.html'},
+      {name:'AtmDens2',              desc:"Computes the Earth's atmospheric density using scale heights.",                   url:'AerospaceUtilsHeaders/AtmDens2Header.html'},
+      {name:'AtmGamma',              desc:'Computes the ratio of specific heats for air.',                                   url:'AerospaceUtilsHeaders/AtmGammaHeader.html'},
+      {name:'AtmJ70',                desc:"Computes the atmospheric density using Jacchia's 1970 model.",                   url:'AerospaceUtilsHeaders/AtmJ70Header.html'},
+      {name:'AtmSnd',                desc:'Computes the speed of sound in the atmosphere.',                                  url:'AerospaceUtilsHeaders/AtmSndHeader.html'},
+      {name:'AtmTemp',               desc:'Computes the atmospheric temperature using a simplified model.',                  url:'AerospaceUtilsHeaders/AtmTempHeader.html'},
+      {name:'BaromExp',              desc:'Computes the barometric exponent.',                                               url:'AerospaceUtilsHeaders/BaromExpHeader.html'},
+      {name:'DiffusionExp',          desc:'Computes the diffusion exponent.',                                               url:'AerospaceUtilsHeaders/DiffusionExpHeader.html'},
+      {name:'JacchiaLineberry',      desc:'Jacchia-Lineberry model of the upper atmosphere.',                               url:'AerospaceUtilsHeaders/JacchiaLineberryHeader.html'},
+      {name:'ReynoldsNumber',        desc:'Reynolds number as a function of atmospheric density.',                          url:'AerospaceUtilsHeaders/ReynoldsNumberHeader.html'},
+      {name:'SutherlandsLaw',        desc:"Sutherland's law for dynamic viscosity.",                                        url:'AerospaceUtilsHeaders/SutherlandsLawHeader.html'},
+      {name:'TemperatureStagnation', desc:"Compute the stagnation temperature in the earth's atmosphere.",                  url:'AerospaceUtilsHeaders/TemperatureStagnationHeader.html'},
+    ]
+  },
+  CAD: {
+    label: 'CAD',
+    items: [
+      {name:'AddThermalDevices',      desc:'Add a heater and thermistor to each component.',                            url:'AerospaceUtilsHeaders/AddThermalDevicesHeader.html'},
+      {name:'AreaTriMesh',            desc:'Computes the area of a triangle mesh.',                                     url:'AerospaceUtilsHeaders/AreaTriMeshHeader.html'},
+      {name:'AutoCADColor',           desc:'Converts an AutoCAD color into a [r,g,b] color.',                          url:'AerospaceUtilsHeaders/AutoCADColorHeader.html'},
+      {name:'BHinge',                 desc:'Compute a transformation matrix from a bHinge data structure.',             url:'AerospaceUtilsHeaders/BHingeHeader.html'},
+      {name:'BinaryToString',         desc:'Converts a bit array to a string.',                                        url:'AerospaceUtilsHeaders/BinaryToStringHeader.html'},
+      {name:'BodyPlugIn',             desc:'Create the CAD body GUI plug in.',                                          url:'AerospaceUtilsHeaders/BodyPlugInHeader.html'},
+      {name:'BoundingBox',            desc:'Compute a bounding box for a component.',                                   url:'AerospaceUtilsHeaders/BoundingBoxHeader.html'},
+      {name:'BuildCADModel',          desc:'Build a model of a spacecraft using repeated calls to this function.',      url:'AerospaceUtilsHeaders/BuildCADModelHeader.html'},
+      {name:'CADColor',               desc:'Color a CAD Model.',                                                       url:'AerospaceUtilsHeaders/CADColorHeader.html'},
+      {name:'CADNotebook',            desc:'Work with a model using the CAD data structure.',                           url:'AerospaceUtilsHeaders/CADNotebookHeader.html'},
+      {name:'CentroidOBJFile',        desc:'Computes the centroid of an obj file.',                                     url:'AerospaceUtilsHeaders/CentroidOBJFileHeader.html'},
+      {name:'CombineOBJFiles',        desc:'Combines obj files and writes a new file.',                                 url:'AerospaceUtilsHeaders/CombineOBJFilesHeader.html'},
+      {name:'ComponentPlugIn',        desc:'Create a component GUI plug in.',                                           url:'AerospaceUtilsHeaders/ComponentPlugInHeader.html'},
+      {name:'ComponentPopup',         desc:'Draw a component.',                                                        url:'AerospaceUtilsHeaders/ComponentPopupHeader.html'},
+      {name:'CreateBody',             desc:'Create a body with hinge data.',                                            url:'AerospaceUtilsHeaders/CreateBodyHeader.html'},
+      {name:'CreateCADReport',        desc:'Creates CAD model report — HTML tables or formatted output.',               url:'AerospaceUtilsHeaders/CreateCADReportHeader.html'},
+      {name:'CreateCADTable',         desc:'Creates a CAD report by subsystem.',                                       url:'AerospaceUtilsHeaders/CreateCADTableHeader.html'},
+      {name:'CreateComponent',        desc:'Create a CAD component. This function has a built-in demo.',                url:'AerospaceUtilsHeaders/CreateComponentHeader.html'},
+      {name:'CreateReport',           desc:'Creates power and mass reports from a CAD model.',                         url:'AerospaceUtilsHeaders/CreateReportHeader.html'},
+      {name:'CrossSection',           desc:'Determine cross-sectional area from CAD model.',                           url:'AerospaceUtilsHeaders/CrossSectionHeader.html'},
+      {name:'DeviceProperties',       desc:'Generates default properties for specific devices.',                        url:'AerospaceUtilsHeaders/DevicePropertiesHeader.html'},
+      {name:'Dim',                    desc:'Set the transparency for components of a particular name.',                 url:'AerospaceUtilsHeaders/DimHeader.html'},
+      {name:'ExportCAD',              desc:'Export a CAD file to a text file.',                                        url:'AerospaceUtilsHeaders/ExportCADHeader.html'},
+      {name:'ExportDSim',             desc:'Export fields required by DSim.',                                          url:'AerospaceUtilsHeaders/ExportDSimHeader.html'},
+      {name:'ExportDXF',              desc:'Export a DXF file.',                                                       url:'AerospaceUtilsHeaders/ExportDXFHeader.html'},
+      {name:'ExportOBJ',              desc:'Export an OBJ file.',                                                      url:'AerospaceUtilsHeaders/ExportOBJHeader.html'},
+      {name:'ExportVerticesToOBJ',    desc:'Export an OBJ file from vertex and face data.',                            url:'AerospaceUtilsHeaders/ExportVerticesToOBJHeader.html'},
+      {name:'FindComponents',         desc:'Find indices of components containing a particular string.',                url:'AerospaceUtilsHeaders/FindComponentsHeader.html'},
+      {name:'ForceAndTorqueEnvelope', desc:'Computes the force and torque envelope.',                                  url:'AerospaceUtilsHeaders/ForceAndTorqueEnvelopeHeader.html'},
+      {name:'GenericProperties',      desc:'Generates generic properties for CAD components.',                         url:'AerospaceUtilsHeaders/GenericPropertiesHeader.html'},
+      {name:'GetCADPower',            desc:'Compute total and directed solar array power from a CAD model.',           url:'AerospaceUtilsHeaders/GetCADPowerHeader.html'},
+      {name:'GetCADVF',               desc:'Return a single set of vertices and faces for the CAD model.',             url:'AerospaceUtilsHeaders/GetCADVFHeader.html'},
+      {name:'GetCADVFRotated',        desc:'Return a rotated set of vertices and faces for the CAD model.',            url:'AerospaceUtilsHeaders/GetCADVFRotatedHeader.html'},
+      {name:'GetSubsystemMass',       desc:'Compute the total mass in the requested subsystem.',                       url:'AerospaceUtilsHeaders/GetSubsystemMassHeader.html'},
+      {name:'HSRCAD',                 desc:'Finds the visible surfaces given a vertex and face list.',                 url:'AerospaceUtilsHeaders/HSRCADHeader.html'},
+      {name:'LoadCAD',                desc:'Load a 3D CAD file (.dxf, .obj, .3DMF).',                                 url:'AerospaceUtilsHeaders/LoadCADHeader.html'},
+      {name:'LoadOBJFile',            desc:'Load a 3D CAD file (.obj).',                                              url:'AerospaceUtilsHeaders/LoadOBJFileHeader.html'},
+      {name:'MassBudget',             desc:'Create a mass budget for a flight vehicle.',                               url:'AerospaceUtilsHeaders/MassBudgetHeader.html'},
+      {name:'MassBudgetInput',        desc:'Create a data structure for MassBudget.',                                  url:'AerospaceUtilsHeaders/MassBudgetInputHeader.html'},
+      {name:'MatlabColorToObj',       desc:'Convert Matlab color parameters to obj parameters.',                       url:'AerospaceUtilsHeaders/MatlabColorToObjHeader.html'},
+      {name:'PanelBoxCAD',            desc:'Build a box with panels.',                                                 url:'AerospaceUtilsHeaders/PanelBoxCADHeader.html'},
+      {name:'RotateOBJFile',          desc:'Rotates and scales an obj file.',                                          url:'AerospaceUtilsHeaders/RotateOBJFileHeader.html'},
+      {name:'SetCADQuaternion',       desc:'Set the inertial attitude of a CAD model.',                                url:'AerospaceUtilsHeaders/SetCADQuaternionHeader.html'},
+      {name:'SetCADRotation',         desc:'Set CAD model rotations using parameter/value pairs.',                     url:'AerospaceUtilsHeaders/SetCADRotationHeader.html'},
+      {name:'SetCADState',            desc:'Set the inertial state of a CAD model.',                                   url:'AerospaceUtilsHeaders/SetCADStateHeader.html'},
+      {name:'TesselatePolygon',       desc:'Tesselate polygons by breaking them into triangles.',                      url:'AerospaceUtilsHeaders/TesselatePolygonHeader.html'},
+      {name:'TreeBldCAD',             desc:'Take CAD data and create the body array for Tree.',                        url:'AerospaceUtilsHeaders/TreeBldCADHeader.html'},
+      {name:'TreeDraw',               desc:'Update the 3D drawing data structure.',                                    url:'AerospaceUtilsHeaders/TreeDrawHeader.html'},
+      {name:'TriMesh3DMF',            desc:'Generate a 3DMF for a trimesh.',                                          url:'AerospaceUtilsHeaders/TriMesh3DMFHeader.html'},
+    ]
+  },
+  ComponentModels: {
+    label: 'ComponentModels',
+    items: [
+      {name:'AddCubesatComponent',      desc:'Add a component to a CAD model.',                                                         url:'AerospaceUtilsHeaders/AddCubesatComponentHeader.html'},
+      {name:'AirCoreTorquerModel',       desc:'Vertices and faces for an air core magnetic torquer CAD component.',                      url:'AerospaceUtilsHeaders/AirCoreTorquerModelHeader.html'},
+      {name:'AntennaPatch',             desc:'Vertices and faces for an antenna CAD component.',                                        url:'AerospaceUtilsHeaders/AntennaPatchHeader.html'},
+      {name:'ArrayPatch',               desc:'Vertices and faces for solar array CAD models.',                                          url:'AerospaceUtilsHeaders/ArrayPatchHeader.html'},
+      {name:'CameraModel',              desc:'CAD vertices and faces for a star camera model.',                                         url:'AerospaceUtilsHeaders/CameraModelHeader.html'},
+      {name:'ChairModel',               desc:'CAD vertices and faces for an astronaut chair component.',                                url:'AerospaceUtilsHeaders/ChairModelHeader.html'},
+      {name:'CircuitBoard',             desc:'Vertices and faces for a circuit board CAD model.',                                       url:'AerospaceUtilsHeaders/CircuitBoardHeader.html'},
+      {name:'CompactPCIChassis',        desc:'Vertices and faces for a CompactPCI 3U Chassis CAD component.',                          url:'AerospaceUtilsHeaders/CompactPCIChassisHeader.html'},
+      {name:'CurvedArrows',             desc:'Generate CAD vertices for a curved 3D arrow through points.',                            url:'AerospaceUtilsHeaders/CurvedArrowsHeader.html'},
+      {name:'CylindricalTank',          desc:'A cylindrical tank with spherical end caps.',                                             url:'AerospaceUtilsHeaders/CylindricalTankHeader.html'},
+      {name:'DeltaWing',                desc:'Vertices and faces for a single or double delta wing CAD model.',                        url:'AerospaceUtilsHeaders/DeltaWingHeader.html'},
+      {name:'DrawCanadarm3',            desc:'Vertices and faces for a Canadarm3, or animate it.',                                      url:'AerospaceUtilsHeaders/DrawCanadarm3Header.html'},
+      {name:'ECAMC50',                  desc:'CAD vertices and faces for an ECAM-C50 camera model.',                                   url:'AerospaceUtilsHeaders/ECAMC50Header.html'},
+      {name:'ESPAArray',                desc:'Vertices and faces for an ESPA Array.',                                                  url:'AerospaceUtilsHeaders/ESPAArrayHeader.html'},
+      {name:'ESPABus',                  desc:'Generate CAD vertices and faces for an ESPA bus.',                                       url:'AerospaceUtilsHeaders/ESPABusHeader.html'},
+      {name:'Fuselage',                 desc:'Vertices and faces for a fuselage CAD model.',                                           url:'AerospaceUtilsHeaders/FuselageHeader.html'},
+      {name:'HallThrusterModel',        desc:'CAD vertices and faces for a Hall thruster.',                                            url:'AerospaceUtilsHeaders/HallThrusterModelHeader.html'},
+      {name:'ICONS',                    desc:'CAD vertices and faces for the Integrated Communications and Navigation Sensor.',        url:'AerospaceUtilsHeaders/ICONSHeader.html'},
+      {name:'LAETR308CAD',              desc:'CAD vertices and faces for a Northrop Grumman TR-308 engine.',                           url:'AerospaceUtilsHeaders/LAETR308CADHeader.html'},
+      {name:'LaserRangefinder',         desc:'Vertices and faces for a laser range finder.',                                           url:'AerospaceUtilsHeaders/LaserRangefinderHeader.html'},
+      {name:'LiftingBody',              desc:'Vertices and faces for a lifting body CAD model.',                                       url:'AerospaceUtilsHeaders/LiftingBodyHeader.html'},
+      {name:'LunarModuleFirstStage',    desc:'CAD vertices and faces for a lunar module first stage.',                                 url:'AerospaceUtilsHeaders/LunarModuleFirstStageHeader.html'},
+      {name:'LunarModuleSecondStage',   desc:'Generates a CAD component for a lunar module ascent stage.',                            url:'AerospaceUtilsHeaders/LunarModuleSecondStageHeader.html'},
+      {name:'MR107S',                   desc:'CAD vertices and faces for the MR 107S thruster model.',                                url:'AerospaceUtilsHeaders/MR107SHeader.html'},
+      {name:'MarsAeroshell',            desc:'CAD vertices and faces for a Mars aeroshell for entry.',                                 url:'AerospaceUtilsHeaders/MarsAeroshellHeader.html'},
+      {name:'NoseCone',                 desc:'CAD vertices and faces for a nose cone.',                                               url:'AerospaceUtilsHeaders/NoseConeHeader.html'},
+      {name:'Nozzle2D',                 desc:'Vertices and faces for a 2D nozzle CAD model.',                                         url:'AerospaceUtilsHeaders/Nozzle2DHeader.html'},
+      {name:'NuclearReactorModel',      desc:'CAD vertices and faces for an SP-100 based space nuclear reactor.',                     url:'AerospaceUtilsHeaders/NuclearReactorModelHeader.html'},
+      {name:'Panel',                    desc:'CAD vertices and faces for a panel in the x, y plane.',                                 url:'AerospaceUtilsHeaders/PanelHeader.html'},
+      {name:'PanelFrame',               desc:'CAD vertices and faces for a frame for a honeycomb panel.',                             url:'AerospaceUtilsHeaders/PanelFrameHeader.html'},
+      {name:'PanelWithCenterHole',      desc:'CAD vertices and faces for a panel with a center hole.',                               url:'AerospaceUtilsHeaders/PanelWithCenterHoleHeader.html'},
+      {name:'PanelWithCutout',          desc:'CAD vertices and faces for a panel with a cutout.',                                     url:'AerospaceUtilsHeaders/PanelWithCutoutHeader.html'},
+      {name:'Panels',                   desc:'Draw panels for a spacecraft.',                                                         url:'AerospaceUtilsHeaders/PanelsHeader.html'},
+      {name:'PartialThickDisk',         desc:'CAD vertices and faces for a partial thick disk.',                                      url:'AerospaceUtilsHeaders/PartialThickDiskHeader.html'},
+      {name:'R40BEngine',               desc:'Generates an R40B engine CAD model.',                                                   url:'AerospaceUtilsHeaders/R40BEngineHeader.html'},
+      {name:'REAModel',                 desc:'CAD vertices and faces for General Dynamics REAs.',                                      url:'AerospaceUtilsHeaders/REAModelHeader.html'},
+      {name:'RWAArray',                 desc:'CAD components for an array of four reaction wheels.',                                  url:'AerospaceUtilsHeaders/RWAArrayHeader.html'},
+      {name:'RWAModel',                 desc:'CAD vertices and properties for a specific RWA model.',                                 url:'AerospaceUtilsHeaders/RWAModelHeader.html'},
+      {name:'RoundedRectangle',         desc:'Create an outline of a rounded rectangle.',                                             url:'AerospaceUtilsHeaders/RoundedRectangleHeader.html'},
+      {name:'SCMG',                     desc:'CAD vertices and faces for a single-axis control moment gyro.',                         url:'AerospaceUtilsHeaders/SCMGHeader.html'},
+      {name:'SHELSFlange',              desc:'CAD vertices and faces for the SHELS Flange component.',                               url:'AerospaceUtilsHeaders/SHELSFlangeHeader.html'},
+      {name:'SHELSInterface',           desc:'Vertices and faces for the SHELS Interface CAD components.',                           url:'AerospaceUtilsHeaders/SHELSInterfaceHeader.html'},
+      {name:'SaturnsRings',             desc:'CAD vertices and faces for the rings of Saturn.',                                       url:'AerospaceUtilsHeaders/SaturnsRingsHeader.html'},
+      {name:'SimpleFuselage',           desc:'CAD vertices and faces for a simple fuselage.',                                         url:'AerospaceUtilsHeaders/SimpleFuselageHeader.html'},
+      {name:'SolarWingSupport',         desc:'CAD vertices and faces for a triangle strut for a solar wing.',                        url:'AerospaceUtilsHeaders/SolarWingSupportHeader.html'},
+      {name:'StarCameraBasicModel',     desc:'Vertices and faces for a basic star camera CAD component.',                            url:'AerospaceUtilsHeaders/StarCameraBasicModelHeader.html'},
+      {name:'StarCameraModel',          desc:'CAD vertices and faces for various star cameras.',                                      url:'AerospaceUtilsHeaders/StarCameraModelHeader.html'},
+      {name:'SurfaceOfRevolution',      desc:'CAD vertices and faces for a surface of revolution about z.',                          url:'AerospaceUtilsHeaders/SurfaceOfRevolutionHeader.html'},
+      {name:'TPlate',                   desc:'CAD vertices and faces for a T-shaped plate.',                                         url:'AerospaceUtilsHeaders/TPlateHeader.html'},
+      {name:'ThrusterCAD',              desc:'CAD vertices and faces for a thruster model.',                                         url:'AerospaceUtilsHeaders/ThrusterCADHeader.html'},
+      {name:'ThrusterPatch',            desc:'Vertices and faces for a thruster CAD component.',                                     url:'AerospaceUtilsHeaders/ThrusterPatchHeader.html'},
+      {name:'TubeBetweenPoints',        desc:'CAD vertices and faces for a tube going from x1 to x2.',                              url:'AerospaceUtilsHeaders/TubeBetweenPointsHeader.html'},
+      {name:'USR30Motor',               desc:'CAD vertices and faces for a motor model.',                                            url:'AerospaceUtilsHeaders/USR30MotorHeader.html'},
+      {name:'Wing',                     desc:'Generate vertices and faces for a wing.',                                              url:'AerospaceUtilsHeaders/WingHeader.html'},
+      {name:'XenonTank',                desc:'Generate a Xenon Tank CAD model based on the ETS VIII Tank.',                         url:'AerospaceUtilsHeaders/XenonTankHeader.html'},
+      {name:'XenonTankSupport',         desc:'CAD vertices for a Xenon Tank support based on the ETS VIII Tank.',                   url:'AerospaceUtilsHeaders/XenonTankSupportHeader.html'},
+    ]
+  },
+  Coord: {
+    label: 'Coord',
+    items: [
+      {name:'AzCoElToU',                desc:'Converts azimuth and coelevation to a unit vector.',                                    url:'AerospaceUtilsHeaders/AzCoElToUHeader.html'},
+      {name:'AzElRangeRangeDotToRV',    desc:'Compute r, v from range, range rate, az and el.',                                       url:'AerospaceUtilsHeaders/AzElRangeRangeDotToRVHeader.html'},
+      {name:'AzElToU',                  desc:'Converts azimuth and elevation to a unit vector.',                                      url:'AerospaceUtilsHeaders/AzElToUHeader.html'},
+      {name:'BankAngle',                desc:'Bank angle computations.',                                                              url:'AerospaceUtilsHeaders/BankAngleHeader.html'},
+      {name:'CoordinateTransform',      desc:'Transform between selected coordinate frames and representations.',                      url:'AerospaceUtilsHeaders/CoordinateTransformHeader.html'},
+      {name:'DownrangeAndAltFromTarget',desc:'Finds the altitude and downrange from a target on a planet.',                          url:'AerospaceUtilsHeaders/DownrangeAndAltFromTargetHeader.html'},
+      {name:'ECEFToLLA',                desc:'Compute latitude, longitude, altitude from ECEF position.',                            url:'AerospaceUtilsHeaders/ECEFToLLAHeader.html'},
+      {name:'ECIToEF',                  desc:'Computes the matrix from mean of Aries 2000 to the earth fixed frame.',               url:'AerospaceUtilsHeaders/ECIToEFHeader.html'},
+      {name:'EFToLatLonAlt',            desc:'Convert an earth fixed position vector to [latitude; longitude; altitude].',           url:'AerospaceUtilsHeaders/EFToLatLonAltHeader.html'},
+      {name:'FLagrange',                desc:'Lagrange point RHS.',                                                                  url:'AerospaceUtilsHeaders/FLagrangeHeader.html'},
+      {name:'Gc2GdLat',                 desc:'Convert geocentric latitude to geodetic latitude.',                                    url:'AerospaceUtilsHeaders/Gc2GdLatHeader.html'},
+      {name:'Gd2GcLat',                 desc:'Convert geodetic latitude to geocentric latitude.',                                    url:'AerospaceUtilsHeaders/Gd2GcLatHeader.html'},
+      {name:'HorizonAngle',             desc:'Angle between the horizon and a vector from rG to rS.',                               url:'AerospaceUtilsHeaders/HorizonAngleHeader.html'},
+      {name:'IntersectPlanet',          desc:'Altitude of the nearest point to a sphere.',                                          url:'AerospaceUtilsHeaders/IntersectPlanetHeader.html'},
+      {name:'LLAToECEF',               desc:'Compute ECEF position from latitude, longitude, altitude.',                           url:'AerospaceUtilsHeaders/LLAToECEFHeader.html'},
+      {name:'LatLonAltToEF',            desc:'Convert [latitude; longitude; altitude] to an earth fixed position vector.',          url:'AerospaceUtilsHeaders/LatLonAltToEFHeader.html'},
+      {name:'LatLonToR',                desc:'Converts geodetic latitude and longitude to r for an ellipsoidal planet.',            url:'AerospaceUtilsHeaders/LatLonToRHeader.html'},
+      {name:'OmegaFromU',               desc:'Finds a total angular rate from a set of unit vectors.',                              url:'AerospaceUtilsHeaders/OmegaFromUHeader.html'},
+      {name:'OmegaLVLH',                desc:'Generate the LVLH angular rate vector.',                                              url:'AerospaceUtilsHeaders/OmegaLVLHHeader.html'},
+      {name:'Q2RADec',                  desc:'Compute right ascension and declination of a vector from a quaternion.',              url:'AerospaceUtilsHeaders/Q2RADecHeader.html'},
+      {name:'QAcq',                     desc:'Given at least three vectors computes the initial quaternion.',                       url:'AerospaceUtilsHeaders/QAcqHeader.html'},
+      {name:'QAlign',                   desc:'Rotate about a body axis to align a body vector with an inertial vector.',            url:'AerospaceUtilsHeaders/QAlignHeader.html'},
+      {name:'QFrom2U',                  desc:'Finds a quaternion with u1 aligned with u1ECI and u2 close to u2ECI.',               url:'AerospaceUtilsHeaders/QFrom2UHeader.html'},
+      {name:'QHills',                   desc:'Generate the quaternion that transforms from the ECI to the Hills frame.',            url:'AerospaceUtilsHeaders/QHillsHeader.html'},
+      {name:'QIToBDot',                 desc:'Computes the time derivative of a quaternion.',                                       url:'AerospaceUtilsHeaders/QIToBDotHeader.html'},
+      {name:'QLVLH',                    desc:'Generate the quaternions that transform from ECI to LVLH coordinates.',               url:'AerospaceUtilsHeaders/QLVLHHeader.html'},
+      {name:'QLatLon',                  desc:'Generate the quaternions that transform from ECI to a lat/long frame.',               url:'AerospaceUtilsHeaders/QLatLonHeader.html'},
+      {name:'QNadirPoint',              desc:'Generate a quaternion that points a body vector towards nadir.',                      url:'AerospaceUtilsHeaders/QNadirPointHeader.html'},
+      {name:'QRotateToAlign',           desc:'Rotate about an axis to align "ua" as close as possible to target "ut".',            url:'AerospaceUtilsHeaders/QRotateToAlignHeader.html'},
+      {name:'QSLERP',                   desc:'Interpolate a quaternion using the SLERP algorithm.',                                 url:'AerospaceUtilsHeaders/QSLERPHeader.html'},
+      {name:'QToPFTarget',              desc:'Generate a quaternion to go to a planet fixed lat/long target.',                      url:'AerospaceUtilsHeaders/QToPFTargetHeader.html'},
+      {name:'R2LatLon',                 desc:'Computes geocentric latitude and longitude from r.',                                  url:'AerospaceUtilsHeaders/R2LatLonHeader.html'},
+      {name:'RVToRADec',                desc:'Computes right ascension and declination and their rates.',                           url:'AerospaceUtilsHeaders/RVToRADecHeader.html'},
+      {name:'RaDec2Q',                  desc:'Right ascension and declination to a quaternion.',                                   url:'AerospaceUtilsHeaders/RaDec2QHeader.html'},
+      {name:'RollPitchToQECI',          desc:'Convert roll, pitch, r and v to QECIToBody.',                                       url:'AerospaceUtilsHeaders/RollPitchToQECIHeader.html'},
+      {name:'SunAzEl',                  desc:'Approx. azimuth and elevation of the sun for a time and place on earth.',            url:'AerospaceUtilsHeaders/SunAzElHeader.html'},
+      {name:'TargetFromRPVD',           desc:'Finds a target on a planet.',                                                        url:'AerospaceUtilsHeaders/TargetFromRPVDHeader.html'},
+      {name:'U2AzEl',                   desc:'Converts a unit vector to azimuth and elevation.',                                   url:'AerospaceUtilsHeaders/U2AzElHeader.html'},
+      {name:'U2RADec',                  desc:'Computes the right ascension and declination from a unit vector.',                   url:'AerospaceUtilsHeaders/U2RADecHeader.html'},
+    ]
+  },
+  Visualization: {
+    label: 'Visualization',
+    items: [
+      {name:'Draw2DViewPlugIn',       desc:'Draw the spacecraft CAD components in a 2D representation.',              url:'AerospaceUtilsHeaders/Draw2DViewPlugInHeader.html'},
+      {name:'DrawPatch',              desc:'Draw a series of patches.',                                               url:'AerospaceUtilsHeaders/DrawPatchHeader.html'},
+      {name:'DrawSCPlanPlugIn',       desc:'Draw a spacecraft CAD model in a plain 3D box with Gouraud lighting.',    url:'AerospaceUtilsHeaders/DrawSCPlanPlugInHeader.html'},
+      {name:'DrawSpacecraftPatches',  desc:'Draw the spacecraft CAD model using patches.',                            url:'AerospaceUtilsHeaders/DrawSpacecraftPatchesHeader.html'},
+      {name:'ShowCAD',                desc:'Display a stored CAD model using DrawSCPlanPlugIn.',                      url:'AerospaceUtilsHeaders/ShowCADHeader.html'},
+      {name:'SpacecraftPlugIn',       desc:'Create a Spacecraft GUI plug in.',                                        url:'AerospaceUtilsHeaders/SpacecraftPlugInHeader.html'},
+    ]
+  }
+};
+
+// Build flat search index
+const INDEX = [];
+Object.entries(SECTIONS).forEach(([key, sec]) => {
+  sec.items.forEach(item => INDEX.push({...item, folder: key}));
+});
+
+// Detail panel
+const overlay = document.getElementById('detail-overlay');
+const panel   = document.getElementById('detail-panel');
+const iframe  = document.getElementById('detail-iframe');
+const dtitle  = document.getElementById('detail-title');
+const dclose  = document.getElementById('detail-close');
+
+function openPanel(name, url) {
+  dtitle.textContent = name;
+  iframe.src = url;
+  overlay.classList.add('open');
+  panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  panel.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  iframe.src = 'about:blank';
+}
+
+dclose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+// Render a folder into the content pane
+function renderFolder(key) {
+  const sec = SECTIONS[key];
+  document.getElementById('pane-title').textContent = sec.label;
+  document.getElementById('pane-count').textContent = sec.items.length + ' entries';
+  const list = document.getElementById('fn-list');
+  list.innerHTML = sec.items.map(item => {
+    if (!item.url) {
+      return `<div class="fn-row data">
+        <span class="fn-row-name">${item.name}</span>
+        <span class="fn-row-desc">${item.desc}</span>
+      </div>`;
+    }
+    return `<div class="fn-row" data-url="${item.url}" data-name="${item.name}">
+      <span class="fn-row-name">${item.name}</span>
+      <span class="fn-row-desc">${item.desc}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.fn-row[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+// Sidebar click
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    renderFolder(el.dataset.folder);
+  });
+});
+
+// Initial render
+renderFolder('AeroData');
+
+// Search
+const inp = document.getElementById('search-input');
+const clr = document.getElementById('search-clear');
+const resDiv = document.getElementById('search-results');
+const resMeta = document.getElementById('results-meta');
+const resList = document.getElementById('results-list');
+const statusEl = document.getElementById('search-status');
+const browseEl = document.getElementById('browse-content');
+
+clr.style.display = 'none';
+
+function run() {
+  const q = inp.value.trim().toLowerCase();
+  if (!q) {
+    resDiv.classList.remove('active');
+    browseEl.style.display = '';
+    statusEl.textContent = 'Showing all entries.';
+    clr.style.display = 'none';
+    return;
+  }
+  clr.style.display = '';
+  browseEl.style.display = 'none';
+  resDiv.classList.add('active');
+
+  const terms = q.split(/\s+/);
+  const hits = INDEX.filter(i =>
+    terms.every(t => i.name.toLowerCase().includes(t) || i.desc.toLowerCase().includes(t) || i.folder.toLowerCase().includes(t))
+  );
+  statusEl.textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''} found.`;
+  resMeta.innerHTML = hits.length
+    ? `<strong>${hits.length}</strong> result${hits.length !== 1 ? 's' : ''} for &ldquo;<strong>${q}</strong>&rdquo;`
+    : `No results for <strong>"${q}"</strong>.`;
+
+  resList.innerHTML = hits.length ? hits.map(h => {
+    const inner = `<span class="rc-name">${h.name}</span><span class="rc-desc">${h.desc}</span><span class="rc-folder">${h.folder}</span>`;
+    return h.url
+      ? `<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">${inner}</div>`
+      : `<div class="rc" style="cursor:default">${inner}</div>`;
+  }).join('') : `<div class="no-results">No matches — try a different keyword.</div>`;
+
+  resList.querySelectorAll('.rc[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+inp.addEventListener('input', run);
+clr.addEventListener('click', () => { inp.value = ''; run(); inp.focus(); });
+</script>
+</body>
+</html>

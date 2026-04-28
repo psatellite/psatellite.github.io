@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaunchVehicle Module — Spacecraft Design Toolbox</title>
+<style>
+:root{--blue:#0070AD;--blue-dark:#004f7c;--blue-darker:#003557;--blue-light:#3a96c9;--blue-faint:#eef6fb;--blue-xl:#c8e6f5;--white:#fff;--gray-50:#f7f9fb;--gray-100:#f0f4f8;--gray-200:#dde4ed;--gray-400:#8fa3b8;--gray-600:#4a5c70;--gray-800:#1b2a3b;--shadow-sm:0 1px 4px rgba(0,80,140,.08);--r-lg:16px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+.header{background-image:url('../SCTPro/Guides/images/headers/LaunchVehicle.png'),url('../SCTPro/Guides/images/headers/LaunchVehicle.jpg'),url('Guides/images/background.png');background-size:cover,cover,cover;background-repeat:no-repeat,no-repeat,no-repeat;background-position:center,center,center;background-color:var(--blue-darker);position:relative;}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+#search-results{display:none;margin-bottom:36px;}#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);}
+.rc{display:grid;grid-template-columns:minmax(0,220px) 1fr 140px;align-items:baseline;padding:10px 18px;border-bottom:1px solid var(--gray-100);color:inherit;gap:16px;transition:background .12s;}
+.rc:last-child{border-bottom:none;}.rc:hover{background:var(--blue-faint);}
+.rc-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+.explorer{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;overflow-y:auto;max-height:80vh;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:7px 16px;font-size:12.5px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;gap:6px;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;flex-shrink:0;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+.content-pane{overflow:hidden;min-width:0;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;}
+.fn-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;align-items:baseline;padding:9px 20px;border-bottom:1px solid var(--gray-100);gap:16px;color:inherit;transition:background .12s;cursor:pointer;}
+.fn-row:last-child{border-bottom:none;}.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fn-row-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.fn-row.data{cursor:default;}.fn-row.data:hover{background:transparent;}
+.fn-row.data .fn-row-name{color:var(--gray-800);font-family:Calibri,sans-serif;font-weight:400;}
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="../SCTPro/Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="../SCTPro/index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">LaunchVehicle Module</h1>
+    <p class="header-sub">Launch simulation, gravity turn, multi-stage, TSTO, reentry, guidance, vehicle design, and database tools.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions and data files…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>gravity turn</strong>, <strong>reentry</strong>, <strong>TSTO</strong>, <strong>payload</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
+<main class="main">
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="DemosGuidedSim"><span class="side-label">Demos/GuidedSim</span><span class="side-count">2</span></div>
+        <div class="side-item" data-folder="DemosLVModels"><span class="side-label">Demos/LVModels</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="DemosLaunchOpt"><span class="side-label">Demos/LaunchOpt</span><span class="side-count">2</span></div>
+        <div class="side-item" data-folder="DemosLaunchSim"><span class="side-label">Demos/LaunchSim</span><span class="side-count">4</span></div>
+        <div class="side-item" data-folder="DemosMultiStage"><span class="side-label">Demos/MultiStage</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="DemosTSTO"><span class="side-label">Demos/TSTO</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="DemosVehicleDesign"><span class="side-label">Demos/VehicleDesign</span><span class="side-count">2</span></div>
+        <div class="side-item" data-folder="DemosVehicleModels"><span class="side-label">Demos/VehicleModels</span><span class="side-count">1</span></div>
+        <div class="side-item" data-folder="Hypersonic"><span class="side-label">Hypersonic</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="LVCoord"><span class="side-label">LVCoord</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="LVData"><span class="side-label">LVData</span><span class="side-count">8</span></div>
+        <div class="side-item" data-folder="LVDatabase"><span class="side-label">LVDatabase</span><span class="side-count">7</span></div>
+        <div class="side-item" data-folder="LVGuidance"><span class="side-label">LVGuidance</span><span class="side-count">7</span></div>
+        <div class="side-item" data-folder="LVModels"><span class="side-label">LVModels</span><span class="side-count">3</span></div>
+        <div class="side-item" data-folder="LaunchOpt"><span class="side-label">LaunchOpt</span><span class="side-count">10</span></div>
+        <div class="side-item" data-folder="LaunchSim"><span class="side-label">LaunchSim</span><span class="side-count">10</span></div>
+        <div class="side-item" data-folder="MultiStage"><span class="side-label">MultiStage</span><span class="side-count">7</span></div>
+        <div class="side-item" data-folder="SubOrbital"><span class="side-label">SubOrbital</span><span class="side-count">5</span></div>
+        <div class="side-item" data-folder="TSTO"><span class="side-label">TSTO</span><span class="side-count">6</span></div>
+        <div class="side-item" data-folder="Utilities"><span class="side-label">Utilities</span><span class="side-count">5</span></div>
+        <div class="side-item" data-folder="VehicleModels"><span class="side-label">VehicleModels</span><span class="side-count">10</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">Demos/GuidedSim</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+</footer>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
+<script>
+const SECTIONS={
+DemosGuidedSim:{label:'Demos/GuidedSim',items:[
+{name:'Guided3DSimDemo',desc:'Guided 3D simulation of an example 4 stage rocket.',url:'LaunchVehicleHeaders/Guided3DSimDemoHeader.html'},
+{name:'GuidedLaunch2DDemo',desc:'Simulation of a guided launch with GuidedLaunch2DSim.',url:'LaunchVehicleHeaders/GuidedLaunch2DDemoHeader.html'},
+]},
+DemosLVModels:{label:'Demos/LVModels',items:[
+{name:'LiftingReentrySimulation3D',desc:'A reentry simulation with lift and drag forces. Uses LiftingReentry3D.',url:'LaunchVehicleHeaders/LiftingReentrySimulation3DHeader.html'},
+{name:'ReentryCartSimulation',desc:'A reentry simulation in Cartesian coordinates using LaunchVehicle3D.',url:'LaunchVehicleHeaders/ReentryCartSimulationHeader.html'},
+{name:'ReentrySimulation',desc:'A reentry simulation in spherical coordinates. Uses RHSReentry.',url:'LaunchVehicleHeaders/ReentrySimulationHeader.html'},
+]},
+DemosLaunchOpt:{label:'Demos/LaunchOpt',items:[
+{name:'GravityTurnDemo',desc:'Gravity turn trajectories.',url:'LaunchVehicleHeaders/GravityTurnDemoHeader.html'},
+{name:'LSQLaunchDemo',desc:'LSQ launch demo.',url:'LaunchVehicleHeaders/LSQLaunchDemoHeader.html'},
+]},
+DemosLaunchSim:{label:'Demos/LaunchSim',items:[
+{name:'LaunchSimulation',desc:'Simulate a gravity turn trajectory in 2D.',url:'LaunchVehicleHeaders/LaunchSimulationHeader.html'},
+{name:'SSTO3DLaunchSimulation',desc:'Launch vehicle simulation for single stage to orbit (SSTO) vertical launch in 3D.',url:'LaunchVehicleHeaders/SSTO3DLaunchSimulationHeader.html'},
+{name:'SSTOLaunchSimulation',desc:'Launch vehicle simulation for single stage to orbit (SSTO) vertical launch.',url:'LaunchVehicleHeaders/SSTOLaunchSimulationHeader.html'},
+{name:'SolveGravityTurn',desc:'Solve for the initial conditions to perform a gravity turn trajectory.',url:'LaunchVehicleHeaders/SolveGravityTurnHeader.html'},
+]},
+DemosMultiStage:{label:'Demos/MultiStage',items:[
+{name:'ISSMission',desc:'Explore Single Stage To Orbit (SSTO) for an ISS orbit.',url:'LaunchVehicleHeaders/ISSMissionHeader.html'},
+{name:'LunarTransferSSTO',desc:'Plan a simplified lunar transfer assuming you start in a geo transfer orbit.',url:'LaunchVehicleHeaders/LunarTransferSSTOHeader.html'},
+{name:'StructuralFractionSSTO',desc:'Compute the payload fraction as a function of structural fraction.',url:'LaunchVehicleHeaders/StructuralFractionSSTOHeader.html'},
+]},
+DemosTSTO:{label:'Demos/TSTO',items:[
+{name:'OptimalFPA',desc:'Compute the optimal flight path angle as a function of altitude.',url:'LaunchVehicleHeaders/OptimalFPAHeader.html'},
+{name:'TSTODemo',desc:'TSTO takeoff demo.',url:'LaunchVehicleHeaders/TSTODemoHeader.html'},
+{name:'TSTOSimulation3D',desc:'End-to-end TSTO launch simulation.',url:'LaunchVehicleHeaders/TSTOSimulation3DHeader.html'},
+]},
+DemosVehicleDesign:{label:'Demos/VehicleDesign',items:[
+{name:'ALASA',desc:'Three stage to orbit launch vehicle.',url:'LaunchVehicleHeaders/ALASAHeader.html'},
+{name:'LiftAndDragForUpperStage',desc:'Compute lift and drag coefficients for an upper stage.',url:'LaunchVehicleHeaders/LiftAndDragForUpperStageHeader.html'},
+]},
+DemosVehicleModels:{label:'Demos/VehicleModels',items:[
+{name:'DatabaseHistograms',desc:'Histograms of all available launch vehicle models.',url:'LaunchVehicleHeaders/DatabaseHistogramsHeader.html'},
+]},
+Hypersonic:{label:'Hypersonic',items:[
+{name:'NewtonianAeroPropertiesFromOBJFile',desc:'Computes the normal coefficient of a body in hypersonic flow.',url:'LaunchVehicleHeaders/NewtonianAeroPropertiesFromOBJFileHeader.html'},
+{name:'NewtonianLD3D',desc:'Newtonian lift and drag for hypersonic flight in a standard atmosphere.',url:'LaunchVehicleHeaders/NewtonianLD3DHeader.html'},
+{name:'TurboRamjetSim',desc:'Simulates a turboramjet engine on a fixed flight path angle trajectory.',url:'LaunchVehicleHeaders/TurboRamjetSimHeader.html'},
+]},
+LVCoord:{label:'LVCoord',items:[
+{name:'IncLatVelToAzimuthHeading',desc:'Compute azimuth and heading required at latitude and V to reach inclination.',url:'LaunchVehicleHeaders/IncLatVelToAzimuthHeadingHeader.html'},
+{name:'LatLonToRangeAzimuth',desc:'Compute range and azimuth angle from a source site to a destination.',url:'LaunchVehicleHeaders/LatLonToRangeAzimuthHeader.html'},
+{name:'VEFToVGamAz',desc:'Compute the velocity magnitude, flight path angle and azimuth from a vector.',url:'LaunchVehicleHeaders/VEFToVGamAzHeader.html'},
+]},
+LVData:{label:'LVData',items:[
+{name:'EngineData.mat',desc:'Thrust & sFC tables for ramjet and F135 turbofan.',url:null},
+{name:'TSTOEngineData.mat',desc:'Thrust & sFC tables for TSTO ramjet and turbofan.',url:null},
+{name:'TSTOFerryData.mat',desc:'Aerodynamic and mass data for a TSTO first stage.',url:null},
+{name:'TSTOOrbiterData.mat',desc:'Aerodynamic and mass data for a TSTO second stage.',url:null},
+{name:'UpperStage.obj',desc:'OBJ file for example upper stage.',url:null},
+{name:'pk80_direct_1250_300.mat',desc:'Saved data from LaunchGUI for direct launch.',url:null},
+{name:'pk80_indirect_1250_300.mat',desc:'Saved data from LaunchGUI for indirect launch.',url:null},
+{name:'srt_upper_no_gear.obj',desc:'OBJ file of SRT upper stage with gear up.',url:null},
+]},
+LVDatabase:{label:'LVDatabase',items:[
+{name:'CreateRocketModel',desc:'Create a rocket model from individual fields.',url:'LaunchVehicleHeaders/CreateRocketModelHeader.html'},
+{name:'FormatRocketDB',desc:'Reformat the data from the csv file into the standard data structure.',url:'LaunchVehicleHeaders/FormatRocketDBHeader.html'},
+{name:'GetStage',desc:'Get all of the LV data fields for a particular stage.',url:'LaunchVehicleHeaders/GetStageHeader.html'},
+{name:'LVDatabase.csv',desc:'CSV file of launch vehicles around the world.',url:null},
+{name:'LVUnitedStates.csv',desc:'CSV file of US launch vehicles.',url:null},
+{name:'RocketDatabase',desc:'Load the properties for a rocket: mS, thrust, ISP, exhaust velocity.',url:'LaunchVehicleHeaders/RocketDatabaseHeader.html'},
+{name:'VonBraunRocket',desc:'The fictional Von Braun three-stage space shuttle.',url:'LaunchVehicleHeaders/VonBraunRocketHeader.html'},
+]},
+LVGuidance:{label:'LVGuidance',items:[
+{name:'ThrustAngleConstant',desc:'Constant thrust angle control for 2D simulations.',url:'LaunchVehicleHeaders/ThrustAngleConstantHeader.html'},
+{name:'ThrustAngleExplicit',desc:'Explicit guidance for a 2D launch simulation.',url:'LaunchVehicleHeaders/ThrustAngleExplicitHeader.html'},
+{name:'ThrustAngleGravity',desc:'Gravity turn thrust angle (0 degrees) for 2D simulations.',url:'LaunchVehicleHeaders/ThrustAngleGravityHeader.html'},
+{name:'ThrustAngleVGain',desc:'Velocity to be gained for a 2D launch simulation.',url:'LaunchVehicleHeaders/ThrustAngleVGainHeader.html'},
+{name:'ThrustControlConstantAngle',desc:'Thrust control function to apply thrust at a fixed angle above horizon.',url:'LaunchVehicleHeaders/ThrustControlConstantAngleHeader.html'},
+{name:'ThrustControlGravityTurn',desc:'Thrust control function during gravity turn.',url:'LaunchVehicleHeaders/ThrustControlGravityTurnHeader.html'},
+{name:'ThrustControlRaiseApogee',desc:'Thrust control function to raise the apogee using fminbnd.',url:'LaunchVehicleHeaders/ThrustControlRaiseApogeeHeader.html'},
+]},
+LVModels:{label:'LVModels',items:[
+{name:'LiftAndDragSeaLevelToOrbit',desc:'Two dimensional lift and drag with skin friction.',url:'LaunchVehicleHeaders/LiftAndDragSeaLevelToOrbitHeader.html'},
+{name:'RHSLiftingReentry3D',desc:'The right hand side of a 3D lifting launch vehicle model.',url:'LaunchVehicleHeaders/RHSLiftingReentry3DHeader.html'},
+{name:'RHSReentry',desc:'Non dimensional reentry dynamics model.',url:'LaunchVehicleHeaders/RHSReentryHeader.html'},
+]},
+LaunchOpt:{label:'LaunchOpt',items:[
+{name:'FGravityTurn',desc:'Cost function for gravity turn to zero flight path angle.',url:'LaunchVehicleHeaders/FGravityTurnHeader.html'},
+{name:'FMinTOrbitInjection',desc:'Function to be minimized by fmins for MinTOrbitInjection.',url:'LaunchVehicleHeaders/FMinTOrbitInjectionHeader.html'},
+{name:'GuidedLaunch2DCost',desc:'Cost function for the 2D launch via GuidedLaunchOpt2D.',url:'LaunchVehicleHeaders/GuidedLaunch2DCostHeader.html'},
+{name:'GuidedLaunchOpt2D',desc:'Compute the parameters to perform a 2D launch into a circular orbit.',url:'LaunchVehicleHeaders/GuidedLaunchOpt2DHeader.html'},
+{name:'LSQLaunch',desc:'Use least squares approach to compute launch conditions.',url:'LaunchVehicleHeaders/LSQLaunchHeader.html'},
+{name:'LSQLaunchSim',desc:'Simulate launch trajectory given initial parameters, return final states.',url:'LaunchVehicleHeaders/LSQLaunchSimHeader.html'},
+{name:'LaunchOptions',desc:'Specify the options for a launch simulation using GuidedLaunch2D.',url:'LaunchVehicleHeaders/LaunchOptionsHeader.html'},
+{name:'LaunchSummary',desc:'Print out summary of launch data. For use with GuidedLaunchOpt2D.',url:'LaunchVehicleHeaders/LaunchSummaryHeader.html'},
+{name:'MinTOrbitInjection',desc:'Constant thrust minimum time orbit injection.',url:'LaunchVehicleHeaders/MinTOrbitInjectionHeader.html'},
+{name:'RHSMinTOrbitInjection',desc:'RHS for planar equations.',url:'LaunchVehicleHeaders/RHSMinTOrbitInjectionHeader.html'},
+]},
+LaunchSim:{label:'LaunchSim',items:[
+{name:'GravityTurnSim2D',desc:'Perform a gravity-turn simulation using RHSLaunchVehicle2D.',url:'LaunchVehicleHeaders/GravityTurnSim2DHeader.html'},
+{name:'GuidedLaunch2DRHS',desc:'The right hand side of a guided 2D launch model.',url:'LaunchVehicleHeaders/GuidedLaunch2DRHSHeader.html'},
+{name:'GuidedLaunch2DSim',desc:'Simulates a 2D guided launch with the specified payload mass.',url:'LaunchVehicleHeaders/GuidedLaunch2DSimHeader.html'},
+{name:'GuidedLaunch3D',desc:"Simulate a guided launch to LEO, for 'examplerocket'.",url:'LaunchVehicleHeaders/GuidedLaunch3DHeader.html'},
+{name:'GuidedLaunch3DRHS',desc:'Right hand side for 3D guided launch to orbit in ECI frame.',url:'LaunchVehicleHeaders/GuidedLaunch3DRHSHeader.html'},
+{name:'LaunchGUI',desc:'Select a launch vehicle, set initial conditions, simulate 2D launch.',url:'LaunchVehicleHeaders/LaunchGUIHeader.html'},
+{name:'LaunchRHSData',desc:'Create the data structure needed for launch simulations.',url:'LaunchVehicleHeaders/LaunchRHSDataHeader.html'},
+{name:'RHSLaunchVehicle2D',desc:'The right hand side of a 2D launch model with gravity turn.',url:'LaunchVehicleHeaders/RHSLaunchVehicle2DHeader.html'},
+{name:'RHSLaunchVehicle3D',desc:'The right hand side of a 3D launch model with gravity turn.',url:'LaunchVehicleHeaders/RHSLaunchVehicle3DHeader.html'},
+{name:'RocketDrag',desc:'Compute the drag on a rocket using a plate model or Jones/Sears/Haack.',url:'LaunchVehicleHeaders/RocketDragHeader.html'},
+]},
+MultiStage:{label:'MultiStage',items:[
+{name:'BurnoutVelocity',desc:'Compute the burnout velocity for a multi-stage rocket.',url:'LaunchVehicleHeaders/BurnoutVelocityHeader.html'},
+{name:'MSData',desc:'Complete the stage data for a multi-stage launch vehicle.',url:'LaunchVehicleHeaders/MSDataHeader.html'},
+{name:'MSThrustModel',desc:'Simple thrust model for multi-stage vehicle.',url:'LaunchVehicleHeaders/MSThrustModelHeader.html'},
+{name:'MSVRatio',desc:'Compute the velocity ratio for a multi-stage rocket.',url:'LaunchVehicleHeaders/MSVRatioHeader.html'},
+{name:'OptimalPayloadRatio',desc:'Compute the optimal payload ratios for a multi-stage rocket.',url:'LaunchVehicleHeaders/OptimalPayloadRatioHeader.html'},
+{name:'PayloadMassForBurnoutVelocity',desc:'Compute the payload mass to achieve a given burnout velocity.',url:'LaunchVehicleHeaders/PayloadMassForBurnoutVelocityHeader.html'},
+{name:'SS2O',desc:'Compute single-stage fuel mass needed to reach a velocity.',url:'LaunchVehicleHeaders/SS2OHeader.html'},
+]},
+SubOrbital:{label:'SubOrbital',items:[
+{name:'SubOrbDistance',desc:'Compute the min angular distance (around the Earth) that connects 2 points.',url:'LaunchVehicleHeaders/SubOrbDistanceHeader.html'},
+{name:'SubOrbLambert',desc:'Find initial velocity and flight path angle that gives desired distance.',url:'LaunchVehicleHeaders/SubOrbLambertHeader.html'},
+{name:'SubOrbMaxRange',desc:'Computes maximum range for a sub-orbital trajectory given initial velocity.',url:'LaunchVehicleHeaders/SubOrbMaxRangeHeader.html'},
+{name:'SubOrbTrajAnalysis',desc:'Analyze the trajectories for around-the-Earth sub-orbital launches.',url:'LaunchVehicleHeaders/SubOrbTrajAnalysisHeader.html'},
+{name:'SubOrbVelocity',desc:'Compute initial velocity and flight time for a sub-orbital trajectory.',url:'LaunchVehicleHeaders/SubOrbVelocityHeader.html'},
+]},
+TSTO:{label:'TSTO',items:[
+{name:'BoostPhaseDeltaV',desc:'Compute DV required to enter circular orbit at hF given V0 and gamma0.',url:'LaunchVehicleHeaders/BoostPhaseDeltaVHeader.html'},
+{name:'RHSOptimalFPA',desc:'Compute the delta-V required to raise the orbit to altitude hF.',url:'LaunchVehicleHeaders/RHSOptimalFPAHeader.html'},
+{name:'RHSTSTO',desc:'Compute state and mass derivatives for a two-stage launch vehicle.',url:'LaunchVehicleHeaders/RHSTSTOHeader.html'},
+{name:'TSTODragData',desc:'Generates TSTO drag data for use by LiftAndDragJonesSearsHaack.',url:'LaunchVehicleHeaders/TSTODragDataHeader.html'},
+{name:'TSTOFlightProfile',desc:'Computes the TSTO flight profile.',url:'LaunchVehicleHeaders/TSTOFlightProfileHeader.html'},
+{name:'TSTOSizing',desc:'Size a horizontal launch/horizontal landing two stage to orbit vehicle.',url:'LaunchVehicleHeaders/TSTOSizingHeader.html'},
+]},
+Utilities:{label:'Utilities',items:[
+{name:'LaunchConstants',desc:'Uses persistent variables to store launch vehicle constants.',url:'LaunchVehicleHeaders/LaunchConstantsHeader.html'},
+{name:'LaunchTime',desc:'Compute the time until launch, given launch site and desired orbit.',url:'LaunchVehicleHeaders/LaunchTimeHeader.html'},
+{name:'ReentryPlot',desc:'Plot values from reentry simulations.',url:'LaunchVehicleHeaders/ReentryPlotHeader.html'},
+{name:'StageTimes',desc:'Compute the ignition and burnout times given stage mass histories.',url:'LaunchVehicleHeaders/StageTimesHeader.html'},
+{name:'WriteEngineData',desc:'Write engine data to a table.',url:'LaunchVehicleHeaders/WriteEngineDataHeader.html'},
+]},
+VehicleModels:{label:'VehicleModels',items:[
+{name:'LVCombineSRB',desc:'Combine the SRB(s) and first stage into a new first stage.',url:'LaunchVehicleHeaders/LVCombineSRBHeader.html'},
+{name:'LVModelFeasibility',desc:'Compute the feasibility of a given LV model. Checks several conditions.',url:'LaunchVehicleHeaders/LVModelFeasibilityHeader.html'},
+{name:'LVModelFeasibilityFix',desc:'Fix a launch vehicle model to make it feasible.',url:'LaunchVehicleHeaders/LVModelFeasibilityFixHeader.html'},
+{name:'LVModelFeasibilityReport',desc:'Compute the feasibility of all models in the LVDatabase.csv.',url:'LaunchVehicleHeaders/LVModelFeasibilityReportHeader.html'},
+{name:'LVStageTimes',desc:'Compute the launch vehicle staging times from the model and coast times.',url:'LaunchVehicleHeaders/LVStageTimesHeader.html'},
+{name:'LVThrustToWeight',desc:'Compute takeoff thrust to weight ratio for a launch vehicle.',url:'LaunchVehicleHeaders/LVThrustToWeightHeader.html'},
+{name:'ParallelToSerialStages',desc:'Separate 2 parallel stages with partial overlap, into 2 serial stages.',url:'LaunchVehicleHeaders/ParallelToSerialStagesHeader.html'},
+{name:'RemoveStage',desc:'Remove a stage from a multi-stage data structure.',url:'LaunchVehicleHeaders/RemoveStageHeader.html'},
+{name:'ScaleVehicle',desc:"Scale a vehicle's properties.",url:'LaunchVehicleHeaders/ScaleVehicleHeader.html'},
+{name:'SetPayloadMass',desc:'Set payload mass in structure d.',url:'LaunchVehicleHeaders/SetPayloadMassHeader.html'},
+]},
+};
+
+const INDEX=[];
+Object.entries(SECTIONS).forEach(([key,sec])=>{sec.items.forEach(item=>INDEX.push({...item,folder:sec.label}));});
+
+const overlay=document.getElementById('detail-overlay'),panel=document.getElementById('detail-panel'),iframe=document.getElementById('detail-iframe'),dtitle=document.getElementById('detail-title'),dclose=document.getElementById('detail-close');
+function openPanel(name,url){dtitle.textContent=name;iframe.src=url;overlay.classList.add('open');panel.classList.add('open');document.body.style.overflow='hidden';}
+function closePanel(){panel.classList.remove('open');overlay.classList.remove('open');document.body.style.overflow='';iframe.src='about:blank';}
+dclose.addEventListener('click',closePanel);overlay.addEventListener('click',closePanel);document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
+
+function renderFolder(key){
+  const sec=SECTIONS[key];
+  document.getElementById('pane-title').textContent=sec.label;
+  document.getElementById('pane-count').textContent=sec.items.length+' entries';
+  const list=document.getElementById('fn-list');
+  list.innerHTML=sec.items.map(item=>item.url
+    ?`<div class="fn-row" data-url="${item.url}" data-name="${item.name}"><span class="fn-row-name">${item.name}</span><span class="fn-row-desc">${item.desc}</span></div>`
+    :`<div class="fn-row data"><span class="fn-row-name">${item.name}</span><span class="fn-row-desc">${item.desc}</span></div>`
+  ).join('');
+  list.querySelectorAll('.fn-row[data-url]').forEach(row=>row.addEventListener('click',()=>openPanel(row.dataset.name,row.dataset.url)));
+}
+
+document.querySelectorAll('.side-item').forEach(el=>el.addEventListener('click',()=>{
+  document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');renderFolder(el.dataset.folder);
+}));
+renderFolder('DemosGuidedSim');
+
+const inp=document.getElementById('search-input'),clr=document.getElementById('search-clear'),resDiv=document.getElementById('search-results'),resMeta=document.getElementById('results-meta'),resList=document.getElementById('results-list'),statusEl=document.getElementById('search-status'),browseEl=document.getElementById('browse-content');
+clr.style.display='none';
+function run(){
+  const q=inp.value.trim().toLowerCase();
+  if(!q){resDiv.classList.remove('active');browseEl.style.display='';statusEl.textContent='Showing all entries.';clr.style.display='none';return;}
+  clr.style.display='';browseEl.style.display='none';resDiv.classList.add('active');
+  const terms=q.split(/\s+/);
+  const hits=INDEX.filter(i=>terms.every(t=>i.name.toLowerCase().includes(t)||i.desc.toLowerCase().includes(t)||i.folder.toLowerCase().includes(t)));
+  statusEl.textContent=`${hits.length} result${hits.length!==1?'s':''} found.`;
+  resMeta.innerHTML=hits.length?`<strong>${hits.length}</strong> result${hits.length!==1?'s':''} for &ldquo;<strong>${q}</strong>&rdquo;`:`No results for <strong>"${q}"</strong>.`;
+  resList.innerHTML=hits.length?hits.map(h=>{const inner=`<span class="rc-name">${h.name}</span><span class="rc-desc">${h.desc}</span><span class="rc-folder">${h.folder}</span>`;return h.url?`<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">${inner}</div>`:`<div class="rc" style="cursor:default">${inner}</div>`;}).join(''):`<div class="no-results">No matches — try a different keyword.</div>`;
+  resList.querySelectorAll('.rc[data-url]').forEach(row=>row.addEventListener('click',()=>openPanel(row.dataset.name,row.dataset.url)));
+}
+inp.addEventListener('input',run);
+clr.addEventListener('click',()=>{inp.value='';run();inp.focus();});
+</script>
+</body>
+</html>

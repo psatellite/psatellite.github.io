@@ -1,314 +1,587 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<STYLE TYPE="text/css">
-td.link{font-family: Cambria; font-size: 12pt;}
-td.bio{font-family: Cambria; font-size: 12pt;}
-td.cl{height: 20; cellpadding: 5; cellspacing: 5;}
-h1{text-align: left;}
-h2{font-family: Cambria; color: #990000;}
-h3{font-family: Cambria; color: #990000; font-size: 18pt; }
-table.cl{font-family: Cambria; background-color: #e1e6f2;
-font-size: 14pt; border: 0; cellpadding: 5; cellspacing: 5;}
-</STYLE>
-<title>Thermal Functions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermal Module — Spacecraft Design Toolbox</title>
+<style>
+:root {
+  --blue:#0070AD; --blue-dark:#004f7c; --blue-darker:#003557;
+  --blue-light:#3a96c9; --blue-faint:#eef6fb; --blue-xl:#c8e6f5;
+  --white:#fff; --gray-50:#f7f9fb; --gray-100:#f0f4f8;
+  --gray-200:#dde4ed; --gray-400:#8fa3b8; --gray-600:#4a5c70; --gray-800:#1b2a3b;
+  --shadow-sm:0 1px 4px rgba(0,80,140,.08); --shadow:0 4px 18px rgba(0,80,140,.11);
+  --r:10px; --r-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+
+/* HEADER */
+.header{
+  background-image:url('Guides/images/headers/Thermal.png'),url('Guides/images/headers/Thermal.jpg'),url('Guides/images/background.png');
+  background-size:cover,cover,cover;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center center,center center,center center;
+  background-color:var(--blue-darker);
+  position:relative;
+}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}
+.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+
+/* SEARCH */
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+
+/* SEARCH RESULTS */
+#search-results{display:none;margin-bottom:36px;}
+#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}
+.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);min-width:0;}
+.rc{
+  display:grid;
+  grid-template-columns:minmax(320px,420px) minmax(0,1fr) 160px;
+  align-items:start;
+  padding:10px 18px;
+  border-bottom:1px solid var(--gray-100);
+  text-decoration:none;
+  color:inherit;
+  gap:16px;
+  transition:background .12s;
+}
+.rc:last-child{border-bottom:none;}
+.rc:hover{background:var(--blue-faint);}
+.rc-name{
+  font-size:13.5px;
+  font-weight:700;
+  color:var(--blue-dark);
+  font-family:monospace;
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.rc-desc{
+  font-size:12.5px;
+  color:var(--gray-600);
+  line-height:1.4;
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+
+/* EXPLORER LAYOUT */
+.explorer{display:grid;grid-template-columns:270px 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+
+/* SIDEBAR */
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;gap:10px;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;flex-shrink:0;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+
+/* CONTENT PANE */
+.content-pane{overflow:hidden;min-width:0;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;min-width:0;}
+.fn-row{
+  display:grid;
+  grid-template-columns:minmax(320px,420px) minmax(0,1fr);
+  align-items:start;
+  padding:9px 20px;
+  border-bottom:1px solid var(--gray-100);
+  gap:16px;
+  text-decoration:none;
+  color:inherit;
+  transition:background .12s;
+  cursor:pointer;
+}
+.fn-row:last-child{border-bottom:none;}
+.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{
+  font-size:13.5px;
+  font-weight:700;
+  color:var(--blue-dark);
+  font-family:monospace;
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.fn-row-desc{
+  font-size:12.5px;
+  color:var(--gray-600);
+  line-height:1.4;
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+/* data items */
+.fn-row.data{cursor:default;}
+.fn-row.data:hover{background:transparent;}
+.fn-row.data .fn-row-name{color:var(--gray-800);}
+
+/* DETAIL PANEL */
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+
+/* FOOTER */
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+
+@media(max-width:700px){
+  .header-inner,.search-outer,.main{padding-left:18px;padding-right:18px;}
+  .header-title{font-size:22px;}
+  .explorer{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--gray-200);display:flex;flex-wrap:wrap;gap:4px;padding:10px;}
+  .side-item{border-left:none;border-radius:20px;border:1.5px solid var(--gray-200);}
+  .side-item.active{border-color:var(--blue);}
+  .fn-row,.rc{grid-template-columns:1fr;gap:4px;}
+  .rc-folder{text-align:left;}
+  .detail-panel{width:92%;}
+}
+</style>
 </head>
 <body>
-<div class=page>
 
-<table width="600"><tr><td width="50%"><h1>Thermal Module</h1></td>
-<td width="50%"><img src="Guides/images/PSSLogo.jpg"></td></tr></table>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">Thermal Module</h1>
+    <p class="header-sub">Thermal analysis, heat transfer, Brayton and Rankine cycles, thermal graphics, and material properties.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions and data files…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>Brayton</strong>, <strong>heat</strong>, <strong>radiation</strong>, <strong>temperature</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-<h2>Directory List</h2>
-<a name="top"></a>
-<table border="1" cellpadding="0"><tr><td>
-<table class="cl" width="600">
-<tr><td class="cl" width="33%"><a href="ThermalFunctions.html#Brayton">Brayton</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/Brayton">Demos/Brayton</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/HeatTransfer">Demos/HeatTransfer</a></td></tr>
- <tr><td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/Rankine">Demos/Rankine</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/ThermalAnalysis">Demos/ThermalAnalysis</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/ThermalControl">Demos/ThermalControl</a></td></tr>
- <tr><td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/ThermalGraphics">Demos/ThermalGraphics</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Demos/Tutorials">Demos/Tutorials</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#HeatExchanger">HeatExchanger</a></td></tr>
- <tr><td class="cl" width="33%"><a href="ThermalFunctions.html#HeatTransfer">HeatTransfer</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#Rankine">Rankine</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#ThermalAnalysis">ThermalAnalysis</a></td></tr>
- <tr><td class="cl" width="33%"><a href="ThermalFunctions.html#ThermalData">ThermalData</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#ThermalGraphics">ThermalGraphics</a></td>
- <td class="cl" width="33%"><a href="ThermalFunctions.html#ThermalProperties">ThermalProperties</a></td></tr>
- </table></td></tr></table><br><hr>
+<main class="main">
 
-<h3><a name="Brayton"></a>Brayton</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/AxialTurbineDesignHeader.html">AxialTurbineDesign</a> </td>
-<td class="bio"> Design an axial turbine </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BladeSpacingHeader.html">BladeSpacing</a> </td>
-<td class="bio"> Computes s/b - blade spacing divided by the chord </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BladeStressHeader.html">BladeStress</a> </td>
-<td class="bio"> Compute stress on turbine blades. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BraytonHeader.html">Brayton</a> </td>
-<td class="bio"> Brayton Cycle </td></tr>
-<tr><td class="bio">BraytonCycleComplex.jpg</td><td class="bio">Two-compressor cycle diagram</td></tr>
-<tr><td class="bio">BraytonCycleComplexNoRecuperator.jpg</td><td class="bio">Cycle diagram without recuperator</td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BraytonIdealHeader.html">BraytonIdeal</a> </td>
-<td class="bio"> Ideal Brayton cycle </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BraytonWithRecuperatorHeader.html">BraytonWithRecuperator</a> </td>
-<td class="bio"> Brayton Cycle with Recuperator </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/CentrifugalCompressorHeader.html">CentrifugalCompressor</a> </td>
-<td class="bio"> Designs a centrifugal compressor. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/CycleDesignHeader.html">CycleDesign</a> </td>
-<td class="bio"> Brayton cycle design from temperature, pressure and efficiencies </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ImpactThicknessHeader.html">ImpactThickness</a> </td>
-<td class="bio"> For turbine blades going through the shell </td></tr>
-<tr><td class="bio">NewBrayton.png</td><td class="bio">Updated cycle diagram</td></tr>
-<tr><td class="bio">OrbiterBraytonCycleInternalBFD.png</td><td class="bio">Diagrams for pipe layout</td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SizeTurbineAndCompressorHeader.html">SizeTurbineAndCompressor</a> </td>
-<td class="bio"> Designs the turbine and compressor for a Brayton cycle. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
 
-<h3><a name="Demos/Brayton"></a>Demos/Brayton</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatEngineHeader.html">HeatEngine</a> </td>
-<td class="bio"> Brayton cycle heat engine design </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/OneMWAxialTurbineHeader.html">OneMWAxialTurbine</a> </td>
-<td class="bio"> Size 1 MW axial turbine </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SimpleBraytonCycleHeader.html">SimpleBraytonCycle</a> </td>
-<td class="bio"> Analysis of an ideal Brayton cycle </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="Brayton">Brayton <span class="side-count">14</span></div>
+        <div class="side-item" data-folder="DemosBrayton">Demos/Brayton <span class="side-count">3</span></div>
+        <div class="side-item" data-folder="DemosHeatTransfer">Demos/HeatTransfer <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="DemosRankine">Demos/Rankine <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="DemosThermalAnalysis">Demos/ThermalAnalysis <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="DemosThermalControl">Demos/ThermalControl <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="DemosThermalGraphics">Demos/ThermalGraphics <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="DemosTutorials">Demos/Tutorials <span class="side-count">0</span></div>
+        <div class="side-item" data-folder="HeatExchanger">HeatExchanger <span class="side-count">17</span></div>
+        <div class="side-item" data-folder="HeatTransfer">HeatTransfer <span class="side-count">2</span></div>
+        <div class="side-item" data-folder="Rankine">Rankine <span class="side-count">3</span></div>
+        <div class="side-item" data-folder="ThermalAnalysis">ThermalAnalysis <span class="side-count">22</span></div>
+        <div class="side-item" data-folder="ThermalData">ThermalData <span class="side-count">7</span></div>
+        <div class="side-item" data-folder="ThermalGraphics">ThermalGraphics <span class="side-count">3</span></div>
+        <div class="side-item" data-folder="ThermalProperties">ThermalProperties <span class="side-count">13</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">Brayton</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
 
-<h3><a name="Demos/HeatTransfer"></a>Demos/HeatTransfer</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatExchangerDesignHeader.html">HeatExchangerDesign</a> </td>
-<td class="bio"> Study the heat exchanger between the plasma and the magnets </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/MLIHeatTransferHeader.html">MLIHeatTransfer</a> </td>
-<td class="bio"> Total flux emitted to a surface through a layer of MLI </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ShellThermalAnalysisHeader.html">ShellThermalAnalysis</a> </td>
-<td class="bio"> Shell analysis </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SizeExchangerChannelHeader.html">SizeExchangerChannel</a> </td>
-<td class="bio"> Size the channels for heat transfer with He/Xe </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalCapacityHeader.html">ThermalCapacity</a> </td>
-<td class="bio"> Thermal capacity Nitrogen and CO2 </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+</main>
 
-<h3><a name="Demos/Rankine"></a>Demos/Rankine</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/RankineCycleDemoHeader.html">RankineCycleDemo</a> </td>
-<td class="bio"> Simple Rankine Cycle demo </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Back to Toolbox Index</a>
+</footer>
 
-<h3><a name="Demos/ThermalAnalysis"></a>Demos/ThermalAnalysis</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/IsothermalSpacecraftDemoHeader.html">IsothermalSpacecraftDemo</a> </td>
-<td class="bio"> Isothermal satellite simulation </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SCThermalDemoHeader.html">SCThermalDemo</a> </td>
-<td class="bio"> Demonstrates how to use the thermal modeling package </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TNetHeader.html">TNet</a> </td>
-<td class="bio"> Demonstrate Thermnet. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalEquilibriumBoxHeader.html">ThermalEquilibriumBox</a> </td>
-<td class="bio"> Thermal equilibrium examples. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThreeNodeNetworkHeader.html">ThreeNodeNetwork</a> </td>
-<td class="bio"> Demonstrate Thermnet with a three node model. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
 
-<h3><a name="Demos/ThermalControl"></a>Demos/ThermalControl</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/LQThermalControlHeader.html">LQThermalControl</a> </td>
-<td class="bio"> Design a linear quadratic temperature controller </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<script>
+const SECTIONS = {
+  Brayton: {
+    label: 'Brayton',
+    items: [
+      {name:'AxialTurbineDesign', desc:'Design an axial turbine.', url:'ThermalHeaders/AxialTurbineDesignHeader.html'},
+      {name:'BladeSpacing', desc:'Computes s/b - blade spacing divided by the chord.', url:'ThermalHeaders/BladeSpacingHeader.html'},
+      {name:'BladeStress', desc:'Compute stress on turbine blades.', url:'ThermalHeaders/BladeStressHeader.html'},
+      {name:'Brayton', desc:'Brayton Cycle.', url:'ThermalHeaders/BraytonHeader.html'},
+      {name:'BraytonCycleComplex.jpg', desc:'Two-compressor cycle diagram.', url:null},
+      {name:'BraytonCycleComplexNoRecuperator.jpg', desc:'Cycle diagram without recuperator.', url:null},
+      {name:'BraytonIdeal', desc:'Ideal Brayton cycle.', url:'ThermalHeaders/BraytonIdealHeader.html'},
+      {name:'BraytonWithRecuperator', desc:'Brayton Cycle with Recuperator.', url:'ThermalHeaders/BraytonWithRecuperatorHeader.html'},
+      {name:'CentrifugalCompressor', desc:'Designs a centrifugal compressor.', url:'ThermalHeaders/CentrifugalCompressorHeader.html'},
+      {name:'CycleDesign', desc:'Brayton cycle design from temperature, pressure and efficiencies.', url:'ThermalHeaders/CycleDesignHeader.html'},
+      {name:'ImpactThickness', desc:'For turbine blades going through the shell.', url:'ThermalHeaders/ImpactThicknessHeader.html'},
+      {name:'NewBrayton.png', desc:'Updated cycle diagram.', url:null},
+      {name:'OrbiterBraytonCycleInternalBFD.png', desc:'Diagrams for pipe layout.', url:null},
+      {name:'SizeTurbineAndCompressor', desc:'Designs the turbine and compressor for a Brayton cycle.', url:'ThermalHeaders/SizeTurbineAndCompressorHeader.html'}
+    ]
+  },
 
-<h3><a name="Demos/ThermalGraphics"></a>Demos/ThermalGraphics</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalCubeHeader.html">ThermalCube</a> </td>
-<td class="bio"> Create a simple satellite with 6 panels for thermal analysis. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosBrayton: {
+    label: 'Demos/Brayton',
+    items: [
+      {name:'HeatEngine', desc:'Brayton cycle heat engine design.', url:'ThermalHeaders/HeatEngineHeader.html'},
+      {name:'OneMWAxialTurbine', desc:'Size 1 MW axial turbine.', url:'ThermalHeaders/OneMWAxialTurbineHeader.html'},
+      {name:'SimpleBraytonCycle', desc:'Analysis of an ideal Brayton cycle.', url:'ThermalHeaders/SimpleBraytonCycleHeader.html'}
+    ]
+  },
 
-<h3><a name="Demos/Tutorials"></a>Demos/Tutorials</h3>
-<table border="0" cellpadding="2" width="100%">
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosHeatTransfer: {
+    label: 'Demos/HeatTransfer',
+    items: [
+      {name:'HeatExchangerDesign', desc:'Study the heat exchanger between the plasma and the magnets.', url:'ThermalHeaders/HeatExchangerDesignHeader.html'},
+      {name:'MLIHeatTransfer', desc:'Total flux emitted to a surface through a layer of MLI.', url:'ThermalHeaders/MLIHeatTransferHeader.html'},
+      {name:'ShellThermalAnalysis', desc:'Shell analysis.', url:'ThermalHeaders/ShellThermalAnalysisHeader.html'},
+      {name:'SizeExchangerChannel', desc:'Size the channels for heat transfer with He/Xe.', url:'ThermalHeaders/SizeExchangerChannelHeader.html'},
+      {name:'ThermalCapacity', desc:'Thermal capacity Nitrogen and CO2.', url:'ThermalHeaders/ThermalCapacityHeader.html'}
+    ]
+  },
 
-<h3><a name="HeatExchanger"></a>HeatExchanger</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/AbsoluteViscosityHeader.html">AbsoluteViscosity</a> </td>
-<td class="bio"> Computes the absolute viscosity. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/FrictionLaminarHeader.html">FrictionLaminar</a> </td>
-<td class="bio"> Computes the laminar friction. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatExchangerHeader.html">HeatExchanger</a> </td>
-<td class="bio"> Designs a heat exchanger for a one sided heat flux </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatExchangerWithLossesHeader.html">HeatExchangerWithLosses</a> </td>
-<td class="bio"> Implements a flat plate heat exchanger with radiation losses </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatTransferChannelHeader.html">HeatTransferChannel</a> </td>
-<td class="bio"> Designs a heat exchanger for a one sided heat flux </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatTransferCoeffHeader.html">HeatTransferCoeff</a> </td>
-<td class="bio"> Computes the Heat transfer coefficient. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatTransferCoeffTaylorHeader.html">HeatTransferCoeffTaylor</a> </td>
-<td class="bio"> HeatTransferCoeffTaylor Heat transfer coefficient based on Taylor </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/KinematicViscosityHeader.html">KinematicViscosity</a> </td>
-<td class="bio"> Computes the Kinematic viscosity from viscosity and density </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/NusseltDevelopingHeader.html">NusseltDeveloping</a> </td>
-<td class="bio"> Computes the Nusselt number for developing turbulent flow. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/NusseltLaminarHeader.html">NusseltLaminar</a> </td>
-<td class="bio"> Computes the Nusselt number for laminar flow. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/NusseltTurbulentHeader.html">NusseltTurbulent</a> </td>
-<td class="bio"> Computes the Nusselt number for fully developed turbulent flow. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PrandtlNikuradseHeader.html">PrandtlNikuradse</a> </td>
-<td class="bio"> Computes the Fanning friction factor for fully developed turbulent flow. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PrandtlNumberHeader.html">PrandtlNumber</a> </td>
-<td class="bio"> Computes the Prandtl Number. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PressureDropChannelHeader.html">PressureDropChannel</a> </td>
-<td class="bio"> Computes the channel pressure drop </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ReynoldsNumberKinematicHeader.html">ReynoldsNumberKinematic</a> </td>
-<td class="bio"> Computes the Reynolds number from kinematic viscosity </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalConductivityHeader.html">ThermalConductivity</a> </td>
-<td class="bio"> Computes the thermal conductivity </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalConductivityAndViscHeXeHeader.html">ThermalConductivityAndViscHeXe</a> </td>
-<td class="bio"> Computes the thermal conductivity and viscosity </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosRankine: {
+    label: 'Demos/Rankine',
+    items: [
+      {name:'RankineCycleDemo', desc:'Simple Rankine Cycle demo.', url:'ThermalHeaders/RankineCycleDemoHeader.html'}
+    ]
+  },
 
-<h3><a name="HeatTransfer"></a>HeatTransfer</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/OptimalMLIDensityHeader.html">OptimalMLIDensity</a> </td>
-<td class="bio"> Determine optimal Multi-layer Insulation (MLI) density </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RadiationShieldHeader.html">RadiationShield</a> </td>
-<td class="bio"> Computes temperatures on a radiation shield with MLI </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosThermalAnalysis: {
+    label: 'Demos/ThermalAnalysis',
+    items: [
+      {name:'IsothermalSpacecraftDemo', desc:'Isothermal satellite simulation.', url:'ThermalHeaders/IsothermalSpacecraftDemoHeader.html'},
+      {name:'SCThermalDemo', desc:'Demonstrates how to use the thermal modeling package.', url:'ThermalHeaders/SCThermalDemoHeader.html'},
+      {name:'TNet', desc:'Demonstrate Thermnet.', url:'ThermalHeaders/TNetHeader.html'},
+      {name:'ThermalEquilibriumBox', desc:'Thermal equilibrium examples.', url:'ThermalHeaders/ThermalEquilibriumBoxHeader.html'},
+      {name:'ThreeNodeNetwork', desc:'Demonstrate Thermnet with a three node model.', url:'ThermalHeaders/ThreeNodeNetworkHeader.html'}
+    ]
+  },
 
-<h3><a name="Rankine"></a>Rankine</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/RankineCycleHeader.html">RankineCycle</a> </td>
-<td class="bio"> Simple Rankine Cycle from turbine pressures </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SteamTablesSuperheatedEnthalpyHeader.html">SteamTablesSuperheatedEnthalpy</a> </td>
-<td class="bio"> Enthalpy for superheated steam or compressed water. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TSCurveHeader.html">TSCurve</a> </td>
-<td class="bio"> Generate the TS curve for water and steam </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosThermalControl: {
+    label: 'Demos/ThermalControl',
+    items: [
+      {name:'LQThermalControl', desc:'Design a linear quadratic temperature controller.', url:'ThermalHeaders/LQThermalControlHeader.html'}
+    ]
+  },
 
-<h3><a name="ThermalAnalysis"></a>ThermalAnalysis</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/AeroHeatFluxHeader.html">AeroHeatFlux</a> </td>
-<td class="bio"> Aerodynamic heat flux. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BTUToJouleHeader.html">BTUToJoule</a> </td>
-<td class="bio"> Converts BTUs to Joules </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/FSolarPanelThermalHeader.html">FSolarPanelThermal</a> </td>
-<td class="bio"> Used by fmins from SolarPanelThermal to compute panel temperatures. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/GrayBodyHeader.html">GrayBody</a> </td>
-<td class="bio"> Aborptivity and emissivity of a gray body. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/IsothermalHeader.html">Isothermal</a> </td>
-<td class="bio"> Model a spacecraft as an isothermal radiator. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/IsothermalHelioHeader.html">IsothermalHelio</a> </td>
-<td class="bio"> Isothermal model in heliocentric orbit. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/IsothermalLunarHeader.html">IsothermalLunar</a> </td>
-<td class="bio"> Model a spacecraft as an isothermal radiator in lunar orbit. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/JouleToBTUHeader.html">JouleToBTU</a> </td>
-<td class="bio"> Converts Joules to BTUs </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/LambertLHeader.html">LambertL</a> </td>
-<td class="bio"> Lambert's cosine law. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PanelThermalModelHeader.html">PanelThermalModel</a> </td>
-<td class="bio"> Computes the temperatures of a panel from a CAD model. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PlanckLHeader.html">PlanckL</a> </td>
-<td class="bio"> Planck's law for a black body. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RHSAerodynamicHeatingHeader.html">RHSAerodynamicHeating</a> </td>
-<td class="bio"> Compute aerodynamic heating. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RHSIsothermalHeader.html">RHSIsothermal</a> </td>
-<td class="bio"> Model a spacecraft as an isothermal radiator. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RadBFpHeader.html">RadBFp</a> </td>
-<td class="bio"> Radiation between equal area flat plates. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RadDaHeader.html">RadDa</a> </td>
-<td class="bio"> Radiation from an incremental area </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RadiationShapeFactorHeader.html">RadiationShapeFactor</a> </td>
-<td class="bio"> Computes the radiation shape factor </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SolarPanelThermalHeader.html">SolarPanelThermal</a> </td>
-<td class="bio"> Compute the front/back temperatures of a solar panel. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SpaceCameraHeader.html">SpaceCamera</a> </td>
-<td class="bio"> Draw spacecraft in orbit about a planet, as seen by an in-situ camera. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/SpacecraftThermalHeader.html">SpacecraftThermal</a> </td>
-<td class="bio"> Compute the temperature and input flux for the spacecraft components. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalColorMapHeader.html">ThermalColorMap</a> </td>
-<td class="bio"> Generates a color corresponding to a temperature. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalEquilibriumHeader.html">ThermalEquilibrium</a> </td>
-<td class="bio"> Thermal equilibrium for a system with conduction and radiation </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermnetHeader.html">Thermnet</a> </td>
-<td class="bio"> Model a thermal circuit from nodal masses </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosThermalGraphics: {
+    label: 'Demos/ThermalGraphics',
+    items: [
+      {name:'ThermalCube', desc:'Create a simple satellite with 6 panels for thermal analysis.', url:'ThermalHeaders/ThermalCubeHeader.html'}
+    ]
+  },
 
-<h3><a name="ThermalData"></a>ThermalData</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="bio">BraytonCycle.png</td><td class="bio">Cycle image for displaying Brayton design results</td></tr>
-<tr><td class="bio">NewBraytonTransmission.png</td><td class="bio">Updated cycle image for displaying results</td></tr>
-<tr><td class="bio">RankineCycle.png</td><td class="bio">Cycle image for displaying Rankine design results</td></tr>
-<tr><td class="bio">Steam_Tables_Pressure.xlsx</td><td class="bio">Steam tables as a function of pressure</td></tr>
-<tr><td class="bio">Steam_Tables_Superheated.xlsx</td><td class="bio">Steam tables for superheated steam</td></tr>
-<tr><td class="bio">Steam_Tables_Temperature.xlsx</td><td class="bio">Steam tables as a function of</td></tr>
-<tr><td class="bio">ThermalCube.mat</td><td class="bio">Cube CAD model with thermal network</td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  DemosTutorials: {
+    label: 'Demos/Tutorials',
+    items: []
+  },
 
-<h3><a name="ThermalGraphics"></a>ThermalGraphics</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/DrawThermalPlugInHeader.html">DrawThermalPlugIn</a> </td>
-<td class="bio"> Draw a thermal diagram. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/PlotThermalHeader.html">PlotThermal</a> </td>
-<td class="bio"> Plots flux and temperature time histories. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/ThermalImagerHeader.html">ThermalImager</a> </td>
-<td class="bio"> Color a spacecraft or planet corresponding to a temperature. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  HeatExchanger: {
+    label: 'HeatExchanger',
+    items: [
+      {name:'AbsoluteViscosity', desc:'Computes the absolute viscosity.', url:'ThermalHeaders/AbsoluteViscosityHeader.html'},
+      {name:'FrictionLaminar', desc:'Computes the laminar friction.', url:'ThermalHeaders/FrictionLaminarHeader.html'},
+      {name:'HeatExchanger', desc:'Designs a heat exchanger for a one sided heat flux.', url:'ThermalHeaders/HeatExchangerHeader.html'},
+      {name:'HeatExchangerWithLosses', desc:'Implements a flat plate heat exchanger with radiation losses.', url:'ThermalHeaders/HeatExchangerWithLossesHeader.html'},
+      {name:'HeatTransferChannel', desc:'Designs a heat exchanger for a one sided heat flux.', url:'ThermalHeaders/HeatTransferChannelHeader.html'},
+      {name:'HeatTransferCoeff', desc:'Computes the Heat transfer coefficient.', url:'ThermalHeaders/HeatTransferCoeffHeader.html'},
+      {name:'HeatTransferCoeffTaylor', desc:'Heat transfer coefficient based on Taylor.', url:'ThermalHeaders/HeatTransferCoeffTaylorHeader.html'},
+      {name:'KinematicViscosity', desc:'Computes the Kinematic viscosity from viscosity and density.', url:'ThermalHeaders/KinematicViscosityHeader.html'},
+      {name:'NusseltDeveloping', desc:'Computes the Nusselt number for developing turbulent flow.', url:'ThermalHeaders/NusseltDevelopingHeader.html'},
+      {name:'NusseltLaminar', desc:'Computes the Nusselt number for laminar flow.', url:'ThermalHeaders/NusseltLaminarHeader.html'},
+      {name:'NusseltTurbulent', desc:'Computes the Nusselt number for fully developed turbulent flow.', url:'ThermalHeaders/NusseltTurbulentHeader.html'},
+      {name:'PrandtlNikuradse', desc:'Computes the Fanning friction factor for fully developed turbulent flow.', url:'ThermalHeaders/PrandtlNikuradseHeader.html'},
+      {name:'PrandtlNumber', desc:'Computes the Prandtl Number.', url:'ThermalHeaders/PrandtlNumberHeader.html'},
+      {name:'PressureDropChannel', desc:'Computes the channel pressure drop.', url:'ThermalHeaders/PressureDropChannelHeader.html'},
+      {name:'ReynoldsNumberKinematic', desc:'Computes the Reynolds number from kinematic viscosity.', url:'ThermalHeaders/ReynoldsNumberKinematicHeader.html'},
+      {name:'ThermalConductivity', desc:'Computes the thermal conductivity.', url:'ThermalHeaders/ThermalConductivityHeader.html'},
+      {name:'ThermalConductivityAndViscHeXe', desc:'Computes the thermal conductivity and viscosity.', url:'ThermalHeaders/ThermalConductivityAndViscHeXeHeader.html'}
+    ]
+  },
 
-<h3><a name="ThermalProperties"></a>ThermalProperties</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="ThermalHeaders/AbsDaHeader.html">AbsDa</a> </td>
-<td class="bio"> Absorbed radiation from an incremental area. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/BlckBodyHeader.html">BlckBody</a> </td>
-<td class="bio"> Aborptivity and emissivity of a black body. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/EmittanceParallelPlatesHeader.html">EmittanceParallelPlates</a> </td>
-<td class="bio"> Computes the emittance of plates in parallel. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeXeMixtureHeader.html">HeXeMixture</a> </td>
-<td class="bio"> Compute gas properties for a helium/xenon mixture </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatFPHeader.html">HeatFP</a> </td>
-<td class="bio"> Computes the temperature at two surfaces of a flat plate </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/HeatShieldCoatingHeader.html">HeatShieldCoating</a> </td>
-<td class="bio"> Values for heat shield coatings. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/LiquidMetalPropsHeader.html">LiquidMetalProps</a> </td>
-<td class="bio"> Liquid metal thermal properties </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/RadiatorCoatingHeader.html">RadiatorCoating</a> </td>
-<td class="bio"> Values for radiator coatings. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TempConvHeader.html">TempConv</a> </td>
-<td class="bio"> Converts temperatures between units. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TempCylHeader.html">TempCyl</a> </td>
-<td class="bio"> Temperature of a cylinder. Includes ends. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TempFPHeader.html">TempFP</a> </td>
-<td class="bio"> Temperature of a flat plate. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/TempSphHeader.html">TempSph</a> </td>
-<td class="bio"> Temperature of a sphere. </td></tr>
-<tr><td class="link" width="200"><a href="ThermalHeaders/WiensDspHeader.html">WiensDsp</a> </td>
-<td class="bio"> Computes the peak black body wavelength as a function of temperature. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
-<p> <a href="FunctionIndex.html">Back</a> to Functions main page</p></div></body></html>
+  HeatTransfer: {
+    label: 'HeatTransfer',
+    items: [
+      {name:'OptimalMLIDensity', desc:'Determine optimal Multi-layer Insulation (MLI) density.', url:'ThermalHeaders/OptimalMLIDensityHeader.html'},
+      {name:'RadiationShield', desc:'Computes temperatures on a radiation shield with MLI.', url:'ThermalHeaders/RadiationShieldHeader.html'}
+    ]
+  },
+
+  Rankine: {
+    label: 'Rankine',
+    items: [
+      {name:'RankineCycle', desc:'Simple Rankine Cycle from turbine pressures.', url:'ThermalHeaders/RankineCycleHeader.html'},
+      {name:'SteamTablesSuperheatedEnthalpy', desc:'Enthalpy for superheated steam or compressed water.', url:'ThermalHeaders/SteamTablesSuperheatedEnthalpyHeader.html'},
+      {name:'TSCurve', desc:'Generate the TS curve for water and steam.', url:'ThermalHeaders/TSCurveHeader.html'}
+    ]
+  },
+
+  ThermalAnalysis: {
+    label: 'ThermalAnalysis',
+    items: [
+      {name:'AeroHeatFlux', desc:'Aerodynamic heat flux.', url:'ThermalHeaders/AeroHeatFluxHeader.html'},
+      {name:'BTUToJoule', desc:'Converts BTUs to Joules.', url:'ThermalHeaders/BTUToJouleHeader.html'},
+      {name:'FSolarPanelThermal', desc:'Used by fmins from SolarPanelThermal to compute panel temperatures.', url:'ThermalHeaders/FSolarPanelThermalHeader.html'},
+      {name:'GrayBody', desc:'Aborptivity and emissivity of a gray body.', url:'ThermalHeaders/GrayBodyHeader.html'},
+      {name:'Isothermal', desc:'Model a spacecraft as an isothermal radiator.', url:'ThermalHeaders/IsothermalHeader.html'},
+      {name:'IsothermalHelio', desc:'Isothermal model in heliocentric orbit.', url:'ThermalHeaders/IsothermalHelioHeader.html'},
+      {name:'IsothermalLunar', desc:'Model a spacecraft as an isothermal radiator in lunar orbit.', url:'ThermalHeaders/IsothermalLunarHeader.html'},
+      {name:'JouleToBTU', desc:'Converts Joules to BTUs.', url:'ThermalHeaders/JouleToBTUHeader.html'},
+      {name:'LambertL', desc:"Lambert's cosine law.", url:'ThermalHeaders/LambertLHeader.html'},
+      {name:'PanelThermalModel', desc:'Computes the temperatures of a panel from a CAD model.', url:'ThermalHeaders/PanelThermalModelHeader.html'},
+      {name:'PlanckL', desc:"Planck's law for a black body.", url:'ThermalHeaders/PlanckLHeader.html'},
+      {name:'RHSAerodynamicHeating', desc:'Compute aerodynamic heating.', url:'ThermalHeaders/RHSAerodynamicHeatingHeader.html'},
+      {name:'RHSIsothermal', desc:'Model a spacecraft as an isothermal radiator.', url:'ThermalHeaders/RHSIsothermalHeader.html'},
+      {name:'RadBFp', desc:'Radiation between equal area flat plates.', url:'ThermalHeaders/RadBFpHeader.html'},
+      {name:'RadDa', desc:'Radiation from an incremental area.', url:'ThermalHeaders/RadDaHeader.html'},
+      {name:'RadiationShapeFactor', desc:'Computes the radiation shape factor.', url:'ThermalHeaders/RadiationShapeFactorHeader.html'},
+      {name:'SolarPanelThermal', desc:'Compute the front/back temperatures of a solar panel.', url:'ThermalHeaders/SolarPanelThermalHeader.html'},
+      {name:'SpaceCamera', desc:'Draw spacecraft in orbit about a planet, as seen by an in-situ camera.', url:'ThermalHeaders/SpaceCameraHeader.html'},
+      {name:'SpacecraftThermal', desc:'Compute the temperature and input flux for the spacecraft components.', url:'ThermalHeaders/SpacecraftThermalHeader.html'},
+      {name:'ThermalColorMap', desc:'Generates a color corresponding to a temperature.', url:'ThermalHeaders/ThermalColorMapHeader.html'},
+      {name:'ThermalEquilibrium', desc:'Thermal equilibrium for a system with conduction and radiation.', url:'ThermalHeaders/ThermalEquilibriumHeader.html'},
+      {name:'Thermnet', desc:'Model a thermal circuit from nodal masses.', url:'ThermalHeaders/ThermnetHeader.html'}
+    ]
+  },
+
+  ThermalData: {
+    label: 'ThermalData',
+    items: [
+      {name:'BraytonCycle.png', desc:'Cycle image for displaying Brayton design results.', url:null},
+      {name:'NewBraytonTransmission.png', desc:'Updated cycle image for displaying results.', url:null},
+      {name:'RankineCycle.png', desc:'Cycle image for displaying Rankine design results.', url:null},
+      {name:'Steam_Tables_Pressure.xlsx', desc:'Steam tables as a function of pressure.', url:null},
+      {name:'Steam_Tables_Superheated.xlsx', desc:'Steam tables for superheated steam.', url:null},
+      {name:'Steam_Tables_Temperature.xlsx', desc:'Steam tables as a function of temperature.', url:null},
+      {name:'ThermalCube.mat', desc:'Cube CAD model with thermal network.', url:null}
+    ]
+  },
+
+  ThermalGraphics: {
+    label: 'ThermalGraphics',
+    items: [
+      {name:'DrawThermalPlugIn', desc:'Draw a thermal diagram.', url:'ThermalHeaders/DrawThermalPlugInHeader.html'},
+      {name:'PlotThermal', desc:'Plots flux and temperature time histories.', url:'ThermalHeaders/PlotThermalHeader.html'},
+      {name:'ThermalImager', desc:'Color a spacecraft or planet corresponding to a temperature.', url:'ThermalHeaders/ThermalImagerHeader.html'}
+    ]
+  },
+
+  ThermalProperties: {
+    label: 'ThermalProperties',
+    items: [
+      {name:'AbsDa', desc:'Absorbed radiation from an incremental area.', url:'ThermalHeaders/AbsDaHeader.html'},
+      {name:'BlckBody', desc:'Aborptivity and emissivity of a black body.', url:'ThermalHeaders/BlckBodyHeader.html'},
+      {name:'EmittanceParallelPlates', desc:'Computes the emittance of plates in parallel.', url:'ThermalHeaders/EmittanceParallelPlatesHeader.html'},
+      {name:'HeXeMixture', desc:'Compute gas properties for a helium/xenon mixture.', url:'ThermalHeaders/HeXeMixtureHeader.html'},
+      {name:'HeatFP', desc:'Computes the temperature at two surfaces of a flat plate.', url:'ThermalHeaders/HeatFPHeader.html'},
+      {name:'HeatShieldCoating', desc:'Values for heat shield coatings.', url:'ThermalHeaders/HeatShieldCoatingHeader.html'},
+      {name:'LiquidMetalProps', desc:'Liquid metal thermal properties.', url:'ThermalHeaders/LiquidMetalPropsHeader.html'},
+      {name:'RadiatorCoating', desc:'Values for radiator coatings.', url:'ThermalHeaders/RadiatorCoatingHeader.html'},
+      {name:'TempConv', desc:'Converts temperatures between units.', url:'ThermalHeaders/TempConvHeader.html'},
+      {name:'TempCyl', desc:'Temperature of a cylinder. Includes ends.', url:'ThermalHeaders/TempCylHeader.html'},
+      {name:'TempFP', desc:'Temperature of a flat plate.', url:'ThermalHeaders/TempFPHeader.html'},
+      {name:'TempSph', desc:'Temperature of a sphere.', url:'ThermalHeaders/TempSphHeader.html'},
+      {name:'WiensDsp', desc:'Computes the peak black body wavelength as a function of temperature.', url:'ThermalHeaders/WiensDspHeader.html'}
+    ]
+  }
+};
+
+// Build flat search index
+const INDEX = [];
+Object.entries(SECTIONS).forEach(([key, sec]) => {
+  sec.items.forEach(item => INDEX.push({...item, folder: sec.label}));
+});
+
+// Detail panel
+const overlay = document.getElementById('detail-overlay');
+const panel   = document.getElementById('detail-panel');
+const iframe  = document.getElementById('detail-iframe');
+const dtitle  = document.getElementById('detail-title');
+const dclose  = document.getElementById('detail-close');
+
+function openPanel(name, url) {
+  dtitle.textContent = name;
+  iframe.src = url;
+  overlay.classList.add('open');
+  panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  panel.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  iframe.src = 'about:blank';
+}
+
+dclose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+// Render a folder into the content pane
+function renderFolder(key) {
+  const sec = SECTIONS[key];
+  document.getElementById('pane-title').textContent = sec.label;
+  document.getElementById('pane-count').textContent = sec.items.length + ' entries';
+
+  const list = document.getElementById('fn-list');
+
+  if (!sec.items.length) {
+    list.innerHTML = `<div class="no-results">No entries in this folder.</div>`;
+    return;
+  }
+
+  list.innerHTML = sec.items.map(item => {
+    if (!item.url) {
+      return `<div class="fn-row data">
+        <span class="fn-row-name">${item.name}</span>
+        <span class="fn-row-desc">${item.desc}</span>
+      </div>`;
+    }
+    return `<div class="fn-row" data-url="${item.url}" data-name="${item.name}">
+      <span class="fn-row-name">${item.name}</span>
+      <span class="fn-row-desc">${item.desc}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.fn-row[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+// Sidebar click
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    renderFolder(el.dataset.folder);
+  });
+});
+
+// Initial render
+renderFolder('Brayton');
+
+// Search
+const inp = document.getElementById('search-input');
+const clr = document.getElementById('search-clear');
+const resDiv = document.getElementById('search-results');
+const resMeta = document.getElementById('results-meta');
+const resList = document.getElementById('results-list');
+const statusEl = document.getElementById('search-status');
+const browseEl = document.getElementById('browse-content');
+
+clr.style.display = 'none';
+
+function run() {
+  const q = inp.value.trim().toLowerCase();
+
+  if (!q) {
+    resDiv.classList.remove('active');
+    browseEl.style.display = '';
+    statusEl.textContent = 'Showing all entries.';
+    clr.style.display = 'none';
+    return;
+  }
+
+  clr.style.display = '';
+  browseEl.style.display = 'none';
+  resDiv.classList.add('active');
+
+  const terms = q.split(/\s+/);
+  const hits = INDEX.filter(i =>
+    terms.every(t =>
+      i.name.toLowerCase().includes(t) ||
+      i.desc.toLowerCase().includes(t) ||
+      i.folder.toLowerCase().includes(t)
+    )
+  );
+
+  statusEl.textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''} found.`;
+  resMeta.innerHTML = hits.length
+    ? `<strong>${hits.length}</strong> result${hits.length !== 1 ? 's' : ''} for &ldquo;<strong>${q}</strong>&rdquo;`
+    : `No results for <strong>"${q}"</strong>.`;
+
+  resList.innerHTML = hits.length ? hits.map(h => {
+    const inner = `<span class="rc-name">${h.name}</span><span class="rc-desc">${h.desc}</span><span class="rc-folder">${h.folder}</span>`;
+    return h.url
+      ? `<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">${inner}</div>`
+      : `<div class="rc" style="cursor:default">${inner}</div>`;
+  }).join('') : `<div class="no-results">No matches — try a different keyword.</div>`;
+
+  resList.querySelectorAll('.rc[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+inp.addEventListener('input', run);
+clr.addEventListener('click', () => {
+  inp.value = '';
+  run();
+  inp.focus();
+});
+</script>
+</body>
+</html>

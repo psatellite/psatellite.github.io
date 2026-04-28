@@ -1,240 +1,432 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<STYLE TYPE="text/css">
-td.link{font-family: Cambria; font-size: 12pt;}
-td.bio{font-family: Cambria; font-size: 12pt;}
-td.cl{height: 20; cellpadding: 5; cellspacing: 5;}
-h1{text-align: left;}
-h2{font-family: Cambria; color: #990000;}
-h3{font-family: Cambria; color: #990000; font-size: 18pt; }
-table.cl{font-family: Cambria; background-color: #e1e6f2;
-font-size: 14pt; border: 0; cellpadding: 5; cellspacing: 5;}
-</STYLE>
-<title>Missions Functions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missions Module — Spacecraft Design Toolbox</title>
+<style>
+:root {
+  --blue:#0070AD; --blue-dark:#004f7c; --blue-darker:#003557;
+  --blue-light:#3a96c9; --blue-faint:#eef6fb; --blue-xl:#c8e6f5;
+  --white:#fff; --gray-50:#f7f9fb; --gray-100:#f0f4f8;
+  --gray-200:#dde4ed; --gray-400:#8fa3b8; --gray-600:#4a5c70; --gray-800:#1b2a3b;
+  --shadow-sm:0 1px 4px rgba(0,80,140,.08); --shadow:0 4px 18px rgba(0,80,140,.11);
+  --r:10px; --r-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+
+.header{
+  background-image:url('Guides/images/headers/Mission.png'),url('Guides/images/headers/Mission.jpg'),url('Guides/images/background.png');
+  background-size:cover,cover,cover;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center center,center center,center center;
+  background-color:var(--blue-darker);
+  position:relative;
+}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}
+.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+
+#search-results{display:none;margin-bottom:36px;}
+#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}
+.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);}
+.rc{display:grid;grid-template-columns:minmax(0,230px) 1fr 110px;align-items:baseline;padding:10px 18px;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit;gap:16px;transition:background .12s;}
+.rc:last-child{border-bottom:none;}
+.rc:hover{background:var(--blue-faint);}
+.rc-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+
+.explorer{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+
+.content-pane{overflow:hidden;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;}
+.fn-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;align-items:baseline;padding:9px 20px;border-bottom:1px solid var(--gray-100);gap:16px;color:inherit;transition:background .12s;cursor:pointer;}
+.fn-row:last-child{border-bottom:none;}
+.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fn-row-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.fn-row.data{cursor:default;}
+.fn-row.data:hover{background:transparent;}
+.fn-row.data .fn-row-name{color:var(--gray-800);font-family:Calibri,sans-serif;font-weight:400;}
+
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+
+@media(max-width:700px){
+  .header-inner,.search-outer,.main{padding-left:18px;padding-right:18px;}
+  .header-title{font-size:22px;}
+  .explorer{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--gray-200);display:flex;flex-wrap:wrap;gap:4px;padding:10px;}
+  .side-item{border-left:none;border-radius:20px;border:1.5px solid var(--gray-200);}
+  .side-item.active{border-color:var(--blue);}
+  .rc{grid-template-columns:1fr;gap:4px;}
+  .rc-folder{text-align:left;}
+}
+</style>
 </head>
 <body>
-<div class=page>
 
-<table width="600"><tr><td width="50%"><h1>Missions Module</h1></td>
-<td width="50%"><img src="Guides/images/PSSLogo.jpg"></td></tr></table>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">Missions Module</h1>
+    <p class="header-sub">ComSat operations, fast reorientation, space station, and sun-nadir pointing missions.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions and data files…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>comsat</strong>, <strong>spin</strong>, <strong>transfer</strong>, <strong>station</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-<h2>Directory List</h2>
-<a name="top"></a>
-<table border="1" cellpadding="0"><tr><td>
-<table class="cl" width="600">
-<tr><td class="cl" width="33%"><a href="MissionsFunctions.html#Comsat">Comsat</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#ComsatData">ComsatData</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#Demos/Comsat">Demos/Comsat</a></td></tr>
- <tr><td class="cl" width="33%"><a href="MissionsFunctions.html#Demos/FastReorientation">Demos/FastReorientation</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#Demos/SpaceStation">Demos/SpaceStation</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#Demos/SunNadir">Demos/SunNadir</a></td></tr>
- <tr><td class="cl" width="33%"><a href="MissionsFunctions.html#FastReorientation">FastReorientation</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#SpaceStation">SpaceStation</a></td>
- <td class="cl" width="33%"><a href="MissionsFunctions.html#SunNadir">SunNadir</a></td></tr>
- </table></td></tr></table><br><hr>
+<main class="main">
 
-<h3><a name="Comsat"></a>Comsat</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/ATTDataTHeader.html">ATTDataT</a> </td>
-<td class="bio"> Generates the data needed for a attitude data collection in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarHeader.html">ComStar</a> </td>
-<td class="bio"> The ComStar satellite properties database GUI. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/DSTHeader.html">DST</a> </td>
-<td class="bio"> Simulate a dual-spin-turn. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/DSTDataTHeader.html">DSTDataT</a> </td>
-<td class="bio"> Generates the data needed for a dual spin turn in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/DlVDataTHeader.html">DlVDataT</a> </td>
-<td class="bio"> Generates the data needed for a delta Vs in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FuelUpdtHeader.html">FuelUpdt</a> </td>
-<td class="bio"> Updates the fuel mass. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/GetHSAHeader.html">GetHSA</a> </td>
-<td class="bio"> Gets HSA attitude data </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/HSMAHeader.html">HSMA</a> </td>
-<td class="bio"> Computes the half system moment arms </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/InjDataTHeader.html">InjDataT</a> </td>
-<td class="bio"> Generates the data needed for an injection in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/IntDataHeader.html">IntData</a> </td>
-<td class="bio"> Generates the data needed for initialization in TransferOrbit.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/OddEvenHeader.html">OddEven</a> </td>
-<td class="bio"> Count the number of odd and even numbered thrusters in use. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/OrbitDeltaVHeader.html">OrbitDeltaV</a> </td>
-<td class="bio"> Updates orbital elements based on an impulsive delta-V </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/PitchEstHeader.html">PitchEst</a> </td>
-<td class="bio"> Kalman Filter for pitch </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/PitchLoopHeader.html">PitchLoop</a> </td>
-<td class="bio"> Design the Pitch Loop including a tach loop for the wheel. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/PressureHeader.html">Pressure</a> </td>
-<td class="bio"> Computes the REA and tank pressure </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/REAHeader.html">REA</a> </td>
-<td class="bio"> Computes the thrust and fuel consumed for thrusters. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/RollEstHeader.html">RollEst</a> </td>
-<td class="bio"> Designs the dual-spin-turn roll estimator </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SKDataFHeader.html">SKDataF</a> </td>
-<td class="bio"> Generates the data needed to compute stationkeeping maneuvers </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SPMDataFHeader.html">SPMDataF</a> </td>
-<td class="bio"> Computes spin precession maneuver data for fuel budgets </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SPMDataTHeader.html">SPMDataT</a> </td>
-<td class="bio"> Generates the data needed for an SPM maneuver in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SPMMnvrHeader.html">SPMMnvr</a> </td>
-<td class="bio"> Performs a spin precession maneuver. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ShadowHeader.html">Shadow</a> </td>
-<td class="bio"> Find the surfaces that are in shadow. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpinChangeHeader.html">SpinChange</a> </td>
-<td class="bio"> Simulates a spin change. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpinDataFHeader.html">SpinDataF</a> </td>
-<td class="bio"> Computes spin precession maneuver data for fuel budgets </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpinDataTHeader.html">SpinDataT</a> </td>
-<td class="bio"> Generates the data needed for a spin change in TrnsfOrb.m </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpinREstHeader.html">SpinREst</a> </td>
-<td class="bio"> Estimates rate from measurements of period </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ThrustLevelHeader.html">ThrustLevel</a> </td>
-<td class="bio"> Computes the thrust level of a set of thrusters. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ThrustModelHeader.html">ThrustModel</a> </td>
-<td class="bio"> Computes the thruster torques based on exponential rise and fall time model. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/TransferOrbitHeader.html">TransferOrbit</a> </td>
-<td class="bio"> Simulates transfer orbit </td></tr>
-<tr><td class="bio">ComStarI.mat</td><td class="bio">ComStar inertia data.</td></tr>
-<tr><td class="bio">DistModel.mat</td><td class="bio">Comsat disturbance model data.</td></tr>
-<tr><td class="bio">NoiseF.mat</td><td class="bio">Comsat noise filter matrices</td></tr>
-<tr><td class="bio">PMWA.txt</td><td class="bio">Comsat MWA controller matrices.</td></tr>
-<tr><td class="bio">RYC.mat</td><td class="bio">Comsat roll/yaw control data.</td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
 
-<h3><a name="ComsatData"></a>ComsatData</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="bio">ComStarI.mat</td><td class="bio">ComStar inertia data.</td></tr>
-<tr><td class="bio">DistModel.mat</td><td class="bio">Comsat disturbance model data.</td></tr>
-<tr><td class="bio">NoiseF.mat</td><td class="bio">Comsat noise filter matrices</td></tr>
-<tr><td class="bio">PMWA.txt</td><td class="bio">Comsat MWA controller matrices.</td></tr>
-<tr><td class="bio">RYC.mat</td><td class="bio">Comsat roll/yaw control data.</td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="Comsat">Comsat <span class="side-count">34</span></div>
+        <div class="side-item" data-folder="ComsatData">ComsatData <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="DemosComsat">Demos/Comsat <span class="side-count">17</span></div>
+        <div class="side-item" data-folder="DemosFastReorientation">Demos/FastReor. <span class="side-count">2</span></div>
+        <div class="side-item" data-folder="DemosSpaceStation">Demos/SpaceStn <span class="side-count">4</span></div>
+        <div class="side-item" data-folder="DemosSunNadir">Demos/SunNadir <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="FastReorientation">FastReorientation <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="SpaceStation">SpaceStation <span class="side-count">3</span></div>
+        <div class="side-item" data-folder="SunNadir">SunNadir <span class="side-count">10</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">Comsat</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
 
-<h3><a name="Demos/Comsat"></a>Demos/Comsat</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarAKMHeader.html">ComStarAKM</a> </td>
-<td class="bio"> Simulate the AKM firing for the ComStar spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarAcqHeader.html">ComStarAcq</a> </td>
-<td class="bio"> The acquisition sequence for the ComStar satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarBuildHeader.html">ComStarBuild</a> </td>
-<td class="bio"> Generates the mass properties for the ComStar demo satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarDSTHeader.html">ComStarDST</a> </td>
-<td class="bio"> Simulate the ComStar dual spin turn. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarDistHeader.html">ComStarDist</a> </td>
-<td class="bio"> Computes the total disturbance torque for the ComStar satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarESANHeader.html">ComStarESAN</a> </td>
-<td class="bio"> Designs earth sensor noise filters for the ComStar satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarPBudgetHeader.html">ComStarPBudget</a> </td>
-<td class="bio"> Demonstrate a pointing budget for a typical satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarPDHeader.html">ComStarPD</a> </td>
-<td class="bio"> Design a PD controller for pitch for the ComStar satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarPMWAHeader.html">ComStarPMWA</a> </td>
-<td class="bio"> Tests the MWA pitch loop for the ComStar satellite. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarRYLFHeader.html">ComStarRYLF</a> </td>
-<td class="bio"> Design and test the low frequency roll/yaw control system. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarRYNutHeader.html">ComStarRYNut</a> </td>
-<td class="bio"> Design and test the nutation compensator. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarSKHeader.html">ComStarSK</a> </td>
-<td class="bio"> Compensate the flexible solar array on the ComStar Spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarSPMHeader.html">ComStarSPM</a> </td>
-<td class="bio"> Simulate a spin precession maneuver for ComStar. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarSpinupHeader.html">ComStarSpinup</a> </td>
-<td class="bio"> Demonstrate the automatic spin up for ComStar. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ComStarTransferOrbitHeader.html">ComStarTransferOrbit</a> </td>
-<td class="bio"> Simulates transfer orbit for ComStar. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FlexModelHeader.html">FlexModel</a> </td>
-<td class="bio"> Analyze the flexible solar array on the ComStar Spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/RollYawDoublePivotHeader.html">RollYawDoublePivot</a> </td>
-<td class="bio"> Design a roll/yaw controller using a double pivot </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+</main>
 
-<h3><a name="Demos/FastReorientation"></a>Demos/FastReorientation</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSSimHeader.html">FRSSim</a> </td>
-<td class="bio"> Simulate the fast reorientation system. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/QPropDemoHeader.html">QPropDemo</a> </td>
-<td class="bio"> Simulate the fast reorientation system and demonstrate quaternion propagation </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Back to Toolbox Index</a>
+</footer>
 
-<h3><a name="Demos/SpaceStation"></a>Demos/SpaceStation</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/MagneticUnloadingDemoHeader.html">MagneticUnloadingDemo</a> </td>
-<td class="bio"> Momentum unloading with magnetic torque </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ManufacturingSpaceStationCADHeader.html">ManufacturingSpaceStationCAD</a> </td>
-<td class="bio"> Design a manufacturing space station </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpaceStationACSSimulationHeader.html">SpaceStationACSSimulation</a> </td>
-<td class="bio"> Space Station Attitude Control </td></tr>
-<tr><td class="bio">SpaceStationProps.mat</td><td class="bio">Station geometry properties for disturbance analysis.</td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
 
-<h3><a name="Demos/SunNadir"></a>Demos/SunNadir</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/SunNadirPointingSimHeader.html">SunNadirPointingSim</a> </td>
-<td class="bio"> Implements and simulates Sun nadir pointing control. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<script>
+const SECTIONS = {
+  Comsat: {
+    label: 'Comsat',
+    items: [
+      {name:'ATTDataT',       desc:'Generates the data needed for an attitude data collection in TrnsfOrb.m.',         url:'MissionsHeaders/ATTDataTHeader.html'},
+      {name:'ComStar',        desc:'The ComStar satellite properties database GUI.',                                    url:'MissionsHeaders/ComStarHeader.html'},
+      {name:'DST',            desc:'Simulate a dual-spin-turn.',                                                       url:'MissionsHeaders/DSTHeader.html'},
+      {name:'DSTDataT',       desc:'Generates the data needed for a dual spin turn in TrnsfOrb.m.',                    url:'MissionsHeaders/DSTDataTHeader.html'},
+      {name:'DlVDataT',       desc:'Generates the data needed for delta Vs in TrnsfOrb.m.',                            url:'MissionsHeaders/DlVDataTHeader.html'},
+      {name:'FuelUpdt',       desc:'Updates the fuel mass.',                                                           url:'MissionsHeaders/FuelUpdtHeader.html'},
+      {name:'GetHSA',         desc:'Gets HSA attitude data.',                                                          url:'MissionsHeaders/GetHSAHeader.html'},
+      {name:'HSMA',           desc:'Computes the half system moment arms.',                                            url:'MissionsHeaders/HSMAHeader.html'},
+      {name:'InjDataT',       desc:'Generates the data needed for an injection in TrnsfOrb.m.',                        url:'MissionsHeaders/InjDataTHeader.html'},
+      {name:'IntData',        desc:'Generates the data needed for initialization in TransferOrbit.m.',                 url:'MissionsHeaders/IntDataHeader.html'},
+      {name:'OddEven',        desc:'Count the number of odd and even numbered thrusters in use.',                      url:'MissionsHeaders/OddEvenHeader.html'},
+      {name:'OrbitDeltaV',    desc:'Updates orbital elements based on an impulsive delta-V.',                          url:'MissionsHeaders/OrbitDeltaVHeader.html'},
+      {name:'PitchEst',       desc:'Kalman Filter for pitch.',                                                         url:'MissionsHeaders/PitchEstHeader.html'},
+      {name:'PitchLoop',      desc:'Design the Pitch Loop including a tach loop for the wheel.',                       url:'MissionsHeaders/PitchLoopHeader.html'},
+      {name:'Pressure',       desc:'Computes the REA and tank pressure.',                                              url:'MissionsHeaders/PressureHeader.html'},
+      {name:'REA',            desc:'Computes the thrust and fuel consumed for thrusters.',                             url:'MissionsHeaders/REAHeader.html'},
+      {name:'RollEst',        desc:'Designs the dual-spin-turn roll estimator.',                                       url:'MissionsHeaders/RollEstHeader.html'},
+      {name:'SKDataF',        desc:'Generates the data needed to compute stationkeeping maneuvers.',                   url:'MissionsHeaders/SKDataFHeader.html'},
+      {name:'SPMDataF',       desc:'Computes spin precession maneuver data for fuel budgets.',                         url:'MissionsHeaders/SPMDataFHeader.html'},
+      {name:'SPMDataT',       desc:'Generates the data needed for an SPM maneuver in TrnsfOrb.m.',                    url:'MissionsHeaders/SPMDataTHeader.html'},
+      {name:'SPMMnvr',        desc:'Performs a spin precession maneuver.',                                             url:'MissionsHeaders/SPMMnvrHeader.html'},
+      {name:'Shadow',         desc:'Find the surfaces that are in shadow.',                                            url:'MissionsHeaders/ShadowHeader.html'},
+      {name:'SpinChange',     desc:'Simulates a spin change.',                                                         url:'MissionsHeaders/SpinChangeHeader.html'},
+      {name:'SpinDataF',      desc:'Computes spin precession maneuver data for fuel budgets.',                         url:'MissionsHeaders/SpinDataFHeader.html'},
+      {name:'SpinDataT',      desc:'Generates the data needed for a spin change in TrnsfOrb.m.',                       url:'MissionsHeaders/SpinDataTHeader.html'},
+      {name:'SpinREst',       desc:'Estimates rate from measurements of period.',                                      url:'MissionsHeaders/SpinREstHeader.html'},
+      {name:'ThrustLevel',    desc:'Computes the thrust level of a set of thrusters.',                                 url:'MissionsHeaders/ThrustLevelHeader.html'},
+      {name:'ThrustModel',    desc:'Computes the thruster torques based on exponential rise and fall time model.',      url:'MissionsHeaders/ThrustModelHeader.html'},
+      {name:'TransferOrbit',  desc:'Simulates transfer orbit.',                                                        url:'MissionsHeaders/TransferOrbitHeader.html'},
 
-<h3><a name="FastReorientation"></a>FastReorientation</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSCGenHeader.html">FRSCGen</a> </td>
-<td class="bio"> Executes the fast reorientation system slew maneuver. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSMPlanHeader.html">FRSMPlan</a> </td>
-<td class="bio"> Plans the fast reorientation system slew maneuver. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSPropHeader.html">FRSProp</a> </td>
-<td class="bio"> Propagates the target profile for the fast reorientation slew maneuver. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSTargHeader.html">FRSTarg</a> </td>
-<td class="bio"> Compute the target quaternion for the fast reorientation system. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/FRSTorqueHeader.html">FRSTorque</a> </td>
-<td class="bio"> Calculates the torque for the fast reorientation system slew maneuver. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+    ]
+  },
+  ComsatData: {
+    label: 'ComsatData',
+    items: [
+      {name:'ComStarI.mat',   desc:'ComStar inertia data.',          url:null},
+      {name:'DistModel.mat',  desc:'Comsat disturbance model data.', url:null},
+      {name:'NoiseF.mat',     desc:'Comsat noise filter matrices.',  url:null},
+      {name:'PMWA.txt',       desc:'Comsat MWA controller matrices.',url:null},
+      {name:'RYC.mat',        desc:'Comsat roll/yaw control data.',  url:null},
+    ]
+  },
+  DemosComsat: {
+    label: 'Demos/Comsat',
+    items: [
+      {name:'ComStarAKM',             desc:'Simulate the AKM firing for the ComStar spacecraft.',                     url:'MissionsHeaders/ComStarAKMHeader.html'},
+      {name:'ComStarAcq',             desc:'The acquisition sequence for the ComStar satellite.',                     url:'MissionsHeaders/ComStarAcqHeader.html'},
+      {name:'ComStarBuild',           desc:'Generates the mass properties for the ComStar demo satellite.',           url:'MissionsHeaders/ComStarBuildHeader.html'},
+      {name:'ComStarDST',             desc:'Simulate the ComStar dual spin turn.',                                    url:'MissionsHeaders/ComStarDSTHeader.html'},
+      {name:'ComStarDist',            desc:'Computes the total disturbance torque for the ComStar satellite.',        url:'MissionsHeaders/ComStarDistHeader.html'},
+      {name:'ComStarESAN',            desc:'Designs earth sensor noise filters for the ComStar satellite.',           url:'MissionsHeaders/ComStarESANHeader.html'},
+      {name:'ComStarPBudget',         desc:'Demonstrate a pointing budget for a typical satellite.',                  url:'MissionsHeaders/ComStarPBudgetHeader.html'},
+      {name:'ComStarPD',              desc:'Design a PD controller for pitch for the ComStar satellite.',             url:'MissionsHeaders/ComStarPDHeader.html'},
+      {name:'ComStarPMWA',            desc:'Tests the MWA pitch loop for the ComStar satellite.',                     url:'MissionsHeaders/ComStarPMWAHeader.html'},
+      {name:'ComStarRYLF',            desc:'Design and test the low frequency roll/yaw control system.',              url:'MissionsHeaders/ComStarRYLFHeader.html'},
+      {name:'ComStarRYNut',           desc:'Design and test the nutation compensator.',                               url:'MissionsHeaders/ComStarRYNutHeader.html'},
+      {name:'ComStarSK',              desc:'Compensate the flexible solar array on the ComStar Spacecraft.',          url:'MissionsHeaders/ComStarSKHeader.html'},
+      {name:'ComStarSPM',             desc:'Simulate a spin precession maneuver for ComStar.',                        url:'MissionsHeaders/ComStarSPMHeader.html'},
+      {name:'ComStarSpinup',          desc:'Demonstrate the automatic spin up for ComStar.',                          url:'MissionsHeaders/ComStarSpinupHeader.html'},
+      {name:'ComStarTransferOrbit',   desc:'Simulates transfer orbit for ComStar.',                                   url:'MissionsHeaders/ComStarTransferOrbitHeader.html'},
+      {name:'FlexModel',              desc:'Analyze the flexible solar array on the ComStar Spacecraft.',             url:'MissionsHeaders/FlexModelHeader.html'},
+      {name:'RollYawDoublePivot',     desc:'Design a roll/yaw controller using a double pivot.',                      url:'MissionsHeaders/RollYawDoublePivotHeader.html'},
+    ]
+  },
+  DemosFastReorientation: {
+    label: 'Demos/FastReorientation',
+    items: [
+      {name:'FRSSim',      desc:'Simulate the fast reorientation system.',                                              url:'MissionsHeaders/FRSSimHeader.html'},
+      {name:'QPropDemo',   desc:'Simulate the fast reorientation system and demonstrate quaternion propagation.',        url:'MissionsHeaders/QPropDemoHeader.html'},
+    ]
+  },
+  DemosSpaceStation: {
+    label: 'Demos/SpaceStation',
+    items: [
+      {name:'MagneticUnloadingDemo',          desc:'Momentum unloading with magnetic torque.',              url:'MissionsHeaders/MagneticUnloadingDemoHeader.html'},
+      {name:'ManufacturingSpaceStationCAD',   desc:'Design a manufacturing space station.',                 url:'MissionsHeaders/ManufacturingSpaceStationCADHeader.html'},
+      {name:'SpaceStationACSSimulation',      desc:'Space Station Attitude Control.',                       url:'MissionsHeaders/SpaceStationACSSimulationHeader.html'},
+      {name:'SpaceStationProps.mat',          desc:'Station geometry properties for disturbance analysis.', url:null},
+    ]
+  },
+  DemosSunNadir: {
+    label: 'Demos/SunNadir',
+    items: [
+      {name:'SunNadirPointingSim', desc:'Implements and simulates Sun nadir pointing control.', url:'MissionsHeaders/SunNadirPointingSimHeader.html'},
+    ]
+  },
+  FastReorientation: {
+    label: 'FastReorientation',
+    items: [
+      {name:'FRSCGen',    desc:'Executes the fast reorientation system slew maneuver.',                     url:'MissionsHeaders/FRSCGenHeader.html'},
+      {name:'FRSMPlan',   desc:'Plans the fast reorientation system slew maneuver.',                        url:'MissionsHeaders/FRSMPlanHeader.html'},
+      {name:'FRSProp',    desc:'Propagates the target profile for the fast reorientation slew maneuver.',   url:'MissionsHeaders/FRSPropHeader.html'},
+      {name:'FRSTarg',    desc:'Compute the target quaternion for the fast reorientation system.',          url:'MissionsHeaders/FRSTargHeader.html'},
+      {name:'FRSTorque',  desc:'Calculates the torque for the fast reorientation system slew maneuver.',    url:'MissionsHeaders/FRSTorqueHeader.html'},
+    ]
+  },
+  SpaceStation: {
+    label: 'SpaceStation',
+    items: [
+      {name:'RHSSpaceStation',              desc:'Right-hand-side for attitude and orbit of spacecraft.',    url:'MissionsHeaders/RHSSpaceStationHeader.html'},
+      {name:'SpaceStationControl',          desc:'Implements the space station control system.',             url:'MissionsHeaders/SpaceStationControlHeader.html'},
+      {name:'SpaceStationDragDisturbance',  desc:'Calculates drag for the LEO space station.',              url:'MissionsHeaders/SpaceStationDragDisturbanceHeader.html'},
+    ]
+  },
+  SunNadir: {
+    label: 'SunNadir',
+    items: [
+      {name:'CDist',   desc:'Control demand distribution.',                                                  url:'MissionsHeaders/CDistHeader.html'},
+      {name:'Core2SA', desc:'Transform core frame to solar array frame.',                                    url:'MissionsHeaders/Core2SAHeader.html'},
+      {name:'I2B',     desc:'Transform sun vector from I frame to body frame.',                              url:'MissionsHeaders/I2BHeader.html'},
+      {name:'ICSN',    desc:'Initial quaternion and solar array angle given the sun geometry.',               url:'MissionsHeaders/ICSNHeader.html'},
+      {name:'RHSSNP',  desc:'Spacecraft sun-nadir RHS with 4 RWAs and 2 solar arrays.',                     url:'MissionsHeaders/RHSSNPHeader.html'},
+      {name:'SA2Core', desc:'Transform a vector from the sun sensor frame to the core frame.',               url:'MissionsHeaders/SA2CoreHeader.html'},
+      {name:'SAForm',  desc:'Creates a small angle transformation matrix.',                                  url:'MissionsHeaders/SAFormHeader.html'},
+      {name:'SSAD',    desc:'Sun sensor attitude determination for sun-nadir pointing.',                     url:'MissionsHeaders/SSADHeader.html'},
+      {name:'SSOutput',desc:'Models the output for array mounted analog sun sensors.',                       url:'MissionsHeaders/SSOutputHeader.html'},
+      {name:'SunRA',   desc:'Compute the orbit right ascension angle.',                                      url:'MissionsHeaders/SunRAHeader.html'},
+    ]
+  }
+};
 
-<h3><a name="SpaceStation"></a>SpaceStation</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/RHSSpaceStationHeader.html">RHSSpaceStation</a> </td>
-<td class="bio"> Right-hand-side for attitude and orbit of spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpaceStationControlHeader.html">SpaceStationControl</a> </td>
-<td class="bio"> Implements the space station control system </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SpaceStationDragDisturbanceHeader.html">SpaceStationDragDisturbance</a> </td>
-<td class="bio"> Calculates drag for the LEO space station </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+const INDEX = [];
+Object.entries(SECTIONS).forEach(([key, sec]) => {
+  sec.items.forEach(item => INDEX.push({...item, folder: sec.label}));
+});
 
-<h3><a name="SunNadir"></a>SunNadir</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="MissionsHeaders/CDistHeader.html">CDist</a> </td>
-<td class="bio"> Control demand distribution </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/Core2SAHeader.html">Core2SA</a> </td>
-<td class="bio"> Transform core frame to solar array frame </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/I2BHeader.html">I2B</a> </td>
-<td class="bio"> Transform sun vector from I frame to body frame </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/ICSNHeader.html">ICSN</a> </td>
-<td class="bio"> Initial quaternion and solar array angle given the sun geometry. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/RHSSNPHeader.html">RHSSNP</a> </td>
-<td class="bio"> Spacecraft sun-nadir RHS with 4 RWA's and 2 solar arrays. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SA2CoreHeader.html">SA2Core</a> </td>
-<td class="bio"> Transform a vector from the sun sensor frame to the core frame </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SAFormHeader.html">SAForm</a> </td>
-<td class="bio"> Creates a small angle transformation matrix. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SSADHeader.html">SSAD</a> </td>
-<td class="bio"> Sun sensor attitude determination for sun-nadir pointing. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SSOutputHeader.html">SSOutput</a> </td>
-<td class="bio"> Models the output for array mounted analog sun sensors. </td></tr>
-<tr><td class="link" width="200"><a href="MissionsHeaders/SunRAHeader.html">SunRA</a> </td>
-<td class="bio"> Compute the orbit right ascension angle </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
-<p> <a href="FunctionIndex.html">Back</a> to Functions main page</p></div></body></html>
+const overlay = document.getElementById('detail-overlay');
+const panel   = document.getElementById('detail-panel');
+const iframe  = document.getElementById('detail-iframe');
+const dtitle  = document.getElementById('detail-title');
+const dclose  = document.getElementById('detail-close');
+
+function openPanel(name, url) {
+  dtitle.textContent = name;
+  iframe.src = url;
+  overlay.classList.add('open');
+  panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  panel.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  iframe.src = 'about:blank';
+}
+
+dclose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+function renderFolder(key) {
+  const sec = SECTIONS[key];
+  document.getElementById('pane-title').textContent = sec.label;
+  document.getElementById('pane-count').textContent = sec.items.length + ' entries';
+  const list = document.getElementById('fn-list');
+
+  list.innerHTML = sec.items.map(item => {
+    if (!item.url) {
+      return `<div class="fn-row data">
+        <span class="fn-row-name">${item.name}</span>
+        <span class="fn-row-desc">${item.desc}</span>
+      </div>`;
+    }
+    return `<div class="fn-row" data-url="${item.url}" data-name="${item.name}">
+      <span class="fn-row-name">${item.name}</span>
+      <span class="fn-row-desc">${item.desc}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.fn-row[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    renderFolder(el.dataset.folder);
+  });
+});
+
+renderFolder('Comsat');
+
+const inp     = document.getElementById('search-input');
+const clr     = document.getElementById('search-clear');
+const resDiv  = document.getElementById('search-results');
+const resMeta = document.getElementById('results-meta');
+const resList = document.getElementById('results-list');
+const statusEl= document.getElementById('search-status');
+const browseEl= document.getElementById('browse-content');
+
+clr.style.display = 'none';
+
+function run() {
+  const q = inp.value.trim().toLowerCase();
+  if (!q) {
+    resDiv.classList.remove('active');
+    browseEl.style.display = '';
+    statusEl.textContent = 'Showing all entries.';
+    clr.style.display = 'none';
+    return;
+  }
+  clr.style.display = '';
+  browseEl.style.display = 'none';
+  resDiv.classList.add('active');
+
+  const terms = q.split(/\s+/);
+  const hits = INDEX.filter(i =>
+    terms.every(t => i.name.toLowerCase().includes(t) || i.desc.toLowerCase().includes(t) || i.folder.toLowerCase().includes(t))
+  );
+  statusEl.textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''} found.`;
+  resMeta.innerHTML = hits.length
+    ? `<strong>${hits.length}</strong> result${hits.length !== 1 ? 's' : ''} for &ldquo;<strong>${q}</strong>&rdquo;`
+    : `No results for <strong>"${q}"</strong>.`;
+
+  resList.innerHTML = hits.length ? hits.map(h => {
+    const inner = `<span class="rc-name">${h.name}</span><span class="rc-desc">${h.desc}</span><span class="rc-folder">${h.folder}</span>`;
+    return h.url
+      ? `<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">${inner}</div>`
+      : `<div class="rc" style="cursor:default">${inner}</div>`;
+  }).join('') : `<div class="no-results">No matches — try a different keyword.</div>`;
+
+  resList.querySelectorAll('.rc[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+inp.addEventListener('input', run);
+clr.addEventListener('click', () => { inp.value = ''; run(); inp.focus(); });
+</script>
+</body>
+</html>

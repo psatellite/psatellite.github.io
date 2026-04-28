@@ -1,271 +1,457 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<STYLE TYPE="text/css">
-td.link{font-family: Cambria; font-size: 12pt;}
-td.bio{font-family: Cambria; font-size: 12pt;}
-td.cl{height: 20; cellpadding: 5; cellspacing: 5;}
-h1{text-align: left;}
-h2{font-family: Cambria; color: #990000;}
-h3{font-family: Cambria; color: #990000; font-size: 18pt; }
-table.cl{font-family: Cambria; background-color: #e1e6f2;
-font-size: 14pt; border: 0; cellpadding: 5; cellspacing: 5;}
-</STYLE>
-<title>Link Functions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Module — Spacecraft Design Toolbox</title>
+<style>
+:root {
+  --blue:#0070AD; --blue-dark:#004f7c; --blue-darker:#003557;
+  --blue-light:#3a96c9; --blue-faint:#eef6fb; --blue-xl:#c8e6f5;
+  --white:#fff; --gray-50:#f7f9fb; --gray-100:#f0f4f8;
+  --gray-200:#dde4ed; --gray-400:#8fa3b8; --gray-600:#4a5c70; --gray-800:#1b2a3b;
+  --shadow-sm:0 1px 4px rgba(0,80,140,.08); --shadow:0 4px 18px rgba(0,80,140,.11);
+  --r:10px; --r-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Calibri,sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.55;}
+
+/* HEADER */
+.header{
+  background-image:url('Guides/images/headers/Link.png'),url('Guides/images/headers/Link.jpg'),url('Guides/images/background.png');
+  background-size:cover,cover,cover;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-position:center center,center center,center center;
+  background-color:var(--blue-darker);
+  position:relative;
+}
+.header::before{content:'';position:absolute;inset:0;background:rgba(0,20,50,.52);pointer-events:none;}
+.header-inner{max-width:1200px;margin:0 auto;padding:32px 40px 36px;position:relative;z-index:1;}
+.header-top{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.header-logo{height:80px;}
+.vr{width:1px;height:34px;background:rgba(255,255,255,.3);}
+.header-brand{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.breadcrumb{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:8px;}
+.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.header-title{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:6px;}
+.header-sub{font-size:13.5px;color:rgba(255,255,255,.6);}
+
+/* SEARCH */
+.search-outer{background:rgba(45,35,90,.55);border-top:1px solid rgba(255,255,255,.1);padding:18px 40px 0;}
+.search-inner{max-width:1200px;margin:0 auto;}
+.search-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.search-box{flex:1;position:relative;}
+.search-box input{width:100%;padding:12px 16px 12px 42px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-family:Calibri,sans-serif;font-size:14px;background:rgba(255,255,255,.92);color:var(--gray-800);outline:none;transition:border-color .2s,box-shadow .2s;}
+.search-box input:focus{border-color:var(--blue-light);box-shadow:0 0 0 3px rgba(58,150,201,.2);background:#fff;}
+.search-box input::placeholder{color:var(--gray-400);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.search-clear-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-family:Calibri,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.search-clear-btn:hover{background:rgba(255,255,255,.22);}
+.search-status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.search-status-bar .tip strong{color:rgba(255,255,255,.8);}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:32px 40px 72px;}
+
+/* SEARCH RESULTS */
+#search-results{display:none;margin-bottom:36px;}
+#search-results.active{display:block;}
+.results-meta{font-size:13px;color:var(--gray-600);margin-bottom:12px;}
+.results-meta strong{color:var(--blue);}
+.results-list{display:flex;flex-direction:column;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);}
+.rc{display:grid;grid-template-columns:minmax(0,230px) 1fr 110px;align-items:baseline;padding:10px 18px;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit;gap:16px;transition:background .12s;}
+.rc:last-child{border-bottom:none;}
+.rc:hover{background:var(--blue-faint);}
+.rc-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+.rc-folder{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray-400);text-align:right;}
+.no-results{padding:40px;text-align:center;color:var(--gray-400);font-size:15px;background:var(--white);border-radius:var(--r-lg);}
+
+/* EXPLORER LAYOUT */
+#browse-content{}
+.explorer{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--gray-200);border-radius:var(--r-lg);overflow:hidden;background:var(--white);box-shadow:var(--shadow-sm);}
+
+/* SIDEBAR */
+.sidebar{background:var(--gray-50);border-right:1px solid var(--gray-200);padding:8px 0;}
+.sidebar-heading{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-400);padding:10px 16px 6px;}
+.side-item{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;font-size:13px;color:var(--gray-600);cursor:pointer;border-left:3px solid transparent;transition:all .13s;user-select:none;}
+.side-item:hover{background:var(--blue-faint);color:var(--blue-dark);}
+.side-item.active{background:var(--white);color:var(--blue);font-weight:700;border-left-color:var(--blue);}
+.side-count{font-size:11px;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:10px;}
+.side-item.active .side-count{background:var(--blue-xl);color:var(--blue-dark);}
+
+/* CONTENT PANE */
+.content-pane{overflow:hidden;}
+.pane-header{padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);display:flex;align-items:baseline;justify-content:space-between;}
+.pane-title{font-size:16px;font-weight:700;color:var(--gray-800);}
+.pane-count{font-size:12px;color:var(--gray-400);}
+.fn-list{display:flex;flex-direction:column;}
+.fn-row{display:grid;grid-template-columns:minmax(0,220px) 1fr;align-items:baseline;padding:9px 20px;border-bottom:1px solid var(--gray-100);gap:16px;text-decoration:none;color:inherit;transition:background .12s;cursor:pointer;}
+.fn-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fn-row:last-child{border-bottom:none;}
+.fn-row:hover{background:var(--blue-faint);}
+.fn-row-name{font-size:13.5px;font-weight:700;color:var(--blue-dark);font-family:monospace;}
+.fn-row-desc{font-size:12.5px;color:var(--gray-600);line-height:1.4;}
+
+/* DETAIL PANEL */
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;}
+.detail-overlay.open{display:block;}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:55%;background:var(--white);box-shadow:-4px 0 32px rgba(0,0,0,.18);z-index:101;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.detail-panel.open{transform:translateX(0);}
+.detail-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;}
+.detail-title{font-size:14px;font-weight:700;color:var(--gray-800);font-family:monospace;flex:1;}
+.detail-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:background .13s;}
+.detail-close:hover{background:var(--gray-100);}
+.detail-iframe{flex:1;border:none;width:100%;}
+
+/* FOOTER */
+.footer{background:var(--blue-darker);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:13px;}
+.footer a{color:rgba(255,255,255,.78);text-decoration:none;}
+
+@media(max-width:700px){
+  .header-inner,.search-outer,.main{padding-left:18px;padding-right:18px;}
+  .header-title{font-size:22px;}
+  .explorer{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--gray-200);display:flex;flex-wrap:wrap;gap:4px;padding:10px;}
+  .side-item{border-left:none;border-radius:20px;border:1.5px solid var(--gray-200);}
+  .side-item.active{border-color:var(--blue);}
+  .rc{grid-template-columns:1fr;gap:4px;}
+  .rc-folder{text-align:left;}
+}
+</style>
 </head>
 <body>
-<div class=page>
 
-<table width="600"><tr><td width="50%"><h1>Link Module</h1></td>
-<td width="50%"><img src="Guides/images/PSSLogo.jpg"></td></tr></table>
+<header class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <img src="Guides/images/PSSLogo2.png" alt="PSS" class="header-logo">
+      <div class="vr"></div>
+      <span class="header-brand">2026.1 Toolbox Guide</span>
+    </div>
+    <p class="breadcrumb"><a href="index.html">&larr; Spacecraft Design Toolbox</a></p>
+    <h1 class="header-title">Link Module</h1>
+    <p class="header-sub">Coverage analysis, RF and optical link budgets, radar systems, and communications utilities.</p>
+  </div>
+  <div class="search-outer">
+    <div class="search-inner">
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search functions…" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="search-clear-btn" id="search-clear">Clear search</button>
+      </div>
+      <div class="search-status-bar">
+        <span id="search-status">Showing all entries.</span>
+        <span class="tip">Tip: try <strong>radar</strong>, <strong>optical</strong>, <strong>antenna</strong>, <strong>doppler</strong>…</span>
+      </div>
+    </div>
+  </div>
+</header>
 
-<h2>Directory List</h2>
-<a name="top"></a>
-<table border="1" cellpadding="0"><tr><td>
-<table class="cl" width="600">
-<tr><td class="cl" width="33%"><a href="LinkFunctions.html#Coverage">Coverage</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#Demos/Optical">Demos/Optical</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#Demos/RF">Demos/RF</a></td></tr>
- <tr><td class="cl" width="33%"><a href="LinkFunctions.html#Demos/Tutorials">Demos/Tutorials</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#Ladar">Ladar</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#LinkDesign">LinkDesign</a></td></tr>
- <tr><td class="cl" width="33%"><a href="LinkFunctions.html#LinkUtilities">LinkUtilities</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#Optical">Optical</a></td>
- <td class="cl" width="33%"><a href="LinkFunctions.html#RF">RF</a></td></tr>
- <tr><td class="cl" width="33%"><a href="LinkFunctions.html#Radar">Radar</a></td>
- <td width="33%"></td><td width="33%"></td></tr>
-</table></td></tr></table><br><hr>
+<main class="main">
 
-<h3><a name="Coverage"></a>Coverage</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/AntennaPointHeader.html">AntennaPoint</a> </td>
-<td class="bio"> Compute the boresight matrix or attitude quaternion. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/GenerateSwathHeader.html">GenerateSwath</a> </td>
-<td class="bio"> Generate dynamical plots of antenna patterns. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/GroundStationVisibilityHeader.html">GroundStationVisibility</a> </td>
-<td class="bio"> Determine ground station visibility for spacecraft position(s). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ISLFOVHeader.html">ISLFOV</a> </td>
-<td class="bio"> Determines if a satellite is visible to an ISL. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/SatelliteVisibilityHeader.html">SatelliteVisibility</a> </td>
-<td class="bio"> Determines the visibility between the points in r2 and r1. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="search-results">
+    <p class="results-meta" id="results-meta"></p>
+    <div class="results-list" id="results-list"></div>
+  </div>
 
-<h3><a name="Demos/Optical"></a>Demos/Optical</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/OpticalLinkDemoHeader.html">OpticalLinkDemo</a> </td>
-<td class="bio"> Create an optical link budget for a Pluto mission. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  <div id="browse-content">
+    <div class="explorer">
+      <div class="sidebar">
+        <div class="sidebar-heading">Folders</div>
+        <div class="side-item active" data-folder="Coverage">Coverage <span class="side-count">5</span></div>
+        <div class="side-item" data-folder="DemosOptical">Demos/Optical <span class="side-count">1</span></div>
+        <div class="side-item" data-folder="DemosRF">Demos/RF <span class="side-count">6</span></div>
 
-<h3><a name="Demos/RF"></a>Demos/RF</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/LinkAnalysisHeader.html">LinkAnalysis</a> </td>
-<td class="bio"> Link analysis for an earth orbiting spacecraft. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LinkAnalysisMarsHeader.html">LinkAnalysisMars</a> </td>
-<td class="bio"> Link analysis for a Mars mission </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LinkExamplesHeader.html">LinkExamples</a> </td>
-<td class="bio"> Examples of link analysis from the reference </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarAnalysisHeader.html">RadarAnalysis</a> </td>
-<td class="bio"> Design a radar </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/VoyagerCommLinkHeader.html">VoyagerCommLink</a> </td>
-<td class="bio"> Voyager link analysis </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/VoyagerLinkBudgetHeader.html">VoyagerLinkBudget</a> </td>
-<td class="bio"> Voyager spacecraft link budget </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+        <div class="side-item" data-folder="Ladar">Ladar <span class="side-count">2</span></div>
+        <div class="side-item" data-folder="LinkDesign">LinkDesign <span class="side-count">2</span></div>
+        <div class="side-item" data-folder="LinkUtilities">LinkUtilities <span class="side-count">27</span></div>
+        <div class="side-item" data-folder="Optical">Optical <span class="side-count">4</span></div>
+        <div class="side-item" data-folder="RF">RF <span class="side-count">19</span></div>
+        <div class="side-item" data-folder="Radar">Radar <span class="side-count">21</span></div>
+      </div>
+      <div class="content-pane">
+        <div class="pane-header">
+          <span class="pane-title" id="pane-title">Coverage</span>
+          <span class="pane-count" id="pane-count"></span>
+        </div>
+        <div class="fn-list" id="fn-list"></div>
+      </div>
+    </div>
+  </div>
 
-<h3><a name="Demos/Tutorials"></a>Demos/Tutorials</h3>
-<table border="0" cellpadding="2" width="100%">
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+</main>
 
-<h3><a name="Ladar"></a>Ladar</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/LADAREquationHeader.html">LADAREquation</a> </td>
-<td class="bio"> Solves one form of the laser radar equation (ladar). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LADARTransmitPowerHeader.html">LADARTransmitPower</a> </td>
-<td class="bio"> Computes required Ladar transmit power. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<footer class="footer">
+  Copyright &copy; 2026 Princeton Satellite Systems, Inc. &nbsp;&middot;&nbsp;
+  <a href="http://www.psatellite.com">www.psatellite.com</a> &nbsp;&middot;&nbsp;
+  <a href="index.html">&larr; Back to Toolbox Index</a>
+</footer>
 
-<h3><a name="LinkDesign"></a>LinkDesign</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/LinkAnalysisToolHeader.html">LinkAnalysisTool</a> </td>
-<td class="bio"> Performs a link analysis for a satellite over an orbit </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LinkBudgetHeader.html">LinkBudget</a> </td>
-<td class="bio"> Performs a link budget for a satellite. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-bar">
+    <span class="detail-title" id="detail-title"></span>
+    <button class="detail-close" id="detail-close" title="Close">&#10005;</button>
+  </div>
+  <iframe class="detail-iframe" id="detail-iframe" src="about:blank"></iframe>
+</div>
 
-<h3><a name="LinkUtilities"></a>LinkUtilities</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/BEPHeader.html">BEP</a> </td>
-<td class="bio"> Computes the bit error probability given C/N and the bit rate. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/CNRCompHeader.html">CNRComp</a> </td>
-<td class="bio"> Compute the carrier to noise ratio. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ConstellationGroundContactHeader.html">ConstellationGroundContact</a> </td>
-<td class="bio"> Compute the number of contacts for a constellation with ground users. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ConstellationMaxDistanceHeader.html">ConstellationMaxDistance</a> </td>
-<td class="bio"> Compute maximum distances between satellites in a constellation. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBPowerHeader.html">DBPower</a> </td>
-<td class="bio"> Power conversion to decibels. dB = 20 log10(s). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBSignalHeader.html">DBSignal</a> </td>
-<td class="bio"> Signal conversion to decibels. dB = 10 log10(s). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBSignalToPowerHeader.html">DBSignalToPower</a> </td>
-<td class="bio"> Convert decibels to power (invert decibels). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBWToNWHeader.html">DBWToNW</a> </td>
-<td class="bio"> Convert dBW (decibels-Watts) to nanowatts. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBWToPWHeader.html">DBWToPW</a> </td>
-<td class="bio"> Convert dBW to picowatts. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DataRateHeader.html">DataRate</a> </td>
-<td class="bio"> Computes communications sytems data rates </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DataRateGainHeader.html">DataRateGain</a> </td>
-<td class="bio"> Computes communications sytems data rates from gains </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DataRateOrbitHeader.html">DataRateOrbit</a> </td>
-<td class="bio"> Computes data rate over an orbit. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DopplerBlindHeader.html">DopplerBlind</a> </td>
-<td class="bio"> Finds Doppler blind speeds. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DopplerShiftHeader.html">DopplerShift</a> </td>
-<td class="bio"> Doppler shift </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/FPDHeader.html">FPD</a> </td>
-<td class="bio"> Function called by fzero to compute the carrier to noise ratio. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/FPFAHeader.html">FPFA</a> </td>
-<td class="bio"> Right hand side for probability of false alarm computation. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/FrequencyHeader.html">Frequency</a> </td>
-<td class="bio"> Outputs the frequencies for specified bands of electromagnetic radiation. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/FrequencyToWavelengthHeader.html">FrequencyToWavelength</a> </td>
-<td class="bio"> Converts frequency to wavelength. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ModulationSpectralEfficiencyHeader.html">ModulationSpectralEfficiency</a> </td>
-<td class="bio"> Spectral efficiency of different modulation schemes </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/MultiBEPPlotHeader.html">MultiBEPPlot</a> </td>
-<td class="bio"> Computes and plots multiple bit error rates on the same plot. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/PeriodToSemimajorAxisHeader.html">PeriodToSemimajorAxis</a> </td>
-<td class="bio"> Computes semi-major axis from orbital period </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ProbDetectionHeader.html">ProbDetection</a> </td>
-<td class="bio"> Probability of detection for a diffuse target. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ShannonHeader.html">Shannon</a> </td>
-<td class="bio"> The Shannon information theorem relating S/N and C/B. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TToPowerHeader.html">TToPower</a> </td>
-<td class="bio"> Convert temperature to power via bandwidth. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/WavelengthHeader.html">Wavelength</a> </td>
-<td class="bio"> Outputs the wavelengths for bands of electromagnetic radiation. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/WavelengthToFrequencyHeader.html">WavelengthToFrequency</a> </td>
-<td class="bio"> Converts wavelength to frequency. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/YBCompHeader.html">YBComp</a> </td>
-<td class="bio"> yB computation used as part of the probability of detection algorithm. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+<script>
+const SECTIONS = {
+  Coverage: {
+    label: 'Coverage',
+    items: [
+      {name:'AntennaPoint',             desc:'Compute the boresight matrix or attitude quaternion.',                                   url:'LinkHeaders/AntennaPointHeader.html'},
+      {name:'GenerateSwath',            desc:'Generate dynamical plots of antenna patterns.',                                          url:'LinkHeaders/GenerateSwathHeader.html'},
+      {name:'GroundStationVisibility',  desc:'Determine ground station visibility for spacecraft position(s).',                        url:'LinkHeaders/GroundStationVisibilityHeader.html'},
+      {name:'ISLFOV',                   desc:'Determines if a satellite is visible to an ISL.',                                       url:'LinkHeaders/ISLFOVHeader.html'},
+      {name:'SatelliteVisibility',      desc:'Determines the visibility between the points in r2 and r1.',                            url:'LinkHeaders/SatelliteVisibilityHeader.html'},
+    ]
+  },
+  DemosOptical: {
+    label: 'Demos/Optical',
+    items: [
+      {name:'OpticalLinkDemo',          desc:'Create an optical link budget for a Pluto mission.',                                     url:'LinkHeaders/OpticalLinkDemoHeader.html'},
+    ]
+  },
+  DemosRF: {
+    label: 'Demos/RF',
+    items: [
+      {name:'LinkAnalysis',             desc:'Link analysis for an earth orbiting spacecraft.',                                        url:'LinkHeaders/LinkAnalysisHeader.html'},
+      {name:'LinkAnalysisMars',         desc:'Link analysis for a Mars mission.',                                                      url:'LinkHeaders/LinkAnalysisMarsHeader.html'},
+      {name:'LinkExamples',             desc:'Examples of link analysis from the reference.',                                          url:'LinkHeaders/LinkExamplesHeader.html'},
+      {name:'RadarAnalysis',            desc:'Design a radar.',                                                                        url:'LinkHeaders/RadarAnalysisHeader.html'},
+      {name:'VoyagerCommLink',          desc:'Voyager link analysis.',                                                                 url:'LinkHeaders/VoyagerCommLinkHeader.html'},
+      {name:'VoyagerLinkBudget',        desc:'Voyager spacecraft link budget.',                                                        url:'LinkHeaders/VoyagerLinkBudgetHeader.html'},
+    ]
+  },
 
-<h3><a name="Optical"></a>Optical</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/OpticalBackgroundNoiseHeader.html">OpticalBackgroundNoise</a> </td>
-<td class="bio"> Computes optical background noise for various sources. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/OpticalLinkBudgetHeader.html">OpticalLinkBudget</a> </td>
-<td class="bio"> Create an optical link budget. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/OpticalReceiverNoiseDensityHeader.html">OpticalReceiverNoiseDensity</a> </td>
-<td class="bio"> Compute the receiver noise density. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/SNRHeader.html">SNR</a> </td>
-<td class="bio"> Compute the signal to noise ratio. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+  Ladar: {
+    label: 'Ladar',
+    items: [
+      {name:'LADAREquation',            desc:'Solves one form of the laser radar equation (ladar).',                                   url:'LinkHeaders/LADAREquationHeader.html'},
+      {name:'LADARTransmitPower',       desc:'Computes required Ladar transmit power.',                                               url:'LinkHeaders/LADARTransmitPowerHeader.html'},
+    ]
+  },
+  LinkDesign: {
+    label: 'LinkDesign',
+    items: [
+      {name:'LinkAnalysisTool',         desc:'Performs a link analysis for a satellite over an orbit.',                                url:'LinkHeaders/LinkAnalysisToolHeader.html'},
+      {name:'LinkBudget',               desc:'Performs a link budget for a satellite.',                                                url:'LinkHeaders/LinkBudgetHeader.html'},
+    ]
+  },
+  LinkUtilities: {
+    label: 'LinkUtilities',
+    items: [
+      {name:'BEP',                         desc:'Computes the bit error probability given C/N and the bit rate.',                     url:'LinkHeaders/BEPHeader.html'},
+      {name:'CNRComp',                     desc:'Compute the carrier to noise ratio.',                                                url:'LinkHeaders/CNRCompHeader.html'},
+      {name:'ConstellationGroundContact',  desc:'Compute the number of contacts for a constellation with ground users.',              url:'LinkHeaders/ConstellationGroundContactHeader.html'},
+      {name:'ConstellationMaxDistance',    desc:'Compute maximum distances between satellites in a constellation.',                   url:'LinkHeaders/ConstellationMaxDistanceHeader.html'},
+      {name:'DBPower',                     desc:'Power conversion to decibels. dB = 20 log10(s).',                                   url:'LinkHeaders/DBPowerHeader.html'},
+      {name:'DBSignal',                    desc:'Signal conversion to decibels. dB = 10 log10(s).',                                  url:'LinkHeaders/DBSignalHeader.html'},
+      {name:'DBSignalToPower',             desc:'Convert decibels to power (invert decibels).',                                      url:'LinkHeaders/DBSignalToPowerHeader.html'},
+      {name:'DBWToNW',                     desc:'Convert dBW (decibels-Watts) to nanowatts.',                                        url:'LinkHeaders/DBWToNWHeader.html'},
+      {name:'DBWToPW',                     desc:'Convert dBW to picowatts.',                                                         url:'LinkHeaders/DBWToPWHeader.html'},
+      {name:'DataRate',                    desc:'Computes communications systems data rates.',                                        url:'LinkHeaders/DataRateHeader.html'},
+      {name:'DataRateGain',               desc:'Computes communications systems data rates from gains.',                             url:'LinkHeaders/DataRateGainHeader.html'},
+      {name:'DataRateOrbit',              desc:'Computes data rate over an orbit.',                                                   url:'LinkHeaders/DataRateOrbitHeader.html'},
+      {name:'DopplerBlind',               desc:'Finds Doppler blind speeds.',                                                        url:'LinkHeaders/DopplerBlindHeader.html'},
+      {name:'DopplerShift',               desc:'Doppler shift.',                                                                     url:'LinkHeaders/DopplerShiftHeader.html'},
+      {name:'FPD',                        desc:'Function called by fzero to compute the carrier to noise ratio.',                    url:'LinkHeaders/FPDHeader.html'},
+      {name:'FPFA',                       desc:'Right hand side for probability of false alarm computation.',                        url:'LinkHeaders/FPFAHeader.html'},
+      {name:'Frequency',                  desc:'Outputs the frequencies for specified bands of electromagnetic radiation.',           url:'LinkHeaders/FrequencyHeader.html'},
+      {name:'FrequencyToWavelength',      desc:'Converts frequency to wavelength.',                                                  url:'LinkHeaders/FrequencyToWavelengthHeader.html'},
+      {name:'ModulationSpectralEfficiency',desc:'Spectral efficiency of different modulation schemes.',                              url:'LinkHeaders/ModulationSpectralEfficiencyHeader.html'},
+      {name:'MultiBEPPlot',               desc:'Computes and plots multiple bit error rates on the same plot.',                      url:'LinkHeaders/MultiBEPPlotHeader.html'},
+      {name:'PeriodToSemimajorAxis',      desc:'Computes semi-major axis from orbital period.',                                      url:'LinkHeaders/PeriodToSemimajorAxisHeader.html'},
+      {name:'ProbDetection',              desc:'Probability of detection for a diffuse target.',                                     url:'LinkHeaders/ProbDetectionHeader.html'},
+      {name:'Shannon',                    desc:'The Shannon information theorem relating S/N and C/B.',                              url:'LinkHeaders/ShannonHeader.html'},
+      {name:'TToPower',                   desc:'Convert temperature to power via bandwidth.',                                        url:'LinkHeaders/TToPowerHeader.html'},
+      {name:'Wavelength',                 desc:'Outputs the wavelengths for bands of electromagnetic radiation.',                    url:'LinkHeaders/WavelengthHeader.html'},
+      {name:'WavelengthToFrequency',      desc:'Converts wavelength to frequency.',                                                  url:'LinkHeaders/WavelengthToFrequencyHeader.html'},
+      {name:'YBComp',                     desc:'yB computation used as part of the probability of detection algorithm.',            url:'LinkHeaders/YBCompHeader.html'},
+    ]
+  },
+  Optical: {
+    label: 'Optical',
+    items: [
+      {name:'OpticalBackgroundNoise',     desc:'Computes optical background noise for various sources.',                             url:'LinkHeaders/OpticalBackgroundNoiseHeader.html'},
+      {name:'OpticalLinkBudget',          desc:'Create an optical link budget.',                                                     url:'LinkHeaders/OpticalLinkBudgetHeader.html'},
+      {name:'OpticalReceiverNoiseDensity',desc:'Compute the receiver noise density.',                                                url:'LinkHeaders/OpticalReceiverNoiseDensityHeader.html'},
+      {name:'SNR',                        desc:'Compute the signal to noise ratio.',                                                 url:'LinkHeaders/SNRHeader.html'},
+    ]
+  },
+  RF: {
+    label: 'RF',
+    items: [
+      {name:'AntennaGain',               desc:'Antenna gain from area and efficiencies as a function of frequency.',                 url:'LinkHeaders/AntennaGainHeader.html'},
+      {name:'Beamwidth3dB',              desc:'Antenna 3 dB angle for a parabolic antenna.',                                        url:'LinkHeaders/Beamwidth3dBHeader.html'},
+      {name:'Gain3dB',                   desc:'Antenna 3 dB gain for a parabolic antenna.',                                         url:'LinkHeaders/Gain3dBHeader.html'},
+      {name:'GainPattern',               desc:'Compute an antenna gain pattern as a function of the incidence angle.',              url:'LinkHeaders/GainPatternHeader.html'},
+      {name:'LossAtmosphericGas',        desc:'Computes the link attenuation due to gas.',                                          url:'LinkHeaders/LossAtmosphericGasHeader.html'},
+      {name:'LossDepointing',            desc:'Computes the depointing loss.',                                                      url:'LinkHeaders/LossDepointingHeader.html'},
+      {name:'LossFreeSpace',             desc:'Computes the free space loss.',                                                      url:'LinkHeaders/LossFreeSpaceHeader.html'},
+      {name:'LossPolarization',          desc:'Computes the polarization loss.',                                                    url:'LinkHeaders/LossPolarizationHeader.html'},
+      {name:'LossPrecipitation',         desc:'Computes the link attenuation due to precipitation (rain).',                        url:'LinkHeaders/LossPrecipitationHeader.html'},
+      {name:'NoisePower',                desc:'Computes the noise power required from bandwidth and noise temperature.',            url:'LinkHeaders/NoisePowerHeader.html'},
+      {name:'PowerReceived',             desc:'Computes the power received by an antenna.',                                        url:'LinkHeaders/PowerReceivedHeader.html'},
+      {name:'TAntennaGround',            desc:'Compute the temperature of an antenna on the ground.',                              url:'LinkHeaders/TAntennaGroundHeader.html'},
+      {name:'TAttenuator',               desc:'Compute the temperature of an attenuator.',                                         url:'LinkHeaders/TAttenuatorHeader.html'},
+      {name:'TMoon',                     desc:'Noise temperature of the Moon. Constant at 250 deg-K.',                             url:'LinkHeaders/TMoonHeader.html'},
+      {name:'TNoiseCascade',             desc:'Compute the noise of a cascade series.',                                            url:'LinkHeaders/TNoiseCascadeHeader.html'},
+      {name:'TPlanet',                   desc:'Noise temperature of a planet.',                                                    url:'LinkHeaders/TPlanetHeader.html'},
+      {name:'TReceiver',                 desc:'Compute the noise temperature of a receiver attached to an antenna.',               url:'LinkHeaders/TReceiverHeader.html'},
+      {name:'TSky',                      desc:'Brightness temperature of the sky.',                                                url:'LinkHeaders/TSkyHeader.html'},
+      {name:'TSun',                      desc:'Noise temperature of the sun.',                                                     url:'LinkHeaders/TSunHeader.html'},
+    ]
+  },
+  Radar: {
+    label: 'Radar',
+    items: [
+      {name:'Clutter',                   desc:'Compute clutter for land or sea.',                                                   url:'LinkHeaders/ClutterHeader.html'},
+      {name:'ClutterArea',               desc:'Compute clutter area.',                                                             url:'LinkHeaders/ClutterAreaHeader.html'},
+      {name:'DBWToPower',                desc:'Convert from dBW to power.',                                                        url:'LinkHeaders/DBWToPowerHeader.html'},
+      {name:'DBmToPower',                desc:'Convert from dBm to power.',                                                        url:'LinkHeaders/DBmToPowerHeader.html'},
+      {name:'DBsmToSM',                  desc:'Convert from dBsm to m².',                                                         url:'LinkHeaders/DBsmToSMHeader.html'},
+      {name:'NElementsPhasedArray',      desc:'Compute the number of elements needed to prevent grating lobes.',                   url:'LinkHeaders/NElementsPhasedArrayHeader.html'},
+      {name:'PhasedArray',               desc:'Generate a phased array.',                                                          url:'LinkHeaders/PhasedArrayHeader.html'},
+      {name:'PowerToDBW',                desc:'Convert from power to dB watts.',                                                   url:'LinkHeaders/PowerToDBWHeader.html'},
+      {name:'PowerToDBm',                desc:'Convert from power to dB milliwatts.',                                             url:'LinkHeaders/PowerToDBmHeader.html'},
+      {name:'RFSystemNoise',             desc:'Computes system noise.',                                                            url:'LinkHeaders/RFSystemNoiseHeader.html'},
+      {name:'RadarAccuracy',             desc:'Compute radar accuracy.',                                                           url:'LinkHeaders/RadarAccuracyHeader.html'},
+      {name:'RadarCrosssection',         desc:'Computes radar crossections.',                                                      url:'LinkHeaders/RadarCrosssectionHeader.html'},
+      {name:'RadarEquation',             desc:'Solves the radar equation. Can compute range or power.',                            url:'LinkHeaders/RadarEquationHeader.html'},
+      {name:'RadarEquationPulse',        desc:'Solves the radar equation for pulse mode. Can compute range or power.',             url:'LinkHeaders/RadarEquationPulseHeader.html'},
+      {name:'RadarEquationSN',           desc:'Computes signal to noise ratios from the radar equation.',                         url:'LinkHeaders/RadarEquationSNHeader.html'},
+      {name:'RadarPulseTrain',           desc:'Generates a pulse train.',                                                         url:'LinkHeaders/RadarPulseTrainHeader.html'},
+      {name:'RadarSN',                   desc:'Computes the radar signal to noise ratio for a pulsed monostatic radar.',          url:'LinkHeaders/RadarSNHeader.html'},
+      {name:'RadarThermalNoise',         desc:'Computes thermal noise for radar or any communications system.',                    url:'LinkHeaders/RadarThermalNoiseHeader.html'},
+      {name:'RadarWindows',              desc:'Parameters for different radar windows.',                                          url:'LinkHeaders/RadarWindowsHeader.html'},
+      {name:'SMToDBsm',                  desc:'Convert m² to dBsm.',                                                             url:'LinkHeaders/SMToDBsmHeader.html'},
+      {name:'TrackingAccuracy',          desc:'Computes radar tracking accuracy.',                                                url:'LinkHeaders/TrackingAccuracyHeader.html'},
+    ]
+  }
+};
 
-<h3><a name="RF"></a>RF</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/AntennaGainHeader.html">AntennaGain</a> </td>
-<td class="bio"> Antenna gain from area and efficiencies as a function of frequency. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/Beamwidth3dBHeader.html">Beamwidth3dB</a> </td>
-<td class="bio"> Antenna 3 dB angle for a parabolic antenna. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/Gain3dBHeader.html">Gain3dB</a> </td>
-<td class="bio"> Antenna 3 dB gain for a parabolic antenna. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/GainPatternHeader.html">GainPattern</a> </td>
-<td class="bio"> Compute an antenna gain pattern as a function of the incidence angle. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LossAtmosphericGasHeader.html">LossAtmosphericGas</a> </td>
-<td class="bio"> Computes the link attenuation due to gas. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LossDepointingHeader.html">LossDepointing</a> </td>
-<td class="bio"> Computes the depointing loss </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LossFreeSpaceHeader.html">LossFreeSpace</a> </td>
-<td class="bio"> Computes the free space loss. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LossPolarizationHeader.html">LossPolarization</a> </td>
-<td class="bio"> Computes the polarization loss. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/LossPrecipitationHeader.html">LossPrecipitation</a> </td>
-<td class="bio"> Computes the link attenuation due to precipation (rain). </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/NoisePowerHeader.html">NoisePower</a> </td>
-<td class="bio"> Computes the noise power required from bandwidth and noise temperature. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/PowerReceivedHeader.html">PowerReceived</a> </td>
-<td class="bio"> Computes the power received by an antenna. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TAntennaGroundHeader.html">TAntennaGround</a> </td>
-<td class="bio"> Compute the temperature of an antenna on the ground. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TAttenuatorHeader.html">TAttenuator</a> </td>
-<td class="bio"> Compute the temperature of an attenuator. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TMoonHeader.html">TMoon</a> </td>
-<td class="bio"> Noise temperature of the Moon. Constant at 250 deg-K. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TNoiseCascadeHeader.html">TNoiseCascade</a> </td>
-<td class="bio"> Compute the noise of a cascade series. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TPlanetHeader.html">TPlanet</a> </td>
-<td class="bio"> Noise temperature of a planet. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TReceiverHeader.html">TReceiver</a> </td>
-<td class="bio"> Compute the noise temperature of a receiver attached to an antenna. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TSkyHeader.html">TSky</a> </td>
-<td class="bio"> Brightness temperature of the sky. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TSunHeader.html">TSun</a> </td>
-<td class="bio"> Noise temperature of the sun. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
+// Build flat search index
+const INDEX = [];
+Object.entries(SECTIONS).forEach(([key, sec]) => {
+  sec.items.forEach(item => INDEX.push({...item, folder: sec.label}));
+});
 
-<h3><a name="Radar"></a>Radar</h3>
-<table border="0" cellpadding="2" width="100%">
-<tr><td class="link" width="200"><a href="LinkHeaders/ClutterHeader.html">Clutter</a> </td>
-<td class="bio"> Compute clutter for land or sea. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/ClutterAreaHeader.html">ClutterArea</a> </td>
-<td class="bio"> Compute clutter area. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBWToPowerHeader.html">DBWToPower</a> </td>
-<td class="bio"> Convert from dBW to power. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBmToPowerHeader.html">DBmToPower</a> </td>
-<td class="bio"> Convert from dBm to power. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/DBsmToSMHeader.html">DBsmToSM</a> </td>
-<td class="bio"> Convert from dBsm to m^2 </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/NElementsPhasedArrayHeader.html">NElementsPhasedArray</a> </td>
-<td class="bio"> Compute the number of elements needed to prevent grating lobes. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/PhasedArrayHeader.html">PhasedArray</a> </td>
-<td class="bio"> Generate a phased array </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/PowerToDBWHeader.html">PowerToDBW</a> </td>
-<td class="bio"> Convert from power to dB watts. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/PowerToDBmHeader.html">PowerToDBm</a> </td>
-<td class="bio"> Convert from power to dB milliwatts </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RFSystemNoiseHeader.html">RFSystemNoise</a> </td>
-<td class="bio"> Computes system noise. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarAccuracyHeader.html">RadarAccuracy</a> </td>
-<td class="bio"> Compute radar accuracy. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarCrosssectionHeader.html">RadarCrosssection</a> </td>
-<td class="bio"> Computes radar crossections. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarEquationHeader.html">RadarEquation</a> </td>
-<td class="bio"> Solves the radar equation. Can compute range or power. This function assumes </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarEquationPulseHeader.html">RadarEquationPulse</a> </td>
-<td class="bio"> Solves the radar equation. Can compute range or power. This function assumes </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarEquationSNHeader.html">RadarEquationSN</a> </td>
-<td class="bio"> Computes signal to noise ratios from the radar equation. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarPulseTrainHeader.html">RadarPulseTrain</a> </td>
-<td class="bio"> Generates a pulse train. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarSNHeader.html">RadarSN</a> </td>
-<td class="bio"> Computes the radar signal to noise ratio for a pulsed monostatic radar. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarThermalNoiseHeader.html">RadarThermalNoise</a> </td>
-<td class="bio"> Computes thermal noise for radar or any communications system. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/RadarWindowsHeader.html">RadarWindows</a> </td>
-<td class="bio"> Parameters for different radar windows. </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/SMToDBsmHeader.html">SMToDBsm</a> </td>
-<td class="bio"> Convert m^2 to dBsm </td></tr>
-<tr><td class="link" width="200"><a href="LinkHeaders/TrackingAccuracyHeader.html">TrackingAccuracy</a> </td>
-<td class="bio"> Computes radar tracking accuracy. </td></tr>
-</table>
-<br><a href="#top">Back To Top</a><br>
-<hr>
-<p> <a href="FunctionIndex.html">Back</a> to Functions main page</p></div></body></html>
+// Detail panel
+const overlay = document.getElementById('detail-overlay');
+const panel   = document.getElementById('detail-panel');
+const iframe  = document.getElementById('detail-iframe');
+const dtitle  = document.getElementById('detail-title');
+const dclose  = document.getElementById('detail-close');
+
+function openPanel(name, url) {
+  dtitle.textContent = name;
+  iframe.src = url;
+  overlay.classList.add('open');
+  panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  panel.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  iframe.src = 'about:blank';
+}
+
+dclose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+function renderFolder(key) {
+  const sec = SECTIONS[key];
+  document.getElementById('pane-title').textContent = sec.label;
+  document.getElementById('pane-count').textContent = sec.items.length + ' entries';
+  const list = document.getElementById('fn-list');
+
+  if (sec.items.length === 0) {
+    list.innerHTML = '<div style="padding:32px 20px;color:var(--gray-400);font-size:14px;">No functions in this folder.</div>';
+    return;
+  }
+
+  list.innerHTML = sec.items.map(item =>
+    `<div class="fn-row" data-url="${item.url}" data-name="${item.name}">
+      <span class="fn-row-name">${item.name}</span>
+      <span class="fn-row-desc">${item.desc}</span>
+    </div>`
+  ).join('');
+
+  list.querySelectorAll('.fn-row').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+// Sidebar click
+document.querySelectorAll('.side-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    renderFolder(el.dataset.folder);
+  });
+});
+
+// Initial render
+renderFolder('Coverage');
+
+// Search
+const inp     = document.getElementById('search-input');
+const clr     = document.getElementById('search-clear');
+const resDiv  = document.getElementById('search-results');
+const resMeta = document.getElementById('results-meta');
+const resList = document.getElementById('results-list');
+const statusEl= document.getElementById('search-status');
+const browseEl= document.getElementById('browse-content');
+
+clr.style.display = 'none';
+
+function run() {
+  const q = inp.value.trim().toLowerCase();
+  if (!q) {
+    resDiv.classList.remove('active');
+    browseEl.style.display = '';
+    statusEl.textContent = 'Showing all entries.';
+    clr.style.display = 'none';
+    return;
+  }
+  clr.style.display = '';
+  browseEl.style.display = 'none';
+  resDiv.classList.add('active');
+
+  const terms = q.split(/\s+/);
+  const hits = INDEX.filter(i =>
+    terms.every(t => i.name.toLowerCase().includes(t) || i.desc.toLowerCase().includes(t) || i.folder.toLowerCase().includes(t))
+  );
+  statusEl.textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''} found.`;
+  resMeta.innerHTML = hits.length
+    ? `<strong>${hits.length}</strong> result${hits.length !== 1 ? 's' : ''} for &ldquo;<strong>${q}</strong>&rdquo;`
+    : `No results for <strong>"${q}"</strong>.`;
+
+  resList.innerHTML = hits.length ? hits.map(h =>
+    `<div class="rc" style="cursor:pointer" data-url="${h.url}" data-name="${h.name}">
+      <span class="rc-name">${h.name}</span>
+      <span class="rc-desc">${h.desc}</span>
+      <span class="rc-folder">${h.folder}</span>
+    </div>`
+  ).join('') : `<div class="no-results">No matches — try a different keyword.</div>`;
+
+  resList.querySelectorAll('.rc[data-url]').forEach(row => {
+    row.addEventListener('click', () => openPanel(row.dataset.name, row.dataset.url));
+  });
+}
+
+inp.addEventListener('input', run);
+clr.addEventListener('click', () => { inp.value = ''; run(); inp.focus(); });
+</script>
+</body>
+</html>
